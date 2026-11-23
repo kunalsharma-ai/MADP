@@ -10,7 +10,7 @@ Legend: ✅ passed with live evidence · 🟡 implemented and tested on DEMO or 
 
 | Column | T2O | MFR | MHO |
 |---|---|---|---|
-| 1. Repository audited | ✅ code audit at `REPOSITORY_AUDIT_T2O.md` | ✅ `REPOSITORY_AUDIT_MFR.md` | 🔶 repo audited; production runs the T2O image, so the live code is unaudited |
+| 1. Repository audited | ✅ code audit at `REPOSITORY_AUDIT_T2O.md` | ✅ production runs the T2O backend (confirmed), which is audited | ✅ production runs the T2O backend (confirmed), which is audited |
 | 2. Auth tested | ⛔ no approved credential | ⛔ | ⛔ |
 | 3. Questionnaires imported | 🟡 DEMO, real definitions from the repo | 🟡 DEMO, placeholder definitions | 🟡 DEMO, real definitions from the repo exports |
 | 4. Question versions imported | 🟡 | 🟡 | 🟡 |

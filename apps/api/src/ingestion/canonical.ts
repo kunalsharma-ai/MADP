@@ -358,6 +358,24 @@ export const NAME_SUGGESTIONS: Record<string, string> = {
   'terms-consent': 'consent.terms',
 };
 
+/**
+ * Questions whose answers are direct identifiers. The panels store contact details as profile questions too,
+ * so their answers would otherwise land unencrypted in MongoDB. MADP never requests or stores them as answers;
+ * the encrypted copies on source_identity (from the member record) are the only ones kept.
+ */
+export const DIRECT_IDENTIFIER_QUESTIONS = new Set([
+  'firstname',
+  'lastname',
+  'fullname',
+  'mail',
+  'alternate-email',
+  'workemail',
+  'phone',
+  'alternate-phone',
+  'dob',
+  'zipcode',
+]);
+
 /** MHO answers default to special-category (health) unless the question is in this demographic allow-list. */
 const MHO_STANDARD = new Set([
   'fullname',

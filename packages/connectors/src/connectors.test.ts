@@ -148,7 +148,7 @@ describe.each(PANEL_CODES)('PanelApiConnector [%s]', (panel) => {
 });
 
 describe('panel-specific answer endpoints', () => {
-  it('T2O uses GET /user/:id/profile; MFR and MHO use POST /user/:id/profile-data with the question list', async () => {
+  it('all three panels read answers from the T2O backend profile route they run in production', async () => {
     seen.length = 0;
     await make('t2o').listAnswers(['u1'], ['gender']);
     await make('mfr').listAnswers(['u1'], ['gender']);
@@ -156,10 +156,9 @@ describe('panel-specific answer endpoints', () => {
     const calls = seen.filter((s) => s.url.startsWith('/api/v1/user/u1'));
     expect(calls.map((c) => `${c.method} ${c.url}`)).toEqual([
       'GET /api/v1/user/u1/profile',
-      'POST /api/v1/user/u1/profile-data',
-      'POST /api/v1/user/u1/profile-data',
+      'GET /api/v1/user/u1/profile',
+      'GET /api/v1/user/u1/profile',
     ]);
-    expect(JSON.parse(calls[1]!.body)).toEqual({ questions: ['gender'] });
   });
 
   it('refuses a base URL whose host is not the tenant host', () => {

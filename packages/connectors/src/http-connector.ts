@@ -56,28 +56,25 @@ export interface EndpointMap {
     | { method: 'POST'; path: (memberId: string) => string };
 }
 
+/**
+ * All three panels run the same T2O backend in production (separate tenants by Host header), so they share one
+ * endpoint map. The MFR and MHO repositories contain different API code that is NOT deployed; see
+ * docs/INTEGRATION_GAP_ANALYSIS.md section 3.
+ */
+const T2O_BACKEND_ENDPOINTS: EndpointMap = {
+  questions: '/api/v1/question',
+  option: (q) => `/api/v1/option/${encodeURIComponent(q)}`,
+  questionnaires: '/api/v1/profile',
+  users: '/api/v1/user',
+  // POST /user/:user/profile-data also exists on this backend but is marked "under development" and returns
+  // raw Answer documents, so the profile route is used.
+  answers: { method: 'GET', path: (id) => `/api/v1/user/${encodeURIComponent(id)}/profile` },
+};
+
 export const ENDPOINTS: Record<PanelCode, EndpointMap> = {
-  t2o: {
-    questions: '/api/v1/question',
-    option: (q) => `/api/v1/option/${encodeURIComponent(q)}`,
-    questionnaires: '/api/v1/profile',
-    users: '/api/v1/user',
-    answers: { method: 'GET', path: (id) => `/api/v1/user/${encodeURIComponent(id)}/profile` },
-  },
-  mfr: {
-    questions: '/api/v1/question',
-    option: (q) => `/api/v1/option/${encodeURIComponent(q)}`,
-    questionnaires: '/api/v1/profile',
-    users: '/api/v1/user',
-    answers: { method: 'POST', path: (id) => `/api/v1/user/${encodeURIComponent(id)}/profile-data` },
-  },
-  mho: {
-    questions: '/api/v1/question',
-    option: (q) => `/api/v1/option/${encodeURIComponent(q)}`,
-    questionnaires: '/api/v1/profile',
-    users: '/api/v1/user',
-    answers: { method: 'POST', path: (id) => `/api/v1/user/${encodeURIComponent(id)}/profile-data` },
-  },
+  t2o: T2O_BACKEND_ENDPOINTS,
+  mfr: T2O_BACKEND_ENDPOINTS,
+  mho: T2O_BACKEND_ENDPOINTS,
 };
 
 const RETRYABLE_STATUS = new Set([408, 425, 429]);

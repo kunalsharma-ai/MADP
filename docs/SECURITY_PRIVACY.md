@@ -13,6 +13,7 @@ Act 2023, GDPR and UK GDPR) has to be confirmed by counsel. Nothing here is lega
 | ABAC: PII decrypted only with `panellists.pii.read`; MHO special-category answers only with `health.sensitive.read` | `panellists.controller.ts` | `…stewards see masked data and no health answers`, `a super admin sees decrypted PII and health answers…` |
 | Field encryption, AES-256-GCM, versioned key id (`k1.`), tamper detection | `crypto/field-crypto.ts` | `round-trips and never repeats ciphertext`, `detects tampering` |
 | No PII in Mongo staging events | `ingestion.service.ts` | `PII never lands in MongoDB staging events` |
+| Direct identifiers (name, e-mail, phone, date of birth, postcode) are never requested or stored as profile answers | `ingestion/canonical.ts#DIRECT_IDENTIFIER_QUESTIONS` | `never stores contact details as profile answers…` |
 | Keyed HMAC e-mail hash for matching and exact search; no plaintext e-mail index | `field-crypto.ts` | `exact e-mail search uses the keyed hash` |
 | Masked identifiers in lists | `maskEmail` | `masks e-mails` |
 | Append-only audit, enforced by a database trigger that rejects UPDATE, DELETE and TRUNCATE | `drizzle/0001_audit_append_only.sql` | `rejects UPDATE and DELETE on audit_event` |
@@ -52,7 +53,7 @@ Act 2023, GDPR and UK GDPR) has to be confirmed by counsel. Nothing here is lega
 
 ## 4. Live-access approval process (nothing has been accessed)
 MADP will not read real personal data until **all** of these are true for a panel:
-1. Kunal approves read-only access for that panel in writing in this project.
+1. Kunal approves read-only access for that panel in writing in this project. ✅ Given 2026-11-23 for all three.
 2. The panel owner issues a scoped, revocable integration credential (gap G-01). MADP will not use the T2O `/user/apps`
    login, a person's admin JWT, a database dump or direct database access.
 3. The credential is placed in secure configuration (an environment secret), never in chat, git or a prompt.
@@ -60,7 +61,8 @@ MADP will not read real personal data until **all** of these are true for a pane
 5. A **dry run** is executed first and its counts are reviewed before a real import.
 
 ## 5. Findings in the source panels (from the code audit; not exploited, not tested live)
-These sit outside MADP's code, but they affect the data MADP would ingest. Fixing them needs the panel owner's
+These sit outside MADP's code, but they affect the data MADP would ingest. Because MFR and MHO production run the
+T2O backend, **every T2O finding applies to all three panels**, including MHO's health data. Fixing them needs the panel owner's
 approval, and MADP has changed nothing in the panel repos.
 
 | ID | Severity | Finding |

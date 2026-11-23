@@ -103,3 +103,45 @@ describe('dead-letter queue and reconciliation', () => {
       .expect(403);
   });
 });
+
+describe('direct identifiers', () => {
+  it('never stores contact details as profile answers, even when the source returns them', async () => {
+    const slot = t.app.get(ConnectorRegistry).get('mho');
+    const original = slot.connector.listAnswers.bind(slot.connector);
+    const asked: string[][] = [];
+    slot.connector.listAnswers = async (members, questions) => {
+      asked.push(questions);
+      const real = await original(members, questions);
+      return [
+        ...real,
+        ...members.map((m) => ({
+          panel: 'mho' as const,
+          sourceMemberId: m,
+          sourceQuestionId: 'mail',
+          values: [`${m}@example.invalid`],
+          sourceUpdatedAt: null,
+        })),
+      ];
+    };
+    try {
+      const run = await request(t.server)
+        .post('/api/v1/connectors/mho/import')
+        .set(bearer())
+        .send({ dryRun: false })
+        .expect(200);
+      expect(run.body.status).toBe('succeeded');
+      expect(asked.flat()).not.toContain('mail');
+      expect(asked.flat()).not.toContain('phone');
+      const { Mongo } = await import('../src/mongo/mongo.js');
+      const mongo = t.app.get(Mongo);
+      expect(
+        await mongo.profileAnswers.countDocuments({
+          sourceQuestionId: { $in: ['mail', 'phone', 'firstname'] },
+        }),
+      ).toBe(0);
+      expect(await mongo.profileAnswers.countDocuments({ panel: 'mho' })).toBeGreaterThan(0);
+    } finally {
+      slot.connector.listAnswers = original;
+    }
+  });
+});
