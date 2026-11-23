@@ -66,6 +66,7 @@ approval, and MADP has changed nothing in the panel repos.
 | ID | Severity | Finding |
 |---|---|---|
 | T2O-SEC-01 | Critical | `POST /api/v1/user/apps` returns a 365-day root JWT for any request that matches an app user's fields. No secret is checked |
+| T2O-SEC-07 | Critical | `GET /api/v1/integration/respondent-profile/:respondentID` returns a member's record and all profile answers without authentication |
 | T2O-SEC-02 | Critical | `GET /api/v1/user/birthday/today` returns names and e-mails without authentication |
 | T2O-SEC-03 | High | Any signed-in member can list members and read others' answers. The request body is used as a raw Mongo filter |
 | T2O-SEC-04, MFR-SEC-01, MHO-SEC-02 | High | Question and option write routes have no authentication |
