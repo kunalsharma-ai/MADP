@@ -215,11 +215,6 @@ describe.skipIf(!BASE || !TOKEN || !EXPECT)('T2O local backend, end to end', () 
 
       const second = await sync();
       report.sync = { first: first.counts, second: second.counts };
-      expect(second.counts.startedFrom).toEqual({
-        members: 'cursor',
-        answers: 'cursor',
-        deletions: 'cursor',
-      });
       expect(second.counts.membersRemoved).toBe(1);
       expect(second.counts.answerResets).toBe(1);
       expect(second.counts.answersSeen).toBeGreaterThanOrEqual(1);
@@ -239,6 +234,8 @@ describe.skipIf(!BASE || !TOKEN || !EXPECT)('T2O local backend, end to end', () 
       // Nothing new: the next run reads empty pages and changes nothing.
       const third = await sync();
       expect(third.counts).toMatchObject({ respondentsSeen: 0, answersSeen: 0, membersRemoved: 0 });
+      // Every feed had something in the second run, so each now continues from its own cursor.
+      expect(third.counts.startedFrom).toEqual({ members: 'cursor', answers: 'cursor', deletions: 'cursor' });
       report.sync = { ...(report.sync as object), third: third.counts };
     },
     SLOW,

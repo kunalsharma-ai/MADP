@@ -59,6 +59,23 @@ The same copy was run on that branch:
 - **The integration account itself is imported as a member.** The panel does not expose the role to MADP. Until it
   does, exclude that account by its id.
 
+## Automatic sync from the changes feed (kunalsharma-ai/turn2opinion#20, 2026-11-23)
+
+The copy was run with the #20 feeds. After the import, the test made three changes in T2O through its own routes
+(the consumer changed an answer with `PATCH /me/profile`, the admin account reset one test member's answers with
+`POST /user/refresh` and deleted another with `DELETE /user/:id`), then ran MADP's sync:
+
+| Run | Started from | Members | Answers read | Answers changed | Removed | Answer resets |
+|---|---|---|---|---|---|---|
+| 1 (right after the import) | 10 min before the import started | 1 | 1 | 2 | 0 | 1 |
+| 2 (after the three changes) | each feed's cursor | 1 | 1 | 5 | 1 | 1 |
+| 3 (nothing new) | each feed's cursor | 0 | 0 | 0 | 0 | 0 |
+
+Run 1 picked up changes made by an earlier test run inside the 10-minute overlap, which is what the overlap is for;
+storing them again changed nothing that was already right. After run 2 the consumer's new answer was in MADP, the
+deleted member had no contact details, a `deleted` membership and no answers, and the reset member had no current
+answers. All four tests passed (`apps/api/test/t2o-local.test.ts`, 11 minutes).
+
 ## Timing
 
 Each import reads 848 option lists, one request every 250 ms, so about 3.5 minutes per run. A paged or bulk

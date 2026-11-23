@@ -68,3 +68,15 @@ Only do that on the local copy.
   Use its token for MADP: once the member-access fix is in, a member token gets 403 from `GET /api/v1/user`.
 - `node access-check.mjs` runs 25 before/after access rules for member data.
 - `node make-expect.mjs` adds both accounts to `expect.json`.
+
+## Automatic sync (turn2opinion#20)
+
+Run the backend from the #20 branch. Then add two disposable member ids from the copy (one is deleted, one has its
+answers reset) and the tokens file:
+
+```bash
+T2O_LOCAL_TOKENS=$H/tokens.json T2O_LOCAL_DISPOSABLE=<member id to delete>,<member id to reset> \
+  ... pnpm exec vitest run --project integration t2o-local      # same variables as above
+```
+
+Only use ids of test accounts on the local copy.
