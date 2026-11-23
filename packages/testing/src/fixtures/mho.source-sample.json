@@ -1,0 +1,2965 @@
+{
+ "panel": "mho",
+ "extractedAt": "2026-11-23",
+ "source": "MHO:Project/sections/hcp/data-source/myhealthopinions.*.json",
+ "profiles": [
+  {
+   "slug": "educational",
+   "name": "educational profile",
+   "sourceCategory": "healthcare professional",
+   "exportFile": "HealthcareProfessional",
+   "pages": [
+    [
+     "Educational Profile",
+     "doc-education",
+     "doc-education-diploma",
+     "doc-education-diploma-certified",
+     "doc-education-bachelors",
+     "doc-education-bachelors-registered",
+     "doc-education-masters",
+     "doc-education-master-recognition",
+     "doc-education-doctorate",
+     "doc-education-doctorate-registered",
+     "doc-education-others",
+     "doc-education-others-registered"
+    ]
+   ]
+  },
+  {
+   "slug": "professional",
+   "name": "speciality and area of practice",
+   "sourceCategory": "healthcare professional",
+   "exportFile": "HealthcareProfessional",
+   "pages": [
+    [
+     "Speciality And Area of Practice",
+     "doc-expertise",
+     "doc-specialization",
+     "doc-joblevel",
+     "healthcare-management-job-role"
+    ]
+   ]
+  },
+  {
+   "slug": "education",
+   "name": "educational profile",
+   "sourceCategory": "patient",
+   "exportFile": "Patient",
+   "pages": [
+    [
+     "Educational Profile",
+     "education",
+     "education-diploma",
+     "education-associate-degree",
+     "education-ug",
+     "education-pg",
+     "education-doctorate"
+    ]
+   ]
+  },
+  {
+   "slug": "food-lifestyle",
+   "name": "food and lifestyle profile",
+   "sourceCategory": "patient",
+   "exportFile": "Patient",
+   "pages": [
+    [
+     "Food and Lifestyle Profile",
+     "diet-plan",
+     "have-food-allergy",
+     "food-allergy",
+     "hot-drinks",
+     "cold-drinks",
+     "alcohol",
+     "alcohol-category",
+     "smoke",
+     "smoke-category",
+     "suppliment",
+     "do-exercise",
+     "exercises",
+     "do-sport-participation",
+     "sport-category",
+     "sleep-duration"
+    ]
+   ]
+  },
+  {
+   "slug": "educational-profile",
+   "name": "educational profile",
+   "sourceCategory": "healthcare professional",
+   "exportFile": "CareGiver",
+   "pages": [
+    [
+     "Educational Profile",
+     "doc-education",
+     "doc-education-diploma",
+     "doc-education-diploma-certified",
+     "doc-education-bachelors",
+     "doc-education-bachelors-registered",
+     "doc-education-masters",
+     "doc-education-master-recognition",
+     "doc-education-doctorate",
+     "doc-education-doctorate-registered",
+     "doc-education-others",
+     "doc-education-others-registered"
+    ]
+   ]
+  },
+  {
+   "slug": "speciality-and-area-of-practice",
+   "name": "speciality and area of practice",
+   "sourceCategory": "healthcare professional",
+   "exportFile": "CareGiver",
+   "pages": [
+    [
+     "Speciality And Area of Practice",
+     "doc-expertise",
+     "doc-specialization",
+     "doc-joblevel",
+     "healthcare-management-job-role"
+    ]
+   ]
+  }
+ ],
+ "questions": [
+  {
+   "name": "doc-education",
+   "label": "What is your highest level of education?",
+   "parent": null,
+   "category": [
+    "healthcare professional"
+   ]
+  },
+  {
+   "name": "doc-education-diploma",
+   "label": "What type of diploma have you completed?",
+   "parent": "doc-education",
+   "category": [
+    "healthcare professional"
+   ]
+  },
+  {
+   "name": "doc-education-diploma-certified",
+   "label": "Are you certified/licensed to practice in your field?",
+   "parent": "doc-education",
+   "category": [
+    "healthcare professional"
+   ]
+  },
+  {
+   "name": "doc-education-bachelors",
+   "label": "What is your bachelor's qualification?",
+   "parent": "doc-education",
+   "category": [
+    "healthcare professional"
+   ]
+  },
+  {
+   "name": "doc-education-bachelors-registered",
+   "label": "Do you hold a professional registration/licensure?",
+   "parent": "doc-education",
+   "category": [
+    "healthcare professional"
+   ]
+  },
+  {
+   "name": "doc-education-masters",
+   "label": "What is your master's qualification?",
+   "parent": "doc-education",
+   "category": [
+    "healthcare professional"
+   ]
+  },
+  {
+   "name": "doc-education-master-recognition",
+   "label": "Do you have a specialist certification/board recognition?",
+   "parent": "doc-education",
+   "category": [
+    "healthcare professional"
+   ]
+  },
+  {
+   "name": "doc-education-doctorate",
+   "label": "What is your doctoral qualification?",
+   "parent": "doc-education",
+   "category": [
+    "healthcare professional"
+   ]
+  },
+  {
+   "name": "doc-education-doctorate-registered",
+   "label": "Do you have certification/registration with a professional council or board?",
+   "parent": "doc-education",
+   "category": [
+    "healthcare professional"
+   ]
+  },
+  {
+   "name": "doc-education-others",
+   "label": "Please specify your qualification.",
+   "parent": "doc-education",
+   "category": [
+    "healthcare professional"
+   ]
+  },
+  {
+   "name": "doc-education-others-registered",
+   "label": "Are you certified/licensed to practice in your field?",
+   "parent": "doc-education",
+   "category": [
+    "healthcare professional"
+   ]
+  },
+  {
+   "name": "doc-expertise",
+   "label": "What is your primary role of expertise",
+   "parent": null,
+   "category": [
+    "healthcare professional"
+   ]
+  },
+  {
+   "name": "doc-specialization",
+   "label": "Please Select Your Specialization",
+   "parent": "doc-expertise",
+   "category": [
+    "healthcare professional"
+   ]
+  },
+  {
+   "name": "doc-joblevel",
+   "label": "Please Select Your Job Level",
+   "parent": "doc-specialization",
+   "category": [
+    "healthcare professional"
+   ]
+  },
+  {
+   "name": "healthcare-management-job-role",
+   "label": "Please Select your job  level",
+   "parent": "doc-expertise",
+   "category": [
+    "healthcare professional"
+   ]
+  },
+  {
+   "name": "education",
+   "label": "Highest Level of Education",
+   "parent": null,
+   "category": [
+    "patient",
+    "care giver",
+    "minor patient"
+   ]
+  },
+  {
+   "name": "education-diploma",
+   "label": "Diploma",
+   "parent": "education",
+   "category": [
+    "patient",
+    "care giver",
+    "minor patient"
+   ]
+  },
+  {
+   "name": "education-associate-degree",
+   "label": "Associate Degree",
+   "parent": "education",
+   "category": [
+    "patient",
+    "care giver",
+    "minor patient"
+   ]
+  },
+  {
+   "name": "education-ug",
+   "label": "Under Graduate",
+   "parent": "education",
+   "category": [
+    "patient",
+    "care giver",
+    "minor patient"
+   ]
+  },
+  {
+   "name": "education-pg",
+   "label": "Post Graduation",
+   "parent": "education",
+   "category": [
+    "patient",
+    "care giver",
+    "minor patient"
+   ]
+  },
+  {
+   "name": "education-doctorate",
+   "label": "What is your doctoral qualification",
+   "parent": "education",
+   "category": [
+    "patient",
+    "care giver",
+    "minor patient"
+   ]
+  },
+  {
+   "name": "diet-plan",
+   "label": "Do you follow any specific diet or eating plan?",
+   "parent": null,
+   "category": [
+    "patient",
+    "minor patient"
+   ]
+  },
+  {
+   "name": "have-food-allergy",
+   "label": "Do you have any food allergies or intolerances?",
+   "parent": null,
+   "category": [
+    "patient",
+    "minor patient"
+   ]
+  },
+  {
+   "name": "hot-drinks",
+   "label": "Which of the following hot drinks do you regularly consume?",
+   "parent": null,
+   "category": [
+    "patient",
+    "minor patient"
+   ]
+  },
+  {
+   "name": "cold-drinks",
+   "label": "Which cold drinks do you regularly consume?",
+   "parent": null,
+   "category": [
+    "patient",
+    "minor patient"
+   ]
+  },
+  {
+   "name": "alcohol",
+   "label": "Do you currently consume alcohol?",
+   "parent": null,
+   "category": [
+    "patient",
+    "minor patient"
+   ]
+  },
+  {
+   "name": "alcohol-category",
+   "label": "Which types of alcoholic drinks do you usually consume?",
+   "parent": "alcohol",
+   "category": [
+    "patient",
+    "minor patient"
+   ]
+  },
+  {
+   "name": "smoke",
+   "label": "Do you currently smoke?",
+   "parent": null,
+   "category": [
+    "patient",
+    "minor patient"
+   ]
+  },
+  {
+   "name": "smoke-category",
+   "label": "What type of tobacco product do you use most often?",
+   "parent": "smoke",
+   "category": [
+    "patient",
+    "minor patient"
+   ]
+  },
+  {
+   "name": "suppliment",
+   "label": "Do you consume any of the following for health or energy purposes?",
+   "parent": null,
+   "category": [
+    "patient",
+    "minor patient"
+   ]
+  },
+  {
+   "name": "do-exercise",
+   "label": "Do you currently engage in any physical exercise or fitness routine?",
+   "parent": null,
+   "category": [
+    "patient",
+    "minor patient"
+   ]
+  },
+  {
+   "name": "exercises",
+   "label": "What type of exercise do you usually do?",
+   "parent": null,
+   "category": [
+    "patient",
+    "minor patient"
+   ]
+  },
+  {
+   "name": "do-sport-participation",
+   "label": "Do you regularly participate in any sports or outdoor physical activities?",
+   "parent": null,
+   "category": [
+    "patient",
+    "minor patient"
+   ]
+  },
+  {
+   "name": "sport-category",
+   "label": "Which type(s) of sports or activities do you play most often?",
+   "parent": "do-sport-participation",
+   "category": [
+    "patient",
+    "minor patient",
+    "care giver"
+   ]
+  },
+  {
+   "name": "sleep-duration",
+   "label": "How many hours of sleep do you get per night?",
+   "parent": null,
+   "category": [
+    "patient",
+    "minor patient"
+   ]
+  }
+ ],
+ "options": [
+  {
+   "question": "doc-education",
+   "label": "Diploma",
+   "value": "Diploma",
+   "parentValue": []
+  },
+  {
+   "question": "doc-education",
+   "label": "Bachelor’s ",
+   "value": "Bachelor’s",
+   "parentValue": []
+  },
+  {
+   "question": "doc-education",
+   "label": "Master’s ",
+   "value": "Master’s",
+   "parentValue": []
+  },
+  {
+   "question": "doc-education",
+   "label": "Doctorate",
+   "value": "Doctorate",
+   "parentValue": []
+  },
+  {
+   "question": "doc-education-diploma",
+   "label": "Nursing diploma (GNM/ANM)",
+   "value": "Nursing diploma (GNM/ANM)",
+   "parentValue": [
+    "Diploma"
+   ]
+  },
+  {
+   "question": "doc-education-diploma",
+   "label": "Paramedical diploma (Lab technician, Radiology, Physiotherapy, etc.)",
+   "value": "Paramedical diploma (Lab technician, Radiology, Physiotherapy, etc.)",
+   "parentValue": [
+    "Diploma"
+   ]
+  },
+  {
+   "question": "doc-education-diploma",
+   "label": "Pharmacy diploma (D.Pharm)",
+   "value": "Pharmacy diploma (D.Pharm)",
+   "parentValue": [
+    "Diploma"
+   ]
+  },
+  {
+   "question": "doc-education-diploma",
+   "label": "Other healthcare-related diploma",
+   "value": "Other healthcare-related diploma",
+   "parentValue": [
+    "Diploma"
+   ]
+  },
+  {
+   "question": "doc-education-diploma-certified",
+   "label": "Yes",
+   "value": "yes",
+   "parentValue": [
+    "Diploma"
+   ]
+  },
+  {
+   "question": "doc-education-diploma-certified",
+   "label": "No",
+   "value": "no",
+   "parentValue": [
+    "Diploma"
+   ]
+  },
+  {
+   "question": "doc-education-diploma-certified",
+   "label": "Currently under process",
+   "value": "under process",
+   "parentValue": [
+    "Diploma"
+   ]
+  },
+  {
+   "question": "doc-education-bachelors",
+   "label": "MBBS (Medicine)",
+   "value": "mbbs",
+   "parentValue": [
+    "Bachelor’s"
+   ]
+  },
+  {
+   "question": "doc-education-bachelors",
+   "label": "BDS (Dentistry)",
+   "value": "bds",
+   "parentValue": [
+    "Bachelor’s"
+   ]
+  },
+  {
+   "question": "doc-education-bachelors",
+   "label": "B.Sc Nursing",
+   "value": "bsc",
+   "parentValue": [
+    "Bachelor’s"
+   ]
+  },
+  {
+   "question": "doc-education-bachelors",
+   "label": "B.Pharm (Pharmacy)",
+   "value": "bpharma",
+   "parentValue": [
+    "Bachelor’s"
+   ]
+  },
+  {
+   "question": "doc-education-bachelors",
+   "label": "BPT (Physiotherapy)",
+   "value": "bpt",
+   "parentValue": [
+    "Bachelor’s"
+   ]
+  },
+  {
+   "question": "doc-education-bachelors-registered",
+   "label": "Yes, with national medical/dental/nursing/pharmacy council",
+   "value": "union-certified",
+   "parentValue": [
+    "Bachelor’s"
+   ]
+  },
+  {
+   "question": "doc-education-bachelors-registered",
+   "label": "Yes, with state medical/dental/nursing/pharmacy council",
+   "value": "state-certified",
+   "parentValue": [
+    "Bachelor’s"
+   ]
+  },
+  {
+   "question": "doc-education-bachelors-registered",
+   "label": "No",
+   "value": "no",
+   "parentValue": [
+    "Bachelor’s"
+   ]
+  },
+  {
+   "question": "doc-education-bachelors-registered",
+   "label": "Under process",
+   "value": "under process",
+   "parentValue": [
+    "Bachelor’s"
+   ]
+  },
+  {
+   "question": "doc-education-masters",
+   "label": "MD/MS (Postgraduate Medicine/Surgery)",
+   "value": "md or ms",
+   "parentValue": [
+    "Master’s"
+   ]
+  },
+  {
+   "question": "doc-education-masters",
+   "label": "MDS (Dentistry)",
+   "value": "mds",
+   "parentValue": [
+    "Master’s"
+   ]
+  },
+  {
+   "question": "doc-education-masters",
+   "label": "M.Sc Nursing",
+   "value": "msc",
+   "parentValue": [
+    "Master’s"
+   ]
+  },
+  {
+   "question": "doc-education-masters",
+   "label": "M.Pharm (Pharmacy)",
+   "value": "mpharma",
+   "parentValue": [
+    "Master’s"
+   ]
+  },
+  {
+   "question": "doc-education-masters",
+   "label": "MPT (Physiotherapy)",
+   "value": "mpt",
+   "parentValue": [
+    "Master’s"
+   ]
+  },
+  {
+   "question": "doc-education-master-recognition",
+   "label": "Yes",
+   "value": "yes",
+   "parentValue": [
+    "Master’s"
+   ]
+  },
+  {
+   "question": "doc-education-master-recognition",
+   "label": "No",
+   "value": "no",
+   "parentValue": [
+    "Master’s"
+   ]
+  },
+  {
+   "question": "doc-education-master-recognition",
+   "label": "Currently pursuing",
+   "value": "pursuing",
+   "parentValue": [
+    "Master’s"
+   ]
+  },
+  {
+   "question": "doc-education-doctorate",
+   "label": "DM/MCh (Super-specialty Medicine/Surgery)",
+   "value": "dm/mch",
+   "parentValue": [
+    "Doctorate"
+   ]
+  },
+  {
+   "question": "doc-education-doctorate",
+   "label": "PhD (Healthcare/Medical Science)",
+   "value": "phd",
+   "parentValue": [
+    "Doctorate"
+   ]
+  },
+  {
+   "question": "doc-education-doctorate-registered",
+   "label": "Yes, National Medical Council or equivalent",
+   "value": "union-certified",
+   "parentValue": [
+    "Doctorate"
+   ]
+  },
+  {
+   "question": "doc-education-doctorate-registered",
+   "label": "Yes, International Medical Board (e.g., USMLE, MRCP, FRCS)",
+   "value": "state-certified",
+   "parentValue": [
+    "Doctorate"
+   ]
+  },
+  {
+   "question": "doc-education-doctorate-registered",
+   "label": "No",
+   "value": "no",
+   "parentValue": [
+    "Doctorate"
+   ]
+  },
+  {
+   "question": "doc-education-doctorate-registered",
+   "label": "Under process",
+   "value": "under process",
+   "parentValue": [
+    "Doctorate"
+   ]
+  },
+  {
+   "question": "doc-education-others-registered",
+   "label": "Yes, National Medical Council or equivalent",
+   "value": "union-certified",
+   "parentValue": [
+    "Others"
+   ]
+  },
+  {
+   "question": "doc-education-others-registered",
+   "label": "Yes, International Medical Board (e.g., USMLE, MRCP, FRCS)",
+   "value": "state-certified",
+   "parentValue": [
+    "Others"
+   ]
+  },
+  {
+   "question": "doc-education-others-registered",
+   "label": "No",
+   "value": "no",
+   "parentValue": [
+    "Others"
+   ]
+  },
+  {
+   "question": "doc-education-others-registered",
+   "label": "Under process",
+   "value": "under process",
+   "parentValue": [
+    "Others"
+   ]
+  },
+  {
+   "question": "education",
+   "label": "Less than high school",
+   "value": "basic",
+   "parentValue": []
+  },
+  {
+   "question": "education",
+   "label": "High school",
+   "value": "high-school",
+   "parentValue": []
+  },
+  {
+   "question": "education",
+   "label": "Diploma or GED",
+   "value": "diploma",
+   "parentValue": []
+  },
+  {
+   "question": "education-diploma",
+   "label": "Diploma in Automobile Engineering",
+   "value": "Diploma in Automobile Engineering",
+   "parentValue": [
+    "college-dropout",
+    "diploma"
+   ]
+  },
+  {
+   "question": "education-diploma",
+   "label": "Diploma in Agricultural Engineering",
+   "value": "Diploma in Agricultural Engineering",
+   "parentValue": [
+    "college-dropout",
+    "diploma"
+   ]
+  },
+  {
+   "question": "education-diploma",
+   "label": "Diploma in Architecture Assistantship",
+   "value": "Diploma in Architecture Assistantship",
+   "parentValue": [
+    "college-dropout",
+    "diploma"
+   ]
+  },
+  {
+   "question": "education-diploma",
+   "label": "Diploma in Biomedical Biotechnology",
+   "value": "Diploma in Biomedical Biotechnology",
+   "parentValue": [
+    "college-dropout",
+    "diploma"
+   ]
+  },
+  {
+   "question": "education-diploma",
+   "label": "Diploma in Business Administration",
+   "value": "Diploma in Business Administration",
+   "parentValue": [
+    "college-dropout",
+    "diploma"
+   ]
+  },
+  {
+   "question": "education-diploma",
+   "label": "Diploma in Chemical Engineering",
+   "value": "Diploma in Chemical Engineering",
+   "parentValue": [
+    "college-dropout",
+    "diploma"
+   ]
+  },
+  {
+   "question": "education-diploma",
+   "label": "Diploma in Aeronautical Engineering",
+   "value": "Diploma in Aeronautical Engineering",
+   "parentValue": [
+    "college-dropout",
+    "diploma"
+   ]
+  },
+  {
+   "question": "education-diploma",
+   "label": "Diploma in Ceramic Technology",
+   "value": "Diploma in Ceramic Technology",
+   "parentValue": [
+    "college-dropout",
+    "diploma"
+   ]
+  },
+  {
+   "question": "education-diploma",
+   "label": "Diploma in Electrical & Telecommunication Engineering",
+   "value": "Diploma in Electrical & Telecommunication Engineering",
+   "parentValue": [
+    "college-dropout",
+    "diploma"
+   ]
+  },
+  {
+   "question": "education-diploma",
+   "label": "Diploma in Garment Technology",
+   "value": "Diploma in Garment Technology",
+   "parentValue": [
+    "college-dropout",
+    "diploma"
+   ]
+  },
+  {
+   "question": "education-diploma",
+   "label": "Diploma in Handloom Technology",
+   "value": "Diploma in Handloom Technology",
+   "parentValue": [
+    "college-dropout",
+    "diploma"
+   ]
+  },
+  {
+   "question": "education-diploma",
+   "label": "Diploma in Information Technology",
+   "value": "Diploma in Information Technology",
+   "parentValue": [
+    "college-dropout",
+    "diploma"
+   ]
+  },
+  {
+   "question": "education-diploma",
+   "label": "Diploma in Interior Decoration",
+   "value": "Diploma in Interior Decoration",
+   "parentValue": [
+    "college-dropout",
+    "diploma"
+   ]
+  },
+  {
+   "question": "education-diploma",
+   "label": "Diploma in Instrumentation Technology",
+   "value": "Diploma in Instrumentation Technology",
+   "parentValue": [
+    "college-dropout",
+    "diploma"
+   ]
+  },
+  {
+   "question": "education-diploma",
+   "label": "Diploma in Production & Industrial Engineering",
+   "value": "Diploma in Production & Industrial Engineering",
+   "parentValue": [
+    "college-dropout",
+    "diploma"
+   ]
+  },
+  {
+   "question": "education-diploma",
+   "label": "Diploma in Leather Technology",
+   "value": "Diploma in Leather Technology",
+   "parentValue": [
+    "college-dropout",
+    "diploma"
+   ]
+  },
+  {
+   "question": "education-diploma",
+   "label": "Diploma in Library and Information Science",
+   "value": "Diploma in Library and Information Science",
+   "parentValue": [
+    "college-dropout",
+    "diploma"
+   ]
+  },
+  {
+   "question": "education-diploma",
+   "label": "Diploma in Mechatronics",
+   "value": "Diploma in Mechatronics",
+   "parentValue": [
+    "college-dropout",
+    "diploma"
+   ]
+  },
+  {
+   "question": "education-diploma",
+   "label": "Diploma in Marine Engineering",
+   "value": "Diploma in Marine Engineering",
+   "parentValue": [
+    "college-dropout",
+    "diploma"
+   ]
+  },
+  {
+   "question": "education-diploma",
+   "label": "Diploma in Web Designing",
+   "value": "Diploma in Web Designing",
+   "parentValue": [
+    "college-dropout",
+    "diploma"
+   ]
+  },
+  {
+   "question": "education-diploma",
+   "label": "Diploma in Plastic Technology",
+   "value": "Diploma in Plastic Technology",
+   "parentValue": [
+    "college-dropout",
+    "diploma"
+   ]
+  },
+  {
+   "question": "education-diploma",
+   "label": "Diploma in Textile Technology (Knitting/Weaving/Spinning)",
+   "value": "Diploma in Textile Technology (Knitting/Weaving/Spinning)",
+   "parentValue": [
+    "college-dropout",
+    "diploma"
+   ]
+  },
+  {
+   "question": "education-diploma",
+   "label": "Diploma in Textile Processing",
+   "value": "Diploma in Textile Processing",
+   "parentValue": [
+    "college-dropout",
+    "diploma"
+   ]
+  },
+  {
+   "question": "education-diploma",
+   "label": "Diploma in Electrical and Electronics Engineering",
+   "value": "Diploma in Electrical and Electronics Engineering",
+   "parentValue": [
+    "college-dropout",
+    "diploma"
+   ]
+  },
+  {
+   "question": "education-diploma",
+   "label": "Diploma in Electronics & Communication Engineering",
+   "value": "Diploma in Electronics & Communication Engineering",
+   "parentValue": [
+    "college-dropout",
+    "diploma"
+   ]
+  },
+  {
+   "question": "education",
+   "label": "Some college, no degree",
+   "value": "college-dropout",
+   "parentValue": []
+  },
+  {
+   "question": "education",
+   "label": "Associate degree (AA, AS)",
+   "value": "associate degree",
+   "parentValue": []
+  },
+  {
+   "question": "education-associate-degree",
+   "label": "Associate of Arts",
+   "value": "AA",
+   "parentValue": [
+    "associate degree"
+   ]
+  },
+  {
+   "question": "education-associate-degree",
+   "label": "Associate of Applied Arts",
+   "value": "AAA",
+   "parentValue": [
+    "associate degree"
+   ]
+  },
+  {
+   "question": "education-associate-degree",
+   "label": "Associate of Applied Business",
+   "value": "AAB",
+   "parentValue": [
+    "associate degree"
+   ]
+  },
+  {
+   "question": "education-associate-degree",
+   "label": "Associate of Engineering; Associate in Electronics Engineering Technology",
+   "value": "AAE",
+   "parentValue": [
+    "associate degree"
+   ]
+  },
+  {
+   "question": "education-associate-degree",
+   "label": "Associate of Applied Science",
+   "value": "AAS",
+   "parentValue": [
+    "associate degree"
+   ]
+  },
+  {
+   "question": "education-associate-degree",
+   "label": "Associate of Arts in Teaching",
+   "value": "AAT",
+   "parentValue": [
+    "associate degree"
+   ]
+  },
+  {
+   "question": "education-associate-degree",
+   "label": "Associate of Business Administration",
+   "value": "ABA",
+   "parentValue": [
+    "associate degree"
+   ]
+  },
+  {
+   "question": "education-associate-degree",
+   "label": "Associate Degree in Nursing",
+   "value": "ADN",
+   "parentValue": [
+    "associate degree"
+   ]
+  },
+  {
+   "question": "education-associate-degree",
+   "label": "Associate of Engineering Science",
+   "value": "AES",
+   "parentValue": [
+    "associate degree"
+   ]
+  },
+  {
+   "question": "education-associate-degree",
+   "label": "Associate in Engineering Technology",
+   "value": "AET",
+   "parentValue": [
+    "associate degree"
+   ]
+  },
+  {
+   "question": "education-associate-degree",
+   "label": "Associate of Forestry",
+   "value": "AF",
+   "parentValue": [
+    "associate degree"
+   ]
+  },
+  {
+   "question": "education-associate-degree",
+   "label": "Associate of Fine Arts",
+   "value": "AFA",
+   "parentValue": [
+    "associate degree"
+   ]
+  },
+  {
+   "question": "education-associate-degree",
+   "label": "Associate of General Studies",
+   "value": "AGS",
+   "parentValue": [
+    "associate degree"
+   ]
+  },
+  {
+   "question": "education-associate-degree",
+   "label": "Associate of Industrial Technology",
+   "value": "AIT",
+   "parentValue": [
+    "associate degree"
+   ]
+  },
+  {
+   "question": "education-associate-degree",
+   "label": "Associate of Nursing",
+   "value": "AN",
+   "parentValue": [
+    "associate degree"
+   ]
+  },
+  {
+   "question": "education-associate-degree",
+   "label": "Associate of Occupational Studies",
+   "value": "AOS",
+   "parentValue": [
+    "associate degree"
+   ]
+  },
+  {
+   "question": "education-associate-degree",
+   "label": "Associate of Political Science",
+   "value": "APS",
+   "parentValue": [
+    "associate degree"
+   ]
+  },
+  {
+   "question": "education-associate-degree",
+   "label": "Associate of Public Service",
+   "value": "APS",
+   "parentValue": [
+    "associate degree"
+   ]
+  },
+  {
+   "question": "education-associate-degree",
+   "label": "Associate of Science",
+   "value": "AS",
+   "parentValue": [
+    "associate degree"
+   ]
+  },
+  {
+   "question": "education-associate-degree",
+   "label": "Associate of Science in Nursing",
+   "value": "ASN",
+   "parentValue": [
+    "associate degree"
+   ]
+  },
+  {
+   "question": "education-associate-degree",
+   "label": "Associate in Physical Therapy",
+   "value": "ASPT-APT",
+   "parentValue": [
+    "associate degree"
+   ]
+  },
+  {
+   "question": "education-associate-degree",
+   "label": "Associate of Technology",
+   "value": "AT",
+   "parentValue": [
+    "associate degree"
+   ]
+  },
+  {
+   "question": "education",
+   "label": "Bachelors degree (BA, BS)",
+   "value": "bachelors degree",
+   "parentValue": []
+  },
+  {
+   "question": "education-ug",
+   "label": "Bachelor Degree",
+   "value": "Bachelor Degree",
+   "parentValue": [
+    "bachelors degree"
+   ]
+  },
+  {
+   "question": "education-ug",
+   "label": "Bachelor of Science in Genetic Engineering and Biotechnology",
+   "value": "Bachelor of Science in Genetic Engineering and Biotechnology",
+   "parentValue": [
+    "bachelors degree"
+   ]
+  },
+  {
+   "question": "education-ug",
+   "label": "Bachelor of Applied Economics",
+   "value": "Bachelor of Applied Economics",
+   "parentValue": [
+    "bachelors degree"
+   ]
+  },
+  {
+   "question": "education-ug",
+   "label": "Bachelor of Architecture",
+   "value": "Bachelor of Architecture",
+   "parentValue": [
+    "bachelors degree"
+   ]
+  },
+  {
+   "question": "education-ug",
+   "label": "Bachelor of Biochemistry",
+   "value": "Bachelor of Biochemistry",
+   "parentValue": [
+    "bachelors degree"
+   ]
+  },
+  {
+   "question": "education-ug",
+   "label": "Bachelor of Biomedical Science",
+   "value": "Bachelor of Biomedical Science",
+   "parentValue": [
+    "bachelors degree"
+   ]
+  },
+  {
+   "question": "education-ug",
+   "label": "Bachelor of Business Administration",
+   "value": "Bachelor of Business Administration",
+   "parentValue": [
+    "bachelors degree"
+   ]
+  },
+  {
+   "question": "education-ug",
+   "label": "Bachelor of Clinical Science",
+   "value": "Bachelor of Clinical Science",
+   "parentValue": [
+    "bachelors degree"
+   ]
+  },
+  {
+   "question": "education-ug",
+   "label": "Bachelor of Commerce",
+   "value": "Bachelor of Commerce",
+   "parentValue": [
+    "bachelors degree"
+   ]
+  },
+  {
+   "question": "education-ug",
+   "label": "Bachelor of Computer Applications",
+   "value": "Bachelor of Computer Applications",
+   "parentValue": [
+    "bachelors degree"
+   ]
+  },
+  {
+   "question": "education-ug",
+   "label": "Bachelor of Community Health",
+   "value": "Bachelor of Community Health",
+   "parentValue": [
+    "bachelors degree"
+   ]
+  },
+  {
+   "question": "education-ug",
+   "label": "Bachelor of Computer Information Systems",
+   "value": "Bachelor of Computer Information Systems",
+   "parentValue": [
+    "bachelors degree"
+   ]
+  },
+  {
+   "question": "education-ug",
+   "label": "Bachelor of Science in Construction Technology",
+   "value": "Bachelor of Science in Construction Technology",
+   "parentValue": [
+    "bachelors degree"
+   ]
+  },
+  {
+   "question": "education-ug",
+   "label": "Bachelor of Criminal Justice",
+   "value": "Bachelor of Criminal Justice",
+   "parentValue": [
+    "bachelors degree"
+   ]
+  },
+  {
+   "question": "education-ug",
+   "label": "Bachelor of Divinity",
+   "value": "Bachelor of Divinity",
+   "parentValue": [
+    "bachelors degree"
+   ]
+  },
+  {
+   "question": "education-ug",
+   "label": "Bachelor of Economics",
+   "value": "Bachelor of Economics",
+   "parentValue": [
+    "bachelors degree"
+   ]
+  },
+  {
+   "question": "education-ug",
+   "label": "Bachelor of Elementary Education",
+   "value": "Bachelor of Elementary Education",
+   "parentValue": [
+    "bachelors degree"
+   ]
+  },
+  {
+   "question": "education-ug",
+   "label": "Bachelor of Education",
+   "value": "Bachelor of Education",
+   "parentValue": [
+    "bachelors degree"
+   ]
+  },
+  {
+   "question": "education-ug",
+   "label": "Bachelor of Engineering",
+   "value": "Bachelor of Engineering",
+   "parentValue": [
+    "bachelors degree"
+   ]
+  },
+  {
+   "question": "education-ug",
+   "label": "Bachelor of Fine Arts",
+   "value": "Bachelor of Fine Arts",
+   "parentValue": [
+    "bachelors degree"
+   ]
+  },
+  {
+   "question": "education-ug",
+   "label": "Bachelor of Laws",
+   "value": "Bachelor of Laws",
+   "parentValue": [
+    "bachelors degree"
+   ]
+  },
+  {
+   "question": "education-ug",
+   "label": "Bachelor of Letters",
+   "value": "Bachelor of Letters",
+   "parentValue": [
+    "bachelors degree"
+   ]
+  },
+  {
+   "question": "education-ug",
+   "label": "Bachelor of Library & Information Science",
+   "value": "Bachelor of Library & Information Science",
+   "parentValue": [
+    "bachelors degree"
+   ]
+  },
+  {
+   "question": "education-ug",
+   "label": "Bachelor of Information Systems",
+   "value": "Bachelor of Information Systems",
+   "parentValue": [
+    "bachelors degree"
+   ]
+  },
+  {
+   "question": "education-ug",
+   "label": "Bachelor of Management",
+   "value": "Bachelor of Management",
+   "parentValue": [
+    "bachelors degree"
+   ]
+  },
+  {
+   "question": "education",
+   "label": "Masters degree (MA, MS, MBA, etc.)",
+   "value": "masters degree",
+   "parentValue": []
+  },
+  {
+   "question": "education-pg",
+   "label": "Master of Accountancy (MAcc, MAc, or MAcy)",
+   "value": "Master of Accountancy (MAcc, MAc, or MAcy)",
+   "parentValue": [
+    "masters degree"
+   ]
+  },
+  {
+   "question": "education-pg",
+   "label": "Master of Advanced Study (MAS)",
+   "value": "Master of Advanced Study (MAS)",
+   "parentValue": [
+    "masters degree"
+   ]
+  },
+  {
+   "question": "education-pg",
+   "label": "Master of Economics (MEcon)",
+   "value": "Master of Economics (MEcon)",
+   "parentValue": [
+    "masters degree"
+   ]
+  },
+  {
+   "question": "education-pg",
+   "label": "Master of Architecture (MArch)",
+   "value": "Master of Architecture (MArch)",
+   "parentValue": [
+    "masters degree"
+   ]
+  },
+  {
+   "question": "education-pg",
+   "label": "Master of Applied Science (MASc, MAppSc, MApplSc, MASc and MAS)",
+   "value": "Master of Applied Science (MASc, MAppSc, MApplSc, MASc and MAS)",
+   "parentValue": [
+    "masters degree"
+   ]
+  },
+  {
+   "question": "education-pg",
+   "label": "Master of Arts (MA, MA, AM, or AM)",
+   "value": "Master of Arts (MA, MA, AM, or AM)",
+   "parentValue": [
+    "masters degree"
+   ]
+  },
+  {
+   "question": "education-pg",
+   "label": "Master of Arts in Teaching (MAT)",
+   "value": "Master of Arts in Teaching (MAT)",
+   "parentValue": [
+    "masters degree"
+   ]
+  },
+  {
+   "question": "education-pg",
+   "label": "Master of Arts in Liberal Studies (MA, ALM, MLA, MLS or MALS)",
+   "value": "Master of Arts in Liberal Studies (MA, ALM, MLA, MLS or MALS)",
+   "parentValue": [
+    "masters degree"
+   ]
+  },
+  {
+   "question": "education-pg",
+   "label": "Master of Business (MBus)",
+   "value": "Master of Business (MBus)",
+   "parentValue": [
+    "masters degree"
+   ]
+  },
+  {
+   "question": "education-pg",
+   "label": "Master of Business Administration (MBA or MBA)",
+   "value": "Master of Business Administration (MBA or MBA)",
+   "parentValue": [
+    "masters degree"
+   ]
+  },
+  {
+   "question": "education-pg",
+   "label": "Master of Business Informatics (MBI)",
+   "value": "Master of Business Informatics (MBI)",
+   "parentValue": [
+    "masters degree"
+   ]
+  },
+  {
+   "question": "education-pg",
+   "label": "Master of City Planning",
+   "value": "Master of City Planning",
+   "parentValue": [
+    "masters degree"
+   ]
+  },
+  {
+   "question": "education-pg",
+   "label": "Master of Chemistry (MChem)",
+   "value": "Master of Chemistry (MChem)",
+   "parentValue": [
+    "masters degree"
+   ]
+  },
+  {
+   "question": "education-pg",
+   "label": "Master of Commerce (MCom or MComm)",
+   "value": "Master of Commerce (MCom or MComm)",
+   "parentValue": [
+    "masters degree"
+   ]
+  },
+  {
+   "question": "education-pg",
+   "label": "Master of Computational Finance (or Quantitative Finance)",
+   "value": "Master of Computational Finance (or Quantitative Finance)",
+   "parentValue": [
+    "masters degree"
+   ]
+  },
+  {
+   "question": "education-pg",
+   "label": "Master of Computer Applications (MCA)",
+   "value": "Master of Computer Applications (MCA)",
+   "parentValue": [
+    "masters degree"
+   ]
+  },
+  {
+   "question": "education-pg",
+   "label": "Master in Creative Technologies",
+   "value": "Master in Creative Technologies",
+   "parentValue": [
+    "masters degree"
+   ]
+  },
+  {
+   "question": "education-pg",
+   "label": "Master of Criminal Justice (MCJ)",
+   "value": "Master of Criminal Justice (MCJ)",
+   "parentValue": [
+    "masters degree"
+   ]
+  },
+  {
+   "question": "education-pg",
+   "label": "Master of Design (MDes, MDes or MDesign)",
+   "value": "Master of Design (MDes, MDes or MDesign)",
+   "parentValue": [
+    "masters degree"
+   ]
+  },
+  {
+   "question": "education-pg",
+   "label": "Master of Divinity (MDiv)",
+   "value": "Master of Divinity (MDiv)",
+   "parentValue": [
+    "masters degree"
+   ]
+  },
+  {
+   "question": "education-pg",
+   "label": "Master of Education (MEd, MEd, EdM, MAEd, MSEd, MSE, or MEdL)",
+   "value": "Master of Education (MEd, MEd, EdM, MAEd, MSEd, MSE, or MEdL)",
+   "parentValue": [
+    "masters degree"
+   ]
+  },
+  {
+   "question": "education-pg",
+   "label": "Master of Enterprise (MEnt)",
+   "value": "Master of Enterprise (MEnt)",
+   "parentValue": [
+    "masters degree"
+   ]
+  },
+  {
+   "question": "education-pg",
+   "label": "Master of Engineering (MEng, ME or MEng)",
+   "value": "Master of Engineering (MEng, ME or MEng)",
+   "parentValue": [
+    "masters degree"
+   ]
+  },
+  {
+   "question": "education-pg",
+   "label": "Master of Engineering Management (MEM)",
+   "value": "Master of Engineering Management (MEM)",
+   "parentValue": [
+    "masters degree"
+   ]
+  },
+  {
+   "question": "education-pg",
+   "label": "Master of European Law (LLM Eur)",
+   "value": "Master of European Law (LLM Eur)",
+   "parentValue": [
+    "masters degree"
+   ]
+  },
+  {
+   "question": "education",
+   "label": "Professional degree (MD, JD, DDS, etc.)",
+   "value": "professional degree",
+   "parentValue": []
+  },
+  {
+   "question": "education",
+   "label": "Doctorate degree (PhD, EdD, etc.)",
+   "value": "doctorate degree",
+   "parentValue": []
+  },
+  {
+   "question": "education-doctorate",
+   "label": "Doctoral Degree",
+   "value": "Doctoral Degree",
+   "parentValue": [
+    "doctorate degree"
+   ]
+  },
+  {
+   "question": "education-doctorate",
+   "label": "Doctor of Arts",
+   "value": "Doctor of Arts",
+   "parentValue": [
+    "doctorate degree"
+   ]
+  },
+  {
+   "question": "education-doctorate",
+   "label": "Doctor of Audiology",
+   "value": "Doctor of Audiology",
+   "parentValue": [
+    "doctorate degree"
+   ]
+  },
+  {
+   "question": "education-doctorate",
+   "label": "Doctor of Aviation (Av.D.)",
+   "value": "Doctor of Aviation (Av.D.)",
+   "parentValue": [
+    "doctorate degree"
+   ]
+  },
+  {
+   "question": "education-doctorate",
+   "label": "Doctor of Business Administration",
+   "value": "Doctor of Business Administration",
+   "parentValue": [
+    "doctorate degree"
+   ]
+  },
+  {
+   "question": "education-doctorate",
+   "label": "Doctor of Canon Law",
+   "value": "Doctor of Canon Law",
+   "parentValue": [
+    "doctorate degree"
+   ]
+  },
+  {
+   "question": "education-doctorate",
+   "label": "Doctor of Chiropractic",
+   "value": "Doctor of Chiropractic",
+   "parentValue": [
+    "doctorate degree"
+   ]
+  },
+  {
+   "question": "education-doctorate",
+   "label": "Doctor of Commerce",
+   "value": "Doctor of Commerce",
+   "parentValue": [
+    "doctorate degree"
+   ]
+  },
+  {
+   "question": "education-doctorate",
+   "label": "Doctor of Community Health",
+   "value": "Doctor of Community Health",
+   "parentValue": [
+    "doctorate degree"
+   ]
+  },
+  {
+   "question": "education-doctorate",
+   "label": "Doctor of Dental Surgery",
+   "value": "Doctor of Dental Surgery",
+   "parentValue": [
+    "doctorate degree"
+   ]
+  },
+  {
+   "question": "education-doctorate",
+   "label": "Doctor of Divinity",
+   "value": "Doctor of Divinity",
+   "parentValue": [
+    "doctorate degree"
+   ]
+  },
+  {
+   "question": "education-doctorate",
+   "label": "Doctor of Education (Ed.D.)",
+   "value": "Doctor of Education (Ed.D.)",
+   "parentValue": [
+    "doctorate degree"
+   ]
+  },
+  {
+   "question": "education-doctorate",
+   "label": "Doctor of Engineering",
+   "value": "Doctor of Engineering",
+   "parentValue": [
+    "doctorate degree"
+   ]
+  },
+  {
+   "question": "education-doctorate",
+   "label": "Doctor of Fine Arts",
+   "value": "Doctor of Fine Arts",
+   "parentValue": [
+    "doctorate degree"
+   ]
+  },
+  {
+   "question": "education-doctorate",
+   "label": "Doctor of Health Administration",
+   "value": "Doctor of Health Administration",
+   "parentValue": [
+    "doctorate degree"
+   ]
+  },
+  {
+   "question": "education-doctorate",
+   "label": "Doctor of Health Science",
+   "value": "Doctor of Health Science",
+   "parentValue": [
+    "doctorate degree"
+   ]
+  },
+  {
+   "question": "education-doctorate",
+   "label": "Doctor of Juridical Science; Juris Doctor",
+   "value": "Doctor of Juridical Science; Juris Doctor",
+   "parentValue": [
+    "doctorate degree"
+   ]
+  },
+  {
+   "question": "education-doctorate",
+   "label": "Doctor of Law; Legum Doctor",
+   "value": "Doctor of Law; Legum Doctor",
+   "parentValue": [
+    "doctorate degree"
+   ]
+  },
+  {
+   "question": "education-doctorate",
+   "label": "Doctor of Liberal Studies",
+   "value": "Doctor of Liberal Studies",
+   "parentValue": [
+    "doctorate degree"
+   ]
+  },
+  {
+   "question": "education-doctorate",
+   "label": "Doctor of Management",
+   "value": "Doctor of Management",
+   "parentValue": [
+    "doctorate degree"
+   ]
+  },
+  {
+   "question": "education-doctorate",
+   "label": "Doctor of Medicine (M.D.)",
+   "value": "Doctor of Medicine (M.D.)",
+   "parentValue": [
+    "doctorate degree"
+   ]
+  },
+  {
+   "question": "education-doctorate",
+   "label": "Doctor of Ministry (D.Min.)",
+   "value": "Doctor of Ministry (D.Min.)",
+   "parentValue": [
+    "doctorate degree"
+   ]
+  },
+  {
+   "question": "education-doctorate",
+   "label": "Doctor of Modern Languages",
+   "value": "Doctor of Modern Languages",
+   "parentValue": [
+    "doctorate degree"
+   ]
+  },
+  {
+   "question": "education-doctorate",
+   "label": "Doctor of Musical Arts",
+   "value": "Doctor of Musical Arts",
+   "parentValue": [
+    "doctorate degree"
+   ]
+  },
+  {
+   "question": "education-doctorate",
+   "label": "Doctor of Naturopathic Medicine",
+   "value": "Doctor of Naturopathic Medicine",
+   "parentValue": [
+    "doctorate degree"
+   ]
+  },
+  {
+   "question": "diet-plan",
+   "label": "Vegetarian",
+   "value": "Vegetarian",
+   "parentValue": []
+  },
+  {
+   "question": "diet-plan",
+   "label": "Vegan",
+   "value": "Vegan",
+   "parentValue": []
+  },
+  {
+   "question": "diet-plan",
+   "label": "Keto",
+   "value": "Keto",
+   "parentValue": []
+  },
+  {
+   "question": "diet-plan",
+   "label": "Low-carb / High-protein",
+   "value": "Low-carb / High-protein",
+   "parentValue": []
+  },
+  {
+   "question": "diet-plan",
+   "label": "Diabetic / Low-sugar diet",
+   "value": "Diabetic / Low-sugar diet",
+   "parentValue": []
+  },
+  {
+   "question": "diet-plan",
+   "label": "Heart-healthy diet",
+   "value": "Heart-healthy diet",
+   "parentValue": []
+  },
+  {
+   "question": "diet-plan",
+   "label": "Gluten-free",
+   "value": "Gluten-free",
+   "parentValue": []
+  },
+  {
+   "question": "diet-plan",
+   "label": "Intermittent fasting",
+   "value": "Intermittent fasting",
+   "parentValue": []
+  },
+  {
+   "question": "diet-plan",
+   "label": "None",
+   "value": "None",
+   "parentValue": []
+  },
+  {
+   "question": "have-food-allergy",
+   "label": "Yes",
+   "value": "Yes",
+   "parentValue": []
+  },
+  {
+   "question": "have-food-allergy",
+   "label": "No",
+   "value": "No",
+   "parentValue": []
+  },
+  {
+   "question": "hot-drinks",
+   "label": "Tea (Black / Green / Herbal)",
+   "value": "Tea (Black / Green / Herbal)",
+   "parentValue": []
+  },
+  {
+   "question": "hot-drinks",
+   "label": "Coffee (Regular / Decaf)",
+   "value": "Coffee (Regular / Decaf)",
+   "parentValue": []
+  },
+  {
+   "question": "hot-drinks",
+   "label": "Hot chocolate / Cocoa",
+   "value": "Hot chocolate / Cocoa",
+   "parentValue": []
+  },
+  {
+   "question": "hot-drinks",
+   "label": "Herbal or medicinal teas (e.g., chamomile, ginger, turmeric)",
+   "value": "Herbal or medicinal teas (e.g., chamomile, ginger, turmeric)",
+   "parentValue": []
+  },
+  {
+   "question": "hot-drinks",
+   "label": "None",
+   "value": "None",
+   "parentValue": []
+  },
+  {
+   "question": "cold-drinks",
+   "label": "Soft drinks / Sodas (e.g., Coke, Pepsi)",
+   "value": "Soft drinks / Sodas (e.g., Coke, Pepsi)",
+   "parentValue": []
+  },
+  {
+   "question": "cold-drinks",
+   "label": "Energy drinks (e.g., Red Bull, Monster)",
+   "value": "Energy drinks (e.g., Red Bull, Monster)",
+   "parentValue": []
+  },
+  {
+   "question": "cold-drinks",
+   "label": "Fruit juices (packaged)",
+   "value": "Fruit juices (packaged)",
+   "parentValue": []
+  },
+  {
+   "question": "cold-drinks",
+   "label": "Fresh fruit juices / Smoothies",
+   "value": "Fresh fruit juices / Smoothies",
+   "parentValue": []
+  },
+  {
+   "question": "cold-drinks",
+   "label": "Iced tea / Cold coffee",
+   "value": "Iced tea / Cold coffee",
+   "parentValue": []
+  },
+  {
+   "question": "cold-drinks",
+   "label": "Flavored water / Vitamin water",
+   "value": "Flavored water / Vitamin water",
+   "parentValue": []
+  },
+  {
+   "question": "cold-drinks",
+   "label": "None",
+   "value": "None",
+   "parentValue": []
+  },
+  {
+   "question": "alcohol",
+   "label": "Yes, regularly",
+   "value": "Yes, regularly",
+   "parentValue": []
+  },
+  {
+   "question": "alcohol",
+   "label": "Occasionally",
+   "value": "Occasionally",
+   "parentValue": []
+  },
+  {
+   "question": "alcohol",
+   "label": "Used to but quit",
+   "value": "Used to but quit",
+   "parentValue": []
+  },
+  {
+   "question": "alcohol",
+   "label": "Never",
+   "value": "Never",
+   "parentValue": []
+  },
+  {
+   "question": "alcohol-category",
+   "label": "Beer",
+   "value": "Beer",
+   "parentValue": [
+    "Yes, regularly",
+    "Occasionally"
+   ]
+  },
+  {
+   "question": "alcohol-category",
+   "label": "Wine",
+   "value": "Wine",
+   "parentValue": [
+    "Yes, regularly",
+    "Occasionally"
+   ]
+  },
+  {
+   "question": "alcohol-category",
+   "label": "Whiskey",
+   "value": "Whiskey",
+   "parentValue": [
+    "Yes, regularly",
+    "Occasionally"
+   ]
+  },
+  {
+   "question": "alcohol-category",
+   "label": "Vodka",
+   "value": "Vodka",
+   "parentValue": [
+    "Yes, regularly",
+    "Occasionally"
+   ]
+  },
+  {
+   "question": "alcohol-category",
+   "label": "Rum",
+   "value": "Rum",
+   "parentValue": [
+    "Yes, regularly",
+    "Occasionally"
+   ]
+  },
+  {
+   "question": "alcohol-category",
+   "label": "Cocktails / Mixed drinks",
+   "value": "Cocktails / Mixed drinks",
+   "parentValue": [
+    "Yes, regularly",
+    "Occasionally"
+   ]
+  },
+  {
+   "question": "smoke",
+   "label": "Yes",
+   "value": "Yes",
+   "parentValue": []
+  },
+  {
+   "question": "smoke",
+   "label": "No",
+   "value": "No",
+   "parentValue": []
+  },
+  {
+   "question": "smoke-category",
+   "label": "Cigarettes",
+   "value": "Cigarettes",
+   "parentValue": [
+    "Yes"
+   ]
+  },
+  {
+   "question": "smoke-category",
+   "label": "Cigars",
+   "value": "Cigars",
+   "parentValue": [
+    "Yes"
+   ]
+  },
+  {
+   "question": "smoke-category",
+   "label": "Pipe",
+   "value": "Pipe",
+   "parentValue": [
+    "Yes"
+   ]
+  },
+  {
+   "question": "smoke-category",
+   "label": "E-cigarettes / Vaping",
+   "value": "E-cigarettes / Vaping",
+   "parentValue": [
+    "Yes"
+   ]
+  },
+  {
+   "question": "smoke-category",
+   "label": "Chewing tobacco",
+   "value": "Chewing tobacco",
+   "parentValue": [
+    "Yes"
+   ]
+  },
+  {
+   "question": "suppliment",
+   "label": "Protein shakes",
+   "value": "Protein shakes",
+   "parentValue": []
+  },
+  {
+   "question": "suppliment",
+   "label": "Meal replacement drinks",
+   "value": "Meal replacement drinks",
+   "parentValue": []
+  },
+  {
+   "question": "suppliment",
+   "label": "Electrolyte / Sports drinks (e.g., Gatorade)",
+   "value": "Electrolyte / Sports drinks (e.g., Gatorade)",
+   "parentValue": []
+  },
+  {
+   "question": "suppliment",
+   "label": "Vitamin / Probiotic drinks",
+   "value": "Vitamin / Probiotic drinks",
+   "parentValue": []
+  },
+  {
+   "question": "suppliment",
+   "label": "Green / Detox juices",
+   "value": "Green / Detox juices",
+   "parentValue": []
+  },
+  {
+   "question": "suppliment",
+   "label": "Ayurvedic / Herbal tonics",
+   "value": "Ayurvedic / Herbal tonics",
+   "parentValue": []
+  },
+  {
+   "question": "suppliment",
+   "label": "None",
+   "value": "None",
+   "parentValue": []
+  },
+  {
+   "question": "do-exercise",
+   "label": "Yes",
+   "value": "Yes",
+   "parentValue": []
+  },
+  {
+   "question": "do-exercise",
+   "label": "No",
+   "value": "No",
+   "parentValue": []
+  },
+  {
+   "question": "exercises",
+   "label": "Gym workout / Weight training",
+   "value": "Gym workout / Weight training",
+   "parentValue": [
+    "Yes"
+   ]
+  },
+  {
+   "question": "exercises",
+   "label": "Cardio (running, cycling, walking)",
+   "value": "Cardio (running, cycling, walking)",
+   "parentValue": [
+    "Yes"
+   ]
+  },
+  {
+   "question": "exercises",
+   "label": "Yoga / Meditation",
+   "value": "Yoga / Meditation",
+   "parentValue": [
+    "Yes"
+   ]
+  },
+  {
+   "question": "exercises",
+   "label": "Sports / Outdoor activities",
+   "value": "Sports / Outdoor activities",
+   "parentValue": [
+    "Yes"
+   ]
+  },
+  {
+   "question": "exercises",
+   "label": "Home workouts",
+   "value": "Home workouts",
+   "parentValue": [
+    "Yes"
+   ]
+  },
+  {
+   "question": "exercises",
+   "label": "Physiotherapy exercises",
+   "value": "Physiotherapy exercises",
+   "parentValue": [
+    "Yes"
+   ]
+  },
+  {
+   "question": "do-sport-participation",
+   "label": "Yes",
+   "value": "Yes",
+   "parentValue": []
+  },
+  {
+   "question": "do-sport-participation",
+   "label": "No",
+   "value": "No",
+   "parentValue": []
+  },
+  {
+   "question": "sport-category",
+   "label": "Football / Soccer",
+   "value": "Football / Soccer",
+   "parentValue": [
+    "Yes"
+   ]
+  },
+  {
+   "question": "sport-category",
+   "label": "Cricket",
+   "value": "Cricket",
+   "parentValue": [
+    "Yes"
+   ]
+  },
+  {
+   "question": "sport-category",
+   "label": "Basketball",
+   "value": "Basketball",
+   "parentValue": [
+    "Yes"
+   ]
+  },
+  {
+   "question": "sport-category",
+   "label": "Badminton",
+   "value": "Badminton",
+   "parentValue": [
+    "Yes"
+   ]
+  },
+  {
+   "question": "sport-category",
+   "label": "Tennis",
+   "value": "Tennis",
+   "parentValue": [
+    "Yes"
+   ]
+  },
+  {
+   "question": "sport-category",
+   "label": "Running / Marathon",
+   "value": "Running / Marathon",
+   "parentValue": [
+    "Yes"
+   ]
+  },
+  {
+   "question": "sport-category",
+   "label": "Swimming",
+   "value": "Swimming",
+   "parentValue": [
+    "Yes"
+   ]
+  },
+  {
+   "question": "sport-category",
+   "label": "Cycling",
+   "value": "Cycling",
+   "parentValue": [
+    "Yes"
+   ]
+  },
+  {
+   "question": "sport-category",
+   "label": "Yoga / Pilates",
+   "value": "Yoga / Pilates",
+   "parentValue": [
+    "Yes"
+   ]
+  },
+  {
+   "question": "sleep-duration",
+   "label": "<5 hours",
+   "value": "<5 hours",
+   "parentValue": []
+  },
+  {
+   "question": "sleep-duration",
+   "label": "5–7 hours",
+   "value": "5–7 hours",
+   "parentValue": []
+  },
+  {
+   "question": "sleep-duration",
+   "label": "7–9 hours",
+   "value": "7–9 hours",
+   "parentValue": []
+  },
+  {
+   "question": "sleep-duration",
+   "label": ">9 hours",
+   "value": ">9 hours",
+   "parentValue": []
+  },
+  {
+   "question": "doc-expertise",
+   "label": "Healthcare Management",
+   "value": "Healthcare Management",
+   "parentValue": []
+  },
+  {
+   "question": "doc-expertise",
+   "label": "Medical Doctors & Physicians",
+   "value": "Medical Doctors & Physicians",
+   "parentValue": []
+  },
+  {
+   "question": "doc-specialization",
+   "label": "General Practitioner (GP) / Family Physician",
+   "value": "General Practitioner (GP) / Family Physician",
+   "parentValue": [
+    "Medical Doctors & Physicians"
+   ]
+  },
+  {
+   "question": "doc-joblevel",
+   "label": "General Practitioner (GP)",
+   "value": "General Practitioner (GP)",
+   "parentValue": [
+    "General Practitioner (GP) / Family Physician"
+   ]
+  },
+  {
+   "question": "doc-joblevel",
+   "label": "Family Medicine Physician",
+   "value": "Family Medicine Physician",
+   "parentValue": [
+    "General Practitioner (GP) / Family Physician"
+   ]
+  },
+  {
+   "question": "doc-joblevel",
+   "label": "Primary Care Physician",
+   "value": "Primary Care Physician",
+   "parentValue": [
+    "General Practitioner (GP) / Family Physician"
+   ]
+  },
+  {
+   "question": "doc-joblevel",
+   "label": "House Officer (Intern)",
+   "value": "House Officer (Intern)",
+   "parentValue": [
+    "General Practitioner (GP) / Family Physician"
+   ]
+  },
+  {
+   "question": "doc-joblevel",
+   "label": "Resident Doctor",
+   "value": "Resident Doctor",
+   "parentValue": [
+    "General Practitioner (GP) / Family Physician"
+   ]
+  },
+  {
+   "question": "doc-joblevel",
+   "label": "Medical Officer",
+   "value": "Medical Officer",
+   "parentValue": [
+    "General Practitioner (GP) / Family Physician"
+   ]
+  },
+  {
+   "question": "doc-joblevel",
+   "label": "Attending Physician",
+   "value": "Attending Physician",
+   "parentValue": [
+    "General Practitioner (GP) / Family Physician"
+   ]
+  },
+  {
+   "question": "doc-joblevel",
+   "label": "Consultant Physician",
+   "value": "Consultant Physician",
+   "parentValue": [
+    "General Practitioner (GP) / Family Physician"
+   ]
+  },
+  {
+   "question": "doc-joblevel",
+   "label": "Senior Consultant",
+   "value": "Senior Consultant",
+   "parentValue": [
+    "General Practitioner (GP) / Family Physician"
+   ]
+  },
+  {
+   "question": "doc-joblevel",
+   "label": "Chief Medical Officer (CMO)",
+   "value": "Chief Medical Officer (CMO)",
+   "parentValue": [
+    "General Practitioner (GP) / Family Physician"
+   ]
+  },
+  {
+   "question": "doc-joblevel",
+   "label": "Medical Director",
+   "value": "Medical Director",
+   "parentValue": [
+    "General Practitioner (GP) / Family Physician"
+   ]
+  },
+  {
+   "question": "doc-specialization",
+   "label": "Internal Medicine Specialist",
+   "value": "Internal Medicine Specialist",
+   "parentValue": [
+    "Medical Doctors & Physicians"
+   ]
+  },
+  {
+   "question": "doc-joblevel",
+   "label": "Internal Medicine Physician (Internist)",
+   "value": "Internal Medicine Physician (Internist)",
+   "parentValue": [
+    "Internal Medicine Specialist"
+   ]
+  },
+  {
+   "question": "doc-joblevel",
+   "label": "Infectious Disease Specialist",
+   "value": "Infectious Disease Specialist",
+   "parentValue": [
+    "Internal Medicine Specialist"
+   ]
+  },
+  {
+   "question": "doc-joblevel",
+   "label": "Hospitalist",
+   "value": "Hospitalist",
+   "parentValue": [
+    "Internal Medicine Specialist"
+   ]
+  },
+  {
+   "question": "doc-specialization",
+   "label": "Paediatrics & Neonatology",
+   "value": "Paediatrics & Neonatology",
+   "parentValue": [
+    "Medical Doctors & Physicians"
+   ]
+  },
+  {
+   "question": "doc-joblevel",
+   "label": "Paediatrician",
+   "value": "Paediatrician",
+   "parentValue": [
+    "Paediatrics & Neonatology"
+   ]
+  },
+  {
+   "question": "doc-joblevel",
+   "label": "Neonatologist",
+   "value": "Neonatologist",
+   "parentValue": [
+    "Paediatrics & Neonatology"
+   ]
+  },
+  {
+   "question": "doc-joblevel",
+   "label": "Paediatric Intensivist",
+   "value": "Paediatric Intensivist",
+   "parentValue": [
+    "Paediatrics & Neonatology"
+   ]
+  },
+  {
+   "question": "doc-specialization",
+   "label": "Cardiology",
+   "value": "Cardiology",
+   "parentValue": [
+    "Medical Doctors & Physicians"
+   ]
+  },
+  {
+   "question": "doc-joblevel",
+   "label": "Cardiologist",
+   "value": "Cardiologist",
+   "parentValue": [
+    "Cardiology",
+    "Internal Medicine Specialist"
+   ]
+  },
+  {
+   "question": "doc-joblevel",
+   "label": "Interventional Cardiologist",
+   "value": "Interventional Cardiologist",
+   "parentValue": [
+    "Cardiology"
+   ]
+  },
+  {
+   "question": "doc-joblevel",
+   "label": "Non-Invasive Cardiologist",
+   "value": "Non-Invasive Cardiologist",
+   "parentValue": [
+    "Cardiology"
+   ]
+  },
+  {
+   "question": "doc-joblevel",
+   "label": "Paediatric Cardiologist",
+   "value": "Paediatric Cardiologist",
+   "parentValue": [
+    "Cardiology",
+    "Paediatrics & Neonatology"
+   ]
+  },
+  {
+   "question": "doc-joblevel",
+   "label": "Electrophysiologist",
+   "value": "Electrophysiologist",
+   "parentValue": [
+    "Cardiology"
+   ]
+  },
+  {
+   "question": "doc-joblevel",
+   "label": "Cardiology Resident",
+   "value": "Cardiology Resident",
+   "parentValue": [
+    "Cardiology"
+   ]
+  },
+  {
+   "question": "doc-joblevel",
+   "label": "Fellow in Cardiology",
+   "value": "Fellow in Cardiology",
+   "parentValue": [
+    "Cardiology"
+   ]
+  },
+  {
+   "question": "doc-joblevel",
+   "label": "Cardiac Intensivist",
+   "value": "Cardiac Intensivist",
+   "parentValue": [
+    "Cardiology"
+   ]
+  },
+  {
+   "question": "doc-specialization",
+   "label": "Pulmonology",
+   "value": "Pulmonology",
+   "parentValue": [
+    "Medical Doctors & Physicians"
+   ]
+  },
+  {
+   "question": "doc-specialization",
+   "label": "Neurology",
+   "value": "Neurology",
+   "parentValue": [
+    "Medical Doctors & Physicians"
+   ]
+  },
+  {
+   "question": "doc-specialization",
+   "label": "Endocrinology",
+   "value": "Endocrinology",
+   "parentValue": [
+    "Medical Doctors & Physicians"
+   ]
+  },
+  {
+   "question": "doc-specialization",
+   "label": "Gastroenterology",
+   "value": "Gastroenterology",
+   "parentValue": [
+    "Medical Doctors & Physicians"
+   ]
+  },
+  {
+   "question": "doc-specialization",
+   "label": "Oncology",
+   "value": "Oncology",
+   "parentValue": [
+    "Medical Doctors & Physicians"
+   ]
+  },
+  {
+   "question": "doc-specialization",
+   "label": "Nephrology",
+   "value": "Nephrology",
+   "parentValue": [
+    "Medical Doctors & Physicians"
+   ]
+  },
+  {
+   "question": "doc-specialization",
+   "label": "Orthopaedic",
+   "value": "Orthopaedic",
+   "parentValue": [
+    "Medical Doctors & Physicians"
+   ]
+  },
+  {
+   "question": "doc-specialization",
+   "label": "Rheumatology",
+   "value": "Rheumatology",
+   "parentValue": [
+    "Medical Doctors & Physicians"
+   ]
+  },
+  {
+   "question": "doc-specialization",
+   "label": "Psychology & Mental Health",
+   "value": "Psychology & Mental Health",
+   "parentValue": [
+    "Medical Doctors & Physicians"
+   ]
+  },
+  {
+   "question": "doc-specialization",
+   "label": "Dermatology",
+   "value": "Dermatology",
+   "parentValue": [
+    "Medical Doctors & Physicians"
+   ]
+  },
+  {
+   "question": "doc-specialization",
+   "label": "Ophthalmology",
+   "value": "Ophthalmology",
+   "parentValue": [
+    "Medical Doctors & Physicians"
+   ]
+  },
+  {
+   "question": "doc-specialization",
+   "label": "ENT Specialist",
+   "value": "ENT Specialist",
+   "parentValue": [
+    "Medical Doctors & Physicians"
+   ]
+  },
+  {
+   "question": "doc-specialization",
+   "label": "Radiology",
+   "value": "Radiology",
+   "parentValue": [
+    "Medical Doctors & Physicians"
+   ]
+  },
+  {
+   "question": "doc-specialization",
+   "label": "Anaesthesiology",
+   "value": "Anaesthesiology",
+   "parentValue": [
+    "Medical Doctors & Physicians"
+   ]
+  },
+  {
+   "question": "doc-specialization",
+   "label": "Emergency Medicine",
+   "value": "Emergency Medicine",
+   "parentValue": [
+    "Medical Doctors & Physicians"
+   ]
+  },
+  {
+   "question": "doc-specialization",
+   "label": "Pathology",
+   "value": "Pathology",
+   "parentValue": [
+    "Medical Doctors & Physicians"
+   ]
+  },
+  {
+   "question": "doc-specialization",
+   "label": "Geriatrician",
+   "value": "Geriatrician",
+   "parentValue": [
+    "Medical Doctors & Physicians"
+   ]
+  },
+  {
+   "question": "doc-specialization",
+   "label": "Infectious Diseases",
+   "value": "Infectious Diseases",
+   "parentValue": [
+    "Medical Doctors & Physicians"
+   ]
+  },
+  {
+   "question": "doc-specialization",
+   "label": "Sports Medicine ",
+   "value": "Sports Medicine",
+   "parentValue": [
+    "Medical Doctors & Physicians"
+   ]
+  },
+  {
+   "question": "doc-specialization",
+   "label": "Palliative Care ",
+   "value": "Palliative Care",
+   "parentValue": [
+    "Medical Doctors & Physicians"
+   ]
+  },
+  {
+   "question": "doc-specialization",
+   "label": "Occupational Health ",
+   "value": "Occupational Health",
+   "parentValue": [
+    "Medical Doctors & Physicians"
+   ]
+  },
+  {
+   "question": "doc-expertise",
+   "label": "Surgeons",
+   "value": "Surgeons",
+   "parentValue": []
+  },
+  {
+   "question": "doc-expertise",
+   "label": "Dental Professionals",
+   "value": "Dental Professionals",
+   "parentValue": []
+  },
+  {
+   "question": "doc-expertise",
+   "label": "Nursing & Midwifery",
+   "value": "Nursing & Midwifery",
+   "parentValue": []
+  },
+  {
+   "question": "doc-expertise",
+   "label": "Pharmacy Professionals",
+   "value": "Pharmacy Professionals",
+   "parentValue": []
+  },
+  {
+   "question": "doc-expertise",
+   "label": "Laboratory & Diagnostic Professionals",
+   "value": "Laboratory & Diagnostic Professionals",
+   "parentValue": []
+  },
+  {
+   "question": "doc-expertise",
+   "label": "Allied Health Professionals",
+   "value": "Allied Health Professionals",
+   "parentValue": []
+  },
+  {
+   "question": "doc-expertise",
+   "label": "Health IT & Admin Professionals",
+   "value": "Health IT & Admin Professionals",
+   "parentValue": []
+  },
+  {
+   "question": "doc-expertise",
+   "label": "Support Staff (Ancillary)",
+   "value": "Support Staff (Ancillary)",
+   "parentValue": []
+  },
+  {
+   "question": "alcohol-category",
+   "label": "Other",
+   "value": "Other",
+   "parentValue": [
+    "Yes, regularly",
+    "Occasionally"
+   ]
+  },
+  {
+   "question": "doc-education-masters",
+   "label": "Other Healthcare Master Degree",
+   "value": "other",
+   "parentValue": [
+    "Master’s"
+   ]
+  },
+  {
+   "question": "doc-education-bachelors",
+   "label": "Other",
+   "value": "Other",
+   "parentValue": [
+    "Bachelor’s"
+   ]
+  },
+  {
+   "question": "doc-education-doctorate",
+   "label": "Other",
+   "value": "Other",
+   "parentValue": [
+    "Doctorate"
+   ]
+  },
+  {
+   "question": "doc-education",
+   "label": "Others",
+   "value": "Others",
+   "parentValue": []
+  },
+  {
+   "question": "healthcare-management-job-role",
+   "label": "Chief Compliance Officer (CCO)",
+   "value": "Chief Compliance Officer (CCO)",
+   "parentValue": [
+    "Healthcare Management"
+   ]
+  },
+  {
+   "question": "healthcare-management-job-role",
+   "label": "Chief Financial Officer (CFO)",
+   "value": "Chief Financial Officer (CFO)",
+   "parentValue": [
+    "Healthcare Management"
+   ]
+  },
+  {
+   "question": "healthcare-management-job-role",
+   "label": "Chief Human Resources Officer (CHRO)",
+   "value": "Chief Human Resources Officer (CHRO)",
+   "parentValue": [
+    "Healthcare Management"
+   ]
+  },
+  {
+   "question": "healthcare-management-job-role",
+   "label": "Chief Information Officer (CIO)",
+   "value": "Chief Information Officer (CIO)",
+   "parentValue": [
+    "Healthcare Management"
+   ]
+  },
+  {
+   "question": "healthcare-management-job-role",
+   "label": "Chief Nursing Officer (CNO)",
+   "value": "Chief Nursing Officer (CNO)",
+   "parentValue": [
+    "Healthcare Management"
+   ]
+  },
+  {
+   "question": "healthcare-management-job-role",
+   "label": "Chief Patient Experience Officer",
+   "value": "Chief Patient Experience Officer",
+   "parentValue": [
+    "Healthcare Management"
+   ]
+  },
+  {
+   "question": "healthcare-management-job-role",
+   "label": "Chief Quality Officer (CQO)",
+   "value": "Chief Quality Officer (CQO)",
+   "parentValue": [
+    "Healthcare Management"
+   ]
+  },
+  {
+   "question": "healthcare-management-job-role",
+   "label": "Chief Technology Officer (CTO)",
+   "value": "Chief Technology Officer (CTO)",
+   "parentValue": [
+    "Healthcare Management"
+   ]
+  },
+  {
+   "question": "healthcare-management-job-role",
+   "label": "Chief Medical Officer (CMO)",
+   "value": "Chief Medical Officer (CMO)",
+   "parentValue": [
+    "Healthcare Management"
+   ]
+  },
+  {
+   "question": "healthcare-management-job-role",
+   "label": "Chief Information Officer (CIO) in health organizations",
+   "value": "Chief Information Officer (CIO) in health organizations",
+   "parentValue": [
+    "Healthcare Management"
+   ]
+  },
+  {
+   "question": "healthcare-management-job-role",
+   "label": "Chief Medical Informatics Officer (CMIO)",
+   "value": "Chief Medical Informatics Officer (CMIO)",
+   "parentValue": [
+    "Healthcare Management"
+   ]
+  },
+  {
+   "question": "healthcare-management-job-role",
+   "label": "Chief Executive Officer (CEO) – Hospital",
+   "value": "Chief Executive Officer (CEO) – Hospital",
+   "parentValue": [
+    "Healthcare Management"
+   ]
+  },
+  {
+   "question": "healthcare-management-job-role",
+   "label": "Chief Operating Officer (COO)",
+   "value": "Chief Operating Officer (COO)",
+   "parentValue": [
+    "Healthcare Management"
+   ]
+  },
+  {
+   "question": "healthcare-management-job-role",
+   "label": "Chief Privacy Officer",
+   "value": "Chief Privacy Officer",
+   "parentValue": [
+    "Healthcare Management"
+   ]
+  },
+  {
+   "question": "healthcare-management-job-role",
+   "label": "Vice President – Clinical Services",
+   "value": "Vice President – Clinical Services",
+   "parentValue": [
+    "Healthcare Management"
+   ]
+  },
+  {
+   "question": "healthcare-management-job-role",
+   "label": "Vice President – Healthcare Operations",
+   "value": "Vice President – Healthcare Operations",
+   "parentValue": [
+    "Healthcare Management"
+   ]
+  },
+  {
+   "question": "healthcare-management-job-role",
+   "label": "Vice President – Patient Services",
+   "value": "Vice President – Patient Services",
+   "parentValue": [
+    "Healthcare Management"
+   ]
+  },
+  {
+   "question": "healthcare-management-job-role",
+   "label": "Dean of Healthcare Administration",
+   "value": "Dean of Healthcare Administration",
+   "parentValue": [
+    "Healthcare Management"
+   ]
+  },
+  {
+   "question": "healthcare-management-job-role",
+   "label": "Department Manager (Radiology, Pathology, etc.)",
+   "value": "Department Manager (Radiology, Pathology, etc.)",
+   "parentValue": [
+    "Healthcare Management"
+   ]
+  },
+  {
+   "question": "healthcare-management-job-role",
+   "label": "Director of Clinical Operations",
+   "value": "Director of Clinical Operations",
+   "parentValue": [
+    "Healthcare Management"
+   ]
+  },
+  {
+   "question": "healthcare-management-job-role",
+   "label": "Director of Community Health Programs",
+   "value": "Director of Community Health Programs",
+   "parentValue": [
+    "Healthcare Management"
+   ]
+  },
+  {
+   "question": "healthcare-management-job-role",
+   "label": "Director of Facility Management",
+   "value": "Director of Facility Management",
+   "parentValue": [
+    "Healthcare Management"
+   ]
+  },
+  {
+   "question": "healthcare-management-job-role",
+   "label": "Director of Finance – Healthcare",
+   "value": "Director of Finance – Healthcare",
+   "parentValue": [
+    "Healthcare Management"
+   ]
+  },
+  {
+   "question": "healthcare-management-job-role",
+   "label": "Director of Health Information Management (HIM)",
+   "value": "Director of Health Information Management (HIM)",
+   "parentValue": [
+    "Healthcare Management"
+   ]
+  },
+  {
+   "question": "healthcare-management-job-role",
+   "label": "Director of Hospital Administration",
+   "value": "Director of Hospital Administration",
+   "parentValue": [
+    "Healthcare Management"
+   ]
+  }
+ ]
+}

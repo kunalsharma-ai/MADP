@@ -1,0 +1,14 @@
+node_modules/
+dist/
+.next/
+.turbo/
+coverage/
+*.log
+.env
+.env.*
+!.env.example
+/tmp/
+playwright-report/
+test-results/
+# Source snapshots supplied by operators for offline imports (may contain personal data) never get committed.
+/source-snapshots/
