@@ -123,7 +123,12 @@ export default async function Dashboard() {
                   </div>
                   <div className="flex items-center gap-2">
                     <DataModeBadge mode={conn.dataMode} />
-                    <span className="num w-16 text-right font-medium">{fmt(cell?.value ?? 0)}</span>
+                    {/* A small panel is suppressed like any other cell; showing 0 would contradict the total. */}
+                    {cell?.suppressed ? (
+                      <Badge>&lt; min cell</Badge>
+                    ) : (
+                      <span className="num w-16 text-right font-medium">{fmt(cell?.value ?? 0)}</span>
+                    )}
                   </div>
                 </li>
               );
