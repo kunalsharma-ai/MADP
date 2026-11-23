@@ -5,11 +5,23 @@ import { AudienceCategory, PanelCode } from './panels.js';
 export const DataMode = z.enum(['demo', 'live']);
 export type DataMode = z.infer<typeof DataMode>;
 
+/**
+ * Filter on a canonical attribute. Matches a person when any approved source question mapped to the attribute
+ * holds one of the canonical values. Values are canonical (after the mapping's value map), not source codes.
+ */
+export const AttributeFilter = z.object({
+  key: z.string().min(1).max(100),
+  values: z.array(z.string().min(1).max(200)).min(1).max(50),
+});
+export type AttributeFilter = z.infer<typeof AttributeFilter>;
+
 export const CountsRequest = z.object({
   panels: z.array(PanelCode).optional(),
   categories: z.array(AudienceCategory).optional(),
   countries: z.array(z.string().length(2)).optional(),
   verifiedEmailOnly: z.boolean().optional(),
+  /** AND across filters, OR within one filter's values. Special-category attributes need health.sensitive.read. */
+  attributes: z.array(AttributeFilter).max(10).optional(),
 });
 export type CountsRequest = z.infer<typeof CountsRequest>;
 
@@ -37,5 +49,16 @@ export const CountsResponse = z.object({
   /** Oldest successful sync among panels that contributed, so stale counts are visible. */
   freshestSourceSyncAt: z.string().datetime().nullable(),
   oldestSourceSyncAt: z.string().datetime().nullable(),
+  /** How each attribute filter was resolved, so a zero count from an unmapped attribute is visible. */
+  attributeFilters: z
+    .array(
+      z.object({
+        key: z.string(),
+        sensitivity: z.enum(['standard', 'personal', 'special_category']),
+        approvedMappings: z.number().int(),
+        panels: z.array(PanelCode),
+      }),
+    )
+    .optional(),
 });
 export type CountsResponse = z.infer<typeof CountsResponse>;

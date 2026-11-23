@@ -6,7 +6,7 @@ contract tests are recorded as evidence of readiness, not as a pass.
 Legend: ✅ passed with live evidence · 🟡 implemented and tested on DEMO or stub only · 🔶 partly implemented ·
 ⛔ blocked on access or approval · ❌ not started.
 
-**As of 2026-11-23 (Milestone 1), no column has passed for any panel.**
+**As of 2026-11-23 (Milestone 2, part 1), no column has passed for any panel.**
 
 | Column | T2O | MFR | MHO |
 |---|---|---|---|
@@ -22,14 +22,15 @@ Legend: ✅ passed with live evidence · 🟡 implemented and tested on DEMO or 
 | 10. Deletion propagated | ❌ no source event (G-05) | ❌ | ❌ |
 | 11. Webhook or polling verified | ❌ | ❌ | ❌ |
 | 12. Source provenance preserved | 🟡 source member id, question version, import job | 🟡 | 🟡 |
-| 13. Mappings reviewed | 🔶 review queue works; nothing approved by a steward yet | 🔶 | 🔶 |
-| 14. Counts reconciled | 🟡 DEMO reconciliation counts per job | 🟡 | 🟡 |
+| 13. Mappings reviewed | 🔶 review queue and value maps work; no live mapping reviewed yet | 🔶 | 🔶 |
+| 14. Counts reconciled | 🟡 reconciliation report with checks, DEMO only | 🟡 | 🟡 |
 | 15. Integration health visible | 🟡 Connectors page and `/integrations/health` | 🟡 | 🟡 |
 | 16. Automated contract tests passing | 🟡 stub of audited routes | 🟡 | 🟡 |
 
 ## Evidence
-- Integration tests: `apps/api/test/platform.test.ts` (19 tests, including `imports every panel independently`).
-- Connector contract tests: `packages/connectors/src/connectors.test.ts` (20 tests).
+- Integration tests: `apps/api/test/platform.test.ts` (19), `resilience.test.ts` (3, dead letters and reconciliation),
+  `attributes.test.ts` (6, attribute filters and value maps).
+- Connector contract tests: `packages/connectors/src/connectors.test.ts` (24, including retry and backoff).
 - Screenshots: `docs/screenshots/05-connectors.png` and `06-questions.png`.
 
 ## Journeys (spec §17)

@@ -58,7 +58,9 @@ identity resolution (source identity, master person, panel and category membersh
 - **Idempotent:** running it twice adds no rows (integration test `re-running an import is idempotent`).
 - **Resumable:** the respondent cursor is checkpointed after every page.
 - **Staging holds no PII:** `source_events` keeps an id, hash and type, not payloads.
-- **Rate limiting:** the HTTP connector spaces requests (250 ms by default) and times out after 15 s. Retry with backoff and a dead-letter queue are planned for M2.
+- **Rate limiting and retry:** the HTTP connector spaces requests (250 ms by default), times out after 15 s, and retries 408, 425, 429, 5xx, timeouts and network errors up to 3 times with exponential backoff and full jitter. `Retry-After` is honoured, capped at 60 s. Refused access (401/403) and the panels' 404 error envelope are never retried.
+- **Dead-letter queue:** an answer batch that still fails after retries is parked in `dead_letter` (source member ids and the error only, no answers or PII) and the import carries on. Refused access or a bad payload fails the job instead. Operators retry parked batches from the Connectors screen.
+- **Reconciliation:** `GET /imports/:id/reconciliation` compares what the source returned with what MADP holds, with explicit pass/fail checks. A run is `reconciled` only when every check passes.
 
 ## 4. Connector modes
 | Mode | When | What it reads |

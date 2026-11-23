@@ -84,6 +84,7 @@ export interface MappingRow {
   attributeKey: string | null;
   status: string;
   notes: string | null;
+  valueMap: Record<string, string> | null;
   label: string | null;
   sensitivity: string | null;
   sampleOptions: { value: string; label: string }[];

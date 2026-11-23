@@ -31,6 +31,11 @@ const ReviewQuery = z.object({
 const Decision = z.object({
   decision: z.enum(['approve', 'reject', 'needs_info']),
   attributeKey: z.string().optional(),
+  /** Source option value -> canonical value. Source values must exist in this question version's options. */
+  valueMap: z
+    .record(z.string().min(1).max(200), z.string().min(1).max(200))
+    .refine((m) => Object.keys(m).length <= 500, 'At most 500 value map entries')
+    .optional(),
   notes: z.string().max(1000).optional(),
 });
 
@@ -199,12 +204,34 @@ export class RegistryController {
         where: eq(attributeDefinitions.key, attributeKey),
       });
       if (!attr) throw new BadRequestException('Unknown canonical attribute');
+      if (body.valueMap && Object.keys(body.valueMap).length) {
+        const version = await this.mongo.questionVersions.findOne({
+          panel: row.panel,
+          dataMode: row.dataMode,
+          sourceQuestionId: row.sourceQuestionId,
+          version: row.questionVersion,
+        });
+        const known = new Set((version?.options ?? []).map((o) => o.value));
+        // Reference lists (cities, states...) are not stored as options, so their values cannot be checked.
+        const unknown = known.size ? Object.keys(body.valueMap).filter((v) => !known.has(v)) : [];
+        if (unknown.length)
+          throw new BadRequestException(
+            `Not options of this question version: ${unknown.slice(0, 5).join(', ')}`,
+          );
+      }
     }
     const status =
       body.decision === 'approve' ? 'approved' : body.decision === 'reject' ? 'rejected' : 'needs_info';
     const [updated] = await this.database.db
       .update(sourceQuestionMappings)
-      .set({ status, attributeKey, notes: body.notes ?? null, decidedBy: p.id, decidedAt: new Date() })
+      .set({
+        status,
+        attributeKey,
+        valueMap: body.decision === 'approve' && body.valueMap ? body.valueMap : null,
+        notes: body.notes ?? null,
+        decidedBy: p.id,
+        decidedAt: new Date(),
+      })
       .where(eq(sourceQuestionMappings.id, id))
       .returning();
     await this.audit.record({
@@ -218,6 +245,7 @@ export class RegistryController {
         sourceQuestionId: row.sourceQuestionId,
         version: row.questionVersion,
         attributeKey,
+        valueMapEntries: body.valueMap ? Object.keys(body.valueMap).length : 0,
       },
       ip: req.ip ?? null,
     });

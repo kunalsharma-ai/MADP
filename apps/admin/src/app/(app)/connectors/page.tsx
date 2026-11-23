@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import Link from 'next/link';
 import { api } from '@/lib/api';
 import type { ConnectorRow, ImportJob } from '@/lib/types';
 import {
@@ -12,14 +13,23 @@ import {
   fmt,
   fmtDate,
 } from '@/components/ui';
-import { ImportButtons } from './import-buttons';
+import { ImportButtons, RetryDeadLettersButton } from './import-buttons';
 
 export const metadata: Metadata = { title: 'Connectors & sync' };
 
 const statusTone = { verified: 'teal', partial: 'warn', missing: 'danger', unknown: 'neutral' } as const;
 
 export default async function ConnectorsPage() {
-  const [rows, jobs] = await Promise.all([api<ConnectorRow[]>('/connectors'), api<ImportJob[]>('/imports')]);
+  const [rows, jobs, dead] = await Promise.all([
+    api<ConnectorRow[]>('/connectors'),
+    api<ImportJob[]>('/imports'),
+    api<{ panel: string; memberCount: number }[]>('/dead-letters?status=open'),
+  ]);
+  const deadByPanel = new Map<string, { batches: number; members: number }>();
+  for (const d of dead) {
+    const cur = deadByPanel.get(d.panel) ?? { batches: 0, members: 0 };
+    deadByPanel.set(d.panel, { batches: cur.batches + 1, members: cur.members + d.memberCount });
+  }
   return (
     <>
       <PageHeader
@@ -86,6 +96,15 @@ export default async function ConnectorsPage() {
                   view.
                 </p>
               ) : null}
+              {deadByPanel.get(c.panel) ? (
+                <div className="flex flex-wrap items-center justify-between gap-2 rounded-md bg-warn-soft text-warn px-2 py-1.5 text-xs">
+                  <span>
+                    {fmt(deadByPanel.get(c.panel)!.batches)} answer batch(es) for{' '}
+                    {fmt(deadByPanel.get(c.panel)!.members)} members failed after retries
+                  </span>
+                  <RetryDeadLettersButton panel={c.panel} />
+                </div>
+              ) : null}
               <ImportButtons panel={c.panel} />
             </div>
             <details className="border-t border-border px-5 py-3 text-[12px]">
@@ -127,6 +146,8 @@ export default async function ConnectorsPage() {
             'Cross-panel links',
             'Answers changed',
             'Question versions',
+            'Dead-lettered',
+            '',
           ]}
         >
           {jobs.map((j) => {
@@ -157,6 +178,15 @@ export default async function ConnectorsPage() {
                 </td>
                 <td className="num px-5 py-2.5">{fmt(n.answersChanged)}</td>
                 <td className="num px-5 py-2.5">{fmt(n.questionVersionsCreated)}</td>
+                <td className="num px-5 py-2.5">{fmt(n.deadLetteredMembers ?? 0)}</td>
+                <td className="px-5 py-2.5 whitespace-nowrap">
+                  <Link
+                    className="text-accent underline-offset-2 hover:underline"
+                    href={`/connectors/imports/${j.id}`}
+                  >
+                    Reconciliation
+                  </Link>
+                </td>
               </tr>
             );
           })}

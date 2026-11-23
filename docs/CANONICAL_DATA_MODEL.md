@@ -47,6 +47,7 @@ erDiagram
 | `attribute_definition` | `key`, `label`, `dimension`, `value_type`, `sensitivity` | Seeded from `SEED_ATTRIBUTES` |
 | `source_question_mapping` | `panel`, `source_question_id`, `question_version`, `suggested_attribute_key`, `suggestion_basis`, `attribute_key`, `status`, `value_map`, `decided_by` | Suggestions always start `pending` |
 | `import_job` | `panel`, `kind`, `dry_run`, `status`, `counts`, `error`, `requested_by` | Reconciliation counts per run |
+| `dead_letter` | `panel`, `import_job_id`, `stream`, `source_member_ids`, `error_kind`, `error`, `attempts`, `status` (open/resolved) | Answer batches that failed after retries. Resolved, never deleted |
 | `sync_checkpoint` | `panel`, `stream`, `cursor`, `last_success_at`, `last_job_id` | Resume point and freshness |
 | `webhook_inbox` | `panel`, `idempotency_key` (unique), `event_type`, `signature_valid`, `payload_ref` | Replay protection; no panel sends events yet |
 | `outbox` | `topic`, `payload`, `published_at` | Downstream refresh events |
@@ -62,8 +63,13 @@ filters on one mode, and the UI shows a DEMO badge.
 - **Category memberships:** counted separately and never added into unique people.
 - **Suppression:** any cell below `MIN_CELL_SIZE` (default 5) returns `value: null, suppressed: true`.
 - **Freshness:** every response has `computedAt`, `freshestSourceSyncAt` and `oldestSourceSyncAt` from `sync_checkpoint`.
-- **Filters today:** panels, categories, countries and verified e-mail. Attribute-level filters, including
-  purpose-limited health filters gated by `health.sensitive.read`, are M2/M3.
+- **Filters:** panels, categories, countries, verified e-mail and canonical attributes.
+- **Attribute filters:** a person matches when an answer to an **approved** mapping of that attribute holds one of
+  the canonical values (after the mapping's value map). Mappings are approved per question version, so a new
+  version must be reviewed before its answers count. Pending suggestions never affect counts. Filters are ANDed;
+  values within one filter are ORed. Special-category attributes need `health.sensitive.read`, and each use is
+  audited. The matching person set is passed to SQL as one array; a materialised attribute read model replaces
+  that in M3 for large volumes.
 
 ## 4. Planned entities (spec §13), by milestone
 

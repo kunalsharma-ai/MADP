@@ -15,9 +15,11 @@ linking, overlap-safe counts, the question registry and mapping review, and the 
 Depends on approvals and credentials (gap analysis §3).
 1. Dry run per panel against production with an approved read-only credential, and review the counts.
 2. Full backfill per panel, plus a reconciliation report (source count vs imported vs rejected).
-3. Retry with backoff, dead-letter queue, BullMQ workers for backfills, Redis-cached counts.
-4. Attribute-level audience filters, and a mapping UI with value maps.
-5. Contract tests recorded against each live API (sanitised and definitions only).
+3. ✅ Retry with backoff and a dead-letter queue (done, DEMO and stub tested). BullMQ workers for backfills and
+   Redis-cached counts once real volumes are known.
+4. ✅ Attribute-level audience filters and a mapping UI with value maps (done, DEMO tested).
+5. ✅ Reconciliation report per import (done, DEMO tested).
+6. Contract tests recorded against each live API (sanitised and definitions only).
 **Gate:** matrix columns 2–8 and 12–16 pass for **each** panel, with evidence.
 
 ## M3 — Cross-panel unification and validation

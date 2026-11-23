@@ -94,6 +94,8 @@ export class Mongo implements OnModuleInit, OnModuleDestroy {
       { unique: true },
     );
     await this.profileAnswers.createIndex({ personId: 1 });
+    // Attribute filters: answers to one question version, scanned with personId and values only.
+    await this.profileAnswers.createIndex({ dataMode: 1, panel: 1, sourceQuestionId: 1, questionVersion: 1 });
     await this.answerHistory.createIndex({ personId: 1, sourceQuestionId: 1 });
   }
 
