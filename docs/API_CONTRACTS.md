@@ -43,8 +43,11 @@ tenant host, because each panel resolves its tenant from the `Host` header.
 | Questionnaires | `GET /api/v1/profile` | same | same |
 | Questions | `GET /api/v1/question` | same | same |
 | Options | `GET /api/v1/option/:question` | same | same |
-| Respondents | `POST /api/v1/user` `{}` | `POST /api/v1/user` `{}` | `POST /api/v1/user` `{}` (unverified on the T2O image) |
-| Answers | `GET /api/v1/user/:id/profile` | `POST /api/v1/user/:id/profile-data` `{questions}` | `POST /api/v1/user/:id/profile-data` `{questions}` |
+| Respondents | `POST /api/v1/user` `{}` | same | same |
+| Answers | `GET /api/v1/user/:id/profile` | same | same |
+
+All three panels run the T2O backend in production (confirmed 2026-11-23), so they share one endpoint map; only the
+host differs. MADP never requests direct identifiers (name, e-mail, phone, date of birth, postcode) as answers.
 
 ## 3. Proposed non-breaking additions to the panels (needs owner approval; nothing changed)
 Each addition is new, read-only and behind a scoped service credential, so existing clients are unaffected.

@@ -60,6 +60,7 @@ Severity is the auditor's estimate from code reading. None was exploited or test
 - **T2O-SEC-03 (high):** `POST /api/v1/user`, `GET /api/v1/user/:id/profile` and `GET /api/v1/user/:id/survey` only require *a* signed-in user, not an admin. Any member can list other members and read their answers. The `POST /api/v1/user` body is used unfiltered as a Mongo query (operator injection).
 - **T2O-SEC-04 (high):** `PUT/DELETE /api/v1/question/:id`, `PUT /api/v1/question`, option create/update/delete have no auth check.
 - **T2O-SEC-05 (medium):** `Profile.status()` aggregation matches `isActive/isDeleted` but not `origin`, so profile completion may mix tenants that share a database.
+- **T2O-SEC-07 (critical, added 2026-11-23):** `GET /api/v1/integration/respondent-profile/:respondentID` (`routes/api/integrationRoutes.js`) has no authentication. Given a survey response id, it returns that member's user record merged with all of their profile answers. Response ids are MongoDB ObjectIds, which are partly time-based and so easier to guess than random ids. Found while cross-checking the OpenAPI document Kunal shared, which also lists the route without security.
 - **T2O-SEC-06 (medium):** `sync.sh` restores a production `mongodump` into a local environment — personal data leaves production for development.
 - MFR has already locked several of these down (`utils/access.js`, Nov 2026); the same changes would close SEC-03.
 

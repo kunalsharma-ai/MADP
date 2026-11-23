@@ -3,6 +3,12 @@
 - **Repository:** github.com/kunalsharma-ai/MFR (public), audited read-only at commit `496fc6f` on 2026-11-23.
 - **Method:** source reading only; no production access. Legend as in the T2O audit.
 
+
+> **Production note (2026-11-23):** the owner confirmed that MFR and MHO production run the **T2O backend**
+> (separate tenants by `Host`), not the API code in their own repositories. The connectors and capability matrix
+> follow the T2O backend for all three panels, and the T2O security findings apply to every tenant. This audit of
+> the repository code stays as a record of what is *not* deployed.
+
 ## 1. Runtime and stack
 | Area | Finding |
 |---|---|

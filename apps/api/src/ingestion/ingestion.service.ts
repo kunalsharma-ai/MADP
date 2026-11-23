@@ -26,7 +26,7 @@ import {
 import { Mongo, type QuestionVersionDoc } from '../mongo/mongo.js';
 import { FieldCrypto, maskEmail } from '../crypto/field-crypto.js';
 import { AuditService } from '../audit/audit.service.js';
-import { NAME_SUGGESTIONS, categoryFor, sensitivityFor } from './canonical.js';
+import { DIRECT_IDENTIFIER_QUESTIONS, NAME_SUGGESTIONS, categoryFor, sensitivityFor } from './canonical.js';
 
 /** Location reference lists (tens of thousands of options) are not copied into the question registry. */
 const REFERENCE_LISTS = new Set([
@@ -153,7 +153,10 @@ export class IngestionService {
       });
       let cursor: string | null = opts.dryRun ? null : (checkpoint?.cursor ?? null);
       counts.resumedFromCursor = cursor;
-      const questionIds = questions.map((q) => q.sourceQuestionId);
+      // Direct identifiers are never requested as answers (see DIRECT_IDENTIFIER_QUESTIONS).
+      const questionIds = questions
+        .map((q) => q.sourceQuestionId)
+        .filter((id) => !DIRECT_IDENTIFIER_QUESTIONS.has(id));
       do {
         const page = await connector.listRespondents(cursor, PAGE_SIZE);
         counts.pages++;
@@ -260,7 +263,7 @@ export class IngestionService {
       ])
       .toArray();
     const versions = new Map(latest.map((v) => [v._id, v.version]));
-    const questionIds = [...versions.keys()];
+    const questionIds = [...versions.keys()].filter((id) => !DIRECT_IDENTIFIER_QUESTIONS.has(id));
     let resolved = 0;
     let stillOpen = 0;
     let answersChanged = 0;
@@ -610,6 +613,8 @@ export class IngestionService {
       .toArray();
     const sens = new Map(versionDocs.map((d) => [`${d.sourceQuestionId}@${d.version}`, d.sensitivity]));
     for (const a of answers) {
+      // Defence in depth: a source that returns more than was asked for still cannot store identifiers.
+      if (DIRECT_IDENTIFIER_QUESTIONS.has(a.sourceQuestionId)) continue;
       const personId = personByMember.get(a.sourceMemberId);
       if (!personId) continue;
       const questionVersion = versions.get(a.sourceQuestionId) ?? 0;
