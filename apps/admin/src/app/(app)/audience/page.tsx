@@ -8,7 +8,8 @@ import {
   type CountsResponse,
   type PanelCode,
 } from '@madp/contracts';
-import { api } from '@/lib/api';
+import { api, ApiError } from '@/lib/api';
+import type { Attribute } from '@/lib/types';
 import {
   Badge,
   Card,
@@ -38,10 +39,31 @@ export default async function AudiencePage({ searchParams }: { searchParams: SP 
     .map((c) => c.toLowerCase())
     .filter((c) => /^[a-z]{2}$/.test(c));
   const verified = sp.verified === '1';
-  const c = await api<CountsResponse>('/audience/counts', {
-    method: 'POST',
-    json: { panels, categories, countries, verifiedEmailOnly: verified },
-  });
+  const attrKey = typeof sp.attr === 'string' ? sp.attr.slice(0, 100) : '';
+  const attrValues = (typeof sp.values === 'string' ? sp.values : '')
+    .split(',')
+    .map((v) => v.trim())
+    .filter(Boolean)
+    .slice(0, 50);
+  const attributes = attrKey && attrValues.length ? [{ key: attrKey, values: attrValues }] : [];
+  const { attributes: catalogue } = await api<{ attributes: Attribute[] }>('/audience/attributes');
+  let c: CountsResponse;
+  let filterError: string | null = null;
+  try {
+    c = await api<CountsResponse>('/audience/counts', {
+      method: 'POST',
+      json: { panels, categories, countries, verifiedEmailOnly: verified, attributes },
+    });
+  } catch (e) {
+    // A special-category filter without health.sensitive.read is refused; show why and count without it.
+    if (!(e instanceof ApiError) || (e.status !== 403 && e.status !== 404)) throw e;
+    filterError = e.message;
+    c = await api<CountsResponse>('/audience/counts', {
+      method: 'POST',
+      json: { panels, categories, countries, verifiedEmailOnly: verified },
+    });
+  }
+  const resolved = c.attributeFilters?.[0];
   return (
     <>
       <PageHeader
@@ -115,7 +137,47 @@ export default async function AudiencePage({ searchParams }: { searchParams: SP 
         <div className="flex items-end">
           <button className={btn.primary}>Apply</button>
         </div>
+        <fieldset className="grid gap-2 border-t border-border pt-3 sm:grid-cols-[1fr_1fr] lg:col-span-4">
+          <legend className="mb-1 text-xs font-medium text-fg-3">
+            Canonical attribute (uses approved mappings only)
+          </legend>
+          <select
+            name="attr"
+            defaultValue={attrKey}
+            aria-label="Canonical attribute"
+            className="rounded-lg border border-border bg-surface px-3 py-1.5 text-sm"
+          >
+            <option value="">No attribute filter</option>
+            {catalogue.map((a) => (
+              <option key={a.key} value={a.key}>
+                {a.label}
+                {a.sensitivity === 'special_category' ? ' (special category)' : ''}
+              </option>
+            ))}
+          </select>
+          <input
+            name="values"
+            defaultValue={attrValues.join(', ')}
+            placeholder="Canonical values, comma-separated (any of)"
+            aria-label="Attribute values"
+            className="rounded-lg border border-border bg-surface px-3 py-1.5 text-sm"
+          />
+        </fieldset>
       </form>
+      {filterError ? (
+        <p role="alert" className="mb-4 rounded-lg bg-danger-soft px-3 py-2 text-sm text-danger">
+          Attribute filter not applied: {filterError}
+        </p>
+      ) : null}
+      {resolved ? (
+        <p className="mb-4 rounded-lg bg-surface-2 px-3 py-2 text-sm text-fg-2">
+          {resolved.approvedMappings === 0
+            ? `No approved mapping for ${resolved.key} yet, so no one can match. Approve mappings in the mapping workbench.`
+            : `${resolved.key}: ${resolved.approvedMappings} approved mapping(s) from ${resolved.panels
+                .map((p) => PANELS[p].shortName)
+                .join(', ')}. Members of other panels match only through a linked identity.`}
+        </p>
+      ) : null}
 
       <div className="grid gap-4 sm:grid-cols-3">
         <Stat label="Unique people" value={fmt(c.uniquePeople)} tone="accent" />

@@ -241,6 +241,31 @@ export const importJobs = pgTable('import_job', {
   createdAt: created(),
 });
 
+/**
+ * Dead-letter queue for source reads that still failed after the connector's retries. Holds source member ids
+ * (pseudonymous references) and the error only - never answer values or PII. Entries are retried from the
+ * Connectors screen and resolved, never deleted.
+ */
+export const deadLetters = pgTable(
+  'dead_letter',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    dataMode: dataMode('data_mode').notNull(),
+    panel: panelCode('panel').notNull(),
+    importJobId: uuid('import_job_id').references(() => importJobs.id),
+    stream: text('stream').notNull(),
+    sourceMemberIds: jsonb('source_member_ids').$type<string[]>().notNull(),
+    errorKind: text('error_kind').notNull(),
+    error: text('error').notNull(),
+    attempts: integer('attempts').notNull().default(1),
+    status: text('status').$type<'open' | 'resolved'>().notNull().default('open'),
+    lastAttemptAt: timestamp('last_attempt_at', { withTimezone: true }).notNull().defaultNow(),
+    resolvedAt: timestamp('resolved_at', { withTimezone: true }),
+    createdAt: created(),
+  },
+  (t) => [index('dead_letter_open_idx').on(t.dataMode, t.panel, t.status)],
+);
+
 export const syncCheckpoints = pgTable(
   'sync_checkpoint',
   {

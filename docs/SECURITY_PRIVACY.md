@@ -17,6 +17,8 @@ Act 2023, GDPR and UK GDPR) has to be confirmed by counsel. Nothing here is lega
 | Masked identifiers in lists | `maskEmail` | `masks e-mails` |
 | Append-only audit, enforced by a database trigger that rejects UPDATE, DELETE and TRUNCATE | `drizzle/0001_audit_append_only.sql` | `rejects UPDATE and DELETE on audit_event` |
 | Every panellist detail view is audited | `panellists.controller.ts` | `…and the view is audited` |
+| Special-category attribute filters need `health.sensitive.read`; each use is audited | `audience.service.ts`, `audience.controller.ts` | `special-category filters need health.sensitive.read, and their use is audited` |
+| Dead-letter rows hold source member ids and the error only; the list API returns counts, not ids | `ingestion.service.ts`, `connectors.controller.ts` | `parks an answer batch that keeps failing…` |
 | Minimum cell suppression on counts | `audience.service.ts` | `filters by panel and category and suppresses small cells` |
 | DEMO and LIVE separation on every row | `data_mode` column | `counts unique people separately from panel and category memberships` |
 | LIVE connectors locked until explicitly approved per panel | `connector-registry.ts` | `all connectors start in DEMO mode because live access is not approved`; config `defaults to no live source access` |

@@ -3,16 +3,40 @@
 import { useState, useTransition } from 'react';
 import { toast } from 'sonner';
 import type { Attribute, MappingRow } from '@/lib/types';
-import { decideMapping } from '../../actions';
+import { decideMapping, questionOptions } from '../../actions';
 import { Badge, PanelChip, btn } from '@/components/ui';
 
 export function MappingRowView({ m, attributes }: { m: MappingRow; attributes: Attribute[] }) {
   const [attr, setAttr] = useState(m.attributeKey ?? m.suggestedAttributeKey ?? '');
   const [pending, start] = useTransition();
+  const [options, setOptions] = useState<{ value: string; label: string }[] | null>(null);
+  const [valueMap, setValueMap] = useState<Record<string, string>>(m.valueMap ?? {});
+  const openValueMap = () =>
+    start(async () => {
+      try {
+        const opts = await questionOptions(m.panel, m.sourceQuestionId, m.questionVersion);
+        setOptions(opts);
+        // Start from a lower-case, trimmed copy of each source value; the steward edits from there.
+        setValueMap((cur) =>
+          Object.keys(cur).length
+            ? cur
+            : Object.fromEntries(opts.map((o) => [o.value, o.value.split(',')[0]!.trim().toLowerCase()])),
+        );
+      } catch (e) {
+        toast.error((e as Error).message);
+      }
+    });
   const act = (decision: 'approve' | 'reject' | 'needs_info') =>
     start(async () => {
       try {
-        await decideMapping(m.id, decision, decision === 'approve' ? attr : undefined);
+        const map = Object.fromEntries(Object.entries(valueMap).filter(([, v]) => v.trim() !== ''));
+        await decideMapping(
+          m.id,
+          decision,
+          decision === 'approve' ? attr : undefined,
+          undefined,
+          decision === 'approve' && options ? map : undefined,
+        );
         toast.success(`${m.sourceQuestionId}: ${decision.replace('_', ' ')}`);
       } catch (e) {
         toast.error((e as Error).message);
@@ -81,6 +105,50 @@ export function MappingRowView({ m, attributes }: { m: MappingRow; attributes: A
           </Badge>
         )}
       </div>
+      {editable && m.sampleOptions.length ? (
+        <div className="lg:col-span-3">
+          {options === null ? (
+            <button className={btn.ghost} disabled={pending} onClick={openValueMap}>
+              Map option values…
+            </button>
+          ) : options.length === 0 ? (
+            <p className="text-[12px] text-fg-3">This question version has no stored options to map.</p>
+          ) : (
+            <fieldset className="rounded-lg border border-border p-3">
+              <legend className="px-1 text-[12px] font-medium">
+                Value map: source option → canonical value (leave blank to exclude it from counts)
+              </legend>
+              <div className="grid max-h-72 gap-1.5 overflow-y-auto sm:grid-cols-2">
+                {options.map((o) => (
+                  <label key={o.value} className="flex min-w-0 items-center gap-2 text-[12px]">
+                    <span className="w-1/2 truncate text-fg-2" title={o.value}>
+                      {o.label}
+                    </span>
+                    <input
+                      value={valueMap[o.value] ?? ''}
+                      onChange={(e) => setValueMap((cur) => ({ ...cur, [o.value]: e.target.value }))}
+                      disabled={pending}
+                      maxLength={200}
+                      aria-label={`Canonical value for ${o.label}`}
+                      className="w-1/2 min-w-0 rounded-md border border-border bg-surface px-2 py-1 font-mono"
+                    />
+                  </label>
+                ))}
+              </div>
+            </fieldset>
+          )}
+        </div>
+      ) : null}
+      {!editable && m.valueMap && Object.keys(m.valueMap).length ? (
+        <p className="text-[11px] text-fg-3 lg:col-span-3">
+          Value map:{' '}
+          {Object.entries(m.valueMap)
+            .slice(0, 8)
+            .map(([k, v]) => `${k} → ${v}`)
+            .join(' · ')}
+          {Object.keys(m.valueMap).length > 8 ? ' …' : ''}
+        </p>
+      ) : null}
     </li>
   );
 }

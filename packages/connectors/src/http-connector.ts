@@ -33,7 +33,13 @@ export interface PanelApiConfig {
   timeoutMs?: number;
   /** Minimum gap between requests, to stay polite to production. */
   minIntervalMs?: number;
+  /** Retries for 408, 425, 429, 5xx, timeouts and network errors. Default 3. Never retries 401/403 or bad payloads. */
+  maxRetries?: number;
+  /** Base delay for exponential backoff with full jitter. Default 500 ms; capped at 30 s. Retry-After wins when sent. */
+  retryBaseMs?: number;
   fetchImpl?: typeof fetch;
+  /** Injected in tests. */
+  sleep?: (ms: number) => Promise<void>;
 }
 
 /** Endpoint map per panel. Paths are those read in each repository; no endpoint is assumed to be shared. */
@@ -74,6 +80,25 @@ export const ENDPOINTS: Record<PanelCode, EndpointMap> = {
   },
 };
 
+const RETRYABLE_STATUS = new Set([408, 425, 429]);
+
+class RetryableError extends Error {
+  constructor(
+    readonly error: ConnectorError,
+    readonly retryAfterMs?: number,
+  ) {
+    super(error.message);
+  }
+}
+
+/** Retry-After is either delta-seconds or an HTTP date. Capped at 60 s so one header cannot stall a run. */
+export function parseRetryAfter(value: string | null, now = Date.now()): number | undefined {
+  if (!value) return undefined;
+  const secs = Number(value);
+  const ms = Number.isFinite(secs) ? secs * 1000 : Date.parse(value) - now;
+  return Number.isFinite(ms) && ms >= 0 ? Math.min(ms, 60_000) : undefined;
+}
+
 interface Envelope<T> {
   status: 'success' | 'error';
   message?: string;
@@ -111,9 +136,29 @@ export class PanelApiConnector implements PanelConnector {
     return AUDITED_CAPABILITIES[this.panel];
   }
 
+  private readonly sleep = (ms: number) =>
+    this.cfg.sleep ? this.cfg.sleep(ms) : new Promise<void>((r) => setTimeout(r, ms));
+
+  /** Calls with retry and backoff. Exhausted retries surface the last error to the caller (and the DLQ). */
   private async call<T>(method: 'GET' | 'POST', path: string, body?: unknown): Promise<T> {
+    const max = this.cfg.maxRetries ?? 3;
+    for (let attempt = 0; ; attempt++) {
+      try {
+        return await this.callOnce<T>(method, path, body);
+      } catch (e) {
+        if (!(e instanceof RetryableError) || attempt >= max) {
+          throw e instanceof RetryableError ? e.error : e;
+        }
+        const base = this.cfg.retryBaseMs ?? 500;
+        const backoff = Math.min(30_000, base * 2 ** attempt * Math.random());
+        await this.sleep(e.retryAfterMs ?? backoff);
+      }
+    }
+  }
+
+  private async callOnce<T>(method: 'GET' | 'POST', path: string, body?: unknown): Promise<T> {
     const gap = (this.cfg.minIntervalMs ?? 250) - (Date.now() - this.lastCall);
-    if (gap > 0) await new Promise((r) => setTimeout(r, gap));
+    if (gap > 0) await this.sleep(gap);
     this.lastCall = Date.now();
     const ctrl = new AbortController();
     const timer = setTimeout(() => ctrl.abort(), this.cfg.timeoutMs ?? 15_000);
@@ -129,6 +174,16 @@ export class PanelApiConnector implements PanelConnector {
         ...(body === undefined ? {} : { body: JSON.stringify(body) }),
       });
       const json = (await res.json().catch(() => null)) as Envelope<T> | null;
+      if (RETRYABLE_STATUS.has(res.status) || res.status >= 500) {
+        throw new RetryableError(
+          new ConnectorError(
+            `Source error ${res.status}: ${json?.message ?? 'retryable'}`,
+            this.panel,
+            'source_error',
+          ),
+          parseRetryAfter(res.headers.get('retry-after')),
+        );
+      }
       if (res.status === 401 || res.status === 403)
         throw new ConnectorError(`Source refused access (${res.status})`, this.panel, 'not_authorised');
       if (!json || json.status !== 'success') {
@@ -140,10 +195,12 @@ export class PanelApiConnector implements PanelConnector {
       }
       return json.data as T;
     } catch (e) {
-      if (e instanceof ConnectorError) throw e;
+      if (e instanceof ConnectorError || e instanceof RetryableError) throw e;
       if ((e as Error).name === 'AbortError')
-        throw new ConnectorError('Source request timed out', this.panel, 'timeout');
-      throw new ConnectorError(`Source request failed: ${(e as Error).message}`, this.panel, 'source_error');
+        throw new RetryableError(new ConnectorError('Source request timed out', this.panel, 'timeout'));
+      throw new RetryableError(
+        new ConnectorError(`Source request failed: ${(e as Error).message}`, this.panel, 'source_error'),
+      );
     } finally {
       clearTimeout(timer);
     }

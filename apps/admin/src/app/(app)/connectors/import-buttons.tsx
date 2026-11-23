@@ -2,7 +2,7 @@
 
 import { useTransition } from 'react';
 import { toast } from 'sonner';
-import { runImport } from '../../actions';
+import { retryDeadLetters, runImport } from '../../actions';
 import { btn } from '@/components/ui';
 
 export function ImportButtons({ panel }: { panel: string }) {
@@ -30,5 +30,28 @@ export function ImportButtons({ panel }: { panel: string }) {
         {pending ? 'Running…' : 'Run import'}
       </button>
     </div>
+  );
+}
+
+export function RetryDeadLettersButton({ panel }: { panel: string }) {
+  const [pending, start] = useTransition();
+  return (
+    <button
+      className={btn.secondary}
+      disabled={pending}
+      onClick={() =>
+        start(async () => {
+          try {
+            const r = await retryDeadLetters(panel);
+            if (r.stillOpen) toast.warning(`${r.resolved} resolved, ${r.stillOpen} still failing`);
+            else toast.success(`${r.resolved} batch(es) re-imported`);
+          } catch (e) {
+            toast.error((e as Error).message);
+          }
+        })
+      }
+    >
+      {pending ? 'Retrying…' : 'Retry now'}
+    </button>
   );
 }

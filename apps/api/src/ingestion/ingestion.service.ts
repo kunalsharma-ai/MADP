@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
 import { Injectable, Logger } from '@nestjs/common';
-import { and, eq, ne, sql } from 'drizzle-orm';
+import { and, eq, inArray, ne, sql } from 'drizzle-orm';
 import type {
   DataMode,
   PanelCode,
@@ -8,10 +8,12 @@ import type {
   SourceQuestionnaire,
   SourceRespondent,
 } from '@madp/contracts';
+import { ConnectorError } from '@madp/connectors';
 import { ConnectorRegistry } from '../connectors/connector-registry.js';
 import { Database, type Db } from '../db/database.js';
 import {
   categoryMemberships,
+  deadLetters,
   identityMatchCandidates,
   importJobs,
   masterPersons,
@@ -57,7 +59,13 @@ export interface ImportCounts {
   answersChanged: number;
   pages: number;
   resumedFromCursor: string | null;
+  /** Answer batches parked in the dead-letter queue after retries were exhausted. */
+  deadLettered: number;
+  deadLetteredMembers: number;
 }
+
+/** Transient source failures go to the dead-letter queue; refused access or bad payloads fail the job. */
+const DEAD_LETTER_KINDS = new Set(['source_error', 'timeout']);
 
 export interface ImportOptions {
   dryRun?: boolean;
@@ -118,6 +126,8 @@ export class IngestionService {
       answersChanged: 0,
       pages: 0,
       resumedFromCursor: null,
+      deadLettered: 0,
+      deadLetteredMembers: 0,
     };
     try {
       const questionnaires = await connector.listQuestionnaires();
@@ -150,10 +160,24 @@ export class IngestionService {
         counts.respondentsSeen += page.items.length;
         if (!opts.dryRun) {
           const personByMember = await this.ingestRespondents(panel, dataMode, jobId, page.items, counts);
-          const answers = await connector.listAnswers(
-            page.items.map((r) => r.sourceMemberId),
-            questionIds,
-          );
+          const memberIds = page.items.map((r) => r.sourceMemberId);
+          let answers: Awaited<ReturnType<typeof connector.listAnswers>> = [];
+          try {
+            answers = await connector.listAnswers(memberIds, questionIds);
+          } catch (e) {
+            if (!(e instanceof ConnectorError) || !DEAD_LETTER_KINDS.has(e.kind)) throw e;
+            await db.insert(deadLetters).values({
+              dataMode,
+              panel,
+              importJobId: jobId,
+              stream: 'answers',
+              sourceMemberIds: memberIds,
+              errorKind: e.kind,
+              error: e.message.slice(0, 500),
+            });
+            counts.deadLettered++;
+            counts.deadLetteredMembers += memberIds.length;
+          }
           counts.answersSeen += answers.length;
           counts.answersChanged += await this.ingestAnswers(
             panel,
@@ -213,6 +237,89 @@ export class IngestionService {
     } finally {
       this.running.delete(panel);
     }
+  }
+
+  /**
+   * Re-reads answers for open dead-letter entries of one panel. Entries that succeed are resolved; failures
+   * stay open with the attempt count raised. Uses the current question versions from the registry.
+   */
+  async retryDeadLetters(panel: PanelCode, requestedBy: string | null = null) {
+    const { connector, dataMode } = this.registry.get(panel);
+    const db = this.database.db;
+    const open = await db.query.deadLetters.findMany({
+      where: and(
+        eq(deadLetters.dataMode, dataMode),
+        eq(deadLetters.panel, panel),
+        eq(deadLetters.status, 'open'),
+      ),
+    });
+    const latest = await this.mongo.questionVersions
+      .aggregate<{ _id: string; version: number }>([
+        { $match: { panel, dataMode } },
+        { $group: { _id: '$sourceQuestionId', version: { $max: '$version' } } },
+      ])
+      .toArray();
+    const versions = new Map(latest.map((v) => [v._id, v.version]));
+    const questionIds = [...versions.keys()];
+    let resolved = 0;
+    let stillOpen = 0;
+    let answersChanged = 0;
+    for (const entry of open) {
+      try {
+        const answers = await connector.listAnswers(entry.sourceMemberIds, questionIds);
+        const identities = await db
+          .select({ member: sourceIdentities.sourceMemberId, person: sourceIdentities.masterPersonId })
+          .from(sourceIdentities)
+          .where(
+            and(
+              eq(sourceIdentities.dataMode, dataMode),
+              eq(sourceIdentities.panel, panel),
+              inArray(sourceIdentities.sourceMemberId, entry.sourceMemberIds),
+            ),
+          );
+        const personByMember = new Map(identities.map((i) => [i.member, i.person]));
+        answersChanged += await this.ingestAnswers(
+          panel,
+          dataMode,
+          entry.importJobId ?? entry.id,
+          answers,
+          personByMember,
+          versions,
+        );
+        await db
+          .update(deadLetters)
+          .set({
+            status: 'resolved',
+            resolvedAt: new Date(),
+            lastAttemptAt: new Date(),
+            attempts: entry.attempts + 1,
+          })
+          .where(eq(deadLetters.id, entry.id));
+        resolved++;
+      } catch (e) {
+        if (!(e instanceof ConnectorError) || !DEAD_LETTER_KINDS.has(e.kind)) throw e;
+        await db
+          .update(deadLetters)
+          .set({ attempts: entry.attempts + 1, lastAttemptAt: new Date(), error: e.message.slice(0, 500) })
+          .where(eq(deadLetters.id, entry.id));
+        stillOpen++;
+      }
+    }
+    if (answersChanged > 0) {
+      await db.insert(outbox).values({
+        topic: 'audience.counts.invalidated',
+        payload: { panel, dataMode, reason: 'dead_letter_retry' },
+      });
+    }
+    await this.audit.record({
+      actorId: requestedBy,
+      actorType: requestedBy ? 'admin' : 'system',
+      action: 'dead_letters.retried',
+      targetType: 'panel',
+      targetId: panel,
+      metadata: { dataMode, attempted: open.length, resolved, stillOpen, answersChanged },
+    });
+    return { panel, dataMode, attempted: open.length, resolved, stillOpen, answersChanged };
   }
 
   private async syncQuestions(

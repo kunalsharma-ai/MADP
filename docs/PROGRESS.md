@@ -1,5 +1,26 @@
 # Progress
 
+## Milestone 2, part 1: work that does not need live access (2026-11-23)
+
+### Completed and tested
+- Connector retry with exponential backoff, jitter and `Retry-After`; never retries refused access.
+- Dead-letter queue for answer batches that fail after retries, with a retry action on the Connectors screen.
+- Reconciliation report per import, with pass/fail checks (`/connectors/imports/[id]` in the admin app).
+- Attribute-level audience filters through approved mappings only; special-category filters gated and audited.
+- Value maps on mapping decisions, validated against the question version's options; editor in the workbench.
+
+### Test results (2026-11-23)
+| Suite | Result |
+|---|---|
+| `pnpm build`, `pnpm typecheck` | pass |
+| `pnpm test` | contracts 3, config 4, testing 2, connectors 24, api 4 — all pass |
+| `pnpm test:integration` | api 28 — all pass (platform 19, resilience 3, attributes 6) |
+
+### Still blocked for the rest of M2
+Live read-only approval and credentials per panel, production hosts, the MFR definitions export, the MHO image.
+All data remains DEMO.
+
+
 ## Milestone 1: discovery and foundation (2026-11-23)
 
 ### Completed and tested
@@ -33,7 +54,7 @@ Screenshots are in `docs/screenshots/`.
 ### Pending
 - Everything in M2–M6 (`docs/IMPLEMENTATION_PLAN.md`).
 - Consent population, deletion propagation, webhook ingress, merge and unmerge (M3).
-- Nonce-based CSP for the admin app, retry and backoff in connectors (M2).
+- Nonce-based CSP for the admin app (M2).
 
 ### Blocked (needs Kunal)
 - Live read-only access approval and a scoped integration credential for each panel.

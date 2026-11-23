@@ -2,7 +2,13 @@ import http from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { PANEL_CODES } from '@madp/contracts';
-import { AUDITED_CAPABILITIES, DemoConnector, PanelApiConnector, ConnectorError } from './index.js';
+import {
+  AUDITED_CAPABILITIES,
+  DemoConnector,
+  PanelApiConnector,
+  ConnectorError,
+  parseRetryAfter,
+} from './index.js';
 
 /**
  * Contract tests against a local stub that reproduces the response envelope and routes read in the
@@ -181,5 +187,63 @@ describe.each(PANEL_CODES)('DemoConnector [%s]', (panel) => {
       qs.map((q) => q.sourceQuestionId),
     );
     expect(answers.every((a) => a.panel === panel)).toBe(true);
+  });
+});
+
+describe('PanelApiConnector retry and backoff', () => {
+  const envelope = (status: number, body: unknown, headers: Record<string, string> = {}) =>
+    new Response(JSON.stringify(body), {
+      status,
+      headers: { 'content-type': 'application/json', ...headers },
+    });
+  const build = (responses: (() => Response | Promise<Response>)[], maxRetries = 3) => {
+    const sleeps: number[] = [];
+    let calls = 0;
+    const c = new PanelApiConnector('t2o', {
+      baseUrl: 'https://panel.example.invalid',
+      tenantHost: 'panel.example.invalid',
+      bearerToken: 'good',
+      minIntervalMs: 0,
+      maxRetries,
+      retryBaseMs: 100,
+      sleep: async (ms) => void sleeps.push(ms),
+      fetchImpl: (async () => responses[Math.min(calls++, responses.length - 1)]!()) as typeof fetch,
+    });
+    return { c, sleeps, calls: () => calls };
+  };
+
+  it('retries 429 and 5xx, honouring Retry-After, then succeeds', async () => {
+    const { c, sleeps, calls } = build([
+      () => envelope(429, { status: 'error', message: 'slow down' }, { 'retry-after': '2' }),
+      () => envelope(503, { status: 'error', message: 'unavailable' }),
+      () => envelope(200, { status: 'success', data: [] }),
+    ]);
+    expect(await c.listQuestions()).toEqual([]);
+    expect(calls()).toBe(3);
+    expect(sleeps[0]).toBe(2000);
+    expect(sleeps[1]).toBeLessThanOrEqual(200);
+  });
+
+  it('retries network errors and gives up after maxRetries with the last error', async () => {
+    const { c, calls } = build([() => Promise.reject(new TypeError('fetch failed'))], 2);
+    await expect(c.listQuestions()).rejects.toMatchObject({ kind: 'source_error', message: /fetch failed/ });
+    expect(calls()).toBe(3);
+  });
+
+  it('never retries refused access or a panel 404 error envelope', async () => {
+    const refused = build([() => envelope(403, { status: 'error', message: 'Forbidden' })]);
+    await expect(refused.c.listQuestions()).rejects.toMatchObject({ kind: 'not_authorised' });
+    expect(refused.calls()).toBe(1);
+    const missing = build([() => envelope(404, { status: 'error', message: 'Fallback route' })]);
+    await expect(missing.c.listQuestions()).rejects.toMatchObject({ kind: 'source_error' });
+    expect(missing.calls()).toBe(1);
+  });
+
+  it('parses Retry-After seconds and dates, capped at 60 s', () => {
+    expect(parseRetryAfter('5')).toBe(5000);
+    expect(parseRetryAfter('600')).toBe(60_000);
+    expect(parseRetryAfter(new Date(10_000).toUTCString(), 4_000)).toBe(6000);
+    expect(parseRetryAfter('soon')).toBeUndefined();
+    expect(parseRetryAfter(null)).toBeUndefined();
   });
 });

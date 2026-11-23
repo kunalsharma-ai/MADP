@@ -16,19 +16,22 @@ MFA completed. The machine-readable document is served at `GET /api/v1/openapi.j
 | `POST /auth/mfa/setup` | `mfa_setup` token | Returns the otpauth URI |
 | `POST /auth/mfa/confirm` `{totp}` | `mfa_setup` token, 10/min | Enables MFA and returns a full session |
 | `GET /dashboard/summary` | `dashboard.read` | Counts, connector modes, KPIs (verified, multi-panel, new in 30 days, pending mappings and matches), questions and answers per panel |
-| `POST /audience/counts` `CountsRequest` | `audience.counts.read` | `CountsResponse`: unique people, memberships, category memberships, per panel/category/country cells with suppression and freshness |
+| `POST /audience/counts` `CountsRequest` | `audience.counts.read` (+ `health.sensitive.read` for special-category attributes) | `CountsResponse`: unique people, memberships, category memberships, per panel/category/country cells with suppression and freshness; `attributes` filters resolve through approved mappings and are reported in `attributeFilters` |
 | `GET /audience/attributes` | `questions.read` | Canonical attribute definitions |
 | `GET /panellists?panel&category&country&search&after&limit` | `panellists.read` | Keyset-paged list with masked identifiers; `search` is an exact member id or an exact e-mail (keyed hash) |
 | `GET /panellists/:id` | `panellists.read` | 360 view. PII needs `panellists.pii.read`; MHO special-category answers need `health.sensitive.read`. Audited |
 | `GET /questions?panel&search` | `questions.read` | Question registry with versions and sensitivity |
 | `GET /questions/:panel/:sourceQuestionId` | `questions.read` | Version history and options |
 | `GET /mappings/review?panel&status` | `mappings.review` | Mapping review queue |
-| `POST /mappings/:id/decision` `{decision: approve\|reject\|needs_info, attributeKey?, notes?}` | `mappings.review` | Records a decision. Audited |
+| `POST /mappings/:id/decision` `{decision: approve\|reject\|needs_info, attributeKey?, valueMap?, notes?}` | `mappings.review` | Records a decision. `valueMap` keys must be options of that question version. Audited |
 | `GET /integrations/health` | `connectors.read` | Per-panel mode (DEMO or LIVE), health, capabilities |
 | `GET /connectors` | `connectors.read` | Connector detail with the audited capability evidence |
 | `GET /imports` | `connectors.read` | Import job history and reconciliation counts |
 | `POST /connectors/:panel/import` `{dryRun}` (default `true`) | `imports.run` | Runs an import for one panel. Audited |
 | `GET /sync-checkpoints` | `connectors.read` | Cursor and last success per panel and stream |
+| `GET /imports/:id/reconciliation` | `connectors.read` | Source vs MADP counts and pass/fail checks for one run |
+| `GET /dead-letters?panel&status` | `connectors.read` | Parked answer batches (member count, not ids) |
+| `POST /connectors/:panel/dead-letters/retry` | `imports.run` | Re-reads open batches; resolves those that succeed. Audited |
 | `GET /audit?before&limit` | `audit.read` | Audit events, newest first |
 
 ## 2. Source panel endpoints MADP calls (verified in source, not live)
