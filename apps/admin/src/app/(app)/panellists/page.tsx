@@ -32,7 +32,17 @@ export default async function PanellistsPage({
 }) {
   const sp = await searchParams;
   const qs = new URLSearchParams();
-  for (const k of ['panel', 'category', 'country', 'search', 'after'] as const) if (sp[k]) qs.set(k, sp[k]!);
+  for (const k of [
+    'panel',
+    'category',
+    'membership',
+    'minor',
+    'guardian',
+    'country',
+    'search',
+    'after',
+  ] as const)
+    if (sp[k]) qs.set(k, sp[k]!);
   const data = await api<{ dataMode: DataMode; items: PanellistRow[]; nextCursor: string | null }>(
     `/panellists?${qs}`,
   );
@@ -74,6 +84,33 @@ export default async function PanellistsPage({
             </option>
           ))}
         </select>
+        <select
+          name="membership"
+          defaultValue={sp.membership ?? ''}
+          className="rounded-lg border border-border bg-surface px-3 py-2 text-sm"
+          aria-label="Membership"
+        >
+          <option value="">Any membership</option>
+          <option value="active">Active</option>
+          <option value="inactive">Deactivated on the panel</option>
+          <option value="deleted">Removed by the panel</option>
+        </select>
+        <select
+          name="guardian"
+          defaultValue={sp.guardian ?? ''}
+          className="rounded-lg border border-border bg-surface px-3 py-2 text-sm"
+          aria-label="Guardian consent"
+        >
+          <option value="">Any guardian consent</option>
+          <option value="granted">Guardian approved</option>
+          <option value="unknown">Guardian not decided</option>
+          <option value="denied">Guardian declined</option>
+          <option value="withdrawn">Withdrawn</option>
+        </select>
+        <label className="flex items-center gap-1.5 text-sm">
+          <input type="checkbox" name="minor" value="true" defaultChecked={sp.minor === 'true'} />
+          Teens only
+        </label>
         <input
           name="country"
           defaultValue={sp.country ?? ''}
@@ -97,7 +134,7 @@ export default async function PanellistsPage({
             Try fewer filters. Search matches exact values only, so partial e-mails do not match.
           </EmptyState>
         ) : (
-          <Table head={['Person', 'Panels', 'Categories', 'Location', 'Born', 'E-mail']}>
+          <Table head={['Person', 'Panels', 'Categories', 'Guardian', 'Location', 'Born', 'E-mail']}>
             {data.items.map((p) => (
               <tr key={p.id} className="hover:bg-surface-2/60">
                 <td className="px-5 py-2.5">
@@ -109,9 +146,19 @@ export default async function PanellistsPage({
                   </Link>
                 </td>
                 <td className="px-5 py-2.5">
-                  <div className="flex gap-1">
-                    {p.panels.map((x) => (
-                      <PanelChip key={x} panel={x} />
+                  <div className="flex flex-wrap gap-1">
+                    {(p.memberships.length
+                      ? p.memberships
+                      : p.panels.map((x) => ({ panel: x, status: 'active' }))
+                    ).map((m) => (
+                      <span key={m.panel} className="flex items-center gap-1">
+                        <PanelChip panel={m.panel} />
+                        {m.status !== 'active' ? (
+                          <Badge tone={m.status === 'deleted' ? 'danger' : 'warn'}>
+                            {m.status === 'deleted' ? 'removed' : 'deactivated'}
+                          </Badge>
+                        ) : null}
+                      </span>
                     ))}
                   </div>
                 </td>
@@ -121,6 +168,27 @@ export default async function PanellistsPage({
                       <CategoryChip key={c} category={c} />
                     ))}
                   </div>
+                </td>
+                <td className="px-5 py-2.5">
+                  {p.minor || p.guardianConsent ? (
+                    <Badge
+                      tone={
+                        p.guardianConsent === 'granted'
+                          ? 'teal'
+                          : p.guardianConsent === 'unknown' || !p.guardianConsent
+                            ? 'warn'
+                            : 'danger'
+                      }
+                    >
+                      {p.guardianConsent === 'granted'
+                        ? 'approved'
+                        : p.guardianConsent === 'unknown' || !p.guardianConsent
+                          ? 'waiting'
+                          : p.guardianConsent}
+                    </Badge>
+                  ) : (
+                    '—'
+                  )}
                 </td>
                 <td className="px-5 py-2.5 capitalize">
                   {[p.city, p.country?.toUpperCase()].filter(Boolean).join(', ') || '—'}

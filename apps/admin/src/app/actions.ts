@@ -58,6 +58,17 @@ export async function runImport(panel: string, dryRun: boolean) {
   return r;
 }
 
+export async function runSync(panel: string) {
+  const r = await api<{
+    status: string;
+    jobId: string | null;
+    error?: string;
+    counts?: Record<string, unknown>;
+  }>(`/connectors/${encodeURIComponent(panel)}/sync`, { method: 'POST', json: {} });
+  revalidatePath('/connectors');
+  return r;
+}
+
 export async function decideMapping(
   id: string,
   decision: 'approve' | 'reject' | 'needs_info',

@@ -51,6 +51,13 @@ export const ApiEnv = z.object({
   /** Minimum cell size below which counts are suppressed in privacy-sensitive views. */
   MIN_CELL_SIZE: z.coerce.number().int().min(0).default(5),
   DEMO_POPULATION_SIZE: z.coerce.number().int().positive().default(1500),
+  /**
+   * Automatic sync: minutes between changed-since reads of each live panel (T2O GET /api/v1/changes/*).
+   * 0 = off (the default). Only panels in LIVE_SOURCE_APPROVED_PANELS are synced on a schedule.
+   */
+  SYNC_INTERVAL_MINUTES: z.coerce.number().int().min(0).max(1440).default(0),
+  /** Most feed pages one sync run reads per feed; the next run continues from the saved cursor. */
+  SYNC_MAX_PAGES: z.coerce.number().int().positive().default(100),
 });
 export type ApiEnv = z.infer<typeof ApiEnv>;
 

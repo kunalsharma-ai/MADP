@@ -40,6 +40,27 @@ export interface ConnectorRow {
   pendingCursor: string | null;
 }
 
+export interface SyncStatus {
+  intervalMinutes: number;
+  panels: {
+    panel: PanelCode;
+    dataMode: DataMode;
+    scheduled: boolean;
+    feedFinding: { capability: string; status: string; evidence: string } | null;
+    lastRun: {
+      id: string;
+      status: string;
+      startedAt: string | null;
+      finishedAt: string | null;
+      error: string | null;
+      counts: Record<string, unknown>;
+    } | null;
+    lastSucceededAt: string | null;
+    streams: { stream: string; lastSuccessAt: string | null }[];
+    parkedAnswerBatches: number;
+  }[];
+}
+
 export interface ImportJob {
   id: string;
   panel: PanelCode;
@@ -110,6 +131,9 @@ export interface PanellistRow {
   categories: AudienceCategory[];
   emailMasked: string | null;
   emailVerified: boolean;
+  memberships: { panel: PanelCode; status: string }[];
+  minor: boolean;
+  guardianConsent: 'granted' | 'unknown' | 'denied' | 'withdrawn' | null;
 }
 
 export interface PanellistDetail {

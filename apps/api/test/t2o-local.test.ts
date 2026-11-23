@@ -23,6 +23,10 @@ const EXPECT = process.env.T2O_LOCAL_EXPECT;
 const REPORT = process.env.T2O_LOCAL_REPORT;
 // The connector is deliberately polite (one request per 250 ms), and the bank has 848 option lists.
 const SLOW = 15 * 60_000;
+// Optional, for the automatic-sync part: the harness tokens.json, and two disposable member ids on the local copy
+// (one is deleted, one has its answers reset). Never point these at a real panel.
+const TOKENS = process.env.T2O_LOCAL_TOKENS;
+const DISPOSABLE = (process.env.T2O_LOCAL_DISPOSABLE ?? '').split(',').filter(Boolean);
 
 interface Expected {
   label: string;
@@ -66,7 +70,8 @@ describe.skipIf(!BASE || !TOKEN || !EXPECT)('T2O local backend, end to end', () 
       expect(dry.body.status).toBe('succeeded');
       expect(dry.body.counts.questionnaires).toBe(50);
       expect(dry.body.counts.questions).toBe(848);
-      expect(dry.body.counts.respondentsSeen).toBe(expected.length);
+      // The local copy may also hold accounts made by hand through the UI; every listed one must be there.
+      expect(dry.body.counts.respondentsSeen).toBeGreaterThanOrEqual(expected.length);
       const db = t.app.get(Database).db;
       const n = await db.execute<{ n: string }>(sql`select count(*) as n from source_identity`);
       expect(Number(n.rows[0]!.n)).toBe(0);
@@ -163,6 +168,78 @@ describe.skipIf(!BASE || !TOKEN || !EXPECT)('T2O local backend, end to end', () 
         await count('master_person'),
       ]).toEqual(before);
       report.reimport = { counts: run.body.counts, unchanged: true };
+    },
+    SLOW,
+  );
+
+  it.skipIf(!TOKENS || DISPOSABLE.length !== 2)(
+    'automatic sync picks up a changed answer, a deleted member and an answer reset from the changes feed',
+    async () => {
+      const tokens = JSON.parse(fs.readFileSync(TOKENS!, 'utf8')) as Record<
+        string,
+        { token: string; userID?: string }
+      >;
+      const t2o = (method: string, path: string, tok: string, body?: unknown) =>
+        fetch(`${BASE}/api/v1${path}`, {
+          method,
+          headers: { authorization: `Bearer ${tok}`, 'content-type': 'application/json', origin: BASE! },
+          ...(body === undefined ? {} : { body: JSON.stringify(body) }),
+        }).then(async (r) => ({ status: r.status, body: (await r.json()) as { data?: unknown } }));
+      const db = t.app.get(Database).db;
+      const mongo = t.app.get(Mongo);
+      const sync = async () => {
+        const r = await request(t.server).post('/api/v1/connectors/t2o/sync').set(bearer()).expect(200);
+        expect(r.body.status, JSON.stringify(r.body.error ?? '')).toBe('succeeded');
+        return r.body;
+      };
+      const first = await sync();
+      const [gone, reset] = DISPOSABLE as [string, string];
+      const consumer = expected.find((e) => e.label === 'consumer')!;
+      // Change one of the consumer's select answers to another option from the bank.
+      const qid = 'empstat';
+      const before = await mongo.profileAnswers.findOne({
+        panel: 't2o',
+        sourceMemberId: consumer.memberId,
+        sourceQuestionId: qid,
+      });
+      expect(before, 'the consumer has an empstat answer in MADP').toBeTruthy();
+      const opts = (await t2o('GET', `/option/${qid}`, tokens.consumer!.token)).body.data as {
+        value: string;
+      }[];
+      const value = opts.map((o) => o.value).find((v) => !before!.values.includes(v))!;
+      expect((await t2o('PATCH', '/me/profile', tokens.consumer!.token, { [qid]: value })).status).toBe(200);
+      const admin = tokens.integration!.token;
+      expect((await t2o('POST', '/user/refresh', admin, { user: reset })).status).toBe(200);
+      expect((await t2o('DELETE', `/user/${gone}`, admin)).status).toBe(200);
+      await new Promise((r) => setTimeout(r, 6_000)); // the feed holds back the last 5 s
+
+      const second = await sync();
+      report.sync = { first: first.counts, second: second.counts };
+      expect(second.counts.startedFrom).toEqual({
+        members: 'cursor',
+        answers: 'cursor',
+        deletions: 'cursor',
+      });
+      expect(second.counts.membersRemoved).toBe(1);
+      expect(second.counts.answerResets).toBe(1);
+      expect(second.counts.answersSeen).toBeGreaterThanOrEqual(1);
+      const after = await mongo.profileAnswers.findOne({
+        panel: 't2o',
+        sourceMemberId: consumer.memberId,
+        sourceQuestionId: qid,
+      });
+      expect(after?.values).toEqual([value]);
+      expect(await mongo.profileAnswers.countDocuments({ panel: 't2o', sourceMemberId: gone })).toBe(0);
+      expect(await mongo.profileAnswers.countDocuments({ panel: 't2o', sourceMemberId: reset })).toBe(0);
+      const rows = await db.execute<{ status: string; email_enc: string | null; source_active: boolean }>(sql`
+        select pm.status, si.email_enc, si.source_active from source_identity si
+        join panel_membership pm on pm.source_identity_id = si.id where si.source_member_id = ${gone}`);
+      expect(rows.rows[0]).toEqual({ status: 'deleted', email_enc: null, source_active: false });
+
+      // Nothing new: the next run reads empty pages and changes nothing.
+      const third = await sync();
+      expect(third.counts).toMatchObject({ respondentsSeen: 0, answersSeen: 0, membersRemoved: 0 });
+      report.sync = { ...(report.sync as object), third: third.counts };
     },
     SLOW,
   );

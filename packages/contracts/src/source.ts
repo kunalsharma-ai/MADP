@@ -83,6 +83,8 @@ export const SourceRespondent = z.object({
   phoneVerification: VerificationState,
   qualityScore: z.number().nullable(),
   isActive: z.boolean(),
+  /** The panel soft-deleted the member (`isDeleted`). Only the changes feed reports it; treated as a deletion. */
+  isDeleted: z.boolean().optional(),
   sourceCreatedAt: z.string().datetime().nullable(),
   sourceUpdatedAt: z.string().datetime().nullable(),
   consents: z.array(SourceConsent).default([]),
@@ -103,4 +105,33 @@ export type SourceAnswer = z.infer<typeof SourceAnswer>;
 export interface SourcePage<T> {
   items: T[];
   nextCursor: string | null;
+}
+
+/**
+ * A page of a panel's changed-since feed (T2O `GET /api/v1/changes/*`). `cursor` is where the next call continues
+ * (unchanged when nothing new was found); `more` says whether another page is ready now.
+ */
+export interface SourceChangePage<T> {
+  items: T[];
+  cursor: string | null;
+  more: boolean;
+}
+
+/**
+ * Something the panel removed for good. `member`: the member record was deleted. `answers`: all of the member's
+ * profile answers were removed (T2O `POST /user/refresh`). Holds the source member id only.
+ */
+export const SourceDeletion = z.object({
+  panel: PanelCode,
+  sourceMemberId: z.string().min(1),
+  kind: z.enum(['member', 'answers']),
+  at: z.string().datetime().nullable(),
+});
+export type SourceDeletion = z.infer<typeof SourceDeletion>;
+
+/** Where a changes-feed read starts: after `cursor`, or (with no cursor) at `since`, or from the beginning. */
+export interface ChangeQuery {
+  cursor: string | null;
+  since?: string | null;
+  limit: number;
 }

@@ -2,7 +2,7 @@
 
 import { useTransition } from 'react';
 import { toast } from 'sonner';
-import { retryDeadLetters, runImport } from '../../actions';
+import { retryDeadLetters, runImport, runSync } from '../../actions';
 import { btn } from '@/components/ui';
 
 export function ImportButtons({ panel }: { panel: string }) {
@@ -52,6 +52,35 @@ export function RetryDeadLettersButton({ panel }: { panel: string }) {
       }
     >
       {pending ? 'Retrying…' : 'Retry now'}
+    </button>
+  );
+}
+
+export function SyncNowButton({ panel }: { panel: string }) {
+  const [pending, start] = useTransition();
+  return (
+    <button
+      className={btn.secondary}
+      disabled={pending}
+      onClick={() =>
+        start(async () => {
+          try {
+            const r = await runSync(panel);
+            const n = (r.counts ?? {}) as Record<string, number>;
+            if (r.status === 'succeeded')
+              toast.success(
+                `${panel.toUpperCase()} sync: ${n.respondentsSeen} members and ${n.answersChanged} answers changed, ${n.membersRemoved} removed`,
+              );
+            else if (r.status === 'not_supported')
+              toast.warning(`${panel.toUpperCase()} does not serve the changes feed yet: ${r.error ?? ''}`);
+            else toast.error(`${panel.toUpperCase()} sync failed: ${r.error ?? 'unknown error'}`);
+          } catch (e) {
+            toast.error((e as Error).message);
+          }
+        })
+      }
+    >
+      {pending ? 'Syncing…' : 'Sync changes now'}
     </button>
   );
 }

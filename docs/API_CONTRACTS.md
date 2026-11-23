@@ -32,6 +32,8 @@ MFA completed. The machine-readable document is served at `GET /api/v1/openapi.j
 | `GET /imports/:id/reconciliation` | `connectors.read` | Source vs MADP counts and pass/fail checks for one run |
 | `GET /dead-letters?panel&status` | `connectors.read` | Parked answer batches (member count, not ids) |
 | `POST /connectors/:panel/dead-letters/retry` | `imports.run` | Re-reads open batches; resolves those that succeed. Audited |
+| `POST /connectors/:panel/sync` | `imports.run` | One automatic-sync run now: only what changed since the last run (members with consent, answers, deletions). 409 while an import or sync of that panel runs. Audited. Covered by `apps/api/test/sync.test.ts` |
+| `GET /sync-status` | `connectors.read` | Per panel: scheduled or not, interval, feed checkpoints, last run and its counts, parked answer batches |
 | `GET /audit?before&limit` | `audit.read` | Audit events, newest first |
 
 ## 2. Source panel endpoints MADP calls (verified in source, not live)
@@ -45,18 +47,33 @@ tenant host, because each panel resolves its tenant from the `Host` header.
 | Options | `GET /api/v1/option/:question` | same | same |
 | Respondents | `POST /api/v1/user` `{}` | same | same |
 | Answers | `GET /api/v1/user/:id/profile` | same | same |
+| Changed members | `GET /api/v1/changes/members?cursor&since&limit` (turn2opinion#20, not deployed) | same | same |
+| Changed answers | `GET /api/v1/changes/answers?cursor&since&limit` (turn2opinion#20, not deployed) | same | same |
+| Deletions | `GET /api/v1/changes/deletions?cursor&since&limit` (turn2opinion#20, not deployed) | same | same |
 
 All three panels run the T2O backend in production (confirmed 2026-11-23), so they share one endpoint map; only the
 host differs. MADP never requests direct identifiers (name, e-mail, phone, date of birth, postcode) as answers.
 
-## 3. Proposed non-breaking additions to the panels (needs owner approval; nothing changed)
-Each addition is new, read-only and behind a scoped service credential, so existing clients are unaffected.
+## 3. Proposed non-breaking additions to the panels
+
+**Changed-since feeds: built as kunalsharma-ai/turn2opinion#20 (draft, not deployed).** Admin-only and read-only.
+Each answers `{status, data: {items, cursor, more}}`, ordered by `(updatedAt, _id)`; records from the last 5 s wait
+for the next call. Mounted at `/api/v1/changes` because `/api/v1/integration` is already used by survey integrations.
+
+```
+GET /api/v1/changes/members    ≤500  → items: member record (no guardian details, password or role), incl. isActive, isDeleted, parent consent status
+GET /api/v1/changes/answers    ≤1000 → items: {_id, user, question, answer: string[], updatedAt}; contact-detail questions left out
+GET /api/v1/changes/deletions  ≤1000 → items: {_id, kind: "member" | "answers", user, at}  (Tombstone written by admin delete and refresh)
+```
+
+MADP reads them in `IngestionService.runSync` (members, then answers, then deletions, each from its own
+`sync_checkpoint` stream `changes.*`). A backend without them answers 404; MADP then reports the sync as not
+supported and asks again an hour later.
+
+Still proposals (not built):
 
 ```
 POST /api/v1/integration/token            client_credentials → 15-minute JWT, scopes: profile:read users:read answers:read
-GET  /api/v1/integration/members          ?updatedSince=ISO&cursor=&limit≤500 → {items:[{id, category, mail, verified, isActive, isDeleted, createdAt, updatedAt}], nextCursor}
-GET  /api/v1/integration/answers          ?updatedSince=ISO&cursor=&limit≤1000 → {items:[{user, question, answer:string[], updatedAt}], nextCursor}
-GET  /api/v1/integration/consents         ?updatedSince=ISO&cursor= → {items:[{user, purpose, channel, status, capturedAt, evidence}], nextCursor}
 Webhooks (panel → MADP)                    POST {madp}/api/v1/webhooks/{panel}
   headers: X-Panel-Signature: sha256=HMAC(secret, timestamp + "." + body), X-Panel-Timestamp, X-Idempotency-Key
   events:  member.created, member.updated, member.deleted, consent.changed, answer.updated

@@ -67,6 +67,50 @@ beforeAll(async () => {
         ]);
       if (req.url?.startsWith('/api/v1/user/u1/'))
         return ok({ _id: 'u1', mail: 'a@example.invalid', gender: 'female', hobbies: ['reading', 'travel'] });
+      // Changes feeds (turn2opinion#20): two member pages, then one answer page and one deletion page.
+      const u = new URL(req.url!, 'http://stub');
+      if (u.pathname === '/api/v1/changes/members') {
+        if (req.headers.host?.startsWith('localhost')) {
+          res.statusCode = 404;
+          return res.end(JSON.stringify({ status: 'error', message: 'Fallback route' }));
+        }
+        return u.searchParams.get('cursor') === 'm1'
+          ? ok({
+              items: [
+                { _id: 'u2', category: 'minor', isDeleted: true, parent: { consentStatus: 'approved' } },
+              ],
+              cursor: 'm2',
+              more: false,
+            })
+          : ok({
+              items: [{ _id: 'u1', category: 'b2c', mail: 'a@example.invalid', isActive: true }],
+              cursor: 'm1',
+              more: true,
+            });
+      }
+      if (u.pathname === '/api/v1/changes/answers')
+        return ok({
+          items: [
+            {
+              _id: 'a1',
+              user: 'u1',
+              question: 'hobbies',
+              answer: ['reading'],
+              updatedAt: '2026-11-23T10:00:00Z',
+            },
+          ],
+          cursor: 'a1c',
+          more: false,
+        });
+      if (u.pathname === '/api/v1/changes/deletions')
+        return ok({
+          items: [
+            { _id: 't1', kind: 'member', user: 'u9', at: '2026-11-23T11:00:00Z' },
+            { _id: 't2', kind: 'something-new', user: 'u8' },
+          ],
+          cursor: null,
+          more: false,
+        });
       res.statusCode = 404;
       res.end(JSON.stringify({ status: 'error', message: `Fallback route: ${req.url} is not available` }));
     });
@@ -122,6 +166,58 @@ describe.each(PANEL_CODES)('PanelApiConnector [%s]', (panel) => {
     const second = await c.listRespondents(first.nextCursor, 1);
     expect(second.items[0]?.sourceMemberId).toBe('u2');
     expect(second.nextCursor).toBeNull();
+  });
+
+  it('reads the changes feeds with the cursor, and maps soft-deleted members and tombstones', async () => {
+    const c = make(panel);
+    const first = await c.memberChanges({ cursor: null, since: '2026-11-01T00:00:00.000Z', limit: 1 });
+    expect(seen.at(-1)!.url).toBe('/api/v1/changes/members?limit=1&since=2026-11-01T00%3A00%3A00.000Z');
+    expect(first).toMatchObject({
+      cursor: 'm1',
+      more: true,
+      items: [{ sourceMemberId: 'u1', isActive: true }],
+    });
+    const second = await c.memberChanges({
+      cursor: first.cursor,
+      since: '2026-11-01T00:00:00.000Z',
+      limit: 1,
+    });
+    expect(seen.at(-1)!.url).toBe('/api/v1/changes/members?limit=1&cursor=m1');
+    expect(second.items[0]).toMatchObject({ sourceMemberId: 'u2', isActive: false, isDeleted: true });
+    expect(second.items[0]!.consents[0]).toMatchObject({ purpose: 'guardian_consent', status: 'granted' });
+    expect(await c.answerChanges({ cursor: 'x', limit: 1000 })).toEqual({
+      items: [
+        {
+          panel,
+          sourceMemberId: 'u1',
+          sourceQuestionId: 'hobbies',
+          values: ['reading'],
+          sourceUpdatedAt: '2026-11-23T10:00:00.000Z',
+        },
+      ],
+      cursor: 'a1c',
+      more: false,
+    });
+    // An empty page keeps the reader's cursor; an unknown tombstone kind is ignored.
+    expect(await c.deletions({ cursor: 'keep', limit: 10 })).toEqual({
+      items: [{ panel, sourceMemberId: 'u9', kind: 'member', at: '2026-11-23T11:00:00.000Z' }],
+      cursor: 'keep',
+      more: false,
+    });
+  });
+
+  it('reports a backend without the changes feed as not supported', async () => {
+    const port = new URL(base).port;
+    const c = new PanelApiConnector(panel, {
+      baseUrl: `http://localhost:${port}`,
+      tenantHost: `localhost:${port}`,
+      bearerToken: 'good',
+      minIntervalMs: 0,
+    });
+    await expect(c.memberChanges({ cursor: null, limit: 10 })).rejects.toMatchObject({
+      kind: 'not_supported',
+      httpStatus: 404,
+    });
   });
 
   it('returns only answers to the requested questions, as arrays', async () => {
