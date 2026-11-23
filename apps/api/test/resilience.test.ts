@@ -145,3 +145,54 @@ describe('direct identifiers', () => {
     }
   });
 });
+
+describe('consent sync', () => {
+  it('writes one current consent record per person, panel and purpose, and refreshes it on re-import', async () => {
+    const run = () =>
+      request(t.server)
+        .post('/api/v1/connectors/t2o/import')
+        .set(bearer())
+        .send({ dryRun: false })
+        .expect(200);
+    const first = await run();
+    expect(first.body.status).toBe('succeeded');
+    expect(first.body.counts.consentsSynced).toBeGreaterThan(0);
+
+    const { Database } = await import('../src/db/database.js');
+    const { sql } = await import('drizzle-orm');
+    const db = t.app.get(Database).db;
+    const count = async () =>
+      Number(
+        (await db.execute<{ n: string }>(sql`select count(*) as n from consent_record where panel = 't2o'`))
+          .rows[0]!.n,
+      );
+    const n1 = await count();
+    expect(n1).toBeGreaterThan(0);
+    const guardian = await db.execute<{
+      status: string;
+      data_mode: string;
+      evidence: Record<string, unknown>;
+    }>(
+      sql`select status, data_mode, evidence from consent_record where panel = 't2o' and purpose = 'guardian_consent'`,
+    );
+    expect(guardian.rows.length).toBeGreaterThan(0);
+    for (const g of guardian.rows) {
+      expect(g.data_mode).toBe('demo');
+      expect(Object.keys(g.evidence).sort()).toEqual(['field', 'importJobId', 'source', 'value', 'version']);
+    }
+
+    await run();
+    expect(await count()).toBe(n1);
+
+    const person = await db.execute<{ id: string }>(
+      sql`select master_person_id as id from consent_record where panel = 't2o' and purpose = 'guardian_consent' limit 1`,
+    );
+    const detail = await request(t.server)
+      .get(`/api/v1/panellists/${person.rows[0]!.id}`)
+      .set(bearer())
+      .expect(200);
+    expect(detail.body.consents.some((c: { purpose: string }) => c.purpose === 'guardian_consent')).toBe(
+      true,
+    );
+  });
+});

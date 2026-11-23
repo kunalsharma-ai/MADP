@@ -43,7 +43,7 @@ erDiagram
 | `panel_membership` | `master_person_id`, `panel`, `source_identity_id`, `status`, `joined_at` | Separate per panel; never merged |
 | `category_membership` | `master_person_id`, `category`, `panel`, `basis`, `is_minor` | Unique per person, category and panel; a person may hold several |
 | `identity_match_candidate` | `source_identity_id`, `candidate_person_id`, `rule`, `status`, `decided_by` | Ambiguous matches wait for review |
-| `consent_record` | `master_person_id`, `panel`, `purpose`, `channel`, `status`, `evidence`, `captured_at` | Table exists; filling it from sources is M3 |
+| `consent_record` | `master_person_id`, `panel`, `purpose`, `channel`, `status`, `evidence`, `captured_at` | One current row per (data_mode, person, panel, purpose), refreshed on every import from the panel `User` fields |
 | `attribute_definition` | `key`, `label`, `dimension`, `value_type`, `sensitivity` | Seeded from `SEED_ATTRIBUTES` |
 | `source_question_mapping` | `panel`, `source_question_id`, `question_version`, `suggested_attribute_key`, `suggestion_basis`, `attribute_key`, `status`, `value_map`, `decided_by` | Suggestions always start `pending` |
 | `import_job` | `panel`, `kind`, `dry_run`, `status`, `counts`, `error`, `requested_by` | Reconciliation counts per run |

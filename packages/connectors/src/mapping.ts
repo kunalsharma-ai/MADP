@@ -5,6 +5,7 @@ import type {
   SourceQuestionnaire,
   SourceRespondent,
   SourceAnswer,
+  SourceConsent,
 } from '@madp/contracts';
 
 /** Shapes returned by the shared Express/Mongoose panel backend (`{status, message, data}` envelope). */
@@ -51,6 +52,86 @@ export interface RawUser {
   isActive?: boolean;
   createdAt?: string;
   updatedAt?: string;
+  consent?: { canShareVideo?: boolean; canShareGPS?: boolean; canAcceptPushNotification?: boolean };
+  terms?: string[];
+  parent?: {
+    consent?: boolean | null;
+    consentStatus?: string;
+    consentAt?: string;
+    consentVersion?: string;
+    decision?: string;
+    decisionAt?: string;
+  };
+}
+
+/**
+ * Guardian consent for teen members (T2O backend User.parent). Only the status is read: the guardian's name,
+ * e-mail, phone, IP address and onboarding answers are never copied into MADP.
+ */
+const GUARDIAN_STATUS: Record<string, SourceConsent['status']> = {
+  approved: 'granted',
+  declined: 'denied',
+  withdrawn: 'withdrawn',
+  pending: 'unknown',
+  expired: 'unknown',
+  cancelled: 'unknown',
+};
+
+export function mapConsents(u: RawUser): SourceConsent[] {
+  const out: SourceConsent[] = [];
+  const p = u.parent;
+  const isTeen = (u.category ?? '').includes('minor');
+  if (p && (isTeen || p.consentStatus || p.consent !== undefined)) {
+    // Same order as the T2O User.registrationStatus virtual, so MADP agrees with what the member area shows.
+    const status: SourceConsent['status'] =
+      p.consent === true || p.consentStatus === 'approved'
+        ? 'granted'
+        : p.consentStatus
+          ? (GUARDIAN_STATUS[p.consentStatus] ?? 'unknown')
+          : p.consent === false || p.decision === 'no'
+            ? 'denied'
+            : 'unknown';
+    out.push({
+      purpose: 'guardian_consent',
+      status,
+      capturedAt: iso(p.consentAt ?? p.decisionAt),
+      evidence: {
+        field: p.consentStatus ? 'parent.consentStatus' : 'parent.consent',
+        value: p.consentStatus ?? (p.consent === undefined || p.consent === null ? null : String(p.consent)),
+        version: s(p.consentVersion),
+      },
+    });
+  } else if (isTeen) {
+    out.push({
+      purpose: 'guardian_consent',
+      status: 'unknown',
+      capturedAt: null,
+      evidence: { field: 'parent', value: null, version: null },
+    });
+  }
+  if (u.terms?.length)
+    out.push({
+      purpose: 'terms',
+      status: 'granted',
+      capturedAt: null,
+      evidence: { field: 'terms', value: null, version: u.terms.map(String).join(',').slice(0, 200) },
+    });
+  const flags: [keyof NonNullable<RawUser['consent']>, SourceConsent['purpose']][] = [
+    ['canAcceptPushNotification', 'push_notifications'],
+    ['canShareVideo', 'video_sharing'],
+    ['canShareGPS', 'gps_sharing'],
+  ];
+  for (const [field, purpose] of flags) {
+    const v = u.consent?.[field];
+    if (typeof v === 'boolean')
+      out.push({
+        purpose,
+        status: v ? 'granted' : 'denied',
+        capturedAt: null,
+        evidence: { field: `consent.${field}`, value: String(v), version: null },
+      });
+  }
+  return out;
 }
 
 const s = (v: unknown): string | null => (v === undefined || v === null || v === '' ? null : String(v));
@@ -123,6 +204,7 @@ export function mapUser(panel: PanelCode, u: RawUser): SourceRespondent {
     isActive: u.isActive !== false,
     sourceCreatedAt: iso(u.createdAt),
     sourceUpdatedAt: iso(u.updatedAt),
+    consents: mapConsents(u),
   };
 }
 

@@ -1,5 +1,33 @@
 # Progress
 
+## Turn2Opinion first (2026-11-23)
+
+Kunal asked to start with Turn2Opinion, using the T2O Member Dashboard demo preview as reference. Everything here
+runs on DEMO data; no panel was contacted.
+
+### Completed and tested
+- Full T2O question bank in the DEMO fixture: all 50 sections (37 consumer, 13 teen), 849 questions, 16,847 options,
+  extracted from the T2O repo. Option values that were `[label, value]` pairs are no longer flattened into one string.
+- DEMO members answer like real ones: the basic section plus a few others that match their member type.
+- Member types: consumer (`b2c`), professional (`b2b`) and teen (`minor`, flagged as a minor) map to MADP categories
+  through the existing review proposals. DEMO now includes T2O teen members with 13-17 birth dates.
+- Consent sync: guardian consent for teens (same rules as the member area's registration status), terms accepted, and
+  push, video and location opt-ins become `consent_record` rows, one per person, panel and purpose, refreshed on each
+  import. Guardian contact details and IPs are never copied. Shown on the panellist 360 page.
+- Answer ingestion writes in bulk per page (one read and two bulk writes instead of one round trip per answer).
+
+### Test results (2026-11-23)
+| Suite | Result |
+|---|---|
+| `pnpm build`, `pnpm typecheck` | pass |
+| `pnpm test` | contracts 3, config 4, testing 3, connectors 29, api 4 — all pass |
+| `pnpm test:integration` | api 30 — all pass |
+
+### Next for T2O
+A T2O-only dry run against the live backend once the token is in the cloud environment, with counts shown to Kunal
+before any write.
+
+
 ## Milestone 2, part 1: work that does not need live access (2026-11-23)
 
 ### Completed and tested

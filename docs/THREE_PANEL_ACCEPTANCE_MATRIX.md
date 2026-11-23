@@ -17,7 +17,7 @@ Legend: ✅ passed with live evidence · 🟡 implemented and tested on DEMO or 
 | 5. Options imported | 🟡 | 🟡 | 🟡 |
 | 6. Respondent identities imported | 🟡 synthetic people | 🟡 | 🟡 |
 | 7. Answers imported | 🟡 synthetic answers | 🟡 | 🟡 |
-| 8. Consent synchronised | ❌ table only | ❌ | ❌ |
+| 8. Consent synchronised | 🟡 DEMO: guardian consent, terms and opt-ins from `User` fields, one current record per purpose | 🟡 DEMO, same backend `User` fields; consent stored as answers (`terms-consent`, `news-letter`) not yet read | 🟡 DEMO, same backend `User` fields; no health-data consent field exists at source |
 | 9. Updates synchronised | 🔶 re-import is idempotent; no updated-since source | 🔶 | 🔶 |
 | 10. Deletion propagated | ❌ no source event (G-05) | ❌ | ❌ |
 | 11. Webhook or polling verified | ❌ | ❌ | ❌ |

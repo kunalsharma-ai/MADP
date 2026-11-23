@@ -182,7 +182,11 @@ export const consentRecords = pgTable(
     capturedAt: timestamp('captured_at', { withTimezone: true }),
     createdAt: created(),
   },
-  (t) => [index('consent_person_idx').on(t.masterPersonId, t.panel, t.purpose)],
+  (t) => [
+    index('consent_person_idx').on(t.masterPersonId, t.panel, t.purpose),
+    // One current record per person, panel and purpose; each sync updates it in place.
+    uniqueIndex('consent_current_uq').on(t.dataMode, t.masterPersonId, t.panel, t.purpose),
+  ],
 );
 
 export const attributeDefinitions = pgTable('attribute_definition', {

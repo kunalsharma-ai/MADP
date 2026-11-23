@@ -142,6 +142,14 @@ export interface PanellistDetail {
   }[];
   memberships: { panel: PanelCode; status: string; joinedAt: string | null }[];
   categories: { panel: PanelCode; category: AudienceCategory; basis: string; isMinor: boolean }[];
+  consents: {
+    panel: PanelCode;
+    purpose: string;
+    status: 'granted' | 'denied' | 'withdrawn' | 'unknown';
+    channel: string | null;
+    version: string | null;
+    capturedAt: string | null;
+  }[];
   identityCandidates: { id: string; rule: string; status: string; createdAt: string }[];
   answers: {
     panel: PanelCode;

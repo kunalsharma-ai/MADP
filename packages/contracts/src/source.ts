@@ -50,6 +50,18 @@ export type SourceQuestionnaire = z.infer<typeof SourceQuestionnaire>;
 
 export const VerificationState = z.enum(['unverified', 'verified', 'rejected']);
 
+/**
+ * A consent state read from the source member record. Evidence holds the source field and value only: never IP
+ * addresses, signatures or guardian contact details.
+ */
+export const SourceConsent = z.object({
+  purpose: z.enum(['guardian_consent', 'terms', 'push_notifications', 'video_sharing', 'gps_sharing']),
+  status: z.enum(['granted', 'denied', 'withdrawn', 'unknown']),
+  capturedAt: z.string().datetime().nullable(),
+  evidence: z.object({ field: z.string(), value: z.string().nullable(), version: z.string().nullable() }),
+});
+export type SourceConsent = z.infer<typeof SourceConsent>;
+
 export const SourceRespondent = z.object({
   panel: PanelCode,
   /** Source `User._id`. Never shown in full to non-privileged roles. */
@@ -73,6 +85,7 @@ export const SourceRespondent = z.object({
   isActive: z.boolean(),
   sourceCreatedAt: z.string().datetime().nullable(),
   sourceUpdatedAt: z.string().datetime().nullable(),
+  consents: z.array(SourceConsent).default([]),
 });
 export type SourceRespondent = z.infer<typeof SourceRespondent>;
 

@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX "consent_current_uq" ON "consent_record" USING btree ("data_mode","master_person_id","panel","purpose");
