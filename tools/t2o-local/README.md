@@ -56,5 +56,15 @@ The OTP model declares a unique index on `{user, type, origin}`, but the field i
 always null. That allows only one live code per member. When the guardian consents, the guardian's link code still
 exists while the teen's activation code is being created, and the insert fails.
 
-To finish the flow locally, drop that index after the backend starts:
-`db.OTP.dropIndex("user_1_type_1_origin_1")`. Do not do this to a panel database. The fix belongs in the T2O repo.
+Fixed in the T2O repo by kunalsharma-ai/turn2opinion#16, which also drops the old index once at start-up. On a
+copy without that fix, drop it by hand after the backend starts: `db.OTP.dropIndex("user_1_type_1_origin_1")`.
+Only do that on the local copy.
+
+## After the T2O fixes (turn2opinion#16)
+
+- `node signup-teen-fixed.mjs` runs a teen through the guardian flow with the old index in place. It shows the
+  start-up clean-up working.
+- `node signup-admin.mjs` creates a "MADP Integration" account and gives it the admin role in the local database.
+  Use its token for MADP: once the member-access fix is in, a member token gets 403 from `GET /api/v1/user`.
+- `node access-check.mjs` runs 25 before/after access rules for member data.
+- `node make-expect.mjs` adds both accounts to `expect.json`.

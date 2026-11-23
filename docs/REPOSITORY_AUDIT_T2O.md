@@ -65,13 +65,16 @@ Severity is the auditor's estimate from code reading. None was exploited or test
   login token returned every member from `GET /api/v1/user`, including the teens' guardian e-mail addresses and
   consent status, and returned another member's record and answers from `GET /api/v1/user/:id/profile`. MADP's import
   also works with a plain member token today. It should not: these routes need an admin or integration role.
+  **Fix proposed in kunalsharma-ai/turn2opinion#16** (admin-only lists; self-or-admin for one member's data). MADP
+  now reads members with `GET /api/v1/user`, so a non-admin credential fails with 403.
 - **T2O-BUG-01 (high, teen sign-up):** the `OTP` model has a unique index on `{user, type, origin}`, but the field is
   `channel`, so `type` is always null and a member can hold only one code. When a guardian gives consent
   (`PUT /api/v1/user/parent-consent/:id`), the guardian's link code still exists while the teen's activation code is
   created, and the insert fails with E11000. The consent *is* saved (`parent.consentStatus = approved`), but the
   guardian sees an error, and the teen gets no activation e-mail and cannot set a password until the guardian's
   code expires. Reproduced on a fresh database. Production behaves the same if that index exists there (Mongoose
-  creates it at start-up by default). Fix: index `{user, channel, origin}`.
+  creates it at start-up by default). Fix: index `{user, channel, origin}`. **Fix proposed in
+  kunalsharma-ai/turn2opinion#16 (not yet merged or deployed).**
 - **T2O-DATA-01 (low):** the `shopping` and `food-beverages` profiles in the question bank have a blank slot in
   their page list. MADP skips blank names.
 - **T2O-SEC-06 (medium):** `sync.sh` restores a production `mongodump` into a local environment — personal data leaves production for development.

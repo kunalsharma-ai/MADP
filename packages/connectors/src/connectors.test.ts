@@ -53,7 +53,7 @@ beforeAll(async () => {
         return ok([{ question: 'gender', label: 'Female', value: 'female', parentValue: [] }]);
       if (req.url === '/api/v1/profile')
         return ok([{ name: 'basic profile', slug: 'basic', category: 'b2c', pages: [['Basic', 'gender']] }]);
-      if (req.url === '/api/v1/user' && req.method === 'POST')
+      if (req.url === '/api/v1/user' && req.method === 'GET')
         return ok([
           {
             _id: 'u1',

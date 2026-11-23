@@ -27,7 +27,7 @@ const T2O_BACKEND: CapabilityFinding[] = [
     capability: 'respondents.read',
     status: 'partial',
     evidence:
-      'POST /api/v1/user (isAuthenticated only, body passed to Mongo as filter) - routes/api/User.js:189',
+      'GET /api/v1/user (unpaginated list) - routes/api/User.js:177. Any signed-in member today (T2O-SEC-03); admin-only once the T2O member-access fix is deployed, so MADP needs an admin integration account',
   },
   {
     capability: 'respondents.pagination',

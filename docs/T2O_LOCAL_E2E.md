@@ -38,12 +38,26 @@ Fixed in MADP:
 - Two bank sections (`shopping`, `food-beverages`) have a blank question slot, which stopped the import. MADP now
   skips blank names. The bank has 848 named questions, not 849.
 
-In the T2O panel (reported, not changed):
+In the T2O panel (fixed in kunalsharma-ai/turn2opinion#16, awaiting review):
 - **T2O-BUG-01:** the guardian's consent step fails part-way, and the teen gets no activation link. See
   `REPOSITORY_AUDIT_T2O.md`.
 - **T2O-SEC-03 confirmed:** an ordinary member's login token lists every member, including teens' guardian e-mails,
   and reads other members' answers. MADP's import worked with a plain member token. For production, use a dedicated
   admin or integration account, and the panel should restrict these routes.
+
+## After the T2O fixes (kunalsharma-ai/turn2opinion#16, 2026-11-23)
+
+Kunal asked for both panel problems to be fixed. The T2O pull request is open for review and has not been deployed.
+The same copy was run on that branch:
+- **Teen activation:** with the old index present, start-up dropped it, and a new teen completed sign-up, guardian
+  YES, onboarding, consent and password set-up with no error.
+- **Member data:** all 25 before/after access rules pass. A member gets 403 for other members' data and keeps their
+  own pages. Anonymous calls to admin routes get 401.
+- **MADP with a dedicated admin integration account:** dry run, import (6 members, 27 consent records),
+  reconciliation and re-import all pass. A member token now fails loudly (403, `not_authorised`) instead of importing
+  nothing, because MADP reads members with `GET /api/v1/user`.
+- **The integration account itself is imported as a member.** The panel does not expose the role to MADP. Until it
+  does, exclude that account by its id.
 
 ## Timing
 
