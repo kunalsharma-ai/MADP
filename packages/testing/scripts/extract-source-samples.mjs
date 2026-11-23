@@ -44,7 +44,8 @@ const readJson = (p) => JSON.parse(fs.readFileSync(p, 'utf8'));
     slug: p.s,
     name: p.n,
     sourceCategory: p.c,
-    pages: p.p.map(([title, names]) => [title, ...names]),
+    // Two bank profiles (shopping, food-beverages) have a blank slot in their page list; it names no question.
+    pages: p.p.map(([title, names]) => [title, ...names.filter((n) => String(n).trim())]),
   }));
   const qNames = [...new Set(profiles.flatMap((p) => p.pages.flatMap((pg) => pg.slice(1))))];
   const questions = qNames

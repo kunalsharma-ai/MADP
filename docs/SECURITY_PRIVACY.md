@@ -73,7 +73,8 @@ approval, and MADP has changed nothing in the panel repos.
 | T2O-SEC-01 | Critical | `POST /api/v1/user/apps` returns a 365-day root JWT for any request that matches an app user's fields. No secret is checked |
 | T2O-SEC-07 | Critical | `GET /api/v1/integration/respondent-profile/:respondentID` returns a member's record and all profile answers without authentication |
 | T2O-SEC-02 | Critical | `GET /api/v1/user/birthday/today` returns names and e-mails without authentication |
-| T2O-SEC-03 | High | Any signed-in member can list members and read others' answers. The request body is used as a raw Mongo filter |
+| T2O-SEC-03 | High | Any signed-in member can list members (including teens' guardian e-mails) and read others' answers. The request body is used as a raw Mongo filter. Reproduced on a running copy, 2026-11-23 |
+| T2O-BUG-01 | High | OTP unique index uses a field that does not exist, so a guardian's consent fails part-way and the teen gets no activation link. Reproduced on a running copy |
 | T2O-SEC-04, MFR-SEC-01, MHO-SEC-02 | High | Question and option write routes have no authentication |
 | MHO-SEC-01 | High | `isAdmin` throws an undefined `HttpError`, so non-admin requests crash instead of getting 403 |
 | MHO-SEC-03 | Medium | MHO production runs the T2O backend image, so this repo's code is not what serves health data |

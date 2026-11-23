@@ -6,7 +6,7 @@ Kunal asked to start with Turn2Opinion, using the T2O Member Dashboard demo prev
 runs on DEMO data; no panel was contacted.
 
 ### Completed and tested
-- Full T2O question bank in the DEMO fixture: all 50 sections (37 consumer, 13 teen), 849 questions, 16,847 options,
+- Full T2O question bank in the DEMO fixture: all 50 sections (37 consumer, 13 teen), 848 questions, 16,847 options (a blank slot in two sections is skipped),
   extracted from the T2O repo. Option values that were `[label, value]` pairs are no longer flattened into one string.
 - DEMO members answer like real ones: the basic section plus a few others that match their member type.
 - Member types: consumer (`b2c`), professional (`b2b`) and teen (`minor`, flagged as a minor) map to MADP categories
@@ -20,8 +20,13 @@ runs on DEMO data; no panel was contacted.
 | Suite | Result |
 |---|---|
 | `pnpm build`, `pnpm typecheck` | pass |
-| `pnpm test` | contracts 3, config 4, testing 3, connectors 29, api 4 — all pass |
-| `pnpm test:integration` | api 30 — all pass |
+| `pnpm test` | contracts 3, config 4, testing 3, connectors 30, api 4 — all pass |
+| `pnpm test:integration` | api 30 — all pass; the opt-in local T2O test (3) passed against the running copy |
+
+### T2O end to end on a local copy
+MADP imported a consumer, a business professional and two teens from a running copy of the real T2O backend
+(test accounts made through T2O's own sign-up and guardian flows). The import was reconciled and the re-import was
+idempotent. Details are in `docs/T2O_LOCAL_E2E.md`. This is not live evidence.
 
 ### Next for T2O
 A T2O-only dry run against the live backend once the token is in the cloud environment, with counts shown to Kunal

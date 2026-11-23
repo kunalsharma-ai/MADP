@@ -234,11 +234,20 @@ export class PanelApiConnector implements PanelConnector {
 
   async listQuestions() {
     const data = await this.call<RawQuestion[]>('GET', this.endpoints.questions);
-    return data.map((q) => mapQuestion(this.panel, q));
+    if (!Array.isArray(data))
+      throw new ConnectorError('Question list is not an array', this.panel, 'invalid_payload');
+    // A question without a name can't be addressed (its option route would be /option/), so it is skipped.
+    return data.filter((q) => String(q?.name ?? '').trim()).map((q) => mapQuestion(this.panel, q));
   }
 
   async listOptions(sourceQuestionId: string) {
     const data = await this.call<RawOption[]>('GET', this.endpoints.option(sourceQuestionId));
+    if (!Array.isArray(data))
+      throw new ConnectorError(
+        `Options for "${sourceQuestionId}" are not an array`,
+        this.panel,
+        'invalid_payload',
+      );
     return data.map((o) => mapOption(this.panel, o));
   }
 
