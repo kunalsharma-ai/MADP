@@ -7,8 +7,13 @@ describe('panel registry', () => {
     expect(PANELS.mho.sensitive).toBe(true);
   });
   it('flags minor source categories for review', () => {
-    expect(SOURCE_CATEGORY_PROPOSALS.filter((p) => p.minor).map((p) => p.sourceValue).sort()).toEqual(['minor', 'minor', 'minor patient']);
-    for (const panel of PANEL_CODES) expect(SOURCE_CATEGORY_PROPOSALS.some((p) => p.panel === panel)).toBe(true);
+    expect(
+      SOURCE_CATEGORY_PROPOSALS.filter((p) => p.minor)
+        .map((p) => p.sourceValue)
+        .sort(),
+    ).toEqual(['minor', 'minor', 'minor patient']);
+    for (const panel of PANEL_CODES)
+      expect(SOURCE_CATEGORY_PROPOSALS.some((p) => p.panel === panel)).toBe(true);
   });
   it('counts contract requires an explicit data mode', () => {
     expect(() => CountsResponse.parse({ uniquePeople: 1 })).toThrow();

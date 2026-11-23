@@ -24,7 +24,12 @@ export class FieldCrypto {
     const iv = randomBytes(12);
     const c = createCipheriv('aes-256-gcm', this.key, iv);
     const data = Buffer.concat([c.update(plain, 'utf8'), c.final()]);
-    return [KEY_ID, iv.toString('base64url'), c.getAuthTag().toString('base64url'), data.toString('base64url')].join('.');
+    return [
+      KEY_ID,
+      iv.toString('base64url'),
+      c.getAuthTag().toString('base64url'),
+      data.toString('base64url'),
+    ].join('.');
   }
 
   decrypt(token: string | null | undefined): string | null {
@@ -44,7 +49,9 @@ export class FieldCrypto {
 }
 
 export function normaliseEmail(email: string | null | undefined): string | null {
-  const e = String(email ?? '').trim().toLowerCase();
+  const e = String(email ?? '')
+    .trim()
+    .toLowerCase();
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e) ? e : null;
 }
 

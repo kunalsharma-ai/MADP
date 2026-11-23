@@ -14,11 +14,26 @@ export interface DemoPopulation {
 }
 
 const COUNTRIES = [
-  { code: 'IN', states: ['maharashtra', 'karnataka', 'delhi'], cities: ['mumbai', 'bengaluru', 'new delhi'], tz: 'Asia/Kolkata' },
-  { code: 'US', states: ['california', 'texas', 'new york'], cities: ['los angeles', 'austin', 'new york'], tz: 'America/New_York' },
+  {
+    code: 'IN',
+    states: ['maharashtra', 'karnataka', 'delhi'],
+    cities: ['mumbai', 'bengaluru', 'new delhi'],
+    tz: 'Asia/Kolkata',
+  },
+  {
+    code: 'US',
+    states: ['california', 'texas', 'new york'],
+    cities: ['los angeles', 'austin', 'new york'],
+    tz: 'America/New_York',
+  },
   { code: 'GB', states: ['england', 'scotland'], cities: ['london', 'edinburgh'], tz: 'Europe/London' },
   { code: 'CA', states: ['ontario', 'quebec'], cities: ['toronto', 'montreal'], tz: 'America/Toronto' },
-  { code: 'AU', states: ['new south wales', 'victoria'], cities: ['sydney', 'melbourne'], tz: 'Australia/Sydney' },
+  {
+    code: 'AU',
+    states: ['new south wales', 'victoria'],
+    cities: ['sydney', 'melbourne'],
+    tz: 'Australia/Sydney',
+  },
   { code: 'AE', states: ['dubai'], cities: ['dubai'], tz: 'Asia/Dubai' },
   { code: 'DE', states: ['bavaria', 'berlin'], cities: ['munich', 'berlin'], tz: 'Europe/Berlin' },
 ] as const;
@@ -37,23 +52,39 @@ export interface DemoOptions {
   now?: Date;
 }
 
-export function generateDemoPopulation({ people, seed = 20261123, overlapRate = 0.18, now = new Date('2026-11-01T00:00:00Z') }: DemoOptions): DemoPopulation {
+export function generateDemoPopulation({
+  people,
+  seed = 20261123,
+  overlapRate = 0.18,
+  now = new Date('2026-11-01T00:00:00Z'),
+}: DemoOptions): DemoPopulation {
   const r = rng(seed);
   const respondents: SourceRespondent[] = [];
   const answers: SourceAnswer[] = [];
   const panels: PanelCode[] = ['t2o', 'mfr', 'mho'];
-  const samples = Object.fromEntries(panels.map((p) => [p, loadSourceSample(p)])) as Record<PanelCode, ReturnType<typeof loadSourceSample>>;
+  const samples = Object.fromEntries(panels.map((p) => [p, loadSourceSample(p)])) as Record<
+    PanelCode,
+    ReturnType<typeof loadSourceSample>
+  >;
 
   for (let i = 1; i <= people; i++) {
     const n = String(i).padStart(5, '0');
     const home = pick(r, panels);
     const memberOf = new Set<PanelCode>([home]);
-    if (r() < overlapRate) memberOf.add(pick(r, panels.filter((p) => p !== home)));
+    if (r() < overlapRate)
+      memberOf.add(
+        pick(
+          r,
+          panels.filter((p) => p !== home),
+        ),
+      );
     const country = pick(r, COUNTRIES);
     const si = Math.floor(r() * country.states.length);
     const gender = pick(r, ['Male', 'Female', 'Other'] as const);
     const age = 18 + Math.floor(r() * 60);
-    const dob = new Date(Date.UTC(now.getUTCFullYear() - age, Math.floor(r() * 12), 1 + Math.floor(r() * 28)));
+    const dob = new Date(
+      Date.UTC(now.getUTCFullYear() - age, Math.floor(r() * 12), 1 + Math.floor(r() * 28)),
+    );
     const created = new Date(now.getTime() - Math.floor(r() * 900) * 86_400_000);
 
     for (const panel of memberOf) {
@@ -90,13 +121,23 @@ export function generateDemoPopulation({ people, seed = 20261123, overlapRate = 
         if (!cats.includes(sourceCategory) || r() < 0.35) continue;
         const parentAnswer = q.parent ? given.get(q.parent) : undefined;
         const opts = sample.options.filter(
-          (o) => o.question === q.name && (o.parentValue.length === 0 || (parentAnswer ?? []).some((v) => o.parentValue.includes(v))),
+          (o) =>
+            o.question === q.name &&
+            (o.parentValue.length === 0 || (parentAnswer ?? []).some((v) => o.parentValue.includes(v))),
         );
         if (opts.length === 0) continue;
         const multi = q.type === 'multiselect' && opts.length > 1;
-        const values = multi ? [...new Set([pick(r, opts).value, pick(r, opts).value])] : [pick(r, opts).value];
+        const values = multi
+          ? [...new Set([pick(r, opts).value, pick(r, opts).value])]
+          : [pick(r, opts).value];
         given.set(q.name, values);
-        answers.push({ panel, sourceMemberId: id, sourceQuestionId: q.name, values, sourceUpdatedAt: created.toISOString() });
+        answers.push({
+          panel,
+          sourceMemberId: id,
+          sourceQuestionId: q.name,
+          values,
+          sourceUpdatedAt: created.toISOString(),
+        });
       }
     }
   }

@@ -28,7 +28,14 @@ export const audienceCategory = pgEnum('audience_category', [
   'patient',
   'caregiver',
 ]);
-export const adminRole = pgEnum('admin_role', ['super_admin', 'platform_admin', 'data_steward', 'privacy_officer', 'analyst', 'support']);
+export const adminRole = pgEnum('admin_role', [
+  'super_admin',
+  'platform_admin',
+  'data_steward',
+  'privacy_officer',
+  'analyst',
+  'support',
+]);
 export const reviewStatus = pgEnum('review_status', ['pending', 'approved', 'rejected', 'needs_info']);
 export const jobStatus = pgEnum('job_status', ['queued', 'running', 'succeeded', 'failed', 'cancelled']);
 export const consentStatus = pgEnum('consent_status', ['granted', 'denied', 'withdrawn', 'unknown']);
@@ -72,7 +79,9 @@ export const sourceIdentities = pgTable(
     panel: panelCode('panel').notNull(),
     sourceMemberId: text('source_member_id').notNull(),
     sourceRespondentRef: text('source_respondent_ref'),
-    masterPersonId: uuid('master_person_id').notNull().references(() => masterPersons.id),
+    masterPersonId: uuid('master_person_id')
+      .notNull()
+      .references(() => masterPersons.id),
     sourceCategory: text('source_category').notNull(),
     emailHash: text('email_hash'),
     emailEnc: text('email_enc'),
@@ -104,15 +113,22 @@ export const panelMemberships = pgTable(
   {
     id: uuid('id').primaryKey().defaultRandom(),
     dataMode: dataMode('data_mode').notNull(),
-    masterPersonId: uuid('master_person_id').notNull().references(() => masterPersons.id),
+    masterPersonId: uuid('master_person_id')
+      .notNull()
+      .references(() => masterPersons.id),
     panel: panelCode('panel').notNull(),
-    sourceIdentityId: uuid('source_identity_id').notNull().references(() => sourceIdentities.id),
+    sourceIdentityId: uuid('source_identity_id')
+      .notNull()
+      .references(() => sourceIdentities.id),
     status: text('status').notNull().default('active'),
     joinedAt: timestamp('joined_at', { withTimezone: true }),
     createdAt: created(),
     updatedAt: updated(),
   },
-  (t) => [uniqueIndex('panel_membership_identity_key').on(t.sourceIdentityId), index('panel_membership_person_idx').on(t.masterPersonId)],
+  (t) => [
+    uniqueIndex('panel_membership_identity_key').on(t.sourceIdentityId),
+    index('panel_membership_person_idx').on(t.masterPersonId),
+  ],
 );
 
 export const categoryMemberships = pgTable(
@@ -120,7 +136,9 @@ export const categoryMemberships = pgTable(
   {
     id: uuid('id').primaryKey().defaultRandom(),
     dataMode: dataMode('data_mode').notNull(),
-    masterPersonId: uuid('master_person_id').notNull().references(() => masterPersons.id),
+    masterPersonId: uuid('master_person_id')
+      .notNull()
+      .references(() => masterPersons.id),
     category: audienceCategory('category').notNull(),
     panel: panelCode('panel').notNull(),
     /** How the membership was derived, e.g. "source_category:b2c". */
@@ -135,8 +153,12 @@ export const categoryMemberships = pgTable(
 export const identityMatchCandidates = pgTable('identity_match_candidate', {
   id: uuid('id').primaryKey().defaultRandom(),
   dataMode: dataMode('data_mode').notNull(),
-  sourceIdentityId: uuid('source_identity_id').notNull().references(() => sourceIdentities.id),
-  candidatePersonId: uuid('candidate_person_id').notNull().references(() => masterPersons.id),
+  sourceIdentityId: uuid('source_identity_id')
+    .notNull()
+    .references(() => sourceIdentities.id),
+  candidatePersonId: uuid('candidate_person_id')
+    .notNull()
+    .references(() => masterPersons.id),
   rule: text('rule').notNull(),
   status: reviewStatus('status').notNull().default('pending'),
   decidedBy: uuid('decided_by'),
@@ -149,7 +171,9 @@ export const consentRecords = pgTable(
   {
     id: uuid('id').primaryKey().defaultRandom(),
     dataMode: dataMode('data_mode').notNull(),
-    masterPersonId: uuid('master_person_id').notNull().references(() => masterPersons.id),
+    masterPersonId: uuid('master_person_id')
+      .notNull()
+      .references(() => masterPersons.id),
     panel: panelCode('panel').notNull(),
     purpose: text('purpose').notNull(),
     channel: text('channel'),
@@ -190,7 +214,14 @@ export const sourceQuestionMappings = pgTable(
     decidedAt: timestamp('decided_at', { withTimezone: true }),
     createdAt: created(),
   },
-  (t) => [uniqueIndex('mapping_question_version_key').on(t.dataMode, t.panel, t.sourceQuestionId, t.questionVersion)],
+  (t) => [
+    uniqueIndex('mapping_question_version_key').on(
+      t.dataMode,
+      t.panel,
+      t.sourceQuestionId,
+      t.questionVersion,
+    ),
+  ],
 );
 
 export const importJobs = pgTable('import_job', {
@@ -201,7 +232,9 @@ export const importJobs = pgTable('import_job', {
   dryRun: boolean('dry_run').notNull().default(false),
   status: jobStatus('status').notNull().default('queued'),
   requestedBy: uuid('requested_by'),
-  counts: jsonb('counts').notNull().default(sql`'{}'::jsonb`),
+  counts: jsonb('counts')
+    .notNull()
+    .default(sql`'{}'::jsonb`),
   error: text('error'),
   startedAt: timestamp('started_at', { withTimezone: true }),
   finishedAt: timestamp('finished_at', { withTimezone: true }),
@@ -277,7 +310,9 @@ export const auditEvents = pgTable(
     targetType: text('target_type'),
     targetId: text('target_id'),
     outcome: text('outcome').notNull().default('success'),
-    metadata: jsonb('metadata').notNull().default(sql`'{}'::jsonb`),
+    metadata: jsonb('metadata')
+      .notNull()
+      .default(sql`'{}'::jsonb`),
     ip: text('ip'),
   },
   (t) => [index('audit_event_at_idx').on(t.at), index('audit_event_actor_idx').on(t.actorId)],

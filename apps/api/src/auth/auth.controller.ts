@@ -37,7 +37,11 @@ export class AuthController {
   @Throttle({ default: { limit: 10, ttl: 60_000 } })
   @Post('mfa/confirm')
   @HttpCode(200)
-  confirmMfa(@CurrentPrincipal() p: Principal, @Body(new ZodPipe(z.object({ code: z.string().regex(/^\d{6}$/) }))) body: { code: string }, @Req() req: Request) {
+  confirmMfa(
+    @CurrentPrincipal() p: Principal,
+    @Body(new ZodPipe(z.object({ code: z.string().regex(/^\d{6}$/) }))) body: { code: string },
+    @Req() req: Request,
+  ) {
     return this.auth.confirmMfa(p, body.code, req.ip ?? null);
   }
 }

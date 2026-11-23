@@ -1,6 +1,23 @@
-import type { CapabilityFinding, ConnectorHealth, PanelCode, SourceAnswer, SourcePage, SourceRespondent } from '@madp/contracts';
+import type {
+  CapabilityFinding,
+  ConnectorHealth,
+  PanelCode,
+  SourceAnswer,
+  SourcePage,
+  SourceRespondent,
+} from '@madp/contracts';
 import { AUDITED_CAPABILITIES } from './capabilities.js';
-import { mapAnswerMap, mapOption, mapQuestion, mapQuestionnaire, mapUser, type RawOption, type RawProfile, type RawQuestion, type RawUser } from './mapping.js';
+import {
+  mapAnswerMap,
+  mapOption,
+  mapQuestion,
+  mapQuestionnaire,
+  mapUser,
+  type RawOption,
+  type RawProfile,
+  type RawQuestion,
+  type RawUser,
+} from './mapping.js';
 import { ConnectorError, type PanelConnector } from './types.js';
 
 export interface PanelApiConfig {
@@ -28,7 +45,9 @@ export interface EndpointMap {
   users: string;
   /** Proposed, non-breaking addition (docs/API_CONTRACTS.md section 3). Used only when the panel ships it. */
   pagedMembers?: string;
-  answers: { method: 'GET'; path: (memberId: string) => string } | { method: 'POST'; path: (memberId: string) => string };
+  answers:
+    | { method: 'GET'; path: (memberId: string) => string }
+    | { method: 'POST'; path: (memberId: string) => string };
 }
 
 export const ENDPOINTS: Record<PanelCode, EndpointMap> = {
@@ -80,7 +99,11 @@ export class PanelApiConnector implements PanelConnector {
     // The panel backend derives its tenant from the Host header, so we must call it on the tenant's own
     // hostname rather than overriding Host. See docs/INTEGRATION_GAP_ANALYSIS.md G-04.
     if (new URL(cfg.baseUrl).host !== cfg.tenantHost) {
-      throw new ConnectorError(`baseUrl host must equal tenantHost (${cfg.tenantHost})`, panel, 'invalid_payload');
+      throw new ConnectorError(
+        `baseUrl host must equal tenantHost (${cfg.tenantHost})`,
+        panel,
+        'invalid_payload',
+      );
     }
   }
 
@@ -106,14 +129,20 @@ export class PanelApiConnector implements PanelConnector {
         ...(body === undefined ? {} : { body: JSON.stringify(body) }),
       });
       const json = (await res.json().catch(() => null)) as Envelope<T> | null;
-      if (res.status === 401 || res.status === 403) throw new ConnectorError(`Source refused access (${res.status})`, this.panel, 'not_authorised');
+      if (res.status === 401 || res.status === 403)
+        throw new ConnectorError(`Source refused access (${res.status})`, this.panel, 'not_authorised');
       if (!json || json.status !== 'success') {
-        throw new ConnectorError(`Source error ${res.status}: ${json?.message ?? 'invalid envelope'}`, this.panel, json ? 'source_error' : 'invalid_payload');
+        throw new ConnectorError(
+          `Source error ${res.status}: ${json?.message ?? 'invalid envelope'}`,
+          this.panel,
+          json ? 'source_error' : 'invalid_payload',
+        );
       }
       return json.data as T;
     } catch (e) {
       if (e instanceof ConnectorError) throw e;
-      if ((e as Error).name === 'AbortError') throw new ConnectorError('Source request timed out', this.panel, 'timeout');
+      if ((e as Error).name === 'AbortError')
+        throw new ConnectorError('Source request timed out', this.panel, 'timeout');
       throw new ConnectorError(`Source request failed: ${(e as Error).message}`, this.panel, 'source_error');
     } finally {
       clearTimeout(timer);
@@ -124,9 +153,23 @@ export class PanelApiConnector implements PanelConnector {
     const started = Date.now();
     try {
       await this.call<unknown>('GET', this.endpoints.questionnaires);
-      return { panel: this.panel, mode: 'live', state: 'healthy', checkedAt: new Date().toISOString(), latencyMs: Date.now() - started, message: 'Questionnaire endpoint reachable' };
+      return {
+        panel: this.panel,
+        mode: 'live',
+        state: 'healthy',
+        checkedAt: new Date().toISOString(),
+        latencyMs: Date.now() - started,
+        message: 'Questionnaire endpoint reachable',
+      };
     } catch (e) {
-      return { panel: this.panel, mode: 'live', state: 'down', checkedAt: new Date().toISOString(), latencyMs: Date.now() - started, message: (e as Error).message };
+      return {
+        panel: this.panel,
+        mode: 'live',
+        state: 'down',
+        checkedAt: new Date().toISOString(),
+        latencyMs: Date.now() - started,
+        message: (e as Error).message,
+      };
     }
   }
 
@@ -148,7 +191,10 @@ export class PanelApiConnector implements PanelConnector {
   async listRespondents(cursor: string | null, limit: number): Promise<SourcePage<SourceRespondent>> {
     if (this.endpoints.pagedMembers) {
       const q = new URLSearchParams({ limit: String(limit), ...(cursor ? { cursor } : {}) });
-      const data = await this.call<{ items: RawUser[]; nextCursor: string | null }>('GET', `${this.endpoints.pagedMembers}?${q}`);
+      const data = await this.call<{ items: RawUser[]; nextCursor: string | null }>(
+        'GET',
+        `${this.endpoints.pagedMembers}?${q}`,
+      );
       return { items: data.items.map((u) => mapUser(this.panel, u)), nextCursor: data.nextCursor };
     }
     // Fallback: the source only offers an unpaginated list. Fetch once per run, page locally.
@@ -156,7 +202,10 @@ export class PanelApiConnector implements PanelConnector {
     const start = cursor ? Number.parseInt(cursor, 10) : 0;
     const slice = this.cachedUsers.slice(start, start + limit);
     const next = start + slice.length;
-    return { items: slice.map((u) => mapUser(this.panel, u)), nextCursor: next < this.cachedUsers.length ? String(next) : null };
+    return {
+      items: slice.map((u) => mapUser(this.panel, u)),
+      nextCursor: next < this.cachedUsers.length ? String(next) : null,
+    };
   }
 
   async listAnswers(sourceMemberIds: string[], sourceQuestionIds: string[]): Promise<SourceAnswer[]> {

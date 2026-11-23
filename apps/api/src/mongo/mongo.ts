@@ -81,9 +81,18 @@ export class Mongo implements OnModuleInit, OnModuleDestroy {
   }
 
   async ensureIndexes() {
-    await this.sourceEvents.createIndex({ panel: 1, dataMode: 1, kind: 1, sourceKey: 1, contentHash: 1 }, { unique: true });
-    await this.questionVersions.createIndex({ panel: 1, dataMode: 1, sourceQuestionId: 1, version: 1 }, { unique: true });
-    await this.profileAnswers.createIndex({ panel: 1, dataMode: 1, sourceMemberId: 1, sourceQuestionId: 1 }, { unique: true });
+    await this.sourceEvents.createIndex(
+      { panel: 1, dataMode: 1, kind: 1, sourceKey: 1, contentHash: 1 },
+      { unique: true },
+    );
+    await this.questionVersions.createIndex(
+      { panel: 1, dataMode: 1, sourceQuestionId: 1, version: 1 },
+      { unique: true },
+    );
+    await this.profileAnswers.createIndex(
+      { panel: 1, dataMode: 1, sourceMemberId: 1, sourceQuestionId: 1 },
+      { unique: true },
+    );
     await this.profileAnswers.createIndex({ personId: 1 });
     await this.answerHistory.createIndex({ personId: 1, sourceQuestionId: 1 });
   }

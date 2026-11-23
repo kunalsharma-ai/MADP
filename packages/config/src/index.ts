@@ -3,7 +3,12 @@ import { z } from 'zod';
 const panelList = z
   .string()
   .default('')
-  .transform((v) => v.split(',').map((s) => s.trim().toLowerCase()).filter(Boolean))
+  .transform((v) =>
+    v
+      .split(',')
+      .map((s) => s.trim().toLowerCase())
+      .filter(Boolean),
+  )
   .pipe(z.array(z.enum(['t2o', 'mfr', 'mho'])));
 
 /**
@@ -19,7 +24,9 @@ export const ApiEnv = z.object({
   /** HS256 signing secret for admin session tokens, >= 32 chars. */
   AUTH_JWT_SECRET: z.string().min(32),
   /** 32-byte key, base64. Encrypts PII fields (AES-256-GCM). Rotate via key id prefix (see SECURITY_PRIVACY.md). */
-  FIELD_ENCRYPTION_KEY: z.string().refine((v) => Buffer.from(v, 'base64').length === 32, 'must be 32 bytes, base64'),
+  FIELD_ENCRYPTION_KEY: z
+    .string()
+    .refine((v) => Buffer.from(v, 'base64').length === 32, 'must be 32 bytes, base64'),
   /** Separate key for keyed hashes used for matching (HMAC-SHA256), so hashes cannot be brute-forced without it. */
   PII_HASH_KEY: z.string().min(32),
   /** Require TOTP MFA for every admin login. Defaults on; tests and local demo may turn it off. */

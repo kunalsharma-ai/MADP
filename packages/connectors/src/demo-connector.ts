@@ -43,12 +43,18 @@ export class DemoConnector implements PanelConnector {
   }
 
   async listQuestionnaires() {
-    return loadSourceSample(this.panel).profiles.map((p) => mapQuestionnaire(this.panel, { ...p, category: p.sourceCategory }));
+    return loadSourceSample(this.panel).profiles.map((p) =>
+      mapQuestionnaire(this.panel, { ...p, category: p.sourceCategory }),
+    );
   }
 
   async listQuestions() {
     return loadSourceSample(this.panel).questions.map((q) =>
-      mapQuestion(this.panel, { ...q, ...(q.type ? { type: q.type } : {}), category: ([] as string[]).concat(q.category) }),
+      mapQuestion(this.panel, {
+        ...q,
+        ...(q.type ? { type: q.type } : {}),
+        category: ([] as string[]).concat(q.category),
+      }),
     );
   }
 
@@ -69,6 +75,8 @@ export class DemoConnector implements PanelConnector {
   async listAnswers(sourceMemberIds: string[], sourceQuestionIds: string[]): Promise<SourceAnswer[]> {
     const ids = new Set(sourceMemberIds);
     const qs = new Set(sourceQuestionIds);
-    return this.pop.answers.filter((a) => a.panel === this.panel && ids.has(a.sourceMemberId) && qs.has(a.sourceQuestionId));
+    return this.pop.answers.filter(
+      (a) => a.panel === this.panel && ids.has(a.sourceMemberId) && qs.has(a.sourceQuestionId),
+    );
   }
 }

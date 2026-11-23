@@ -1,0 +1,43 @@
+# Local development stack. Data stores only by default; add `--profile app` to also run API + admin in containers.
+#   docker compose up -d                 # postgres, mongodb, redis
+#   docker compose --profile app up -d   # + api (4000) and admin (3000)
+name: madp
+services:
+  postgres:
+    image: postgres:18
+    environment:
+      POSTGRES_USER: madp
+      POSTGRES_PASSWORD: madp
+      POSTGRES_DB: madp
+    ports: ['127.0.0.1:5432:5432']
+    volumes: [pgdata:/var/lib/postgresql]
+    healthcheck: { test: ['CMD-SHELL', 'pg_isready -U madp'], interval: 5s, retries: 20 }
+  mongodb:
+    image: mongo:8
+    ports: ['127.0.0.1:27017:27017']
+    volumes: [mongodata:/data/db]
+    healthcheck:
+      { test: ['CMD', 'mongosh', '--quiet', '--eval', 'db.runCommand({ping:1})'], interval: 5s, retries: 20 }
+  # Redis is provisioned now for rate limits, caching and locks; first used in M2 (sync scheduling).
+  redis:
+    image: redis:8
+    ports: ['127.0.0.1:6379:6379']
+  api:
+    profiles: [app]
+    build: { context: ., dockerfile: apps/api/Dockerfile }
+    env_file: .env
+    environment:
+      DATABASE_URL: postgres://madp:madp@postgres:5432/madp
+      MONGODB_URL: mongodb://mongodb:27017
+    ports: ['127.0.0.1:4000:4000']
+    depends_on: { postgres: { condition: service_healthy }, mongodb: { condition: service_healthy } }
+  admin:
+    profiles: [app]
+    build: { context: ., dockerfile: apps/admin/Dockerfile }
+    environment:
+      MADP_API_URL: http://api:4000/api/v1
+    ports: ['127.0.0.1:3000:3000']
+    depends_on: [api]
+volumes:
+  pgdata:
+  mongodata:

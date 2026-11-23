@@ -7,7 +7,16 @@ export default defineConfig({
   test: {
     projects: [
       { extends: true, test: { name: 'unit', include: ['src/**/*.test.ts'] } },
-      { extends: true, test: { name: 'integration', include: ['test/**/*.test.ts'], testTimeout: 60_000, hookTimeout: 60_000, fileParallelism: false } },
+      {
+        extends: true,
+        test: {
+          name: 'integration',
+          include: ['test/**/*.test.ts'],
+          testTimeout: 60_000,
+          hookTimeout: 60_000,
+          fileParallelism: false,
+        },
+      },
     ],
   },
 });

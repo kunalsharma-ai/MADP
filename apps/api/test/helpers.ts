@@ -53,14 +53,24 @@ export async function startTestApp(overrides: Partial<Record<string, string>> = 
   }
 
   /** Creates an admin, enrols MFA through the real endpoints, returns a full-scope token. */
-  async function adminToken(role: Parameters<AuthService['createAdmin']>[3], email = `${role}@example.invalid`) {
+  async function adminToken(
+    role: Parameters<AuthService['createAdmin']>[3],
+    email = `${role}@example.invalid`,
+  ) {
     const password = 'correct horse battery staple';
     await auth.createAdmin(email, role, password, role);
     const login = await request(server).post('/api/v1/auth/login').send({ email, password }).expect(200);
     if (!login.body.mfaSetupRequired) return { token: login.body.token as string, totp: null };
-    const setup = await request(server).post('/api/v1/auth/mfa/setup').set('authorization', `Bearer ${login.body.token}`).expect(200);
+    const setup = await request(server)
+      .post('/api/v1/auth/mfa/setup')
+      .set('authorization', `Bearer ${login.body.token}`)
+      .expect(200);
     const totp = OTPAuth.URI.parse(setup.body.otpauthUri) as OTPAuth.TOTP;
-    const confirm = await request(server).post('/api/v1/auth/mfa/confirm').set('authorization', `Bearer ${login.body.token}`).send({ code: totp.generate() }).expect(200);
+    const confirm = await request(server)
+      .post('/api/v1/auth/mfa/confirm')
+      .set('authorization', `Bearer ${login.body.token}`)
+      .send({ code: totp.generate() })
+      .expect(200);
     return { token: confirm.body.token as string, totp };
   }
 

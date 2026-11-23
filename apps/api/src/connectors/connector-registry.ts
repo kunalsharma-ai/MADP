@@ -36,15 +36,26 @@ export class ConnectorRegistry {
           panel,
           dataMode: 'live',
           reason: 'Live read-only access approved and configured',
-          connector: new PanelApiConnector(panel, { baseUrl: url, tenantHost: new URL(url).host, bearerToken: token }),
+          connector: new PanelApiConnector(panel, {
+            baseUrl: url,
+            tenantHost: new URL(url).host,
+            bearerToken: token,
+          }),
         });
       } else {
         const reason = !approved
           ? 'Live access to production personal data not yet approved'
           : 'Approved, but base URL or integration credential is not configured';
-        this.slots.set(panel, { panel, dataMode: 'demo', reason, connector: new DemoConnector(panel, env.DEMO_POPULATION_SIZE) });
+        this.slots.set(panel, {
+          panel,
+          dataMode: 'demo',
+          reason,
+          connector: new DemoConnector(panel, env.DEMO_POPULATION_SIZE),
+        });
       }
-      this.log.log(`${PANELS[panel].shortName}: ${this.slots.get(panel)!.dataMode.toUpperCase()} (${this.slots.get(panel)!.reason})`);
+      this.log.log(
+        `${PANELS[panel].shortName}: ${this.slots.get(panel)!.dataMode.toUpperCase()} (${this.slots.get(panel)!.reason})`,
+      );
     }
   }
 

@@ -1,4 +1,11 @@
-import type { PanelCode, SourceOption, SourceQuestion, SourceQuestionnaire, SourceRespondent, SourceAnswer } from '@madp/contracts';
+import type {
+  PanelCode,
+  SourceOption,
+  SourceQuestion,
+  SourceQuestionnaire,
+  SourceRespondent,
+  SourceAnswer,
+} from '@madp/contracts';
 
 /** Shapes returned by the shared Express/Mongoose panel backend (`{status, message, data}` envelope). */
 export interface RawQuestion {
@@ -120,7 +127,12 @@ export function mapUser(panel: PanelCode, u: RawUser): SourceRespondent {
 }
 
 /** profile-data / :id/profile responses are flat `{questionName: answer | answer[]}` maps merged with user fields. */
-export function mapAnswerMap(panel: PanelCode, memberId: string, data: Record<string, unknown>, questionIds: Set<string>): SourceAnswer[] {
+export function mapAnswerMap(
+  panel: PanelCode,
+  memberId: string,
+  data: Record<string, unknown>,
+  questionIds: Set<string>,
+): SourceAnswer[] {
   return Object.entries(data)
     .filter(([k]) => questionIds.has(k))
     .map(([k, v]) => ({

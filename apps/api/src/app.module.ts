@@ -28,7 +28,17 @@ export class AppModule {
     return {
       module: AppModule,
       imports: [ThrottlerModule.forRoot([{ name: 'default', ttl: 60_000, limit: 300 }])],
-      controllers: [HealthController, MetaController, AuthController, AudienceController, ConnectorsController, RegistryController, PanellistsController, DashboardController, AuditController],
+      controllers: [
+        HealthController,
+        MetaController,
+        AuthController,
+        AudienceController,
+        ConnectorsController,
+        RegistryController,
+        PanellistsController,
+        DashboardController,
+        AuditController,
+      ],
       providers: [
         { provide: API_ENV, useValue: env },
         Database,

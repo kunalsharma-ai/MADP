@@ -31,7 +31,10 @@ export type Permission = z.infer<typeof Permission>;
 export const LoginRequest = z.object({
   email: z.string().email(),
   password: z.string().min(1),
-  totp: z.string().regex(/^\d{6}$/).optional(),
+  totp: z
+    .string()
+    .regex(/^\d{6}$/)
+    .optional(),
 });
 export type LoginRequest = z.infer<typeof LoginRequest>;
 

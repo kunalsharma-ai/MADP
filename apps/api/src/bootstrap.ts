@@ -6,7 +6,9 @@ import type { ApiEnv } from '@madp/config';
 import { AppModule } from './app.module.js';
 
 export async function createApp(env: ApiEnv, opts: { logger?: boolean } = {}) {
-  const app = await NestFactory.create<NestExpressApplication>(AppModule.forRoot(env), { logger: opts.logger === false ? false : ['log', 'warn', 'error'] });
+  const app = await NestFactory.create<NestExpressApplication>(AppModule.forRoot(env), {
+    logger: opts.logger === false ? false : ['log', 'warn', 'error'],
+  });
   app.set('trust proxy', 1);
   app.use(helmet());
   app.enableCors({ origin: env.ADMIN_ORIGIN, credentials: true });

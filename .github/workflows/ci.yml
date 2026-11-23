@@ -1,0 +1,35 @@
+name: CI
+on:
+  pull_request:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:18
+        env: { POSTGRES_USER: madp, POSTGRES_PASSWORD: madp, POSTGRES_DB: madp }
+        ports: ['5432:5432']
+        options: --health-cmd "pg_isready -U madp" --health-interval 5s --health-retries 20
+      mongodb:
+        image: mongo:8
+        ports: ['27017:27017']
+    env:
+      TURBO_TELEMETRY_DISABLED: 1
+      NEXT_TELEMETRY_DISABLED: 1
+      TEST_DATABASE_ADMIN_URL: postgres://madp:madp@localhost:5432/postgres
+      TEST_MONGODB_URL: mongodb://localhost:27017
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+        with: { version: 12.23.0 }
+      - uses: actions/setup-node@v5
+        with: { node-version-file: .nvmrc, cache: pnpm }
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+      - run: pnpm typecheck
+      - run: pnpm test
+      - run: pnpm test:integration

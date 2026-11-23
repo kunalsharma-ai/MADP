@@ -37,8 +37,14 @@ export class ConnectorsController {
       this.registry.all().map(async (slot) => {
         const [health, lastJob, checkpoint] = await Promise.all([
           slot.connector.health(),
-          db.query.importJobs.findFirst({ where: eq(importJobs.panel, slot.panel), orderBy: [desc(importJobs.createdAt)] }),
-          db.query.syncCheckpoints.findFirst({ where: (c, { and, eq }) => and(eq(c.panel, slot.panel), eq(c.dataMode, slot.dataMode), eq(c.stream, 'respondents')) }),
+          db.query.importJobs.findFirst({
+            where: eq(importJobs.panel, slot.panel),
+            orderBy: [desc(importJobs.createdAt)],
+          }),
+          db.query.syncCheckpoints.findFirst({
+            where: (c, { and, eq }) =>
+              and(eq(c.panel, slot.panel), eq(c.dataMode, slot.dataMode), eq(c.stream, 'respondents')),
+          }),
         ]);
         return {
           panel: slot.panel,
@@ -73,7 +79,15 @@ export class ConnectorsController {
     @CurrentPrincipal() p: Principal,
     @Req() req: Request,
   ) {
-    await this.audit.record({ actorId: p.id, actorType: 'admin', action: 'import.requested', targetType: 'panel', targetId: panel, metadata: { dryRun: body.dryRun, dataMode: this.registry.get(panel).dataMode }, ip: req.ip ?? null });
+    await this.audit.record({
+      actorId: p.id,
+      actorType: 'admin',
+      action: 'import.requested',
+      targetType: 'panel',
+      targetId: panel,
+      metadata: { dryRun: body.dryRun, dataMode: this.registry.get(panel).dataMode },
+      ip: req.ip ?? null,
+    });
     return this.ingestion.runImport(panel, { dryRun: body.dryRun, requestedBy: p.id });
   }
 

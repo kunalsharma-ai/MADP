@@ -1,0 +1,39 @@
+{
+  "name": "@madp/admin",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "next dev --port 3000",
+    "build": "next build",
+    "start": "next start --port 3000",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run --passWithNoTests"
+  },
+  "dependencies": {
+    "@madp/contracts": "workspace:*",
+    "cmdk": "1.1.1",
+    "echarts": "6.1.0",
+    "geist": "1.9.2",
+    "lucide-react": "1.78.0",
+    "next": "16.4.6",
+    "next-themes": "0.4.6",
+    "qrcode": "1.5.4",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
+    "server-only": "0.0.1",
+    "sonner": "2.0.8",
+    "clsx": "2.1.1",
+    "tailwind-merge": "3.7.1"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "4.3.5",
+    "@types/node": "26.6.6",
+    "@types/qrcode": "1.5.6",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "tailwindcss": "4.3.5",
+    "typescript": "7.0.2",
+    "vitest": "5.1.1"
+  }
+}

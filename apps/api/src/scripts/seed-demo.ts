@@ -14,6 +14,8 @@ for (const panel of PANEL_CODES) {
     continue;
   }
   const r = await ingestion.runImport(panel, { dryRun: false });
-  console.log(`${panel}: ${r.status} people=${r.counts.respondentsSeen} questions=${r.counts.questions} answers=${r.counts.answersChanged}${r.status === 'failed' ? ` error=${(r as { error?: string }).error}` : ''}`);
+  console.log(
+    `${panel}: ${r.status} people=${r.counts.respondentsSeen} questions=${r.counts.questions} answers=${r.counts.answersChanged}${r.status === 'failed' ? ` error=${(r as { error?: string }).error}` : ''}`,
+  );
 }
 await app.close();

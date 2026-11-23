@@ -14,8 +14,14 @@ export class HealthController {
   @Public()
   @Get()
   async health() {
-    const pg = await this.database.db.execute(sql`select 1`).then(() => 'up').catch(() => 'down');
-    const mongo = await this.mongo.db.command({ ping: 1 }).then(() => 'up').catch(() => 'down');
+    const pg = await this.database.db
+      .execute(sql`select 1`)
+      .then(() => 'up')
+      .catch(() => 'down');
+    const mongo = await this.mongo.db
+      .command({ ping: 1 })
+      .then(() => 'up')
+      .catch(() => 'down');
     return { status: pg === 'up' && mongo === 'up' ? 'ok' : 'degraded', postgres: pg, mongodb: mongo };
   }
 }

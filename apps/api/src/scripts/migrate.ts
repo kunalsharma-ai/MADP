@@ -15,7 +15,10 @@ export async function runMigrations(databaseUrl: string) {
     const folder = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../drizzle');
     await migrate(db, { migrationsFolder: folder });
     for (const code of PANEL_CODES) {
-      await db.insert(panels).values({ code, name: PANELS[code].name, sensitive: PANELS[code].sensitive }).onConflictDoNothing();
+      await db
+        .insert(panels)
+        .values({ code, name: PANELS[code].name, sensitive: PANELS[code].sensitive })
+        .onConflictDoNothing();
     }
     for (const a of SEED_ATTRIBUTES) await db.insert(attributeDefinitions).values(a).onConflictDoNothing();
   } finally {

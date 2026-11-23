@@ -38,12 +38,20 @@ export class AuthService {
   async createAdmin(email: string, displayName: string, password: string, role: AdminRole) {
     const [row] = await this.database.db
       .insert(adminUsers)
-      .values({ email: email.toLowerCase(), displayName, passwordHash: await AuthService.hashPassword(password), role })
+      .values({
+        email: email.toLowerCase(),
+        displayName,
+        passwordHash: await AuthService.hashPassword(password),
+        role,
+      })
       .returning({ id: adminUsers.id });
     return row!.id;
   }
 
-  async login(req: LoginRequest, ip: string | null): Promise<{ token: string; user: SessionUser; mfaSetupRequired: boolean }> {
+  async login(
+    req: LoginRequest,
+    ip: string | null,
+  ): Promise<{ token: string; user: SessionUser; mfaSetupRequired: boolean }> {
     const email = req.email.toLowerCase();
     const user = await this.database.db.query.adminUsers.findFirst({ where: eq(adminUsers.email, email) });
     const fail = async (reason: string) => {
@@ -52,11 +60,21 @@ export class AuthService {
           .update(adminUsers)
           .set({
             failedAttempts: sql`${adminUsers.failedAttempts} + 1`,
-            lockedUntil: user.failedAttempts + 1 >= MAX_FAILED ? new Date(Date.now() + LOCK_MINUTES * 60_000) : user.lockedUntil,
+            lockedUntil:
+              user.failedAttempts + 1 >= MAX_FAILED
+                ? new Date(Date.now() + LOCK_MINUTES * 60_000)
+                : user.lockedUntil,
           })
           .where(eq(adminUsers.id, user.id));
       }
-      await this.audit.record({ actorId: user?.id ?? null, actorType: 'admin', action: 'auth.login', outcome: 'denied', metadata: { reason }, ip });
+      await this.audit.record({
+        actorId: user?.id ?? null,
+        actorType: 'admin',
+        action: 'auth.login',
+        outcome: 'denied',
+        metadata: { reason },
+        ip,
+      });
       throw new UnauthorizedException('Invalid credentials');
     };
     if (!user || !user.isActive) return fail('unknown_or_inactive');
@@ -67,8 +85,17 @@ export class AuthService {
       if (!this.verifyTotp(this.crypto.decrypt(user.totpSecretEnc)!, req.totp)) return fail('bad_totp');
     }
     const mfaSetupRequired = this.env.REQUIRE_MFA && !user.mfaEnabled;
-    await this.database.db.update(adminUsers).set({ failedAttempts: 0, lockedUntil: null, lastLoginAt: new Date() }).where(eq(adminUsers.id, user.id));
-    await this.audit.record({ actorId: user.id, actorType: 'admin', action: 'auth.login', metadata: { mfaSetupRequired }, ip });
+    await this.database.db
+      .update(adminUsers)
+      .set({ failedAttempts: 0, lockedUntil: null, lastLoginAt: new Date() })
+      .where(eq(adminUsers.id, user.id));
+    await this.audit.record({
+      actorId: user.id,
+      actorType: 'admin',
+      action: 'auth.login',
+      metadata: { mfaSetupRequired },
+      ip,
+    });
     const principal: Principal = {
       id: user.id,
       email: user.email,
@@ -80,7 +107,14 @@ export class AuthService {
   }
 
   private toSessionUser(user: typeof adminUsers.$inferSelect, p: Principal): SessionUser {
-    return { id: user.id, email: user.email, displayName: user.displayName, role: user.role, permissions: p.permissions, mfaEnabled: user.mfaEnabled };
+    return {
+      id: user.id,
+      email: user.email,
+      displayName: user.displayName,
+      role: user.role,
+      permissions: p.permissions,
+      mfaEnabled: user.mfaEnabled,
+    };
   }
 
   async sign(p: Principal): Promise<string> {
@@ -101,11 +135,20 @@ export class AuthService {
     } catch {
       throw new UnauthorizedException('Invalid or expired session');
     }
-    const user = await this.database.db.query.adminUsers.findFirst({ where: eq(adminUsers.id, String(payload.sub)) });
+    const user = await this.database.db.query.adminUsers.findFirst({
+      where: eq(adminUsers.id, String(payload.sub)),
+    });
     if (!user || !user.isActive) throw new UnauthorizedException('Account inactive');
     const scope = payload.scope === 'mfa_setup' && !user.mfaEnabled ? 'mfa_setup' : 'full';
-    if (scope === 'full' && this.env.REQUIRE_MFA && !user.mfaEnabled) throw new UnauthorizedException('MFA enrolment required');
-    return { id: user.id, email: user.email, role: user.role, permissions: scope === 'full' ? permissionsFor(user.role) : [], scope };
+    if (scope === 'full' && this.env.REQUIRE_MFA && !user.mfaEnabled)
+      throw new UnauthorizedException('MFA enrolment required');
+    return {
+      id: user.id,
+      email: user.email,
+      role: user.role,
+      permissions: scope === 'full' ? permissionsFor(user.role) : [],
+      scope,
+    };
   }
 
   async me(p: Principal): Promise<SessionUser> {
@@ -119,16 +162,24 @@ export class AuthService {
     if (!user) throw new UnauthorizedException();
     if (user.mfaEnabled) throw new ForbiddenException('MFA already enabled');
     const secret = new OTPAuth.Secret({ size: 20 });
-    await this.database.db.update(adminUsers).set({ totpSecretEnc: this.crypto.encrypt(secret.base32) }).where(eq(adminUsers.id, p.id));
+    await this.database.db
+      .update(adminUsers)
+      .set({ totpSecretEnc: this.crypto.encrypt(secret.base32) })
+      .where(eq(adminUsers.id, p.id));
     const totp = new OTPAuth.TOTP({ issuer: 'MADP', label: user.email, secret, digits: 6, period: 30 });
     return { otpauthUri: totp.toString() };
   }
 
   /** Step 2: confirm with a code; then issue a full-scope session. */
-  async confirmMfa(p: Principal, code: string, ip: string | null): Promise<{ token: string; user: SessionUser }> {
+  async confirmMfa(
+    p: Principal,
+    code: string,
+    ip: string | null,
+  ): Promise<{ token: string; user: SessionUser }> {
     const user = await this.database.db.query.adminUsers.findFirst({ where: eq(adminUsers.id, p.id) });
     if (!user?.totpSecretEnc) throw new ForbiddenException('Start MFA enrolment first');
-    if (!this.verifyTotp(this.crypto.decrypt(user.totpSecretEnc)!, code)) throw new UnauthorizedException('Invalid code');
+    if (!this.verifyTotp(this.crypto.decrypt(user.totpSecretEnc)!, code))
+      throw new UnauthorizedException('Invalid code');
     await this.database.db.update(adminUsers).set({ mfaEnabled: true }).where(eq(adminUsers.id, p.id));
     await this.audit.record({ actorId: p.id, actorType: 'admin', action: 'auth.mfa.enabled', ip });
     const full: Principal = { ...p, scope: 'full', permissions: permissionsFor(user.role) };

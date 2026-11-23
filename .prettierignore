@@ -3,3 +3,4 @@ dist
 .next
 docs/**/*.md
 packages/testing/src/fixtures/**/*.json
+apps/api/drizzle/meta

@@ -15,7 +15,10 @@ export class AudienceController {
   @RequirePermissions('audience.counts.read')
   @Post('counts')
   @HttpCode(200)
-  counts(@Body(new ZodPipe(CountsRequest)) body: CountsRequest, @Query('mode', new ZodPipe(DataMode.optional())) mode?: DataMode) {
+  counts(
+    @Body(new ZodPipe(CountsRequest)) body: CountsRequest,
+    @Query('mode', new ZodPipe(DataMode.optional())) mode?: DataMode,
+  ) {
     return this.audience.counts(body, mode);
   }
 
@@ -23,7 +26,12 @@ export class AudienceController {
   @RequirePermissions('questions.read')
   @Get('attributes')
   async attributes() {
-    const rows = await this.database.db.query.attributeDefinitions.findMany({ orderBy: (a, { asc }) => [asc(a.key)] });
-    return { categories: AUDIENCE_CATEGORIES.map((c) => ({ key: c, label: AUDIENCE_CATEGORY_LABELS[c] })), attributes: rows };
+    const rows = await this.database.db.query.attributeDefinitions.findMany({
+      orderBy: (a, { asc }) => [asc(a.key)],
+    });
+    return {
+      categories: AUDIENCE_CATEGORIES.map((c) => ({ key: c, label: AUDIENCE_CATEGORY_LABELS[c] })),
+      attributes: rows,
+    };
   }
 }

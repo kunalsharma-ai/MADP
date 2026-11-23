@@ -12,7 +12,20 @@ export class AuditController {
 
   @RequirePermissions('audit.read')
   @Get()
-  async list(@Query(new ZodPipe(z.object({ before: z.coerce.number().int().optional(), limit: z.coerce.number().int().min(1).max(200).default(50) }))) q: { before?: number; limit: number }) {
+  async list(
+    @Query(
+      new ZodPipe(
+        z.object({
+          before: z.coerce.number().int().optional(),
+          limit: z.coerce.number().int().min(1).max(200).default(50),
+        }),
+      ),
+    )
+    q: {
+      before?: number;
+      limit: number;
+    },
+  ) {
     const rows = await this.database.db
       .select()
       .from(auditEvents)

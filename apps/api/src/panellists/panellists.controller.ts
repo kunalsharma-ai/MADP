@@ -40,15 +40,32 @@ export class PanellistsController {
     const conds = [sql`mp.data_mode = ${mode}`];
     if (q.after) conds.push(sql`mp.id > ${q.after}`);
     if (q.country) conds.push(sql`mp.country = ${q.country.toLowerCase()}`);
-    if (q.panel) conds.push(sql`exists (select 1 from panel_membership x where x.master_person_id = mp.id and x.panel = ${q.panel})`);
-    if (q.category) conds.push(sql`exists (select 1 from category_membership x where x.master_person_id = mp.id and x.category = ${q.category})`);
+    if (q.panel)
+      conds.push(
+        sql`exists (select 1 from panel_membership x where x.master_person_id = mp.id and x.panel = ${q.panel})`,
+      );
+    if (q.category)
+      conds.push(
+        sql`exists (select 1 from category_membership x where x.master_person_id = mp.id and x.category = ${q.category})`,
+      );
     if (q.search) {
       const h = this.crypto.emailHash(q.search);
-      conds.push(sql`exists (select 1 from source_identity x where x.master_person_id = mp.id and (x.source_member_id = ${q.search} or x.source_respondent_ref = ${q.search} ${h ? sql`or x.email_hash = ${h}` : sql``}))`);
+      conds.push(
+        sql`exists (select 1 from source_identity x where x.master_person_id = mp.id and (x.source_member_id = ${q.search} or x.source_respondent_ref = ${q.search} ${h ? sql`or x.email_hash = ${h}` : sql``}))`,
+      );
     }
     const rows = await this.database.db.execute<{
-      id: string; country: string | null; state: string | null; city: string | null; birth_year: number | null; gender: string | null; created_at: Date;
-      panels: string[]; categories: string[]; email_masked: string | null; verified: boolean;
+      id: string;
+      country: string | null;
+      state: string | null;
+      city: string | null;
+      birth_year: number | null;
+      gender: string | null;
+      created_at: Date;
+      panels: string[];
+      categories: string[];
+      email_masked: string | null;
+      verified: boolean;
     }>(sql`
       select mp.id, mp.country, mp.state, mp.city, mp.birth_year, mp.gender, mp.created_at,
         (select array_agg(distinct pm.panel::text) from panel_membership pm where pm.master_person_id = mp.id) as panels,
@@ -62,7 +79,19 @@ export class PanellistsController {
     const items = rows.rows.slice(0, q.limit);
     return {
       dataMode: mode,
-      items: items.map((r) => ({ id: r.id, country: r.country, state: r.state, city: r.city, birthYear: r.birth_year, gender: r.gender, panels: r.panels ?? [], categories: r.categories ?? [], emailMasked: r.email_masked, emailVerified: r.verified, createdAt: r.created_at })),
+      items: items.map((r) => ({
+        id: r.id,
+        country: r.country,
+        state: r.state,
+        city: r.city,
+        birthYear: r.birth_year,
+        gender: r.gender,
+        panels: r.panels ?? [],
+        categories: r.categories ?? [],
+        emailMasked: r.email_masked,
+        emailVerified: r.verified,
+        createdAt: r.created_at,
+      })),
       nextCursor: rows.rows.length > q.limit ? (items.at(-1)?.id ?? null) : null,
     };
   }
@@ -73,25 +102,64 @@ export class PanellistsController {
    */
   @RequirePermissions('panellists.read')
   @Get(':id')
-  async detail(@Param('id', new ParseUUIDPipe()) id: string, @CurrentPrincipal() p: Principal, @Req() req: Request) {
+  async detail(
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @CurrentPrincipal() p: Principal,
+    @Req() req: Request,
+  ) {
     const db = this.database.db;
     const person = await db.query.masterPersons.findFirst({ where: (m, { eq }) => eq(m.id, id) });
     if (!person) throw new NotFoundException();
     const canPii = p.permissions.includes('panellists.pii.read');
     const canHealth = p.permissions.includes('health.sensitive.read');
-    const identities = await db.query.sourceIdentities.findMany({ where: (s, { eq }) => eq(s.masterPersonId, id) });
-    const memberships = await db.query.panelMemberships.findMany({ where: (m, { eq }) => eq(m.masterPersonId, id) });
-    const categories = await db.query.categoryMemberships.findMany({ where: (c, { eq }) => eq(c.masterPersonId, id) });
-    const candidates = await db.query.identityMatchCandidates.findMany({ where: (c, { eq, or }) => or(eq(c.candidatePersonId, id), ...identities.map((i) => eq(c.sourceIdentityId, i.id))) });
-    const answers = await this.mongo.profileAnswers.find({ personId: id }, { projection: { _id: 0 } }).sort({ panel: 1, sourceQuestionId: 1 }).toArray();
+    const identities = await db.query.sourceIdentities.findMany({
+      where: (s, { eq }) => eq(s.masterPersonId, id),
+    });
+    const memberships = await db.query.panelMemberships.findMany({
+      where: (m, { eq }) => eq(m.masterPersonId, id),
+    });
+    const categories = await db.query.categoryMemberships.findMany({
+      where: (c, { eq }) => eq(c.masterPersonId, id),
+    });
+    const candidates = await db.query.identityMatchCandidates.findMany({
+      where: (c, { eq, or }) =>
+        or(eq(c.candidatePersonId, id), ...identities.map((i) => eq(c.sourceIdentityId, i.id))),
+    });
+    const answers = await this.mongo.profileAnswers
+      .find({ personId: id }, { projection: { _id: 0 } })
+      .sort({ panel: 1, sourceQuestionId: 1 })
+      .toArray();
     const labels = new Map(
-      (await this.mongo.questionVersions.find({ dataMode: person.dataMode, sourceQuestionId: { $in: answers.map((a) => a.sourceQuestionId) } }, { projection: { panel: 1, sourceQuestionId: 1, version: 1, label: 1 } }).toArray()).map((d) => [`${d.panel}|${d.sourceQuestionId}|${d.version}`, d.label]),
+      (
+        await this.mongo.questionVersions
+          .find(
+            { dataMode: person.dataMode, sourceQuestionId: { $in: answers.map((a) => a.sourceQuestionId) } },
+            { projection: { panel: 1, sourceQuestionId: 1, version: 1, label: 1 } },
+          )
+          .toArray()
+      ).map((d) => [`${d.panel}|${d.sourceQuestionId}|${d.version}`, d.label]),
     );
     const hiddenSensitive = answers.filter((a) => a.sensitivity === 'special_category').length;
-    await this.audit.record({ actorId: p.id, actorType: 'admin', action: 'panellist.viewed', targetType: 'master_person', targetId: id, metadata: { pii: canPii, health: canHealth }, ip: req.ip ?? null });
+    await this.audit.record({
+      actorId: p.id,
+      actorType: 'admin',
+      action: 'panellist.viewed',
+      targetType: 'master_person',
+      targetId: id,
+      metadata: { pii: canPii, health: canHealth },
+      ip: req.ip ?? null,
+    });
     return {
       dataMode: person.dataMode,
-      person: { id: person.id, country: person.country, state: person.state, city: person.city, birthYear: person.birthYear, gender: person.gender, createdAt: person.createdAt },
+      person: {
+        id: person.id,
+        country: person.country,
+        state: person.state,
+        city: person.city,
+        birthYear: person.birthYear,
+        gender: person.gender,
+        createdAt: person.createdAt,
+      },
       access: { pii: canPii, healthSensitive: canHealth },
       identities: identities.map((i) => ({
         id: i.id,
@@ -100,7 +168,11 @@ export class PanellistsController {
         sourceRespondentRef: i.sourceRespondentRef,
         sourceCategory: i.sourceCategory,
         email: canPii ? this.crypto.decrypt(i.emailEnc) : i.emailMasked,
-        name: canPii ? [this.crypto.decrypt(i.firstNameEnc), this.crypto.decrypt(i.lastNameEnc)].filter(Boolean).join(' ') : null,
+        name: canPii
+          ? [this.crypto.decrypt(i.firstNameEnc), this.crypto.decrypt(i.lastNameEnc)]
+              .filter(Boolean)
+              .join(' ')
+          : null,
         dateOfBirth: canPii ? this.crypto.decrypt(i.dateOfBirthEnc) : null,
         emailVerification: i.emailVerification,
         phoneVerification: i.phoneVerification,
@@ -110,11 +182,30 @@ export class PanellistsController {
         sourceUpdatedAt: i.sourceUpdatedAt,
       })),
       memberships: memberships.map((m) => ({ panel: m.panel, status: m.status, joinedAt: m.joinedAt })),
-      categories: categories.map((c) => ({ panel: c.panel, category: c.category, basis: c.basis, isMinor: c.isMinor })),
-      identityCandidates: candidates.map((c) => ({ id: c.id, rule: c.rule, status: c.status, createdAt: c.createdAt })),
+      categories: categories.map((c) => ({
+        panel: c.panel,
+        category: c.category,
+        basis: c.basis,
+        isMinor: c.isMinor,
+      })),
+      identityCandidates: candidates.map((c) => ({
+        id: c.id,
+        rule: c.rule,
+        status: c.status,
+        createdAt: c.createdAt,
+      })),
       answers: answers
         .filter((a) => canHealth || a.sensitivity !== 'special_category')
-        .map((a) => ({ panel: a.panel, sourceQuestionId: a.sourceQuestionId, label: labels.get(`${a.panel}|${a.sourceQuestionId}|${a.questionVersion}`) ?? null, questionVersion: a.questionVersion, values: a.values, sensitivity: a.sensitivity, sourceUpdatedAt: a.sourceUpdatedAt, ingestedAt: a.ingestedAt })),
+        .map((a) => ({
+          panel: a.panel,
+          sourceQuestionId: a.sourceQuestionId,
+          label: labels.get(`${a.panel}|${a.sourceQuestionId}|${a.questionVersion}`) ?? null,
+          questionVersion: a.questionVersion,
+          values: a.values,
+          sensitivity: a.sensitivity,
+          sourceUpdatedAt: a.sourceUpdatedAt,
+          ingestedAt: a.ingestedAt,
+        })),
       hiddenSensitiveAnswers: canHealth ? 0 : hiddenSensitive,
     };
   }

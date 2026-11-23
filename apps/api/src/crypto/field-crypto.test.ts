@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { FieldCrypto, maskEmail } from './field-crypto.js';
 
-const env = { FIELD_ENCRYPTION_KEY: Buffer.alloc(32, 7).toString('base64'), PII_HASH_KEY: 'k'.repeat(32) } as never;
+const env = {
+  FIELD_ENCRYPTION_KEY: Buffer.alloc(32, 7).toString('base64'),
+  PII_HASH_KEY: 'k'.repeat(32),
+} as never;
 
 describe('FieldCrypto', () => {
   const c = new FieldCrypto(env);

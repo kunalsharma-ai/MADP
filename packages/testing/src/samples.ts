@@ -10,7 +10,13 @@ export interface RawSample {
   source: string;
   extractedAt: string;
   profiles: { slug: string; name: string; sourceCategory: string; pages: string[][] }[];
-  questions: { name: string; label: string; parent: string | null; category: string[] | string; type?: string }[];
+  questions: {
+    name: string;
+    label: string;
+    parent: string | null;
+    category: string[] | string;
+    type?: string;
+  }[];
   options: { question: string; label: string; value: string; parentValue: string[] }[];
 }
 
