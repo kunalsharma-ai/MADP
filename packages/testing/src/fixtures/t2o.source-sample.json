@@ -1,0 +1,5235 @@
+{
+ "panel": "t2o",
+ "extractedAt": "2026-11-23",
+ "source": "turn2opinion:Project/frontend-1/src/member/data/demo-bank/bank.json",
+ "profiles": [
+  {
+   "slug": "basic",
+   "name": "basic",
+   "sourceCategory": "b2c",
+   "pages": [
+    [
+     "basic",
+     "firstname",
+     "lastname",
+     "mail",
+     "alternate-email",
+     "phone",
+     "alternate-phone",
+     "dob",
+     "gender",
+     "country",
+     "state",
+     "city",
+     "zipcode",
+     "ethnicity",
+     "religion",
+     "relationship",
+     "rural",
+     "personal-income",
+     "household-income",
+     "children-num"
+    ]
+   ]
+  },
+  {
+   "slug": "professional",
+   "name": "professional",
+   "sourceCategory": "b2c",
+   "pages": [
+    [
+     "professional",
+     "empstat",
+     "pension",
+     "jobseeker",
+     "hw",
+     "freelancer",
+     "industry",
+     "sector",
+     "department",
+     "jobrole",
+     "orgsize",
+     "orgoverseas",
+     "orgdecision",
+     "orgspend",
+     "experience",
+     "organization-revenue",
+     "orgwebsite",
+     "orglinkedin",
+     "org-country",
+     "org-state",
+     "org-zipcode",
+     "org-city",
+     "orglocation",
+     "unemp-industry",
+     "unemp-specialization",
+     "unemp-department",
+     "unemp-jobtype"
+    ]
+   ]
+  },
+  {
+   "slug": "basic",
+   "name": "basic",
+   "sourceCategory": "minor",
+   "pages": [
+    [
+     "basic",
+     "firstname",
+     "lastname",
+     "alternate-email",
+     "alternate-phone",
+     "dob",
+     "gender",
+     "country",
+     "state",
+     "city",
+     "zipcode",
+     "ethnicity",
+     "relationship",
+     "rural"
+    ]
+   ]
+  }
+ ],
+ "questions": [
+  {
+   "name": "firstname",
+   "label": "First Name",
+   "parent": null,
+   "category": [
+    "b2c"
+   ]
+  },
+  {
+   "name": "lastname",
+   "label": "Last Name",
+   "parent": null,
+   "category": [
+    "b2c"
+   ]
+  },
+  {
+   "name": "mail",
+   "label": "Email",
+   "parent": null,
+   "category": [
+    "b2c"
+   ]
+  },
+  {
+   "name": "alternate-email",
+   "label": "Alternate E-Mail",
+   "parent": null,
+   "category": [
+    "b2c"
+   ]
+  },
+  {
+   "name": "phone",
+   "label": "Phone",
+   "parent": null,
+   "category": [
+    "b2c"
+   ]
+  },
+  {
+   "name": "alternate-phone",
+   "label": "Alternate Phone Number",
+   "parent": null,
+   "category": [
+    "b2c"
+   ]
+  },
+  {
+   "name": "dob",
+   "label": "Date of Birth",
+   "parent": null,
+   "category": [
+    "b2c"
+   ]
+  },
+  {
+   "name": "gender",
+   "label": "Gender",
+   "parent": null,
+   "category": [
+    "b2c"
+   ]
+  },
+  {
+   "name": "country",
+   "label": "Country",
+   "parent": null,
+   "category": [
+    "b2c"
+   ]
+  },
+  {
+   "name": "state",
+   "label": "State",
+   "parent": "country",
+   "category": [
+    "b2c"
+   ]
+  },
+  {
+   "name": "city",
+   "label": "City",
+   "parent": "state",
+   "category": [
+    "b2c"
+   ]
+  },
+  {
+   "name": "zipcode",
+   "label": "Zip Code",
+   "parent": "country",
+   "category": [
+    "b2c"
+   ]
+  },
+  {
+   "name": "ethnicity",
+   "label": "Ethnicity?",
+   "parent": "country",
+   "category": [
+    "b2c"
+   ]
+  },
+  {
+   "name": "religion",
+   "label": "Which religion do you identify with?",
+   "parent": null,
+   "category": [
+    "b2c"
+   ]
+  },
+  {
+   "name": "relationship",
+   "label": "Relationship status?",
+   "parent": null,
+   "category": [
+    "b2c"
+   ]
+  },
+  {
+   "name": "rural",
+   "label": "What type of area do you currently live in",
+   "parent": "country",
+   "category": [
+    "b2c"
+   ]
+  },
+  {
+   "name": "personal-income",
+   "label": "What is your personal income, before tax?",
+   "parent": "country",
+   "category": [
+    "b2c"
+   ]
+  },
+  {
+   "name": "household-income",
+   "label": "What is your current household income?",
+   "parent": "country",
+   "category": [
+    "b2c"
+   ]
+  },
+  {
+   "name": "children-num",
+   "label": "Number of children below 18 in household",
+   "parent": "relationship",
+   "category": [
+    "b2c"
+   ]
+  },
+  {
+   "name": "empstat",
+   "label": "What is your current employment status?",
+   "parent": null,
+   "category": [
+    "b2c"
+   ]
+  },
+  {
+   "name": "pension",
+   "label": "Are you availing pension facility?",
+   "parent": "empstat",
+   "category": [
+    "b2c"
+   ]
+  },
+  {
+   "name": "jobseeker",
+   "label": "Are you seeking a job?",
+   "parent": "empstat",
+   "category": [
+    "b2c"
+   ]
+  },
+  {
+   "name": "hw",
+   "label": "Which role you play in your homemaking?",
+   "parent": "empstat",
+   "category": [
+    "b2c"
+   ]
+  },
+  {
+   "name": "freelancer",
+   "label": "If you are a Freelancer, please specify your job profile?",
+   "parent": "empstat",
+   "category": [
+    "b2c"
+   ]
+  },
+  {
+   "name": "industry",
+   "label": "Industry?",
+   "parent": "empstat",
+   "category": [
+    "b2c"
+   ]
+  },
+  {
+   "name": "sector",
+   "label": "Specialization",
+   "parent": "industry",
+   "category": [
+    "b2c"
+   ]
+  },
+  {
+   "name": "department",
+   "label": "Department?",
+   "parent": "sector",
+   "category": [
+    "b2c"
+   ]
+  },
+  {
+   "name": "jobrole",
+   "label": "Job Title",
+   "parent": "department",
+   "category": [
+    "b2c"
+   ]
+  },
+  {
+   "name": "orgsize",
+   "label": "Total Number of Employees (all branches)",
+   "parent": "empstat",
+   "category": [
+    "b2c"
+   ]
+  },
+  {
+   "name": "orgoverseas",
+   "label": "How many branches your organization has in abroad?",
+   "parent": "empstat",
+   "category": [
+    "b2c"
+   ]
+  },
+  {
+   "name": "orgdecision",
+   "label": "Which of the following statements best describes your involvement in decision making in your Organization?",
+   "parent": "empstat",
+   "category": [
+    "b2c"
+   ]
+  },
+  {
+   "name": "orgspend",
+   "label": "Which departments/products you have influence or decision making authority on spending/purchasing",
+   "parent": "orgdecision",
+   "category": [
+    "b2c"
+   ]
+  },
+  {
+   "name": "experience",
+   "label": "Approximate how much experience you have under your current designation?",
+   "parent": "empstat",
+   "category": [
+    "b2c"
+   ]
+  },
+  {
+   "name": "organization-revenue",
+   "label": "What is the annual revenue for your organization?",
+   "parent": "country",
+   "category": [
+    "b2c"
+   ]
+  },
+  {
+   "name": "orgwebsite",
+   "label": "Organisation website",
+   "parent": "empstat",
+   "category": [
+    "b2c"
+   ]
+  },
+  {
+   "name": "orglinkedin",
+   "label": "Organization LinkedIn URL",
+   "parent": "empstat",
+   "category": [
+    "b2c"
+   ]
+  },
+  {
+   "name": "org-country",
+   "label": "Organization Country",
+   "parent": "empstat",
+   "category": [
+    "b2c"
+   ]
+  },
+  {
+   "name": "org-state",
+   "label": "Organization State",
+   "parent": "org-country",
+   "category": [
+    "b2c"
+   ]
+  },
+  {
+   "name": "org-zipcode",
+   "label": "Organization Zip Code",
+   "parent": "org-country",
+   "category": [
+    "b2c"
+   ]
+  },
+  {
+   "name": "org-city",
+   "label": "Organization City",
+   "parent": "org-state",
+   "category": [
+    "b2c"
+   ]
+  },
+  {
+   "name": "orglocation",
+   "label": "Where is your Organisation Located",
+   "parent": "empstat",
+   "category": [
+    "b2c"
+   ]
+  },
+  {
+   "name": "unemp-industry",
+   "label": "Which industry are you interested in?",
+   "parent": "jobseeker",
+   "category": [
+    "b2c"
+   ]
+  },
+  {
+   "name": "unemp-specialization",
+   "label": "What is your area of specialization?",
+   "parent": "unemp-industry",
+   "category": [
+    "b2c"
+   ]
+  },
+  {
+   "name": "unemp-department",
+   "label": "Which department are you interested in?",
+   "parent": "unemp-specialization",
+   "category": [
+    "b2c"
+   ]
+  },
+  {
+   "name": "unemp-jobtype",
+   "label": "What type of job are you interested in?",
+   "parent": "unemp-department",
+   "category": [
+    "b2c"
+   ]
+  }
+ ],
+ "options": [
+  {
+   "question": "gender",
+   "label": "Male",
+   "value": "Male",
+   "parentValue": []
+  },
+  {
+   "question": "gender",
+   "label": "Female",
+   "value": "Female",
+   "parentValue": []
+  },
+  {
+   "question": "gender",
+   "label": "Non-binary,Non-binary",
+   "value": "Non-binary,Non-binary",
+   "parentValue": []
+  },
+  {
+   "question": "gender",
+   "label": "Another identity,Other",
+   "value": "Another identity,Other",
+   "parentValue": []
+  },
+  {
+   "question": "gender",
+   "label": "Prefer not to say,Prefer not to say",
+   "value": "Prefer not to say,Prefer not to say",
+   "parentValue": []
+  },
+  {
+   "question": "country",
+   "label": "Afghanistan,AF",
+   "value": "Afghanistan,AF",
+   "parentValue": []
+  },
+  {
+   "question": "country",
+   "label": "Aland Islands,AX",
+   "value": "Aland Islands,AX",
+   "parentValue": []
+  },
+  {
+   "question": "country",
+   "label": "Albania,AL",
+   "value": "Albania,AL",
+   "parentValue": []
+  },
+  {
+   "question": "country",
+   "label": "Algeria,DZ",
+   "value": "Algeria,DZ",
+   "parentValue": []
+  },
+  {
+   "question": "country",
+   "label": "American Samoa,AS",
+   "value": "American Samoa,AS",
+   "parentValue": []
+  },
+  {
+   "question": "country",
+   "label": "Andorra,AD",
+   "value": "Andorra,AD",
+   "parentValue": []
+  },
+  {
+   "question": "country",
+   "label": "Angola,AO",
+   "value": "Angola,AO",
+   "parentValue": []
+  },
+  {
+   "question": "country",
+   "label": "Anguilla,AI",
+   "value": "Anguilla,AI",
+   "parentValue": []
+  },
+  {
+   "question": "country",
+   "label": "Antarctica,AQ",
+   "value": "Antarctica,AQ",
+   "parentValue": []
+  },
+  {
+   "question": "country",
+   "label": "Antigua And Barbuda,AG",
+   "value": "Antigua And Barbuda,AG",
+   "parentValue": []
+  },
+  {
+   "question": "country",
+   "label": "Argentina,AR",
+   "value": "Argentina,AR",
+   "parentValue": []
+  },
+  {
+   "question": "country",
+   "label": "Armenia,AM",
+   "value": "Armenia,AM",
+   "parentValue": []
+  },
+  {
+   "question": "country",
+   "label": "Aruba,AW",
+   "value": "Aruba,AW",
+   "parentValue": []
+  },
+  {
+   "question": "country",
+   "label": "Australia,AU",
+   "value": "Australia,AU",
+   "parentValue": []
+  },
+  {
+   "question": "country",
+   "label": "Austria,AT",
+   "value": "Austria,AT",
+   "parentValue": []
+  },
+  {
+   "question": "country",
+   "label": "Azerbaijan,AZ",
+   "value": "Azerbaijan,AZ",
+   "parentValue": []
+  },
+  {
+   "question": "country",
+   "label": "Bahrain,BH",
+   "value": "Bahrain,BH",
+   "parentValue": []
+  },
+  {
+   "question": "country",
+   "label": "Bangladesh,BD",
+   "value": "Bangladesh,BD",
+   "parentValue": []
+  },
+  {
+   "question": "country",
+   "label": "Barbados,BB",
+   "value": "Barbados,BB",
+   "parentValue": []
+  },
+  {
+   "question": "country",
+   "label": "Belarus,BY",
+   "value": "Belarus,BY",
+   "parentValue": []
+  },
+  {
+   "question": "country",
+   "label": "Belgium,BE",
+   "value": "Belgium,BE",
+   "parentValue": []
+  },
+  {
+   "question": "country",
+   "label": "Belize,BZ",
+   "value": "Belize,BZ",
+   "parentValue": []
+  },
+  {
+   "question": "country",
+   "label": "Benin,BJ",
+   "value": "Benin,BJ",
+   "parentValue": []
+  },
+  {
+   "question": "country",
+   "label": "Bermuda,BM",
+   "value": "Bermuda,BM",
+   "parentValue": []
+  },
+  {
+   "question": "country",
+   "label": "Bhutan,BT",
+   "value": "Bhutan,BT",
+   "parentValue": []
+  },
+  {
+   "question": "ethnicity",
+   "label": "White",
+   "value": "White",
+   "parentValue": [
+    "US"
+   ]
+  },
+  {
+   "question": "ethnicity",
+   "label": "Black, or African American",
+   "value": "Black, or African American",
+   "parentValue": [
+    "US"
+   ]
+  },
+  {
+   "question": "ethnicity",
+   "label": "American Indian or Alaska Native",
+   "value": "American Indian or Alaska Native",
+   "parentValue": [
+    "US"
+   ]
+  },
+  {
+   "question": "ethnicity",
+   "label": "Asian Indian",
+   "value": "Asian Indian",
+   "parentValue": [
+    "US"
+   ]
+  },
+  {
+   "question": "ethnicity",
+   "label": "Asian Chinese",
+   "value": "Asian Chinese",
+   "parentValue": [
+    "US"
+   ]
+  },
+  {
+   "question": "ethnicity",
+   "label": "Asian Japanese",
+   "value": "Asian Japanese",
+   "parentValue": [
+    "US"
+   ]
+  },
+  {
+   "question": "ethnicity",
+   "label": "Asian Korean",
+   "value": "Asian Korean",
+   "parentValue": [
+    "US"
+   ]
+  },
+  {
+   "question": "ethnicity",
+   "label": "Asian Filipino",
+   "value": "Asian Filipino",
+   "parentValue": [
+    "US"
+   ]
+  },
+  {
+   "question": "ethnicity",
+   "label": "Asian Vietnamese",
+   "value": "Asian Vietnamese",
+   "parentValue": [
+    "US"
+   ]
+  },
+  {
+   "question": "ethnicity",
+   "label": "Asian Other",
+   "value": "Asian Other",
+   "parentValue": [
+    "US"
+   ]
+  },
+  {
+   "question": "ethnicity",
+   "label": "Pacific Islander Native Hawaiian",
+   "value": "Pacific Islander Native Hawaiian",
+   "parentValue": [
+    "US"
+   ]
+  },
+  {
+   "question": "ethnicity",
+   "label": "Pacific Islander Guamanian",
+   "value": "Pacific Islander Guamanian",
+   "parentValue": [
+    "US"
+   ]
+  },
+  {
+   "question": "ethnicity",
+   "label": "Pacific Islander Samoan",
+   "value": "Pacific Islander Samoan",
+   "parentValue": [
+    "US"
+   ]
+  },
+  {
+   "question": "ethnicity",
+   "label": "Pacific Islander Other",
+   "value": "Pacific Islander Other",
+   "parentValue": [
+    "US"
+   ]
+  },
+  {
+   "question": "ethnicity",
+   "label": "Some other race",
+   "value": "Some other race",
+   "parentValue": [
+    "US"
+   ]
+  },
+  {
+   "question": "ethnicity",
+   "label": "Prefer not to answer",
+   "value": "Prefer not to answer",
+   "parentValue": [
+    "US"
+   ]
+  },
+  {
+   "question": "ethnicity",
+   "label": "Acholi",
+   "value": "Acholi",
+   "parentValue": [
+    "UG"
+   ]
+  },
+  {
+   "question": "ethnicity",
+   "label": "Alur",
+   "value": "Alur",
+   "parentValue": [
+    "UG"
+   ]
+  },
+  {
+   "question": "ethnicity",
+   "label": "Baganda (Ganda)",
+   "value": "Baganda (Ganda)",
+   "parentValue": [
+    "UG"
+   ]
+  },
+  {
+   "question": "ethnicity",
+   "label": "Bagisu (Gisu)",
+   "value": "Bagisu (Gisu)",
+   "parentValue": [
+    "UG"
+   ]
+  },
+  {
+   "question": "ethnicity",
+   "label": "Bakiga",
+   "value": "Bakiga",
+   "parentValue": [
+    "UG"
+   ]
+  },
+  {
+   "question": "ethnicity",
+   "label": "Bantu groups",
+   "value": "Bantu groups",
+   "parentValue": [
+    "UG"
+   ]
+  },
+  {
+   "question": "ethnicity",
+   "label": "Banyankole",
+   "value": "Banyankole",
+   "parentValue": [
+    "UG"
+   ]
+  },
+  {
+   "question": "ethnicity",
+   "label": "Basoga",
+   "value": "Basoga",
+   "parentValue": [
+    "UG"
+   ]
+  },
+  {
+   "question": "ethnicity",
+   "label": "Iteso (Teso)",
+   "value": "Iteso (Teso)",
+   "parentValue": [
+    "UG"
+   ]
+  },
+  {
+   "question": "ethnicity",
+   "label": "Langi",
+   "value": "Langi",
+   "parentValue": [
+    "UG"
+   ]
+  },
+  {
+   "question": "ethnicity",
+   "label": "Lugbara",
+   "value": "Lugbara",
+   "parentValue": [
+    "UG"
+   ]
+  },
+  {
+   "question": "ethnicity",
+   "label": "Nilotic & Sudanic groups",
+   "value": "Nilotic & Sudanic groups",
+   "parentValue": [
+    "UG"
+   ]
+  },
+  {
+   "question": "ethnicity",
+   "label": "Other ethnic groups / minorities",
+   "value": "Other ethnic groups / minorities",
+   "parentValue": [
+    "UG"
+   ]
+  },
+  {
+   "question": "ethnicity",
+   "label": "Afar",
+   "value": "Afar",
+   "parentValue": [
+    "ET"
+   ]
+  },
+  {
+   "question": "ethnicity",
+   "label": "Amhara",
+   "value": "Amhara",
+   "parentValue": [
+    "ET"
+   ]
+  },
+  {
+   "question": "ethnicity",
+   "label": "Gurage",
+   "value": "Gurage",
+   "parentValue": [
+    "ET"
+   ]
+  },
+  {
+   "question": "ethnicity",
+   "label": "Hadiya",
+   "value": "Hadiya",
+   "parentValue": [
+    "ET"
+   ]
+  },
+  {
+   "question": "ethnicity",
+   "label": "Oromo",
+   "value": "Oromo",
+   "parentValue": [
+    "ET"
+   ]
+  },
+  {
+   "question": "ethnicity",
+   "label": "Other ethnic groups / minorities",
+   "value": "Other ethnic groups / minorities",
+   "parentValue": [
+    "ET"
+   ]
+  },
+  {
+   "question": "ethnicity",
+   "label": "Sidama",
+   "value": "Sidama",
+   "parentValue": [
+    "ET"
+   ]
+  },
+  {
+   "question": "ethnicity",
+   "label": "Somali",
+   "value": "Somali",
+   "parentValue": [
+    "ET"
+   ]
+  },
+  {
+   "question": "ethnicity",
+   "label": "Tigray (Tigrayan)",
+   "value": "Tigray (Tigrayan)",
+   "parentValue": [
+    "ET"
+   ]
+  },
+  {
+   "question": "ethnicity",
+   "label": "Welayta (Wolayta)",
+   "value": "Welayta (Wolayta)",
+   "parentValue": [
+    "ET"
+   ]
+  },
+  {
+   "question": "religion",
+   "label": "Christianity",
+   "value": "Christianity",
+   "parentValue": []
+  },
+  {
+   "question": "religion",
+   "label": "Islam",
+   "value": "Islam",
+   "parentValue": []
+  },
+  {
+   "question": "religion",
+   "label": "Hinduism",
+   "value": "Hinduism",
+   "parentValue": []
+  },
+  {
+   "question": "religion",
+   "label": "Buddhism",
+   "value": "Buddhism",
+   "parentValue": []
+  },
+  {
+   "question": "religion",
+   "label": "Sikhism",
+   "value": "Sikhism",
+   "parentValue": []
+  },
+  {
+   "question": "religion",
+   "label": "Judaism",
+   "value": "Judaism",
+   "parentValue": []
+  },
+  {
+   "question": "religion",
+   "label": "Bahai Faith,bahai",
+   "value": "Bahai Faith,bahai",
+   "parentValue": []
+  },
+  {
+   "question": "religion",
+   "label": "Jainism",
+   "value": "Jainism",
+   "parentValue": []
+  },
+  {
+   "question": "religion",
+   "label": "Shinto",
+   "value": "Shinto",
+   "parentValue": []
+  },
+  {
+   "question": "religion",
+   "label": "Taoism",
+   "value": "Taoism",
+   "parentValue": []
+  },
+  {
+   "question": "religion",
+   "label": "Confucianism",
+   "value": "Confucianism",
+   "parentValue": []
+  },
+  {
+   "question": "religion",
+   "label": "Zoroastrianism",
+   "value": "Zoroastrianism",
+   "parentValue": []
+  },
+  {
+   "question": "religion",
+   "label": "Spiritual but not religious,no-bellives",
+   "value": "Spiritual but not religious,no-bellives",
+   "parentValue": []
+  },
+  {
+   "question": "religion",
+   "label": "No religion / Atheist / Agnostic,atheist",
+   "value": "No religion / Atheist / Agnostic,atheist",
+   "parentValue": []
+  },
+  {
+   "question": "religion",
+   "label": "Other,other",
+   "value": "Other,other",
+   "parentValue": []
+  },
+  {
+   "question": "religion",
+   "label": "Prefer not to say,no answer",
+   "value": "Prefer not to say,no answer",
+   "parentValue": []
+  },
+  {
+   "question": "relationship",
+   "label": "Single, never married",
+   "value": "Single, never married",
+   "parentValue": []
+  },
+  {
+   "question": "relationship",
+   "label": "Married",
+   "value": "Married",
+   "parentValue": []
+  },
+  {
+   "question": "relationship",
+   "label": "Separated, divorced or widowed",
+   "value": "Separated, divorced or widowed",
+   "parentValue": []
+  },
+  {
+   "question": "relationship",
+   "label": "Domestic partnership/living with someone",
+   "value": "Domestic partnership/living with someone",
+   "parentValue": []
+  },
+  {
+   "question": "relationship",
+   "label": "Prefer not to say",
+   "value": "Prefer not to say",
+   "parentValue": []
+  },
+  {
+   "question": "rural",
+   "label": "Rural,AE-Rural",
+   "value": "Rural,AE-Rural",
+   "parentValue": [
+    "AE"
+   ]
+  },
+  {
+   "question": "rural",
+   "label": "Urban,AE-Urban",
+   "value": "Urban,AE-Urban",
+   "parentValue": [
+    "AE"
+   ]
+  },
+  {
+   "question": "rural",
+   "label": "Rural,AF-Rural",
+   "value": "Rural,AF-Rural",
+   "parentValue": [
+    "AF"
+   ]
+  },
+  {
+   "question": "rural",
+   "label": "Urban,AF-Urban",
+   "value": "Urban,AF-Urban",
+   "parentValue": [
+    "AF"
+   ]
+  },
+  {
+   "question": "rural",
+   "label": "Rural,AO-Rural",
+   "value": "Rural,AO-Rural",
+   "parentValue": [
+    "AO"
+   ]
+  },
+  {
+   "question": "rural",
+   "label": "Urban,AO-Urban",
+   "value": "Urban,AO-Urban",
+   "parentValue": [
+    "AO"
+   ]
+  },
+  {
+   "question": "personal-income",
+   "label": "100000 - 124999",
+   "value": "100000 - 124999",
+   "parentValue": [
+    "AU"
+   ]
+  },
+  {
+   "question": "personal-income",
+   "label": "125000 - 149999",
+   "value": "125000 - 149999",
+   "parentValue": [
+    "AU"
+   ]
+  },
+  {
+   "question": "personal-income",
+   "label": "150000 - 199999",
+   "value": "150000 - 199999",
+   "parentValue": [
+    "AU"
+   ]
+  },
+  {
+   "question": "personal-income",
+   "label": "20000 - 39999",
+   "value": "20000 - 39999",
+   "parentValue": [
+    "AU"
+   ]
+  },
+  {
+   "question": "personal-income",
+   "label": "200000 - 249999",
+   "value": "200000 - 249999",
+   "parentValue": [
+    "AU"
+   ]
+  },
+  {
+   "question": "personal-income",
+   "label": "250000 and above",
+   "value": "250000 and above",
+   "parentValue": [
+    "AU"
+   ]
+  },
+  {
+   "question": "personal-income",
+   "label": "40000 - 59999",
+   "value": "40000 - 59999",
+   "parentValue": [
+    "AU"
+   ]
+  },
+  {
+   "question": "personal-income",
+   "label": "60000 - 79999",
+   "value": "60000 - 79999",
+   "parentValue": [
+    "AU"
+   ]
+  },
+  {
+   "question": "personal-income",
+   "label": "80000 - 99999",
+   "value": "80000 - 99999",
+   "parentValue": [
+    "AU"
+   ]
+  },
+  {
+   "question": "personal-income",
+   "label": "up to 20000",
+   "value": "up to 20000",
+   "parentValue": [
+    "AU"
+   ]
+  },
+  {
+   "question": "personal-income",
+   "label": "100000 - 129999",
+   "value": "100000 - 129999",
+   "parentValue": [
+    "NZ"
+   ]
+  },
+  {
+   "question": "personal-income",
+   "label": "130000 - 159999",
+   "value": "130000 - 159999",
+   "parentValue": [
+    "NZ"
+   ]
+  },
+  {
+   "question": "personal-income",
+   "label": "160000 - 199999",
+   "value": "160000 - 199999",
+   "parentValue": [
+    "NZ"
+   ]
+  },
+  {
+   "question": "personal-income",
+   "label": "20000 - 39999",
+   "value": "20000 - 39999",
+   "parentValue": [
+    "NZ"
+   ]
+  },
+  {
+   "question": "personal-income",
+   "label": "200000 - 299999",
+   "value": "200000 - 299999",
+   "parentValue": [
+    "NZ"
+   ]
+  },
+  {
+   "question": "personal-income",
+   "label": "300000 and above",
+   "value": "300000 and above",
+   "parentValue": [
+    "NZ"
+   ]
+  },
+  {
+   "question": "personal-income",
+   "label": "40000 - 59999",
+   "value": "40000 - 59999",
+   "parentValue": [
+    "NZ"
+   ]
+  },
+  {
+   "question": "personal-income",
+   "label": "60000 - 79999",
+   "value": "60000 - 79999",
+   "parentValue": [
+    "NZ"
+   ]
+  },
+  {
+   "question": "personal-income",
+   "label": "80000 - 99999",
+   "value": "80000 - 99999",
+   "parentValue": [
+    "NZ"
+   ]
+  },
+  {
+   "question": "personal-income",
+   "label": "up to 20000",
+   "value": "up to 20000",
+   "parentValue": [
+    "NZ"
+   ]
+  },
+  {
+   "question": "personal-income",
+   "label": "100000 - 129999",
+   "value": "100000 - 129999",
+   "parentValue": [
+    "CA"
+   ]
+  },
+  {
+   "question": "personal-income",
+   "label": "130000 - 169999",
+   "value": "130000 - 169999",
+   "parentValue": [
+    "CA"
+   ]
+  },
+  {
+   "question": "personal-income",
+   "label": "170000 - 229999",
+   "value": "170000 - 229999",
+   "parentValue": [
+    "CA"
+   ]
+  },
+  {
+   "question": "personal-income",
+   "label": "20000 - 39999",
+   "value": "20000 - 39999",
+   "parentValue": [
+    "CA"
+   ]
+  },
+  {
+   "question": "personal-income",
+   "label": "230000 - 349999",
+   "value": "230000 - 349999",
+   "parentValue": [
+    "CA"
+   ]
+  },
+  {
+   "question": "personal-income",
+   "label": "350000 and above",
+   "value": "350000 and above",
+   "parentValue": [
+    "CA"
+   ]
+  },
+  {
+   "question": "personal-income",
+   "label": "40000 - 59999",
+   "value": "40000 - 59999",
+   "parentValue": [
+    "CA"
+   ]
+  },
+  {
+   "question": "personal-income",
+   "label": "60000 - 79999",
+   "value": "60000 - 79999",
+   "parentValue": [
+    "CA"
+   ]
+  },
+  {
+   "question": "personal-income",
+   "label": "80000 - 99999",
+   "value": "80000 - 99999",
+   "parentValue": [
+    "CA"
+   ]
+  },
+  {
+   "question": "personal-income",
+   "label": "up to 20000",
+   "value": "up to 20000",
+   "parentValue": [
+    "CA"
+   ]
+  },
+  {
+   "question": "household-income",
+   "label": "up to 30000",
+   "value": "up to 30000",
+   "parentValue": [
+    "AU"
+   ]
+  },
+  {
+   "question": "household-income",
+   "label": "30000 - 49999",
+   "value": "30000 - 49999",
+   "parentValue": [
+    "AU"
+   ]
+  },
+  {
+   "question": "household-income",
+   "label": "50000 - 74999",
+   "value": "50000 - 74999",
+   "parentValue": [
+    "AU"
+   ]
+  },
+  {
+   "question": "household-income",
+   "label": "75000 - 99999",
+   "value": "75000 - 99999",
+   "parentValue": [
+    "AU"
+   ]
+  },
+  {
+   "question": "household-income",
+   "label": "100000 - 124999",
+   "value": "100000 - 124999",
+   "parentValue": [
+    "AU"
+   ]
+  },
+  {
+   "question": "household-income",
+   "label": "125000 - 149999",
+   "value": "125000 - 149999",
+   "parentValue": [
+    "AU"
+   ]
+  },
+  {
+   "question": "household-income",
+   "label": "150000 - 174999",
+   "value": "150000 - 174999",
+   "parentValue": [
+    "AU"
+   ]
+  },
+  {
+   "question": "household-income",
+   "label": "175000 - 199999",
+   "value": "175000 - 199999",
+   "parentValue": [
+    "AU"
+   ]
+  },
+  {
+   "question": "household-income",
+   "label": "200000 - 249999",
+   "value": "200000 - 249999",
+   "parentValue": [
+    "AU"
+   ]
+  },
+  {
+   "question": "household-income",
+   "label": "250000 and above",
+   "value": "250000 and above",
+   "parentValue": [
+    "AU"
+   ]
+  },
+  {
+   "question": "household-income",
+   "label": "up to 30000",
+   "value": "up to 30000",
+   "parentValue": [
+    "MY"
+   ]
+  },
+  {
+   "question": "household-income",
+   "label": "30000 - 49999",
+   "value": "30000 - 49999",
+   "parentValue": [
+    "MY"
+   ]
+  },
+  {
+   "question": "household-income",
+   "label": "50000 - 69999",
+   "value": "50000 - 69999",
+   "parentValue": [
+    "MY"
+   ]
+  },
+  {
+   "question": "household-income",
+   "label": "70000 - 89999",
+   "value": "70000 - 89999",
+   "parentValue": [
+    "MY"
+   ]
+  },
+  {
+   "question": "household-income",
+   "label": "90000 - 119999",
+   "value": "90000 - 119999",
+   "parentValue": [
+    "MY"
+   ]
+  },
+  {
+   "question": "household-income",
+   "label": "120000 - 159999",
+   "value": "120000 - 159999",
+   "parentValue": [
+    "MY"
+   ]
+  },
+  {
+   "question": "household-income",
+   "label": "160000 - 219999",
+   "value": "160000 - 219999",
+   "parentValue": [
+    "MY"
+   ]
+  },
+  {
+   "question": "household-income",
+   "label": "220000 - 299999",
+   "value": "220000 - 299999",
+   "parentValue": [
+    "MY"
+   ]
+  },
+  {
+   "question": "household-income",
+   "label": "300000 - 449999",
+   "value": "300000 - 449999",
+   "parentValue": [
+    "MY"
+   ]
+  },
+  {
+   "question": "household-income",
+   "label": "450000 and above",
+   "value": "450000 and above",
+   "parentValue": [
+    "MY"
+   ]
+  },
+  {
+   "question": "household-income",
+   "label": "up to 30000",
+   "value": "up to 30000",
+   "parentValue": [
+    "AT"
+   ]
+  },
+  {
+   "question": "household-income",
+   "label": "100000 - 129999",
+   "value": "100000 - 129999",
+   "parentValue": [
+    "AT"
+   ]
+  },
+  {
+   "question": "household-income",
+   "label": "130000 - 169999",
+   "value": "130000 - 169999",
+   "parentValue": [
+    "AT"
+   ]
+  },
+  {
+   "question": "household-income",
+   "label": "170000 - 219999",
+   "value": "170000 - 219999",
+   "parentValue": [
+    "AT"
+   ]
+  },
+  {
+   "question": "household-income",
+   "label": "220000 - 299999",
+   "value": "220000 - 299999",
+   "parentValue": [
+    "AT"
+   ]
+  },
+  {
+   "question": "household-income",
+   "label": "30000 - 44999",
+   "value": "30000 - 44999",
+   "parentValue": [
+    "AT"
+   ]
+  },
+  {
+   "question": "household-income",
+   "label": "45000 - 59999",
+   "value": "45000 - 59999",
+   "parentValue": [
+    "AT"
+   ]
+  },
+  {
+   "question": "household-income",
+   "label": "60000 - 79999",
+   "value": "60000 - 79999",
+   "parentValue": [
+    "AT"
+   ]
+  },
+  {
+   "question": "household-income",
+   "label": "80000 - 99999",
+   "value": "80000 - 99999",
+   "parentValue": [
+    "AT"
+   ]
+  },
+  {
+   "question": "household-income",
+   "label": "300000 and above",
+   "value": "300000 and above",
+   "parentValue": [
+    "AT"
+   ]
+  },
+  {
+   "question": "children-num",
+   "label": "0",
+   "value": "0",
+   "parentValue": [
+    "Married"
+   ]
+  },
+  {
+   "question": "children-num",
+   "label": "1-3",
+   "value": "1-3",
+   "parentValue": [
+    "Married"
+   ]
+  },
+  {
+   "question": "children-num",
+   "label": "4-6",
+   "value": "4-6",
+   "parentValue": [
+    "Married"
+   ]
+  },
+  {
+   "question": "children-num",
+   "label": "7-9",
+   "value": "7-9",
+   "parentValue": [
+    "Married"
+   ]
+  },
+  {
+   "question": "children-num",
+   "label": "10+",
+   "value": "10+",
+   "parentValue": [
+    "Married"
+   ]
+  },
+  {
+   "question": "children-num",
+   "label": "0",
+   "value": "0",
+   "parentValue": [
+    "Domestic partnership/living with someone"
+   ]
+  },
+  {
+   "question": "children-num",
+   "label": "1-3",
+   "value": "1-3",
+   "parentValue": [
+    "Domestic partnership/living with someone"
+   ]
+  },
+  {
+   "question": "children-num",
+   "label": "4-6",
+   "value": "4-6",
+   "parentValue": [
+    "Domestic partnership/living with someone"
+   ]
+  },
+  {
+   "question": "children-num",
+   "label": "7-9",
+   "value": "7-9",
+   "parentValue": [
+    "Domestic partnership/living with someone"
+   ]
+  },
+  {
+   "question": "children-num",
+   "label": "10+",
+   "value": "10+",
+   "parentValue": [
+    "Domestic partnership/living with someone"
+   ]
+  },
+  {
+   "question": "children-num",
+   "label": "0",
+   "value": "0",
+   "parentValue": [
+    "Separated, divorced or widowed"
+   ]
+  },
+  {
+   "question": "children-num",
+   "label": "1-3",
+   "value": "1-3",
+   "parentValue": [
+    "Separated, divorced or widowed"
+   ]
+  },
+  {
+   "question": "children-num",
+   "label": "4-6",
+   "value": "4-6",
+   "parentValue": [
+    "Separated, divorced or widowed"
+   ]
+  },
+  {
+   "question": "children-num",
+   "label": "7-9",
+   "value": "7-9",
+   "parentValue": [
+    "Separated, divorced or widowed"
+   ]
+  },
+  {
+   "question": "children-num",
+   "label": "10+",
+   "value": "10+",
+   "parentValue": [
+    "Separated, divorced or widowed"
+   ]
+  },
+  {
+   "question": "empstat",
+   "label": "Employed full-time",
+   "value": "Employed full-time",
+   "parentValue": []
+  },
+  {
+   "question": "empstat",
+   "label": "Employed part-time",
+   "value": "Employed part-time",
+   "parentValue": []
+  },
+  {
+   "question": "empstat",
+   "label": "Self-employed full-time",
+   "value": "Self-employed full-time",
+   "parentValue": []
+  },
+  {
+   "question": "empstat",
+   "label": "Self-employed part-time",
+   "value": "Self-employed part-time",
+   "parentValue": []
+  },
+  {
+   "question": "empstat",
+   "label": "Temporary & Seasonal Employed",
+   "value": "Temporary & Seasonal Employed",
+   "parentValue": []
+  },
+  {
+   "question": "empstat",
+   "label": "Government/Public Employee",
+   "value": "Government/Public Employee",
+   "parentValue": []
+  },
+  {
+   "question": "empstat",
+   "label": "Freelancer",
+   "value": "Freelancer",
+   "parentValue": []
+  },
+  {
+   "question": "empstat",
+   "label": "Student,student",
+   "value": "Student,student",
+   "parentValue": []
+  },
+  {
+   "question": "empstat",
+   "label": "Unemployed / Not Working",
+   "value": "Unemployed / Not Working",
+   "parentValue": []
+  },
+  {
+   "question": "empstat",
+   "label": "Retired",
+   "value": "Retired",
+   "parentValue": []
+  },
+  {
+   "question": "empstat",
+   "label": "Homemaker,homemaker",
+   "value": "Homemaker,homemaker",
+   "parentValue": []
+  },
+  {
+   "question": "empstat",
+   "label": "Other,other",
+   "value": "Other,other",
+   "parentValue": []
+  },
+  {
+   "question": "empstat",
+   "label": "Prefer not to say,prefer-not",
+   "value": "Prefer not to say,prefer-not",
+   "parentValue": []
+  },
+  {
+   "question": "pension",
+   "label": "Yes",
+   "value": "Yes",
+   "parentValue": [
+    "Retired"
+   ]
+  },
+  {
+   "question": "pension",
+   "label": "No",
+   "value": "No",
+   "parentValue": [
+    "Retired"
+   ]
+  },
+  {
+   "question": "jobseeker",
+   "label": "Yes",
+   "value": "Yes",
+   "parentValue": [
+    "Unemployed / Not Working"
+   ]
+  },
+  {
+   "question": "jobseeker",
+   "label": "No",
+   "value": "No",
+   "parentValue": [
+    "Unemployed / Not Working"
+   ]
+  },
+  {
+   "question": "jobseeker",
+   "label": "Yes",
+   "value": "Yes",
+   "parentValue": [
+    "Temporary & Seasonal Employed"
+   ]
+  },
+  {
+   "question": "jobseeker",
+   "label": "No",
+   "value": "No",
+   "parentValue": [
+    "Temporary & Seasonal Employed"
+   ]
+  },
+  {
+   "question": "hw",
+   "label": "Household Management",
+   "value": "Household Management",
+   "parentValue": [
+    "homemaker"
+   ]
+  },
+  {
+   "question": "hw",
+   "label": "Cooking and Meal Planning",
+   "value": "Cooking and Meal Planning",
+   "parentValue": [
+    "homemaker"
+   ]
+  },
+  {
+   "question": "hw",
+   "label": "Childcare",
+   "value": "Childcare",
+   "parentValue": [
+    "homemaker"
+   ]
+  },
+  {
+   "question": "hw",
+   "label": "Elder Care",
+   "value": "Elder Care",
+   "parentValue": [
+    "homemaker"
+   ]
+  },
+  {
+   "question": "hw",
+   "label": "Household Budgeting and Finance Manager",
+   "value": "Household Budgeting and Finance Manager",
+   "parentValue": [
+    "homemaker"
+   ]
+  },
+  {
+   "question": "hw",
+   "label": "Shopping and Procurement",
+   "value": "Shopping and Procurement",
+   "parentValue": [
+    "homemaker"
+   ]
+  },
+  {
+   "question": "hw",
+   "label": "Home Organization and Maintenance",
+   "value": "Home Organization and Maintenance",
+   "parentValue": [
+    "homemaker"
+   ]
+  },
+  {
+   "question": "hw",
+   "label": "Family Health and Well-being",
+   "value": "Family Health and Well-being",
+   "parentValue": [
+    "homemaker"
+   ]
+  },
+  {
+   "question": "hw",
+   "label": "Education Support for Children",
+   "value": "Education Support for Children",
+   "parentValue": [
+    "homemaker"
+   ]
+  },
+  {
+   "question": "hw",
+   "label": "Event and Social Planning",
+   "value": "Event and Social Planning",
+   "parentValue": [
+    "homemaker"
+   ]
+  },
+  {
+   "question": "freelancer",
+   "label": "Professional Data Entry Expert",
+   "value": "Professional Data Entry Expert",
+   "parentValue": [
+    "Freelancer"
+   ]
+  },
+  {
+   "question": "freelancer",
+   "label": "MS Excel Entry Expert",
+   "value": "MS Excel Entry Expert",
+   "parentValue": [
+    "Freelancer"
+   ]
+  },
+  {
+   "question": "freelancer",
+   "label": "Data Arranger and Data Collector",
+   "value": "Data Arranger and Data Collector",
+   "parentValue": [
+    "Freelancer"
+   ]
+  },
+  {
+   "question": "freelancer",
+   "label": "Pro Data Entry Expert",
+   "value": "Pro Data Entry Expert",
+   "parentValue": [
+    "Freelancer"
+   ]
+  },
+  {
+   "question": "freelancer",
+   "label": "First on Data Entry on Excel or SQL",
+   "value": "First on Data Entry on Excel or SQL",
+   "parentValue": [
+    "Freelancer"
+   ]
+  },
+  {
+   "question": "freelancer",
+   "label": "Data Analysis and Data Mining Expert",
+   "value": "Data Analysis and Data Mining Expert",
+   "parentValue": [
+    "Freelancer"
+   ]
+  },
+  {
+   "question": "freelancer",
+   "label": "Data Transfer and Record Holder",
+   "value": "Data Transfer and Record Holder",
+   "parentValue": [
+    "Freelancer"
+   ]
+  },
+  {
+   "question": "freelancer",
+   "label": "Web Research and Data Entry Professional",
+   "value": "Web Research and Data Entry Professional",
+   "parentValue": [
+    "Freelancer"
+   ]
+  },
+  {
+   "question": "freelancer",
+   "label": "Data Entry Manager",
+   "value": "Data Entry Manager",
+   "parentValue": [
+    "Freelancer"
+   ]
+  },
+  {
+   "question": "freelancer",
+   "label": "Creative Writer & Copy Writer",
+   "value": "Creative Writer & Copy Writer",
+   "parentValue": [
+    "Freelancer"
+   ]
+  },
+  {
+   "question": "freelancer",
+   "label": "Story Writer & Content Specialist",
+   "value": "Story Writer & Content Specialist",
+   "parentValue": [
+    "Freelancer"
+   ]
+  },
+  {
+   "question": "freelancer",
+   "label": "Writer for Kids Entertainment",
+   "value": "Writer for Kids Entertainment",
+   "parentValue": [
+    "Freelancer"
+   ]
+  },
+  {
+   "question": "freelancer",
+   "label": "E-book Writer, Story Writer",
+   "value": "E-book Writer, Story Writer",
+   "parentValue": [
+    "Freelancer"
+   ]
+  },
+  {
+   "question": "freelancer",
+   "label": "Web Site Content Writer",
+   "value": "Web Site Content Writer",
+   "parentValue": [
+    "Freelancer"
+   ]
+  },
+  {
+   "question": "freelancer",
+   "label": "Biography Writer and Novel Writer",
+   "value": "Biography Writer and Novel Writer",
+   "parentValue": [
+    "Freelancer"
+   ]
+  },
+  {
+   "question": "freelancer",
+   "label": "Writing Expert for Web Content",
+   "value": "Writing Expert for Web Content",
+   "parentValue": [
+    "Freelancer"
+   ]
+  },
+  {
+   "question": "freelancer",
+   "label": "SEO Article Writer & Provider",
+   "value": "SEO Article Writer & Provider",
+   "parentValue": [
+    "Freelancer"
+   ]
+  },
+  {
+   "question": "freelancer",
+   "label": "Blogger and Article Writer",
+   "value": "Blogger and Article Writer",
+   "parentValue": [
+    "Freelancer"
+   ]
+  },
+  {
+   "question": "freelancer",
+   "label": "Pro Email Writer",
+   "value": "Pro Email Writer",
+   "parentValue": [
+    "Freelancer"
+   ]
+  },
+  {
+   "question": "freelancer",
+   "label": "Content Writer on any Topic",
+   "value": "Content Writer on any Topic",
+   "parentValue": [
+    "Freelancer"
+   ]
+  },
+  {
+   "question": "freelancer",
+   "label": "Technical Writer and Content Developer",
+   "value": "Technical Writer and Content Developer",
+   "parentValue": [
+    "Freelancer"
+   ]
+  },
+  {
+   "question": "freelancer",
+   "label": "Creative Writer and Content Provider",
+   "value": "Creative Writer and Content Provider",
+   "parentValue": [
+    "Freelancer"
+   ]
+  },
+  {
+   "question": "freelancer",
+   "label": "Copy Writing Specialist",
+   "value": "Copy Writing Specialist",
+   "parentValue": [
+    "Freelancer"
+   ]
+  },
+  {
+   "question": "freelancer",
+   "label": "Article and Content Expert",
+   "value": "Article and Content Expert",
+   "parentValue": [
+    "Freelancer"
+   ]
+  },
+  {
+   "question": "freelancer",
+   "label": "Professional Word Specialist",
+   "value": "Professional Word Specialist",
+   "parentValue": [
+    "Freelancer"
+   ]
+  },
+  {
+   "question": "industry",
+   "label": "Agriculture",
+   "value": "Agriculture",
+   "parentValue": [
+    "Employed full-time"
+   ]
+  },
+  {
+   "question": "industry",
+   "label": "Manufacturing",
+   "value": "Manufacturing",
+   "parentValue": [
+    "Employed full-time"
+   ]
+  },
+  {
+   "question": "industry",
+   "label": "Service",
+   "value": "Service",
+   "parentValue": [
+    "Employed full-time"
+   ]
+  },
+  {
+   "question": "industry",
+   "label": "Agriculture",
+   "value": "Agriculture",
+   "parentValue": [
+    "Self-employed full-time"
+   ]
+  },
+  {
+   "question": "industry",
+   "label": "Manufacturing",
+   "value": "Manufacturing",
+   "parentValue": [
+    "Self-employed full-time"
+   ]
+  },
+  {
+   "question": "industry",
+   "label": "Service",
+   "value": "Service",
+   "parentValue": [
+    "Self-employed full-time"
+   ]
+  },
+  {
+   "question": "industry",
+   "label": "Agriculture",
+   "value": "Agriculture",
+   "parentValue": [
+    "Self-employed part-time"
+   ]
+  },
+  {
+   "question": "industry",
+   "label": "Manufacturing",
+   "value": "Manufacturing",
+   "parentValue": [
+    "Self-employed part-time"
+   ]
+  },
+  {
+   "question": "industry",
+   "label": "Service",
+   "value": "Service",
+   "parentValue": [
+    "Self-employed part-time"
+   ]
+  },
+  {
+   "question": "sector",
+   "label": "Agriculture Sector",
+   "value": "Agriculture Sector",
+   "parentValue": [
+    "Agriculture"
+   ]
+  },
+  {
+   "question": "sector",
+   "label": "Fishing Sector",
+   "value": "Fishing Sector",
+   "parentValue": [
+    "Agriculture"
+   ]
+  },
+  {
+   "question": "sector",
+   "label": "Horticulture  Sector",
+   "value": "Horticulture  Sector",
+   "parentValue": [
+    "Agriculture"
+   ]
+  },
+  {
+   "question": "sector",
+   "label": "Tobacco Sector",
+   "value": "Tobacco Sector",
+   "parentValue": [
+    "Agriculture"
+   ]
+  },
+  {
+   "question": "sector",
+   "label": "Wood Sector",
+   "value": "Wood Sector",
+   "parentValue": [
+    "Agriculture"
+   ]
+  },
+  {
+   "question": "sector",
+   "label": "Fertilizers & Pesticides",
+   "value": "Fertilizers & Pesticides",
+   "parentValue": [
+    "Agriculture"
+   ]
+  },
+  {
+   "question": "sector",
+   "label": "Aerospace Sector",
+   "value": "Aerospace Sector",
+   "parentValue": [
+    "Manufacturing"
+   ]
+  },
+  {
+   "question": "sector",
+   "label": "Automotive Sector",
+   "value": "Automotive Sector",
+   "parentValue": [
+    "Manufacturing"
+   ]
+  },
+  {
+   "question": "sector",
+   "label": "Chemical Sector",
+   "value": "Chemical Sector",
+   "parentValue": [
+    "Manufacturing"
+   ]
+  },
+  {
+   "question": "sector",
+   "label": "Pharmaceutical Sector",
+   "value": "Pharmaceutical Sector",
+   "parentValue": [
+    "Manufacturing"
+   ]
+  },
+  {
+   "question": "sector",
+   "label": "Construction Sector",
+   "value": "Construction Sector",
+   "parentValue": [
+    "Manufacturing"
+   ]
+  },
+  {
+   "question": "sector",
+   "label": "Defense Sector",
+   "value": "Defense Sector",
+   "parentValue": [
+    "Manufacturing"
+   ]
+  },
+  {
+   "question": "sector",
+   "label": "Arms Sector",
+   "value": "Arms Sector",
+   "parentValue": [
+    "Manufacturing"
+   ]
+  },
+  {
+   "question": "sector",
+   "label": "Electric power Sector",
+   "value": "Electric power Sector",
+   "parentValue": [
+    "Manufacturing"
+   ]
+  },
+  {
+   "question": "sector",
+   "label": "Electronics Sector",
+   "value": "Electronics Sector",
+   "parentValue": [
+    "Manufacturing"
+   ]
+  },
+  {
+   "question": "sector",
+   "label": "Energy Sector",
+   "value": "Energy Sector",
+   "parentValue": [
+    "Manufacturing"
+   ]
+  },
+  {
+   "question": "sector",
+   "label": "I.T Sector",
+   "value": "I.T Sector",
+   "parentValue": [
+    "Manufacturing"
+   ]
+  },
+  {
+   "question": "sector",
+   "label": "Semiconductor Sector",
+   "value": "Semiconductor Sector",
+   "parentValue": [
+    "Manufacturing"
+   ]
+  },
+  {
+   "question": "sector",
+   "label": "Food Sector",
+   "value": "Food Sector",
+   "parentValue": [
+    "Manufacturing"
+   ]
+  },
+  {
+   "question": "sector",
+   "label": "Industrial robot Sector",
+   "value": "Industrial robot Sector",
+   "parentValue": [
+    "Manufacturing"
+   ]
+  },
+  {
+   "question": "sector",
+   "label": "Meat Sector",
+   "value": "Meat Sector",
+   "parentValue": [
+    "Manufacturing"
+   ]
+  },
+  {
+   "question": "sector",
+   "label": "Mining",
+   "value": "Mining",
+   "parentValue": [
+    "Manufacturing"
+   ]
+  },
+  {
+   "question": "sector",
+   "label": "Petroleum ,Oil & Gas Sector",
+   "value": "Petroleum ,Oil & Gas Sector",
+   "parentValue": [
+    "Manufacturing"
+   ]
+  },
+  {
+   "question": "sector",
+   "label": "Pulp and paper Sector",
+   "value": "Pulp and paper Sector",
+   "parentValue": [
+    "Manufacturing"
+   ]
+  },
+  {
+   "question": "sector",
+   "label": "Steel Sector",
+   "value": "Steel Sector",
+   "parentValue": [
+    "Manufacturing"
+   ]
+  },
+  {
+   "question": "sector",
+   "label": "Shipbuilding Sector",
+   "value": "Shipbuilding Sector",
+   "parentValue": [
+    "Manufacturing"
+   ]
+  },
+  {
+   "question": "sector",
+   "label": "Telecommunications Sector",
+   "value": "Telecommunications Sector",
+   "parentValue": [
+    "Manufacturing"
+   ]
+  },
+  {
+   "question": "sector",
+   "label": "Textile Sector",
+   "value": "Textile Sector",
+   "parentValue": [
+    "Manufacturing"
+   ]
+  },
+  {
+   "question": "sector",
+   "label": "Water Sector",
+   "value": "Water Sector",
+   "parentValue": [
+    "Manufacturing"
+   ]
+  },
+  {
+   "question": "sector",
+   "label": "Creative & cultural Services Sector",
+   "value": "Creative & cultural Services Sector",
+   "parentValue": [
+    "Service"
+   ]
+  },
+  {
+   "question": "sector",
+   "label": "Advertising Services",
+   "value": "Advertising Services",
+   "parentValue": [
+    "Service"
+   ]
+  },
+  {
+   "question": "sector",
+   "label": "Fashion Services",
+   "value": "Fashion Services",
+   "parentValue": [
+    "Service"
+   ]
+  },
+  {
+   "question": "sector",
+   "label": "Floral Services",
+   "value": "Floral Services",
+   "parentValue": [
+    "Service"
+   ]
+  },
+  {
+   "question": "sector",
+   "label": "Education Sector Services",
+   "value": "Education Sector Services",
+   "parentValue": [
+    "Service"
+   ]
+  },
+  {
+   "question": "sector",
+   "label": "Entertainment Sector Services",
+   "value": "Entertainment Sector Services",
+   "parentValue": [
+    "Service"
+   ]
+  },
+  {
+   "question": "sector",
+   "label": "Gambling Sector Services",
+   "value": "Gambling Sector Services",
+   "parentValue": [
+    "Service"
+   ]
+  },
+  {
+   "question": "sector",
+   "label": "Music Sector Services",
+   "value": "Music Sector Services",
+   "parentValue": [
+    "Service"
+   ]
+  },
+  {
+   "question": "sector",
+   "label": "Video game Sector Services",
+   "value": "Video game Sector Services",
+   "parentValue": [
+    "Service"
+   ]
+  },
+  {
+   "question": "sector",
+   "label": "Financial Services Sector",
+   "value": "Financial Services Sector",
+   "parentValue": [
+    "Service"
+   ]
+  },
+  {
+   "question": "sector",
+   "label": "Insurance Services Sector",
+   "value": "Insurance Services Sector",
+   "parentValue": [
+    "Service"
+   ]
+  },
+  {
+   "question": "sector",
+   "label": "Healthcare Services Sector",
+   "value": "Healthcare Services Sector",
+   "parentValue": [
+    "Service"
+   ]
+  },
+  {
+   "question": "sector",
+   "label": "Hospitality Services Sector",
+   "value": "Hospitality Services Sector",
+   "parentValue": [
+    "Service"
+   ]
+  },
+  {
+   "question": "sector",
+   "label": "Information Services Sector",
+   "value": "Information Services Sector",
+   "parentValue": [
+    "Service"
+   ]
+  },
+  {
+   "question": "sector",
+   "label": "Leisure Services Sector",
+   "value": "Leisure Services Sector",
+   "parentValue": [
+    "Service"
+   ]
+  },
+  {
+   "question": "sector",
+   "label": "Mass media Services",
+   "value": "Mass media Services",
+   "parentValue": [
+    "Service"
+   ]
+  },
+  {
+   "question": "sector",
+   "label": "Broadcasting Services",
+   "value": "Broadcasting Services",
+   "parentValue": [
+    "Service"
+   ]
+  },
+  {
+   "question": "sector",
+   "label": "Internet Services",
+   "value": "Internet Services",
+   "parentValue": [
+    "Service"
+   ]
+  },
+  {
+   "question": "sector",
+   "label": "News media Services",
+   "value": "News media Services",
+   "parentValue": [
+    "Service"
+   ]
+  },
+  {
+   "question": "sector",
+   "label": "Publishing Services",
+   "value": "Publishing Services",
+   "parentValue": [
+    "Service"
+   ]
+  },
+  {
+   "question": "sector",
+   "label": "Professional services",
+   "value": "Professional services",
+   "parentValue": [
+    "Service"
+   ]
+  },
+  {
+   "question": "sector",
+   "label": "Real estate Sector Services",
+   "value": "Real estate Sector Services",
+   "parentValue": [
+    "Service"
+   ]
+  },
+  {
+   "question": "sector",
+   "label": "Retail Sector Services",
+   "value": "Retail Sector Services",
+   "parentValue": [
+    "Service"
+   ]
+  },
+  {
+   "question": "sector",
+   "label": "Sport Sector Services",
+   "value": "Sport Sector Services",
+   "parentValue": [
+    "Service"
+   ]
+  },
+  {
+   "question": "sector",
+   "label": "Transport Sector Services",
+   "value": "Transport Sector Services",
+   "parentValue": [
+    "Service"
+   ]
+  },
+  {
+   "question": "department",
+   "label": "Farming",
+   "value": "Farming",
+   "parentValue": [
+    "Agriculture Sector"
+   ]
+  },
+  {
+   "question": "department",
+   "label": "Agriculture Equipment & Mechanical Department",
+   "value": "Agriculture Equipment & Mechanical Department",
+   "parentValue": [
+    "Agriculture Sector"
+   ]
+  },
+  {
+   "question": "department",
+   "label": "Agriculture Business",
+   "value": "Agriculture Business",
+   "parentValue": [
+    "Agriculture Sector"
+   ]
+  },
+  {
+   "question": "department",
+   "label": "Environmental Services",
+   "value": "Environmental Services",
+   "parentValue": [
+    "Agriculture Sector"
+   ]
+  },
+  {
+   "question": "department",
+   "label": "Animal Science",
+   "value": "Animal Science",
+   "parentValue": [
+    "Agriculture Sector"
+   ]
+  },
+  {
+   "question": "department",
+   "label": "Food Science",
+   "value": "Food Science",
+   "parentValue": [
+    "Agriculture Sector"
+   ]
+  },
+  {
+   "question": "department",
+   "label": "Natural Resource",
+   "value": "Natural Resource",
+   "parentValue": [
+    "Agriculture Sector"
+   ]
+  },
+  {
+   "question": "department",
+   "label": "Plant Science",
+   "value": "Plant Science",
+   "parentValue": [
+    "Agriculture Sector"
+   ]
+  },
+  {
+   "question": "department",
+   "label": "Strategic & Top Management",
+   "value": "Strategic & Top Management",
+   "parentValue": [
+    "Agriculture Sector"
+   ]
+  },
+  {
+   "question": "department",
+   "label": "Mid Level Management",
+   "value": "Mid Level Management",
+   "parentValue": [
+    "Agriculture Sector"
+   ]
+  },
+  {
+   "question": "department",
+   "label": "Accounts Department",
+   "value": "Accounts Department",
+   "parentValue": [
+    "Agriculture Sector"
+   ]
+  },
+  {
+   "question": "department",
+   "label": "Banking & Finance Department",
+   "value": "Banking & Finance Department",
+   "parentValue": [
+    "Agriculture Sector"
+   ]
+  },
+  {
+   "question": "department",
+   "label": "Marketing & Proposals Department",
+   "value": "Marketing & Proposals Department",
+   "parentValue": [
+    "Agriculture Sector"
+   ]
+  },
+  {
+   "question": "department",
+   "label": "Sales & Business Development Department",
+   "value": "Sales & Business Development Department",
+   "parentValue": [
+    "Agriculture Sector"
+   ]
+  },
+  {
+   "question": "department",
+   "label": "Advertising Department",
+   "value": "Advertising Department",
+   "parentValue": [
+    "Agriculture Sector"
+   ]
+  },
+  {
+   "question": "department",
+   "label": "Project & Program Management",
+   "value": "Project & Program Management",
+   "parentValue": [
+    "Agriculture Sector"
+   ]
+  },
+  {
+   "question": "department",
+   "label": "Procurement Department",
+   "value": "Procurement Department",
+   "parentValue": [
+    "Agriculture Sector"
+   ]
+  },
+  {
+   "question": "department",
+   "label": "Supply/Cold Chain & Logistics",
+   "value": "Supply/Cold Chain & Logistics",
+   "parentValue": [
+    "Agriculture Sector"
+   ]
+  },
+  {
+   "question": "department",
+   "label": "Information Technology Department",
+   "value": "Information Technology Department",
+   "parentValue": [
+    "Agriculture Sector"
+   ]
+  },
+  {
+   "question": "department",
+   "label": "Human Resource Department",
+   "value": "Human Resource Department",
+   "parentValue": [
+    "Agriculture Sector"
+   ]
+  },
+  {
+   "question": "department",
+   "label": "Administration & Facilities department",
+   "value": "Administration & Facilities department",
+   "parentValue": [
+    "Agriculture Sector"
+   ]
+  },
+  {
+   "question": "department",
+   "label": "Quality & Inspection Department",
+   "value": "Quality & Inspection Department",
+   "parentValue": [
+    "Agriculture Sector"
+   ]
+  },
+  {
+   "question": "department",
+   "label": "Production Department",
+   "value": "Production Department",
+   "parentValue": [
+    "Agriculture Sector"
+   ]
+  },
+  {
+   "question": "department",
+   "label": "UX, Design & Architecture Department",
+   "value": "UX, Design & Architecture Department",
+   "parentValue": [
+    "Agriculture Sector"
+   ]
+  },
+  {
+   "question": "department",
+   "label": "Maintenance and Utilities Department",
+   "value": "Maintenance and Utilities Department",
+   "parentValue": [
+    "Agriculture Sector"
+   ]
+  },
+  {
+   "question": "department",
+   "label": "Strategic & Top Management",
+   "value": "Strategic & Top Management",
+   "parentValue": [
+    "Fishing Sector"
+   ]
+  },
+  {
+   "question": "department",
+   "label": "Mid Level Management",
+   "value": "Mid Level Management",
+   "parentValue": [
+    "Fishing Sector"
+   ]
+  },
+  {
+   "question": "department",
+   "label": "Accounts Department",
+   "value": "Accounts Department",
+   "parentValue": [
+    "Fishing Sector"
+   ]
+  },
+  {
+   "question": "department",
+   "label": "Banking & Finance Department",
+   "value": "Banking & Finance Department",
+   "parentValue": [
+    "Fishing Sector"
+   ]
+  },
+  {
+   "question": "department",
+   "label": "Marketing & Proposals Department",
+   "value": "Marketing & Proposals Department",
+   "parentValue": [
+    "Fishing Sector"
+   ]
+  },
+  {
+   "question": "department",
+   "label": "Sales & Business Development Department",
+   "value": "Sales & Business Development Department",
+   "parentValue": [
+    "Fishing Sector"
+   ]
+  },
+  {
+   "question": "department",
+   "label": "Advertising Department",
+   "value": "Advertising Department",
+   "parentValue": [
+    "Fishing Sector"
+   ]
+  },
+  {
+   "question": "department",
+   "label": "Project & Program Management",
+   "value": "Project & Program Management",
+   "parentValue": [
+    "Fishing Sector"
+   ]
+  },
+  {
+   "question": "department",
+   "label": "Procurement Department",
+   "value": "Procurement Department",
+   "parentValue": [
+    "Fishing Sector"
+   ]
+  },
+  {
+   "question": "department",
+   "label": "Supply/Cold Chain & Logistics",
+   "value": "Supply/Cold Chain & Logistics",
+   "parentValue": [
+    "Fishing Sector"
+   ]
+  },
+  {
+   "question": "department",
+   "label": "Information Technology Department",
+   "value": "Information Technology Department",
+   "parentValue": [
+    "Fishing Sector"
+   ]
+  },
+  {
+   "question": "department",
+   "label": "Human Resource Department",
+   "value": "Human Resource Department",
+   "parentValue": [
+    "Fishing Sector"
+   ]
+  },
+  {
+   "question": "department",
+   "label": "Administration & Facilities department",
+   "value": "Administration & Facilities department",
+   "parentValue": [
+    "Fishing Sector"
+   ]
+  },
+  {
+   "question": "department",
+   "label": "Quality & Inspection Department",
+   "value": "Quality & Inspection Department",
+   "parentValue": [
+    "Fishing Sector"
+   ]
+  },
+  {
+   "question": "department",
+   "label": "Production Department",
+   "value": "Production Department",
+   "parentValue": [
+    "Fishing Sector"
+   ]
+  },
+  {
+   "question": "department",
+   "label": "UX, Design & Architecture Department",
+   "value": "UX, Design & Architecture Department",
+   "parentValue": [
+    "Fishing Sector"
+   ]
+  },
+  {
+   "question": "department",
+   "label": "Maintenance and Utilities Department",
+   "value": "Maintenance and Utilities Department",
+   "parentValue": [
+    "Fishing Sector"
+   ]
+  },
+  {
+   "question": "department",
+   "label": "Research & Development Department",
+   "value": "Research & Development Department",
+   "parentValue": [
+    "Fishing Sector"
+   ]
+  },
+  {
+   "question": "department",
+   "label": "Dispatch & Packaging Department",
+   "value": "Dispatch & Packaging Department",
+   "parentValue": [
+    "Fishing Sector"
+   ]
+  },
+  {
+   "question": "department",
+   "label": "Store & warehousing Department",
+   "value": "Store & warehousing Department",
+   "parentValue": [
+    "Fishing Sector"
+   ]
+  },
+  {
+   "question": "department",
+   "label": "Risk & Risk & Security Department",
+   "value": "Risk & Risk & Security Department",
+   "parentValue": [
+    "Fishing Sector"
+   ]
+  },
+  {
+   "question": "department",
+   "label": "Customer Success, Service & Operations",
+   "value": "Customer Success, Service & Operations",
+   "parentValue": [
+    "Fishing Sector"
+   ]
+  },
+  {
+   "question": "department",
+   "label": "Teaching & Training",
+   "value": "Teaching & Training",
+   "parentValue": [
+    "Fishing Sector"
+   ]
+  },
+  {
+   "question": "department",
+   "label": "Consulting Department",
+   "value": "Consulting Department",
+   "parentValue": [
+    "Fishing Sector"
+   ]
+  },
+  {
+   "question": "department",
+   "label": "Construction & Site Engineering",
+   "value": "Construction & Site Engineering",
+   "parentValue": [
+    "Fishing Sector"
+   ]
+  },
+  {
+   "question": "department",
+   "label": "Strategic & Top Management",
+   "value": "Strategic & Top Management",
+   "parentValue": [
+    "Horticulture  Sector"
+   ]
+  },
+  {
+   "question": "department",
+   "label": "Mid Level Management",
+   "value": "Mid Level Management",
+   "parentValue": [
+    "Horticulture  Sector"
+   ]
+  },
+  {
+   "question": "department",
+   "label": "Accounts Department",
+   "value": "Accounts Department",
+   "parentValue": [
+    "Horticulture  Sector"
+   ]
+  },
+  {
+   "question": "department",
+   "label": "Banking & Finance Department",
+   "value": "Banking & Finance Department",
+   "parentValue": [
+    "Horticulture  Sector"
+   ]
+  },
+  {
+   "question": "department",
+   "label": "Marketing & Proposals Department",
+   "value": "Marketing & Proposals Department",
+   "parentValue": [
+    "Horticulture  Sector"
+   ]
+  },
+  {
+   "question": "department",
+   "label": "Sales & Business Development Department",
+   "value": "Sales & Business Development Department",
+   "parentValue": [
+    "Horticulture  Sector"
+   ]
+  },
+  {
+   "question": "department",
+   "label": "Advertising Department",
+   "value": "Advertising Department",
+   "parentValue": [
+    "Horticulture  Sector"
+   ]
+  },
+  {
+   "question": "department",
+   "label": "Project & Program Management",
+   "value": "Project & Program Management",
+   "parentValue": [
+    "Horticulture  Sector"
+   ]
+  },
+  {
+   "question": "department",
+   "label": "Procurement Department",
+   "value": "Procurement Department",
+   "parentValue": [
+    "Horticulture  Sector"
+   ]
+  },
+  {
+   "question": "department",
+   "label": "Supply/Cold Chain & Logistics",
+   "value": "Supply/Cold Chain & Logistics",
+   "parentValue": [
+    "Horticulture  Sector"
+   ]
+  },
+  {
+   "question": "department",
+   "label": "Information Technology Department",
+   "value": "Information Technology Department",
+   "parentValue": [
+    "Horticulture  Sector"
+   ]
+  },
+  {
+   "question": "department",
+   "label": "Human Resource Department",
+   "value": "Human Resource Department",
+   "parentValue": [
+    "Horticulture  Sector"
+   ]
+  },
+  {
+   "question": "department",
+   "label": "Administration & Facilities department",
+   "value": "Administration & Facilities department",
+   "parentValue": [
+    "Horticulture  Sector"
+   ]
+  },
+  {
+   "question": "department",
+   "label": "Quality & Inspection Department",
+   "value": "Quality & Inspection Department",
+   "parentValue": [
+    "Horticulture  Sector"
+   ]
+  },
+  {
+   "question": "department",
+   "label": "Production Department",
+   "value": "Production Department",
+   "parentValue": [
+    "Horticulture  Sector"
+   ]
+  },
+  {
+   "question": "department",
+   "label": "UX, Design & Architecture Department",
+   "value": "UX, Design & Architecture Department",
+   "parentValue": [
+    "Horticulture  Sector"
+   ]
+  },
+  {
+   "question": "department",
+   "label": "Maintenance and Utilities Department",
+   "value": "Maintenance and Utilities Department",
+   "parentValue": [
+    "Horticulture  Sector"
+   ]
+  },
+  {
+   "question": "department",
+   "label": "Research & Development Department",
+   "value": "Research & Development Department",
+   "parentValue": [
+    "Horticulture  Sector"
+   ]
+  },
+  {
+   "question": "department",
+   "label": "Dispatch & Packaging Department",
+   "value": "Dispatch & Packaging Department",
+   "parentValue": [
+    "Horticulture  Sector"
+   ]
+  },
+  {
+   "question": "department",
+   "label": "Store & warehousing Department",
+   "value": "Store & warehousing Department",
+   "parentValue": [
+    "Horticulture  Sector"
+   ]
+  },
+  {
+   "question": "department",
+   "label": "Risk & Risk & Security Department",
+   "value": "Risk & Risk & Security Department",
+   "parentValue": [
+    "Horticulture  Sector"
+   ]
+  },
+  {
+   "question": "department",
+   "label": "Customer Success, Service & Operations",
+   "value": "Customer Success, Service & Operations",
+   "parentValue": [
+    "Horticulture  Sector"
+   ]
+  },
+  {
+   "question": "department",
+   "label": "Teaching & Training",
+   "value": "Teaching & Training",
+   "parentValue": [
+    "Horticulture  Sector"
+   ]
+  },
+  {
+   "question": "department",
+   "label": "Consulting Department",
+   "value": "Consulting Department",
+   "parentValue": [
+    "Horticulture  Sector"
+   ]
+  },
+  {
+   "question": "department",
+   "label": "Construction & Site Engineering",
+   "value": "Construction & Site Engineering",
+   "parentValue": [
+    "Horticulture  Sector"
+   ]
+  },
+  {
+   "question": "orgsize",
+   "label": "1",
+   "value": "1",
+   "parentValue": [
+    "Employed full-time"
+   ]
+  },
+  {
+   "question": "orgsize",
+   "label": "2-10",
+   "value": "2-10",
+   "parentValue": [
+    "Employed full-time"
+   ]
+  },
+  {
+   "question": "orgsize",
+   "label": "11-50",
+   "value": "11-50",
+   "parentValue": [
+    "Employed full-time"
+   ]
+  },
+  {
+   "question": "orgsize",
+   "label": "51-100",
+   "value": "51-100",
+   "parentValue": [
+    "Employed full-time"
+   ]
+  },
+  {
+   "question": "orgsize",
+   "label": "101-500",
+   "value": "101-500",
+   "parentValue": [
+    "Employed full-time"
+   ]
+  },
+  {
+   "question": "orgsize",
+   "label": "501-1000",
+   "value": "501-1000",
+   "parentValue": [
+    "Employed full-time"
+   ]
+  },
+  {
+   "question": "orgsize",
+   "label": "1001-5000",
+   "value": "1001-5000",
+   "parentValue": [
+    "Employed full-time"
+   ]
+  },
+  {
+   "question": "orgsize",
+   "label": "5001-10000",
+   "value": "5001-10000",
+   "parentValue": [
+    "Employed full-time"
+   ]
+  },
+  {
+   "question": "orgsize",
+   "label": "More than 10000",
+   "value": "More than 10000",
+   "parentValue": [
+    "Employed full-time"
+   ]
+  },
+  {
+   "question": "orgsize",
+   "label": "1",
+   "value": "1",
+   "parentValue": [
+    "Self-employed full-time"
+   ]
+  },
+  {
+   "question": "orgsize",
+   "label": "2-10",
+   "value": "2-10",
+   "parentValue": [
+    "Self-employed full-time"
+   ]
+  },
+  {
+   "question": "orgsize",
+   "label": "11-50",
+   "value": "11-50",
+   "parentValue": [
+    "Self-employed full-time"
+   ]
+  },
+  {
+   "question": "orgsize",
+   "label": "51-100",
+   "value": "51-100",
+   "parentValue": [
+    "Self-employed full-time"
+   ]
+  },
+  {
+   "question": "orgsize",
+   "label": "101-500",
+   "value": "101-500",
+   "parentValue": [
+    "Self-employed full-time"
+   ]
+  },
+  {
+   "question": "orgsize",
+   "label": "501-1000",
+   "value": "501-1000",
+   "parentValue": [
+    "Self-employed full-time"
+   ]
+  },
+  {
+   "question": "orgsize",
+   "label": "1001-5000",
+   "value": "1001-5000",
+   "parentValue": [
+    "Self-employed full-time"
+   ]
+  },
+  {
+   "question": "orgsize",
+   "label": "5001-10000",
+   "value": "5001-10000",
+   "parentValue": [
+    "Self-employed full-time"
+   ]
+  },
+  {
+   "question": "orgsize",
+   "label": "More than 10000",
+   "value": "More than 10000",
+   "parentValue": [
+    "Self-employed full-time"
+   ]
+  },
+  {
+   "question": "orgsize",
+   "label": "1",
+   "value": "1",
+   "parentValue": [
+    "Self-employed part-time"
+   ]
+  },
+  {
+   "question": "orgsize",
+   "label": "2-10",
+   "value": "2-10",
+   "parentValue": [
+    "Self-employed part-time"
+   ]
+  },
+  {
+   "question": "orgsize",
+   "label": "11-50",
+   "value": "11-50",
+   "parentValue": [
+    "Self-employed part-time"
+   ]
+  },
+  {
+   "question": "orgsize",
+   "label": "51-100",
+   "value": "51-100",
+   "parentValue": [
+    "Self-employed part-time"
+   ]
+  },
+  {
+   "question": "orgsize",
+   "label": "101-500",
+   "value": "101-500",
+   "parentValue": [
+    "Self-employed part-time"
+   ]
+  },
+  {
+   "question": "orgsize",
+   "label": "501-1000",
+   "value": "501-1000",
+   "parentValue": [
+    "Self-employed part-time"
+   ]
+  },
+  {
+   "question": "orgsize",
+   "label": "1001-5000",
+   "value": "1001-5000",
+   "parentValue": [
+    "Self-employed part-time"
+   ]
+  },
+  {
+   "question": "orgsize",
+   "label": "5001-10000",
+   "value": "5001-10000",
+   "parentValue": [
+    "Self-employed part-time"
+   ]
+  },
+  {
+   "question": "orgsize",
+   "label": "More than 10000",
+   "value": "More than 10000",
+   "parentValue": [
+    "Self-employed part-time"
+   ]
+  },
+  {
+   "question": "orgoverseas",
+   "label": "1",
+   "value": "1",
+   "parentValue": [
+    "Employed full-time"
+   ]
+  },
+  {
+   "question": "orgoverseas",
+   "label": "2-10",
+   "value": "2-10",
+   "parentValue": [
+    "Employed full-time"
+   ]
+  },
+  {
+   "question": "orgoverseas",
+   "label": "11-50",
+   "value": "11-50",
+   "parentValue": [
+    "Employed full-time"
+   ]
+  },
+  {
+   "question": "orgoverseas",
+   "label": "More Than 50",
+   "value": "More Than 50",
+   "parentValue": [
+    "Employed full-time"
+   ]
+  },
+  {
+   "question": "orgoverseas",
+   "label": "None of the Above,None",
+   "value": "None of the Above,None",
+   "parentValue": [
+    "Employed full-time"
+   ]
+  },
+  {
+   "question": "orgoverseas",
+   "label": "1",
+   "value": "1",
+   "parentValue": [
+    "Self-employed full-time"
+   ]
+  },
+  {
+   "question": "orgoverseas",
+   "label": "2-10",
+   "value": "2-10",
+   "parentValue": [
+    "Self-employed full-time"
+   ]
+  },
+  {
+   "question": "orgoverseas",
+   "label": "11-50",
+   "value": "11-50",
+   "parentValue": [
+    "Self-employed full-time"
+   ]
+  },
+  {
+   "question": "orgoverseas",
+   "label": "More Than 50",
+   "value": "More Than 50",
+   "parentValue": [
+    "Self-employed full-time"
+   ]
+  },
+  {
+   "question": "orgoverseas",
+   "label": "None of the Above,None",
+   "value": "None of the Above,None",
+   "parentValue": [
+    "Self-employed full-time"
+   ]
+  },
+  {
+   "question": "orgoverseas",
+   "label": "1",
+   "value": "1",
+   "parentValue": [
+    "Self-employed part-time"
+   ]
+  },
+  {
+   "question": "orgoverseas",
+   "label": "2-10",
+   "value": "2-10",
+   "parentValue": [
+    "Self-employed part-time"
+   ]
+  },
+  {
+   "question": "orgoverseas",
+   "label": "11-50",
+   "value": "11-50",
+   "parentValue": [
+    "Self-employed part-time"
+   ]
+  },
+  {
+   "question": "orgoverseas",
+   "label": "More Than 50",
+   "value": "More Than 50",
+   "parentValue": [
+    "Self-employed part-time"
+   ]
+  },
+  {
+   "question": "orgoverseas",
+   "label": "None of the Above,None",
+   "value": "None of the Above,None",
+   "parentValue": [
+    "Self-employed part-time"
+   ]
+  },
+  {
+   "question": "orgdecision",
+   "label": "I am the sole decision maker",
+   "value": "I am the sole decision maker",
+   "parentValue": [
+    "Employed full-time"
+   ]
+  },
+  {
+   "question": "orgdecision",
+   "label": "I share decision making with others",
+   "value": "I share decision making with others",
+   "parentValue": [
+    "Employed full-time"
+   ]
+  },
+  {
+   "question": "orgdecision",
+   "label": "I give input, but someone else usually makes the final decision",
+   "value": "I give input, but someone else usually makes the final decision",
+   "parentValue": [
+    "Employed full-time"
+   ]
+  },
+  {
+   "question": "orgdecision",
+   "label": "I am not usually involved in decision making",
+   "value": "I am not usually involved in decision making",
+   "parentValue": [
+    "Employed full-time"
+   ]
+  },
+  {
+   "question": "orgdecision",
+   "label": "I am the sole decision maker",
+   "value": "I am the sole decision maker",
+   "parentValue": [
+    "Self-employed full-time"
+   ]
+  },
+  {
+   "question": "orgdecision",
+   "label": "I share decision making with others",
+   "value": "I share decision making with others",
+   "parentValue": [
+    "Self-employed full-time"
+   ]
+  },
+  {
+   "question": "orgdecision",
+   "label": "I give input, but someone else usually makes the final decision",
+   "value": "I give input, but someone else usually makes the final decision",
+   "parentValue": [
+    "Self-employed full-time"
+   ]
+  },
+  {
+   "question": "orgdecision",
+   "label": "I am not usually involved in decision making",
+   "value": "I am not usually involved in decision making",
+   "parentValue": [
+    "Self-employed full-time"
+   ]
+  },
+  {
+   "question": "orgdecision",
+   "label": "I am the sole decision maker",
+   "value": "I am the sole decision maker",
+   "parentValue": [
+    "Self-employed part-time"
+   ]
+  },
+  {
+   "question": "orgdecision",
+   "label": "I share decision making with others",
+   "value": "I share decision making with others",
+   "parentValue": [
+    "Self-employed part-time"
+   ]
+  },
+  {
+   "question": "orgdecision",
+   "label": "I give input, but someone else usually makes the final decision",
+   "value": "I give input, but someone else usually makes the final decision",
+   "parentValue": [
+    "Self-employed part-time"
+   ]
+  },
+  {
+   "question": "orgdecision",
+   "label": "I am not usually involved in decision making",
+   "value": "I am not usually involved in decision making",
+   "parentValue": [
+    "Self-employed part-time"
+   ]
+  },
+  {
+   "question": "orgspend",
+   "label": "IT Hardware",
+   "value": "IT Hardware",
+   "parentValue": [
+    "I give input, but someone else usually makes the final decision"
+   ]
+  },
+  {
+   "question": "orgspend",
+   "label": "IT Software",
+   "value": "IT Software",
+   "parentValue": [
+    "I give input, but someone else usually makes the final decision"
+   ]
+  },
+  {
+   "question": "orgspend",
+   "label": "Printers and Copiers",
+   "value": "Printers and Copiers",
+   "parentValue": [
+    "I give input, but someone else usually makes the final decision"
+   ]
+  },
+  {
+   "question": "orgspend",
+   "label": "Financial Department (Acco. Software,Corporate CC)",
+   "value": "Financial Department (Acco. Software,Corporate CC)",
+   "parentValue": [
+    "I give input, but someone else usually makes the final decision"
+   ]
+  },
+  {
+   "question": "orgspend",
+   "label": "Human Resources (Employee Benefits,Retirement Pro)",
+   "value": "Human Resources (Employee Benefits,Retirement Pro)",
+   "parentValue": [
+    "I give input, but someone else usually makes the final decision"
+   ]
+  },
+  {
+   "question": "orgspend",
+   "label": "Office Supplies",
+   "value": "Office Supplies",
+   "parentValue": [
+    "I give input, but someone else usually makes the final decision"
+   ]
+  },
+  {
+   "question": "orgspend",
+   "label": "Printer and Copier Supplies (e.g. Ink)",
+   "value": "Printer and Copier Supplies (e.g. Ink)",
+   "parentValue": [
+    "I give input, but someone else usually makes the final decision"
+   ]
+  },
+  {
+   "question": "orgspend",
+   "label": "Corporate Travel Self",
+   "value": "Corporate Travel Self",
+   "parentValue": [
+    "I give input, but someone else usually makes the final decision"
+   ]
+  },
+  {
+   "question": "orgspend",
+   "label": "Corporate Travel Company",
+   "value": "Corporate Travel Company",
+   "parentValue": [
+    "I give input, but someone else usually makes the final decision"
+   ]
+  },
+  {
+   "question": "orgspend",
+   "label": "Telecommunications (Mobile)",
+   "value": "Telecommunications (Mobile)",
+   "parentValue": [
+    "I give input, but someone else usually makes the final decision"
+   ]
+  },
+  {
+   "question": "orgspend",
+   "label": "Telecommunications (Non -Mobile)",
+   "value": "Telecommunications (Non -Mobile)",
+   "parentValue": [
+    "I give input, but someone else usually makes the final decision"
+   ]
+  },
+  {
+   "question": "orgspend",
+   "label": "Sales/Business Development",
+   "value": "Sales/Business Development",
+   "parentValue": [
+    "I give input, but someone else usually makes the final decision"
+   ]
+  },
+  {
+   "question": "orgspend",
+   "label": "Shipping/Mail Services",
+   "value": "Shipping/Mail Services",
+   "parentValue": [
+    "I give input, but someone else usually makes the final decision"
+   ]
+  },
+  {
+   "question": "orgspend",
+   "label": "Operations/Production",
+   "value": "Operations/Production",
+   "parentValue": [
+    "I give input, but someone else usually makes the final decision"
+   ]
+  },
+  {
+   "question": "orgspend",
+   "label": "Legal Services",
+   "value": "Legal Services",
+   "parentValue": [
+    "I give input, but someone else usually makes the final decision"
+   ]
+  },
+  {
+   "question": "orgspend",
+   "label": "Marketing/Advertising",
+   "value": "Marketing/Advertising",
+   "parentValue": [
+    "I give input, but someone else usually makes the final decision"
+   ]
+  },
+  {
+   "question": "orgspend",
+   "label": "Security Services",
+   "value": "Security Services",
+   "parentValue": [
+    "I give input, but someone else usually makes the final decision"
+   ]
+  },
+  {
+   "question": "orgspend",
+   "label": "Facilities Maintenance and Management",
+   "value": "Facilities Maintenance and Management",
+   "parentValue": [
+    "I give input, but someone else usually makes the final decision"
+   ]
+  },
+  {
+   "question": "orgspend",
+   "label": "Food Services/Catering",
+   "value": "Food Services/Catering",
+   "parentValue": [
+    "I give input, but someone else usually makes the final decision"
+   ]
+  },
+  {
+   "question": "orgspend",
+   "label": "Auto Leasing/Purchasing",
+   "value": "Auto Leasing/Purchasing",
+   "parentValue": [
+    "I give input, but someone else usually makes the final decision"
+   ]
+  },
+  {
+   "question": "orgspend",
+   "label": "IT services or products",
+   "value": "IT services or products",
+   "parentValue": [
+    "I give input, but someone else usually makes the final decision"
+   ]
+  },
+  {
+   "question": "orgspend",
+   "label": "Maintenance",
+   "value": "Maintenance",
+   "parentValue": [
+    "I give input, but someone else usually makes the final decision"
+   ]
+  },
+  {
+   "question": "orgspend",
+   "label": "Training",
+   "value": "Training",
+   "parentValue": [
+    "I give input, but someone else usually makes the final decision"
+   ]
+  },
+  {
+   "question": "orgspend",
+   "label": "Procurement, buying",
+   "value": "Procurement, buying",
+   "parentValue": [
+    "I give input, but someone else usually makes the final decision"
+   ]
+  },
+  {
+   "question": "orgspend",
+   "label": "Office services, moving",
+   "value": "Office services, moving",
+   "parentValue": [
+    "I give input, but someone else usually makes the final decision"
+   ]
+  },
+  {
+   "question": "orgspend",
+   "label": "IT Hardware",
+   "value": "IT Hardware",
+   "parentValue": [
+    "I share decision making with others"
+   ]
+  },
+  {
+   "question": "orgspend",
+   "label": "IT Software",
+   "value": "IT Software",
+   "parentValue": [
+    "I share decision making with others"
+   ]
+  },
+  {
+   "question": "orgspend",
+   "label": "Printers and Copiers",
+   "value": "Printers and Copiers",
+   "parentValue": [
+    "I share decision making with others"
+   ]
+  },
+  {
+   "question": "orgspend",
+   "label": "Financial Department (Acco. Software,Corporate CC)",
+   "value": "Financial Department (Acco. Software,Corporate CC)",
+   "parentValue": [
+    "I share decision making with others"
+   ]
+  },
+  {
+   "question": "orgspend",
+   "label": "Human Resources (Employee Benefits,Retirement Pro)",
+   "value": "Human Resources (Employee Benefits,Retirement Pro)",
+   "parentValue": [
+    "I share decision making with others"
+   ]
+  },
+  {
+   "question": "orgspend",
+   "label": "Office Supplies",
+   "value": "Office Supplies",
+   "parentValue": [
+    "I share decision making with others"
+   ]
+  },
+  {
+   "question": "orgspend",
+   "label": "Printer and Copier Supplies (e.g. Ink)",
+   "value": "Printer and Copier Supplies (e.g. Ink)",
+   "parentValue": [
+    "I share decision making with others"
+   ]
+  },
+  {
+   "question": "orgspend",
+   "label": "Corporate Travel Self",
+   "value": "Corporate Travel Self",
+   "parentValue": [
+    "I share decision making with others"
+   ]
+  },
+  {
+   "question": "orgspend",
+   "label": "Corporate Travel Company",
+   "value": "Corporate Travel Company",
+   "parentValue": [
+    "I share decision making with others"
+   ]
+  },
+  {
+   "question": "orgspend",
+   "label": "Telecommunications (Mobile)",
+   "value": "Telecommunications (Mobile)",
+   "parentValue": [
+    "I share decision making with others"
+   ]
+  },
+  {
+   "question": "orgspend",
+   "label": "Telecommunications (Non -Mobile)",
+   "value": "Telecommunications (Non -Mobile)",
+   "parentValue": [
+    "I share decision making with others"
+   ]
+  },
+  {
+   "question": "orgspend",
+   "label": "Sales/Business Development",
+   "value": "Sales/Business Development",
+   "parentValue": [
+    "I share decision making with others"
+   ]
+  },
+  {
+   "question": "orgspend",
+   "label": "Shipping/Mail Services",
+   "value": "Shipping/Mail Services",
+   "parentValue": [
+    "I share decision making with others"
+   ]
+  },
+  {
+   "question": "orgspend",
+   "label": "Operations/Production",
+   "value": "Operations/Production",
+   "parentValue": [
+    "I share decision making with others"
+   ]
+  },
+  {
+   "question": "orgspend",
+   "label": "Legal Services",
+   "value": "Legal Services",
+   "parentValue": [
+    "I share decision making with others"
+   ]
+  },
+  {
+   "question": "orgspend",
+   "label": "Marketing/Advertising",
+   "value": "Marketing/Advertising",
+   "parentValue": [
+    "I share decision making with others"
+   ]
+  },
+  {
+   "question": "orgspend",
+   "label": "Security Services",
+   "value": "Security Services",
+   "parentValue": [
+    "I share decision making with others"
+   ]
+  },
+  {
+   "question": "orgspend",
+   "label": "Facilities Maintenance and Management",
+   "value": "Facilities Maintenance and Management",
+   "parentValue": [
+    "I share decision making with others"
+   ]
+  },
+  {
+   "question": "orgspend",
+   "label": "Food Services/Catering",
+   "value": "Food Services/Catering",
+   "parentValue": [
+    "I share decision making with others"
+   ]
+  },
+  {
+   "question": "orgspend",
+   "label": "Auto Leasing/Purchasing",
+   "value": "Auto Leasing/Purchasing",
+   "parentValue": [
+    "I share decision making with others"
+   ]
+  },
+  {
+   "question": "orgspend",
+   "label": "IT services or products",
+   "value": "IT services or products",
+   "parentValue": [
+    "I share decision making with others"
+   ]
+  },
+  {
+   "question": "orgspend",
+   "label": "Maintenance",
+   "value": "Maintenance",
+   "parentValue": [
+    "I share decision making with others"
+   ]
+  },
+  {
+   "question": "orgspend",
+   "label": "Training",
+   "value": "Training",
+   "parentValue": [
+    "I share decision making with others"
+   ]
+  },
+  {
+   "question": "orgspend",
+   "label": "Procurement, buying",
+   "value": "Procurement, buying",
+   "parentValue": [
+    "I share decision making with others"
+   ]
+  },
+  {
+   "question": "orgspend",
+   "label": "Office services, moving",
+   "value": "Office services, moving",
+   "parentValue": [
+    "I share decision making with others"
+   ]
+  },
+  {
+   "question": "orgspend",
+   "label": "IT Hardware",
+   "value": "IT Hardware",
+   "parentValue": [
+    "I am the sole decision maker"
+   ]
+  },
+  {
+   "question": "orgspend",
+   "label": "IT Software",
+   "value": "IT Software",
+   "parentValue": [
+    "I am the sole decision maker"
+   ]
+  },
+  {
+   "question": "orgspend",
+   "label": "Printers and Copiers",
+   "value": "Printers and Copiers",
+   "parentValue": [
+    "I am the sole decision maker"
+   ]
+  },
+  {
+   "question": "orgspend",
+   "label": "Financial Department (Acco. Software,Corporate CC)",
+   "value": "Financial Department (Acco. Software,Corporate CC)",
+   "parentValue": [
+    "I am the sole decision maker"
+   ]
+  },
+  {
+   "question": "orgspend",
+   "label": "Human Resources (Employee Benefits,Retirement Pro)",
+   "value": "Human Resources (Employee Benefits,Retirement Pro)",
+   "parentValue": [
+    "I am the sole decision maker"
+   ]
+  },
+  {
+   "question": "orgspend",
+   "label": "Office Supplies",
+   "value": "Office Supplies",
+   "parentValue": [
+    "I am the sole decision maker"
+   ]
+  },
+  {
+   "question": "orgspend",
+   "label": "Printer and Copier Supplies (e.g. Ink)",
+   "value": "Printer and Copier Supplies (e.g. Ink)",
+   "parentValue": [
+    "I am the sole decision maker"
+   ]
+  },
+  {
+   "question": "orgspend",
+   "label": "Corporate Travel Self",
+   "value": "Corporate Travel Self",
+   "parentValue": [
+    "I am the sole decision maker"
+   ]
+  },
+  {
+   "question": "orgspend",
+   "label": "Corporate Travel Company",
+   "value": "Corporate Travel Company",
+   "parentValue": [
+    "I am the sole decision maker"
+   ]
+  },
+  {
+   "question": "orgspend",
+   "label": "Telecommunications (Mobile)",
+   "value": "Telecommunications (Mobile)",
+   "parentValue": [
+    "I am the sole decision maker"
+   ]
+  },
+  {
+   "question": "orgspend",
+   "label": "Telecommunications (Non -Mobile)",
+   "value": "Telecommunications (Non -Mobile)",
+   "parentValue": [
+    "I am the sole decision maker"
+   ]
+  },
+  {
+   "question": "orgspend",
+   "label": "Sales/Business Development",
+   "value": "Sales/Business Development",
+   "parentValue": [
+    "I am the sole decision maker"
+   ]
+  },
+  {
+   "question": "orgspend",
+   "label": "Shipping/Mail Services",
+   "value": "Shipping/Mail Services",
+   "parentValue": [
+    "I am the sole decision maker"
+   ]
+  },
+  {
+   "question": "orgspend",
+   "label": "Operations/Production",
+   "value": "Operations/Production",
+   "parentValue": [
+    "I am the sole decision maker"
+   ]
+  },
+  {
+   "question": "orgspend",
+   "label": "Legal Services",
+   "value": "Legal Services",
+   "parentValue": [
+    "I am the sole decision maker"
+   ]
+  },
+  {
+   "question": "orgspend",
+   "label": "Marketing/Advertising",
+   "value": "Marketing/Advertising",
+   "parentValue": [
+    "I am the sole decision maker"
+   ]
+  },
+  {
+   "question": "orgspend",
+   "label": "Security Services",
+   "value": "Security Services",
+   "parentValue": [
+    "I am the sole decision maker"
+   ]
+  },
+  {
+   "question": "orgspend",
+   "label": "Facilities Maintenance and Management",
+   "value": "Facilities Maintenance and Management",
+   "parentValue": [
+    "I am the sole decision maker"
+   ]
+  },
+  {
+   "question": "orgspend",
+   "label": "Food Services/Catering",
+   "value": "Food Services/Catering",
+   "parentValue": [
+    "I am the sole decision maker"
+   ]
+  },
+  {
+   "question": "orgspend",
+   "label": "Auto Leasing/Purchasing",
+   "value": "Auto Leasing/Purchasing",
+   "parentValue": [
+    "I am the sole decision maker"
+   ]
+  },
+  {
+   "question": "orgspend",
+   "label": "IT services or products",
+   "value": "IT services or products",
+   "parentValue": [
+    "I am the sole decision maker"
+   ]
+  },
+  {
+   "question": "orgspend",
+   "label": "Maintenance",
+   "value": "Maintenance",
+   "parentValue": [
+    "I am the sole decision maker"
+   ]
+  },
+  {
+   "question": "orgspend",
+   "label": "Training",
+   "value": "Training",
+   "parentValue": [
+    "I am the sole decision maker"
+   ]
+  },
+  {
+   "question": "orgspend",
+   "label": "Procurement, buying",
+   "value": "Procurement, buying",
+   "parentValue": [
+    "I am the sole decision maker"
+   ]
+  },
+  {
+   "question": "orgspend",
+   "label": "Office services, moving",
+   "value": "Office services, moving",
+   "parentValue": [
+    "I am the sole decision maker"
+   ]
+  },
+  {
+   "question": "experience",
+   "label": "Recently Joined",
+   "value": "Recently Joined",
+   "parentValue": [
+    "Employed full-time"
+   ]
+  },
+  {
+   "question": "experience",
+   "label": "1 year,01 year",
+   "value": "1 year,01 year",
+   "parentValue": [
+    "Employed full-time"
+   ]
+  },
+  {
+   "question": "experience",
+   "label": "2-3 years,02-3 years",
+   "value": "2-3 years,02-3 years",
+   "parentValue": [
+    "Employed full-time"
+   ]
+  },
+  {
+   "question": "experience",
+   "label": "4-5 years,04-5 years",
+   "value": "4-5 years,04-5 years",
+   "parentValue": [
+    "Employed full-time"
+   ]
+  },
+  {
+   "question": "experience",
+   "label": "6-7 years,06-7 years",
+   "value": "6-7 years,06-7 years",
+   "parentValue": [
+    "Employed full-time"
+   ]
+  },
+  {
+   "question": "experience",
+   "label": "8-9 years,08-9 years",
+   "value": "8-9 years,08-9 years",
+   "parentValue": [
+    "Employed full-time"
+   ]
+  },
+  {
+   "question": "experience",
+   "label": "10-15 years",
+   "value": "10-15 years",
+   "parentValue": [
+    "Employed full-time"
+   ]
+  },
+  {
+   "question": "experience",
+   "label": "More than 15 years",
+   "value": "More than 15 years",
+   "parentValue": [
+    "Employed full-time"
+   ]
+  },
+  {
+   "question": "experience",
+   "label": "Recently Joined",
+   "value": "Recently Joined",
+   "parentValue": [
+    "Self-employed full-time"
+   ]
+  },
+  {
+   "question": "experience",
+   "label": "1 year,01 year",
+   "value": "1 year,01 year",
+   "parentValue": [
+    "Self-employed full-time"
+   ]
+  },
+  {
+   "question": "experience",
+   "label": "2-3 years,02-3 years",
+   "value": "2-3 years,02-3 years",
+   "parentValue": [
+    "Self-employed full-time"
+   ]
+  },
+  {
+   "question": "experience",
+   "label": "4-5 years,04-5 years",
+   "value": "4-5 years,04-5 years",
+   "parentValue": [
+    "Self-employed full-time"
+   ]
+  },
+  {
+   "question": "experience",
+   "label": "6-7 years,06-7 years",
+   "value": "6-7 years,06-7 years",
+   "parentValue": [
+    "Self-employed full-time"
+   ]
+  },
+  {
+   "question": "experience",
+   "label": "8-9 years,08-9 years",
+   "value": "8-9 years,08-9 years",
+   "parentValue": [
+    "Self-employed full-time"
+   ]
+  },
+  {
+   "question": "experience",
+   "label": "10-15 years",
+   "value": "10-15 years",
+   "parentValue": [
+    "Self-employed full-time"
+   ]
+  },
+  {
+   "question": "experience",
+   "label": "More than 15 years",
+   "value": "More than 15 years",
+   "parentValue": [
+    "Self-employed full-time"
+   ]
+  },
+  {
+   "question": "experience",
+   "label": "Recently Joined",
+   "value": "Recently Joined",
+   "parentValue": [
+    "Self-employed part-time"
+   ]
+  },
+  {
+   "question": "experience",
+   "label": "1 year,01 year",
+   "value": "1 year,01 year",
+   "parentValue": [
+    "Self-employed part-time"
+   ]
+  },
+  {
+   "question": "experience",
+   "label": "2-3 years,02-3 years",
+   "value": "2-3 years,02-3 years",
+   "parentValue": [
+    "Self-employed part-time"
+   ]
+  },
+  {
+   "question": "experience",
+   "label": "4-5 years,04-5 years",
+   "value": "4-5 years,04-5 years",
+   "parentValue": [
+    "Self-employed part-time"
+   ]
+  },
+  {
+   "question": "experience",
+   "label": "6-7 years,06-7 years",
+   "value": "6-7 years,06-7 years",
+   "parentValue": [
+    "Self-employed part-time"
+   ]
+  },
+  {
+   "question": "experience",
+   "label": "8-9 years,08-9 years",
+   "value": "8-9 years,08-9 years",
+   "parentValue": [
+    "Self-employed part-time"
+   ]
+  },
+  {
+   "question": "experience",
+   "label": "10-15 years",
+   "value": "10-15 years",
+   "parentValue": [
+    "Self-employed part-time"
+   ]
+  },
+  {
+   "question": "experience",
+   "label": "More than 15 years",
+   "value": "More than 15 years",
+   "parentValue": [
+    "Self-employed part-time"
+   ]
+  },
+  {
+   "question": "organization-revenue",
+   "label": "up to 1000000",
+   "value": "up to 1000000",
+   "parentValue": [
+    "IN"
+   ]
+  },
+  {
+   "question": "organization-revenue",
+   "label": "1000000 - 5000000",
+   "value": "1000000 - 5000000",
+   "parentValue": [
+    "IN"
+   ]
+  },
+  {
+   "question": "organization-revenue",
+   "label": "5000000 - 20000000",
+   "value": "5000000 - 20000000",
+   "parentValue": [
+    "IN"
+   ]
+  },
+  {
+   "question": "organization-revenue",
+   "label": "20000000 - 100000000",
+   "value": "20000000 - 100000000",
+   "parentValue": [
+    "IN"
+   ]
+  },
+  {
+   "question": "organization-revenue",
+   "label": "100000000 - 500000000",
+   "value": "100000000 - 500000000",
+   "parentValue": [
+    "IN"
+   ]
+  },
+  {
+   "question": "organization-revenue",
+   "label": "500000000 and above",
+   "value": "500000000 and above",
+   "parentValue": [
+    "IN"
+   ]
+  },
+  {
+   "question": "organization-revenue",
+   "label": "up to 1000000",
+   "value": "up to 1000000",
+   "parentValue": [
+    "ID"
+   ]
+  },
+  {
+   "question": "organization-revenue",
+   "label": "500000000 and above",
+   "value": "500000000 and above",
+   "parentValue": [
+    "ID"
+   ]
+  },
+  {
+   "question": "organization-revenue",
+   "label": "1000000 -  5000000",
+   "value": "1000000 -  5000000",
+   "parentValue": [
+    "ID"
+   ]
+  },
+  {
+   "question": "organization-revenue",
+   "label": "5000000 -  20000000",
+   "value": "5000000 -  20000000",
+   "parentValue": [
+    "ID"
+   ]
+  },
+  {
+   "question": "organization-revenue",
+   "label": "20000000 -  100000000",
+   "value": "20000000 -  100000000",
+   "parentValue": [
+    "ID"
+   ]
+  },
+  {
+   "question": "organization-revenue",
+   "label": "100000000 -  500000000",
+   "value": "100000000 -  500000000",
+   "parentValue": [
+    "ID"
+   ]
+  },
+  {
+   "question": "organization-revenue",
+   "label": "up to 1000000",
+   "value": "up to 1000000",
+   "parentValue": [
+    "KH"
+   ]
+  },
+  {
+   "question": "organization-revenue",
+   "label": "1000000 - 5000000",
+   "value": "1000000 - 5000000",
+   "parentValue": [
+    "KH"
+   ]
+  },
+  {
+   "question": "organization-revenue",
+   "label": "5000000 - 20000000",
+   "value": "5000000 - 20000000",
+   "parentValue": [
+    "KH"
+   ]
+  },
+  {
+   "question": "organization-revenue",
+   "label": "20000000 - 100000000",
+   "value": "20000000 - 100000000",
+   "parentValue": [
+    "KH"
+   ]
+  },
+  {
+   "question": "organization-revenue",
+   "label": "100000000 - 500000000",
+   "value": "100000000 - 500000000",
+   "parentValue": [
+    "KH"
+   ]
+  },
+  {
+   "question": "organization-revenue",
+   "label": "500000000 and above",
+   "value": "500000000 and above",
+   "parentValue": [
+    "KH"
+   ]
+  },
+  {
+   "question": "org-country",
+   "label": "Malaysia,MY",
+   "value": "Malaysia,MY",
+   "parentValue": [
+    "Employed full-time"
+   ]
+  },
+  {
+   "question": "org-country",
+   "label": "Namibia,NA",
+   "value": "Namibia,NA",
+   "parentValue": [
+    "Employed full-time"
+   ]
+  },
+  {
+   "question": "org-country",
+   "label": "New Caledonia,NC",
+   "value": "New Caledonia,NC",
+   "parentValue": [
+    "Employed full-time"
+   ]
+  },
+  {
+   "question": "org-country",
+   "label": "Mozambique,MZ",
+   "value": "Mozambique,MZ",
+   "parentValue": [
+    "Employed full-time"
+   ]
+  },
+  {
+   "question": "org-country",
+   "label": "Niger,NE",
+   "value": "Niger,NE",
+   "parentValue": [
+    "Employed full-time"
+   ]
+  },
+  {
+   "question": "org-country",
+   "label": "Nigeria,NG",
+   "value": "Nigeria,NG",
+   "parentValue": [
+    "Employed full-time"
+   ]
+  },
+  {
+   "question": "org-country",
+   "label": "Norfolk Island,NF",
+   "value": "Norfolk Island,NF",
+   "parentValue": [
+    "Employed full-time"
+   ]
+  },
+  {
+   "question": "org-country",
+   "label": "Panama,PA",
+   "value": "Panama,PA",
+   "parentValue": [
+    "Employed full-time"
+   ]
+  },
+  {
+   "question": "org-country",
+   "label": "Netherlands,NL",
+   "value": "Netherlands,NL",
+   "parentValue": [
+    "Employed full-time"
+   ]
+  },
+  {
+   "question": "org-country",
+   "label": "Nicaragua,NI",
+   "value": "Nicaragua,NI",
+   "parentValue": [
+    "Employed full-time"
+   ]
+  },
+  {
+   "question": "org-country",
+   "label": "Nepal,NP",
+   "value": "Nepal,NP",
+   "parentValue": [
+    "Employed full-time"
+   ]
+  },
+  {
+   "question": "org-country",
+   "label": "Niue,NU",
+   "value": "Niue,NU",
+   "parentValue": [
+    "Employed full-time"
+   ]
+  },
+  {
+   "question": "org-country",
+   "label": "Nauru,NR",
+   "value": "Nauru,NR",
+   "parentValue": [
+    "Employed full-time"
+   ]
+  },
+  {
+   "question": "org-country",
+   "label": "Pakistan,PK",
+   "value": "Pakistan,PK",
+   "parentValue": [
+    "Employed full-time"
+   ]
+  },
+  {
+   "question": "org-country",
+   "label": "Poland,PL",
+   "value": "Poland,PL",
+   "parentValue": [
+    "Employed full-time"
+   ]
+  },
+  {
+   "question": "org-country",
+   "label": "Saint Pierre and Miquelon,PM",
+   "value": "Saint Pierre and Miquelon,PM",
+   "parentValue": [
+    "Employed full-time"
+   ]
+  },
+  {
+   "question": "org-country",
+   "label": "Pitcairn Island,PN",
+   "value": "Pitcairn Island,PN",
+   "parentValue": [
+    "Employed full-time"
+   ]
+  },
+  {
+   "question": "org-country",
+   "label": "Puerto Rico,PR",
+   "value": "Puerto Rico,PR",
+   "parentValue": [
+    "Employed full-time"
+   ]
+  },
+  {
+   "question": "org-country",
+   "label": "Norway,NO",
+   "value": "Norway,NO",
+   "parentValue": [
+    "Employed full-time"
+   ]
+  },
+  {
+   "question": "org-country",
+   "label": "French Polynesia,PF",
+   "value": "French Polynesia,PF",
+   "parentValue": [
+    "Employed full-time"
+   ]
+  },
+  {
+   "question": "org-country",
+   "label": "New Zealand,NZ",
+   "value": "New Zealand,NZ",
+   "parentValue": [
+    "Employed full-time"
+   ]
+  },
+  {
+   "question": "org-country",
+   "label": "Peru,PE",
+   "value": "Peru,PE",
+   "parentValue": [
+    "Employed full-time"
+   ]
+  },
+  {
+   "question": "org-country",
+   "label": "Oman,OM",
+   "value": "Oman,OM",
+   "parentValue": [
+    "Employed full-time"
+   ]
+  },
+  {
+   "question": "org-country",
+   "label": "Mexico,MX",
+   "value": "Mexico,MX",
+   "parentValue": [
+    "Employed full-time"
+   ]
+  },
+  {
+   "question": "org-country",
+   "label": "Papua new Guinea,PG",
+   "value": "Papua new Guinea,PG",
+   "parentValue": [
+    "Employed full-time"
+   ]
+  },
+  {
+   "question": "org-country",
+   "label": "Malaysia,MY",
+   "value": "Malaysia,MY",
+   "parentValue": [
+    "Employed part-time"
+   ]
+  },
+  {
+   "question": "org-country",
+   "label": "Namibia,NA",
+   "value": "Namibia,NA",
+   "parentValue": [
+    "Employed part-time"
+   ]
+  },
+  {
+   "question": "org-country",
+   "label": "New Caledonia,NC",
+   "value": "New Caledonia,NC",
+   "parentValue": [
+    "Employed part-time"
+   ]
+  },
+  {
+   "question": "org-country",
+   "label": "Mozambique,MZ",
+   "value": "Mozambique,MZ",
+   "parentValue": [
+    "Employed part-time"
+   ]
+  },
+  {
+   "question": "org-country",
+   "label": "Niger,NE",
+   "value": "Niger,NE",
+   "parentValue": [
+    "Employed part-time"
+   ]
+  },
+  {
+   "question": "org-country",
+   "label": "Nigeria,NG",
+   "value": "Nigeria,NG",
+   "parentValue": [
+    "Employed part-time"
+   ]
+  },
+  {
+   "question": "org-country",
+   "label": "Norfolk Island,NF",
+   "value": "Norfolk Island,NF",
+   "parentValue": [
+    "Employed part-time"
+   ]
+  },
+  {
+   "question": "org-country",
+   "label": "Panama,PA",
+   "value": "Panama,PA",
+   "parentValue": [
+    "Employed part-time"
+   ]
+  },
+  {
+   "question": "org-country",
+   "label": "Netherlands,NL",
+   "value": "Netherlands,NL",
+   "parentValue": [
+    "Employed part-time"
+   ]
+  },
+  {
+   "question": "org-country",
+   "label": "Nicaragua,NI",
+   "value": "Nicaragua,NI",
+   "parentValue": [
+    "Employed part-time"
+   ]
+  },
+  {
+   "question": "org-country",
+   "label": "Nepal,NP",
+   "value": "Nepal,NP",
+   "parentValue": [
+    "Employed part-time"
+   ]
+  },
+  {
+   "question": "org-country",
+   "label": "Niue,NU",
+   "value": "Niue,NU",
+   "parentValue": [
+    "Employed part-time"
+   ]
+  },
+  {
+   "question": "org-country",
+   "label": "Nauru,NR",
+   "value": "Nauru,NR",
+   "parentValue": [
+    "Employed part-time"
+   ]
+  },
+  {
+   "question": "org-country",
+   "label": "Pakistan,PK",
+   "value": "Pakistan,PK",
+   "parentValue": [
+    "Employed part-time"
+   ]
+  },
+  {
+   "question": "org-country",
+   "label": "Poland,PL",
+   "value": "Poland,PL",
+   "parentValue": [
+    "Employed part-time"
+   ]
+  },
+  {
+   "question": "org-country",
+   "label": "Saint Pierre and Miquelon,PM",
+   "value": "Saint Pierre and Miquelon,PM",
+   "parentValue": [
+    "Employed part-time"
+   ]
+  },
+  {
+   "question": "org-country",
+   "label": "Pitcairn Island,PN",
+   "value": "Pitcairn Island,PN",
+   "parentValue": [
+    "Employed part-time"
+   ]
+  },
+  {
+   "question": "org-country",
+   "label": "Puerto Rico,PR",
+   "value": "Puerto Rico,PR",
+   "parentValue": [
+    "Employed part-time"
+   ]
+  },
+  {
+   "question": "org-country",
+   "label": "Norway,NO",
+   "value": "Norway,NO",
+   "parentValue": [
+    "Employed part-time"
+   ]
+  },
+  {
+   "question": "org-country",
+   "label": "French Polynesia,PF",
+   "value": "French Polynesia,PF",
+   "parentValue": [
+    "Employed part-time"
+   ]
+  },
+  {
+   "question": "org-country",
+   "label": "New Zealand,NZ",
+   "value": "New Zealand,NZ",
+   "parentValue": [
+    "Employed part-time"
+   ]
+  },
+  {
+   "question": "org-country",
+   "label": "Peru,PE",
+   "value": "Peru,PE",
+   "parentValue": [
+    "Employed part-time"
+   ]
+  },
+  {
+   "question": "org-country",
+   "label": "Oman,OM",
+   "value": "Oman,OM",
+   "parentValue": [
+    "Employed part-time"
+   ]
+  },
+  {
+   "question": "org-country",
+   "label": "Mexico,MX",
+   "value": "Mexico,MX",
+   "parentValue": [
+    "Employed part-time"
+   ]
+  },
+  {
+   "question": "org-country",
+   "label": "Papua new Guinea,PG",
+   "value": "Papua new Guinea,PG",
+   "parentValue": [
+    "Employed part-time"
+   ]
+  },
+  {
+   "question": "org-country",
+   "label": "Malaysia,MY",
+   "value": "Malaysia,MY",
+   "parentValue": [
+    "Government/Public Employee"
+   ]
+  },
+  {
+   "question": "org-country",
+   "label": "Namibia,NA",
+   "value": "Namibia,NA",
+   "parentValue": [
+    "Government/Public Employee"
+   ]
+  },
+  {
+   "question": "org-country",
+   "label": "New Caledonia,NC",
+   "value": "New Caledonia,NC",
+   "parentValue": [
+    "Government/Public Employee"
+   ]
+  },
+  {
+   "question": "org-country",
+   "label": "Mozambique,MZ",
+   "value": "Mozambique,MZ",
+   "parentValue": [
+    "Government/Public Employee"
+   ]
+  },
+  {
+   "question": "org-country",
+   "label": "Niger,NE",
+   "value": "Niger,NE",
+   "parentValue": [
+    "Government/Public Employee"
+   ]
+  },
+  {
+   "question": "org-country",
+   "label": "Nigeria,NG",
+   "value": "Nigeria,NG",
+   "parentValue": [
+    "Government/Public Employee"
+   ]
+  },
+  {
+   "question": "org-country",
+   "label": "Norfolk Island,NF",
+   "value": "Norfolk Island,NF",
+   "parentValue": [
+    "Government/Public Employee"
+   ]
+  },
+  {
+   "question": "org-country",
+   "label": "Panama,PA",
+   "value": "Panama,PA",
+   "parentValue": [
+    "Government/Public Employee"
+   ]
+  },
+  {
+   "question": "org-country",
+   "label": "Netherlands,NL",
+   "value": "Netherlands,NL",
+   "parentValue": [
+    "Government/Public Employee"
+   ]
+  },
+  {
+   "question": "org-country",
+   "label": "Nicaragua,NI",
+   "value": "Nicaragua,NI",
+   "parentValue": [
+    "Government/Public Employee"
+   ]
+  },
+  {
+   "question": "org-country",
+   "label": "Nepal,NP",
+   "value": "Nepal,NP",
+   "parentValue": [
+    "Government/Public Employee"
+   ]
+  },
+  {
+   "question": "org-country",
+   "label": "Niue,NU",
+   "value": "Niue,NU",
+   "parentValue": [
+    "Government/Public Employee"
+   ]
+  },
+  {
+   "question": "org-country",
+   "label": "Nauru,NR",
+   "value": "Nauru,NR",
+   "parentValue": [
+    "Government/Public Employee"
+   ]
+  },
+  {
+   "question": "org-country",
+   "label": "Pakistan,PK",
+   "value": "Pakistan,PK",
+   "parentValue": [
+    "Government/Public Employee"
+   ]
+  },
+  {
+   "question": "org-country",
+   "label": "Poland,PL",
+   "value": "Poland,PL",
+   "parentValue": [
+    "Government/Public Employee"
+   ]
+  },
+  {
+   "question": "org-country",
+   "label": "Saint Pierre and Miquelon,PM",
+   "value": "Saint Pierre and Miquelon,PM",
+   "parentValue": [
+    "Government/Public Employee"
+   ]
+  },
+  {
+   "question": "org-country",
+   "label": "Pitcairn Island,PN",
+   "value": "Pitcairn Island,PN",
+   "parentValue": [
+    "Government/Public Employee"
+   ]
+  },
+  {
+   "question": "org-country",
+   "label": "Puerto Rico,PR",
+   "value": "Puerto Rico,PR",
+   "parentValue": [
+    "Government/Public Employee"
+   ]
+  },
+  {
+   "question": "org-country",
+   "label": "Norway,NO",
+   "value": "Norway,NO",
+   "parentValue": [
+    "Government/Public Employee"
+   ]
+  },
+  {
+   "question": "org-country",
+   "label": "French Polynesia,PF",
+   "value": "French Polynesia,PF",
+   "parentValue": [
+    "Government/Public Employee"
+   ]
+  },
+  {
+   "question": "org-country",
+   "label": "New Zealand,NZ",
+   "value": "New Zealand,NZ",
+   "parentValue": [
+    "Government/Public Employee"
+   ]
+  },
+  {
+   "question": "org-country",
+   "label": "Peru,PE",
+   "value": "Peru,PE",
+   "parentValue": [
+    "Government/Public Employee"
+   ]
+  },
+  {
+   "question": "org-country",
+   "label": "Oman,OM",
+   "value": "Oman,OM",
+   "parentValue": [
+    "Government/Public Employee"
+   ]
+  },
+  {
+   "question": "org-country",
+   "label": "Mexico,MX",
+   "value": "Mexico,MX",
+   "parentValue": [
+    "Government/Public Employee"
+   ]
+  },
+  {
+   "question": "org-country",
+   "label": "Papua new Guinea,PG",
+   "value": "Papua new Guinea,PG",
+   "parentValue": [
+    "Government/Public Employee"
+   ]
+  },
+  {
+   "question": "unemp-industry",
+   "label": "Service",
+   "value": "Service",
+   "parentValue": [
+    "Yes"
+   ]
+  },
+  {
+   "question": "unemp-industry",
+   "label": "Manufacturing",
+   "value": "Manufacturing",
+   "parentValue": [
+    "Yes"
+   ]
+  },
+  {
+   "question": "unemp-industry",
+   "label": "Govt. and Defense",
+   "value": "Govt. and Defense",
+   "parentValue": [
+    "Yes"
+   ]
+  },
+  {
+   "question": "unemp-industry",
+   "label": "Agriculture",
+   "value": "Agriculture",
+   "parentValue": [
+    "Yes"
+   ]
+  }
+ ]
+}

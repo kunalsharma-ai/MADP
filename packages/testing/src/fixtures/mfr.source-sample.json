@@ -1,0 +1,43 @@
+{
+ "panel": "mfr",
+ "verified": false,
+ "source": "SYNTHETIC. The MFR repository holds no questionnaire export (questions are DB-driven). Question names below are taken from MFR frontend code (frontend-1/src/utils/profileAnswers.js, src/data/worldQuestions.js); labels and options are placeholders until an authorised read of GET /api/v1/question and /api/v1/option/:name.",
+ "extractedAt": "2026-11-23",
+ "profiles": [
+  { "slug": "your-world-consumer", "name": "your world (consumer)", "sourceCategory": "b2c", "pages": [["Your world", "hobbies", "communication-methods", "news-letter", "terms-consent"]] },
+  { "slug": "your-world-professional", "name": "your world (professional)", "sourceCategory": "b2b", "pages": [["Your world", "empstat", "industry", "sector", "department", "workemail", "communication-methods", "news-letter", "terms-consent"]] }
+ ],
+ "questions": [
+  { "name": "hobbies", "label": "[placeholder] Hobbies & Interests", "parent": null, "category": ["b2c", "b2b"], "type": "multiselect" },
+  { "name": "communication-methods", "label": "[placeholder] Preferred communication methods", "parent": null, "category": ["b2c", "b2b"], "type": "multiselect" },
+  { "name": "news-letter", "label": "[placeholder] Marketing newsletter consent", "parent": null, "category": ["b2c", "b2b"], "type": "boolean" },
+  { "name": "terms-consent", "label": "[placeholder] Terms consent", "parent": null, "category": ["b2c", "b2b"], "type": "boolean" },
+  { "name": "empstat", "label": "[placeholder] Employment status", "parent": null, "category": ["b2b"], "type": "select" },
+  { "name": "industry", "label": "[placeholder] Industry", "parent": null, "category": ["b2b"], "type": "select" },
+  { "name": "sector", "label": "[placeholder] Sector", "parent": "industry", "category": ["b2b"], "type": "select" },
+  { "name": "department", "label": "[placeholder] Department", "parent": null, "category": ["b2b"], "type": "select" },
+  { "name": "workemail", "label": "[placeholder] Company email", "parent": null, "category": ["b2b"], "type": "email" }
+ ],
+ "options": [
+  { "question": "hobbies", "label": "Reading", "value": "reading", "parentValue": [] },
+  { "question": "hobbies", "label": "Travel", "value": "travel", "parentValue": [] },
+  { "question": "hobbies", "label": "Gaming", "value": "gaming", "parentValue": [] },
+  { "question": "hobbies", "label": "Cooking", "value": "cooking", "parentValue": [] },
+  { "question": "communication-methods", "label": "Dashboard", "value": "dashboard", "parentValue": [] },
+  { "question": "communication-methods", "label": "Email", "value": "email", "parentValue": [] },
+  { "question": "communication-methods", "label": "SMS", "value": "sms", "parentValue": [] },
+  { "question": "news-letter", "label": "Yes", "value": "true", "parentValue": [] },
+  { "question": "news-letter", "label": "No", "value": "false", "parentValue": [] },
+  { "question": "terms-consent", "label": "Yes", "value": "true", "parentValue": [] },
+  { "question": "terms-consent", "label": "No", "value": "false", "parentValue": [] },
+  { "question": "empstat", "label": "Full-time employee", "value": "full-time", "parentValue": [] },
+  { "question": "empstat", "label": "Self-employed", "value": "self-employed", "parentValue": [] },
+  { "question": "industry", "label": "Information technology", "value": "it", "parentValue": [] },
+  { "question": "industry", "label": "Healthcare", "value": "healthcare", "parentValue": [] },
+  { "question": "industry", "label": "Retail", "value": "retail", "parentValue": [] },
+  { "question": "sector", "label": "Software", "value": "software", "parentValue": ["it"] },
+  { "question": "sector", "label": "Hospitals", "value": "hospitals", "parentValue": ["healthcare"] },
+  { "question": "department", "label": "Finance", "value": "finance", "parentValue": [] },
+  { "question": "department", "label": "Marketing", "value": "marketing", "parentValue": [] }
+ ]
+}
