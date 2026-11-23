@@ -234,11 +234,20 @@ export class PanelApiConnector implements PanelConnector {
 
   async listQuestions() {
     const data = await this.call<RawQuestion[]>('GET', this.endpoints.questions);
-    return data.map((q) => mapQuestion(this.panel, q));
+    if (!Array.isArray(data))
+      throw new ConnectorError('Question list is not an array', this.panel, 'invalid_payload');
+    // A question without a name can't be addressed (its option route would be /option/), so it is skipped.
+    return data.filter((q) => String(q?.name ?? '').trim()).map((q) => mapQuestion(this.panel, q));
   }
 
   async listOptions(sourceQuestionId: string) {
     const data = await this.call<RawOption[]>('GET', this.endpoints.option(sourceQuestionId));
+    if (!Array.isArray(data))
+      throw new ConnectorError(
+        `Options for "${sourceQuestionId}" are not an array`,
+        this.panel,
+        'invalid_payload',
+      );
     return data.map((o) => mapOption(this.panel, o));
   }
 
@@ -252,7 +261,10 @@ export class PanelApiConnector implements PanelConnector {
       return { items: data.items.map((u) => mapUser(this.panel, u)), nextCursor: data.nextCursor };
     }
     // Fallback: the source only offers an unpaginated list. Fetch once per run, page locally.
-    this.cachedUsers ??= await this.call<RawUser[]>('POST', this.endpoints.users, {});
+    // GET, not POST: after the T2O member-access fix, POST /user answers a non-admin with their own referrals
+    // (an empty list for an integration account), while GET /user refuses a non-admin with 403. A wrong
+    // credential must fail loudly, not import zero members.
+    this.cachedUsers ??= await this.call<RawUser[]>('GET', this.endpoints.users);
     const start = cursor ? Number.parseInt(cursor, 10) : 0;
     const slice = this.cachedUsers.slice(start, start + limit);
     const next = start + slice.length;

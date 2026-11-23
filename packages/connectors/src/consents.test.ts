@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { mapConsents, mapUser, type RawUser } from './index.js';
+import { mapConsents, mapQuestionnaire, mapUser, type RawUser } from './index.js';
 
 const teen = (parent: RawUser['parent']): RawUser => ({ _id: 'u1', category: 'minor', parent });
 
@@ -78,5 +78,17 @@ describe('mapConsents (T2O backend User)', () => {
       expect(mapUser(panel, teen({ consentStatus: 'approved' })).consents[0]?.purpose).toBe(
         'guardian_consent',
       );
+  });
+});
+
+describe('mapQuestionnaire', () => {
+  it('drops blank question slots in a page (the T2O bank has two)', () => {
+    const q = mapQuestionnaire('t2o', {
+      name: 'Shopping',
+      slug: 'shopping',
+      category: 'b2c',
+      pages: [['Shopping', 'shop1', '', 'shop2']],
+    });
+    expect(q.pages).toEqual([['Shopping', 'shop1', 'shop2']]);
   });
 });

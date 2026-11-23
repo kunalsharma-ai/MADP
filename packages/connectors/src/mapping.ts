@@ -81,7 +81,9 @@ export function mapConsents(u: RawUser): SourceConsent[] {
   const out: SourceConsent[] = [];
   const p = u.parent;
   const isTeen = (u.category ?? '').includes('minor');
-  if (p && (isTeen || p.consentStatus || p.consent !== undefined)) {
+  // The backend returns a `parent` object with defaults (consent: null, empty lists) for every member, so only a
+  // teen, a recorded status or an explicit yes/no counts as a guardian consent record.
+  if (p && (isTeen || p.consentStatus || typeof p.consent === 'boolean' || p.decision)) {
     // Same order as the T2O User.registrationStatus virtual, so MADP agrees with what the member area shows.
     const status: SourceConsent['status'] =
       p.consent === true || p.consentStatus === 'approved'
@@ -176,7 +178,8 @@ export function mapQuestionnaire(panel: PanelCode, p: RawProfile): SourceQuestio
     slug: p.slug ?? p.name.toLowerCase().replace(/\s+/g, '-'),
     name: p.name,
     sourceCategory: p.category,
-    pages: (p.pages ?? []).map((pg) => pg.map(String)),
+    // Page entries are [title, ...questionNames]; blank slots (seen in the T2O bank) name no question.
+    pages: (p.pages ?? []).map((pg) => pg.map(String).filter((n, i) => i === 0 || n.trim() !== '')),
     points: typeof p.points === 'number' ? p.points : null,
   };
 }
