@@ -18,6 +18,15 @@ import {
 
 export const metadata: Metadata = { title: 'Panellist profile' };
 
+const CONSENT_PURPOSE_LABELS: Record<string, string> = {
+  guardian_consent: 'Parent or guardian consent',
+  terms: 'Terms accepted',
+  push_notifications: 'Push notifications',
+  video_sharing: 'Video sharing',
+  gps_sharing: 'Location sharing',
+};
+const CONSENT_TONE = { granted: 'teal', denied: 'danger', withdrawn: 'warn', unknown: 'neutral' } as const;
+
 export default async function PanellistPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   let d: PanellistDetail;
@@ -111,6 +120,29 @@ export default async function PanellistPage({ params }: { params: Promise<{ id: 
           ) : null}
         </Card>
       </div>
+      {d.consents.length ? (
+        <Card className="mt-4">
+          <CardHeader
+            title="Consent"
+            hint="As recorded by each panel at the last sync. Guardian details stay on the panel."
+          />
+          <Table head={['Panel', 'Purpose', 'Status', 'Version', 'Recorded']}>
+            {d.consents.map((c) => (
+              <tr key={`${c.panel}-${c.purpose}`}>
+                <td className="px-5 py-2.5">
+                  <PanelChip panel={c.panel} />
+                </td>
+                <td className="px-5 py-2.5">{CONSENT_PURPOSE_LABELS[c.purpose] ?? c.purpose}</td>
+                <td className="px-5 py-2.5">
+                  <Badge tone={CONSENT_TONE[c.status]}>{c.status}</Badge>
+                </td>
+                <td className="px-5 py-2.5 font-mono text-xs">{c.version ?? '—'}</td>
+                <td className="px-5 py-2.5 whitespace-nowrap">{fmtDate(c.capturedAt)}</td>
+              </tr>
+            ))}
+          </Table>
+        </Card>
+      ) : null}
       <Card className="mt-4">
         <CardHeader
           title="Profile answers"

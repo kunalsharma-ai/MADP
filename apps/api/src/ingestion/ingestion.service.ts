@@ -13,6 +13,7 @@ import { ConnectorRegistry } from '../connectors/connector-registry.js';
 import { Database, type Db } from '../db/database.js';
 import {
   categoryMemberships,
+  consentRecords,
   deadLetters,
   identityMatchCandidates,
   importJobs,
@@ -23,7 +24,13 @@ import {
   sourceQuestionMappings,
   syncCheckpoints,
 } from '../db/schema.js';
-import { Mongo, type QuestionVersionDoc } from '../mongo/mongo.js';
+import type { AnyBulkWriteOperation, WithId } from 'mongodb';
+import {
+  Mongo,
+  type AnswerHistoryDoc,
+  type ProfileAnswerDoc,
+  type QuestionVersionDoc,
+} from '../mongo/mongo.js';
 import { FieldCrypto, maskEmail } from '../crypto/field-crypto.js';
 import { AuditService } from '../audit/audit.service.js';
 import { DIRECT_IDENTIFIER_QUESTIONS, NAME_SUGGESTIONS, categoryFor, sensitivityFor } from './canonical.js';
@@ -62,6 +69,8 @@ export interface ImportCounts {
   /** Answer batches parked in the dead-letter queue after retries were exhausted. */
   deadLettered: number;
   deadLetteredMembers: number;
+  /** Consent records written or refreshed from the source (guardian consent, terms, opt-ins). */
+  consentsSynced: number;
 }
 
 /** Transient source failures go to the dead-letter queue; refused access or bad payloads fail the job. */
@@ -128,6 +137,7 @@ export class IngestionService {
       resumedFromCursor: null,
       deadLettered: 0,
       deadLetteredMembers: 0,
+      consentsSynced: 0,
     };
     try {
       const questionnaires = await connector.listQuestionnaires();
@@ -573,6 +583,40 @@ export class IngestionService {
     } else {
       counts.unknownCategories[r.sourceCategory] = (counts.unknownCategories[r.sourceCategory] ?? 0) + 1;
     }
+    // Consent: one current record per person, panel and purpose, refreshed on every sync. Evidence holds the
+    // source field, its status value and the version only; guardian contact details and IPs never leave the panel.
+    for (const c of r.consents ?? []) {
+      const evidence = {
+        source: 'panel_sync',
+        field: c.evidence.field,
+        value: c.evidence.value,
+        version: c.evidence.version,
+        importJobId: jobId,
+      };
+      const capturedAt = c.capturedAt ? new Date(c.capturedAt) : null;
+      await tx
+        .insert(consentRecords)
+        .values({
+          dataMode,
+          masterPersonId: personId,
+          panel,
+          purpose: c.purpose,
+          channel: 'panel_sync',
+          status: c.status,
+          evidence,
+          capturedAt,
+        })
+        .onConflictDoUpdate({
+          target: [
+            consentRecords.dataMode,
+            consentRecords.masterPersonId,
+            consentRecords.panel,
+            consentRecords.purpose,
+          ],
+          set: { status: c.status, evidence, capturedAt, channel: 'panel_sync' },
+        });
+      counts.consentsSynced++;
+    }
     // Person-level location/demographics: fill gaps only, never overwrite another panel's value (source precedence = first seen).
     const birthYear = r.dateOfBirth ? Number.parseInt(r.dateOfBirth.slice(0, 4), 10) : null;
     await tx
@@ -612,6 +656,15 @@ export class IngestionService {
       })
       .toArray();
     const sens = new Map(versionDocs.map((d) => [`${d.sourceQuestionId}@${d.version}`, d.sensitivity]));
+    // One read and one bulk write per page instead of two round trips per answer.
+    const memberIds = [...new Set(answers.map((a) => a.sourceMemberId))];
+    const existing = await this.mongo.profileAnswers
+      .find({ panel, dataMode, sourceMemberId: { $in: memberIds } })
+      .toArray();
+    const prevByKey = new Map(existing.map((d) => [`${d.sourceMemberId}\u0000${d.sourceQuestionId}`, d]));
+    const now = new Date();
+    const history: AnswerHistoryDoc[] = [];
+    const writes: AnyBulkWriteOperation<ProfileAnswerDoc>[] = [];
     for (const a of answers) {
       // Defence in depth: a source that returns more than was asked for still cannot store identifiers.
       if (DIRECT_IDENTIFIER_QUESTIONS.has(a.sourceQuestionId)) continue;
@@ -620,32 +673,31 @@ export class IngestionService {
       const questionVersion = versions.get(a.sourceQuestionId) ?? 0;
       const values = [...a.values].sort();
       const key = { panel, dataMode, sourceMemberId: a.sourceMemberId, sourceQuestionId: a.sourceQuestionId };
-      const prev = await this.mongo.profileAnswers.findOne(key);
+      const prev = prevByKey.get(`${a.sourceMemberId}\u0000${a.sourceQuestionId}`);
       if (prev && JSON.stringify(prev.values) === JSON.stringify(values)) continue;
       if (prev) {
         const { _id, ...rest } = prev;
-        await this.mongo.answerHistory.insertOne({ ...rest, supersededAt: new Date() });
+        history.push({ ...rest, supersededAt: now });
       }
-      await this.mongo.profileAnswers.updateOne(
-        key,
-        {
-          $set: {
-            ...key,
-            personId,
-            questionVersion,
-            values,
-            sensitivity:
-              sens.get(`${a.sourceQuestionId}@${questionVersion}`) ??
-              sensitivityFor(panel, a.sourceQuestionId, []),
-            sourceUpdatedAt: a.sourceUpdatedAt ? new Date(a.sourceUpdatedAt) : null,
-            ingestedAt: new Date(),
-            importJobId: jobId,
-          },
-        },
-        { upsert: true },
-      );
+      const doc: ProfileAnswerDoc = {
+        ...key,
+        personId,
+        questionVersion,
+        values,
+        sensitivity:
+          sens.get(`${a.sourceQuestionId}@${questionVersion}`) ??
+          sensitivityFor(panel, a.sourceQuestionId, []),
+        sourceUpdatedAt: a.sourceUpdatedAt ? new Date(a.sourceUpdatedAt) : null,
+        ingestedAt: now,
+        importJobId: jobId,
+      };
+      writes.push({ updateOne: { filter: key, update: { $set: doc }, upsert: true } });
+      // A repeated answer in the same batch compares against this one, not the stored one.
+      prevByKey.set(`${a.sourceMemberId}\u0000${a.sourceQuestionId}`, doc as WithId<ProfileAnswerDoc>);
       changed++;
     }
+    if (history.length) await this.mongo.answerHistory.insertMany(history, { ordered: false });
+    if (writes.length) await this.mongo.profileAnswers.bulkWrite(writes, { ordered: false });
     return changed;
   }
 

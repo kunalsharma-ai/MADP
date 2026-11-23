@@ -20,4 +20,18 @@ describe('generateDemoPopulation', () => {
     expect(emails.length).toBeGreaterThan(new Set(emails).size);
     expect(answers.length).toBeGreaterThan(0);
   });
+
+  it('gives DEMO teen members a guardian consent status and a teen birth date', () => {
+    const { respondents } = generateDemoPopulation({ people: 400 });
+    const teens = respondents.filter((r) => r.sourceCategory === 'minor');
+    expect(teens.length).toBeGreaterThan(0);
+    for (const r of teens) {
+      expect(r.consents.find((c) => c.purpose === 'guardian_consent')).toBeDefined();
+      const age = 2026 - Number(r.dateOfBirth!.slice(0, 4));
+      expect(age).toBeGreaterThanOrEqual(13);
+      expect(age).toBeLessThanOrEqual(17);
+    }
+    const adults = respondents.filter((r) => !r.sourceCategory.includes('minor'));
+    expect(adults.every((r) => !r.consents.some((c) => c.purpose === 'guardian_consent'))).toBe(true);
+  });
 });

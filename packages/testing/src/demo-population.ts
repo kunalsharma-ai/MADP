@@ -1,4 +1,4 @@
-import type { PanelCode, SourceAnswer, SourceRespondent } from '@madp/contracts';
+import type { PanelCode, SourceAnswer, SourceConsent, SourceRespondent } from '@madp/contracts';
 import { PANELS } from '@madp/contracts';
 import { loadSourceSample } from './samples.js';
 import { pick, rng } from './random.js';
@@ -39,7 +39,7 @@ const COUNTRIES = [
 ] as const;
 
 const SOURCE_CATEGORIES: Record<PanelCode, string[]> = {
-  t2o: ['b2c', 'b2c', 'b2c', 'b2b'],
+  t2o: ['b2c', 'b2c', 'b2c', 'b2b', 'b2c', 'b2c', 'b2b', 'b2c', 'b2c', 'minor'],
   mfr: ['b2c', 'b2c', 'b2b'],
   mho: ['healthcare professional', 'patient', 'patient', 'care giver'],
 };
@@ -50,6 +50,44 @@ export interface DemoOptions {
   /** Share of people who also hold an account on a second panel (same e-mail) - exercises identity resolution. */
   overlapRate?: number;
   now?: Date;
+}
+
+/** Guardian consent outcomes for DEMO teen members, weighted roughly like a live sign-up funnel. */
+const GUARDIAN_OUTCOMES = [
+  ['approved', 'granted'],
+  ['approved', 'granted'],
+  ['approved', 'granted'],
+  ['pending', 'unknown'],
+  ['declined', 'denied'],
+  ['withdrawn', 'withdrawn'],
+] as const;
+
+function demoConsents(r: () => number, sourceCategory: string, created: Date): SourceConsent[] {
+  const out: SourceConsent[] = [
+    {
+      purpose: 'terms',
+      status: 'granted',
+      capturedAt: null,
+      evidence: { field: 'terms', value: null, version: 'demo-terms-v1' },
+    },
+  ];
+  if (sourceCategory.includes('minor')) {
+    const [value, status] = pick(r, GUARDIAN_OUTCOMES);
+    out.push({
+      purpose: 'guardian_consent',
+      status,
+      capturedAt: status === 'unknown' ? null : new Date(created.getTime() + 2 * 86_400_000).toISOString(),
+      evidence: { field: 'parent.consentStatus', value, version: 'demo-guardian-v1' },
+    });
+  }
+  const push = r() < 0.6;
+  out.push({
+    purpose: 'push_notifications',
+    status: push ? 'granted' : 'denied',
+    capturedAt: null,
+    evidence: { field: 'consent.canAcceptPushNotification', value: String(push), version: null },
+  });
+  return out;
 }
 
 export function generateDemoPopulation({
@@ -65,6 +103,26 @@ export function generateDemoPopulation({
   const samples = Object.fromEntries(panels.map((p) => [p, loadSourceSample(p)])) as Record<
     PanelCode,
     ReturnType<typeof loadSourceSample>
+  >;
+  // Pre-index each sample once: options by question, and questions by questionnaire.
+  const index = Object.fromEntries(
+    panels.map((p) => {
+      const sample = samples[p];
+      const optionsByQuestion = new Map<string, (typeof sample.options)[number][]>();
+      for (const o of sample.options) {
+        const list = optionsByQuestion.get(o.question) ?? [];
+        list.push(o);
+        optionsByQuestion.set(o.question, list);
+      }
+      const questionByName = new Map(sample.questions.map((q) => [q.name, q]));
+      return [p, { optionsByQuestion, questionByName }];
+    }),
+  ) as Record<
+    PanelCode,
+    {
+      optionsByQuestion: Map<string, ReturnType<typeof loadSourceSample>['options']>;
+      questionByName: Map<string, ReturnType<typeof loadSourceSample>['questions'][number]>;
+    }
   >;
 
   for (let i = 1; i <= people; i++) {
@@ -100,7 +158,10 @@ export function generateDemoPopulation({
         firstName: 'Demo',
         lastName: `Member ${n}`,
         gender,
-        dateOfBirth: dob.toISOString().slice(0, 10),
+        // A teen account gets a 13-17 birth date so the record is internally consistent.
+        dateOfBirth: sourceCategory.includes('minor')
+          ? `${now.getUTCFullYear() - 13 - (Number(n) % 5)}-06-15`
+          : dob.toISOString().slice(0, 10),
         country: country.code.toLowerCase(),
         state: country.states[si] ?? null,
         city: country.cities[si] ?? null,
@@ -111,19 +172,35 @@ export function generateDemoPopulation({
         isActive: r() > 0.07,
         sourceCreatedAt: created.toISOString(),
         sourceUpdatedAt: new Date(created.getTime() + Math.floor(r() * 60) * 86_400_000).toISOString(),
+        consents: demoConsents(r, sourceCategory, created),
       });
 
-      // answer a random subset of that panel's sampled questions for the respondent's category
+      // Answer like a real member: the basic questionnaire plus a few other sections (all sections when the
+      // sample has only a handful), most questions within each chosen section.
       const sample = samples[panel];
+      const { optionsByQuestion, questionByName } = index[panel];
+      // A section belongs to the member's category when its own category matches or any of its questions do
+      // (MHO's caregiver export labels caregiver sections "healthcare professional"; see the MHO audit).
+      const sections = sample.profiles.filter(
+        (qn) =>
+          qn.sourceCategory === sourceCategory ||
+          qn.pages.some((pg) =>
+            pg
+              .slice(1)
+              .some((n) =>
+                ([] as string[]).concat(questionByName.get(n)?.category ?? []).includes(sourceCategory),
+              ),
+          ),
+      );
+      const chosen =
+        sections.length <= 4 ? sections : sections.filter((qn) => qn.slug === 'basic' || r() < 0.1);
       const given = new Map<string, string[]>();
-      for (const q of sample.questions) {
-        const cats = ([] as string[]).concat(q.category);
-        if (!cats.includes(sourceCategory) || r() < 0.35) continue;
+      for (const name of new Set(chosen.flatMap((qn) => qn.pages.flatMap((pg) => pg.slice(1))))) {
+        const q = questionByName.get(name);
+        if (!q || !([] as string[]).concat(q.category).includes(sourceCategory) || r() < 0.35) continue;
         const parentAnswer = q.parent ? given.get(q.parent) : undefined;
-        const opts = sample.options.filter(
-          (o) =>
-            o.question === q.name &&
-            (o.parentValue.length === 0 || (parentAnswer ?? []).some((v) => o.parentValue.includes(v))),
+        const opts = (optionsByQuestion.get(q.name) ?? []).filter(
+          (o) => o.parentValue.length === 0 || (parentAnswer ?? []).some((v) => o.parentValue.includes(v)),
         );
         if (opts.length === 0) continue;
         const multi = q.type === 'multiselect' && opts.length > 1;

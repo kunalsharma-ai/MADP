@@ -125,6 +125,10 @@ export class PanellistsController {
       where: (c, { eq, or }) =>
         or(eq(c.candidatePersonId, id), ...identities.map((i) => eq(c.sourceIdentityId, i.id))),
     });
+    const consents = await db.query.consentRecords.findMany({
+      where: (c, { eq }) => eq(c.masterPersonId, id),
+      orderBy: (c, { asc }) => [asc(c.panel), asc(c.purpose)],
+    });
     const answers = await this.mongo.profileAnswers
       .find({ personId: id }, { projection: { _id: 0 } })
       .sort({ panel: 1, sourceQuestionId: 1 })
@@ -187,6 +191,14 @@ export class PanellistsController {
         category: c.category,
         basis: c.basis,
         isMinor: c.isMinor,
+      })),
+      consents: consents.map((c) => ({
+        panel: c.panel,
+        purpose: c.purpose,
+        status: c.status,
+        channel: c.channel,
+        version: (c.evidence as { version?: string | null } | null)?.version ?? null,
+        capturedAt: c.capturedAt,
       })),
       identityCandidates: candidates.map((c) => ({
         id: c.id,

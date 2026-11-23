@@ -38,15 +38,14 @@ const readJson = (p) => JSON.parse(fs.readFileSync(p, 'utf8'));
 {
   const bankPath = path.join(args.t2o, 'Project/frontend-1/src/member/data/demo-bank/bank.json');
   const bank = readJson(bankPath);
-  const wanted = ['basic', 'professional', 'household', 'automotive'];
-  const profiles = bank.profiles
-    .filter((p) => wanted.includes(p.s))
-    .map((p) => ({
-      slug: p.s,
-      name: p.n,
-      sourceCategory: p.c,
-      pages: p.p.map(([title, names]) => [title, ...names]),
-    }));
+  // The full bank: every questionnaire for every member type (b2c and minor). Confirmed identical to the bank
+  // embedded in the new member dashboard build shared on 2026-11-23.
+  const profiles = bank.profiles.map((p) => ({
+    slug: p.s,
+    name: p.n,
+    sourceCategory: p.c,
+    pages: p.p.map(([title, names]) => [title, ...names]),
+  }));
   const qNames = [...new Set(profiles.flatMap((p) => p.pages.flatMap((pg) => pg.slice(1))))];
   const questions = qNames
     .filter((n) => bank.Q[n])
@@ -54,7 +53,9 @@ const readJson = (p) => JSON.parse(fs.readFileSync(p, 'utf8'));
       name: n,
       label: bank.Q[n][0],
       parent: bank.Q[n][1] || null,
-      category: [profiles.find((p) => p.pages.some((pg) => pg.includes(n))).sourceCategory],
+      category: [
+        ...new Set(profiles.filter((p) => p.pages.some((pg) => pg.includes(n))).map((p) => p.sourceCategory)),
+      ],
     }));
   const options = [];
   for (const q of questions) {
@@ -62,12 +63,14 @@ const readJson = (p) => JSON.parse(fs.readFileSync(p, 'utf8'));
     const listKey = bank.A?.[q.name] ?? q.name;
     const byParent = bank.O[listKey];
     if (!byParent) continue;
-    for (const [parentValue, labels] of Object.entries(byParent).slice(0, 3)) {
-      for (const label of [].concat(labels).slice(0, MAX_OPTIONS)) {
+    for (const [parentValue, labels] of Object.entries(byParent)) {
+      for (const entry of [].concat(labels)) {
+        // Bank entries are either "Label" or [label, value].
+        const [label, value] = Array.isArray(entry) ? entry : [entry, entry];
         options.push({
           question: q.name,
           label: String(label),
-          value: String(label),
+          value: String(value),
           parentValue: parentValue ? [parentValue] : [],
         });
       }
@@ -134,7 +137,12 @@ function write(panel, data) {
   const file = path.join(args.out, `${panel}.source-sample.json`);
   fs.writeFileSync(
     file,
-    JSON.stringify({ panel, extractedAt: new Date().toISOString().slice(0, 10), ...data }, null, 1) + '\n',
+    // The full T2O bank is large, so it is written compactly; the small samples stay readable.
+    JSON.stringify(
+      { panel, extractedAt: new Date().toISOString().slice(0, 10), ...data },
+      null,
+      data.options.length > 5000 ? 0 : 1,
+    ) + '\n',
   );
   console.log(
     `${panel}: ${data.profiles.length} questionnaires, ${data.questions.length} questions, ${data.options.length} options -> ${file}`,

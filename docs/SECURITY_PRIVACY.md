@@ -34,15 +34,18 @@ Act 2023, GDPR and UK GDPR) has to be confirmed by counsel. Nothing here is lega
   (`ingestion/canonical.ts#sensitivityFor`).
 - Membership in MHO never implies a health condition. The `patient` category comes only from the source category the
   member chose, and MADP never infers a diagnosis.
-- Minors: `minor patient` sets `is_minor=true`. Minor records must not be used for engagement until the guardian
-  consent rules are confirmed (M3).
+- Minors: `minor` and `minor patient` set `is_minor=true`. Minor records must not be used for engagement until the
+  guardian consent rules are confirmed (M3).
+- Guardian consent is synced as a status only (`consent_record`, purpose `guardian_consent`). The guardian's name,
+  e-mail, phone, IP address, onboarding answers and the full consent record stay on the panel; the evidence column
+  holds only the source field, its status value, the consent version and the import job.
 - Health answers will never be sent to Supply360 (spec §5). The planned Supply360 contract exposes only
   privacy-thresholded counts and eligibility flags.
 
 ## 3. Planned controls
 | Control | Milestone |
 |---|---|
-| Purpose-specific consent population from each panel; consent check API | M3 |
+| Consent population from each panel's `User` fields (done, DEMO); answer-based consent (MFR); consent check API | M3 |
 | Deletion propagation (source event → MADP → downstream), with deletion receipts | M3 |
 | Reversible merge and unmerge with review | M3 |
 | Key rotation job (re-encrypt `k1` → `k2`) and a KMS-backed key | M3 |
