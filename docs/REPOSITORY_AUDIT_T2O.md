@@ -49,19 +49,11 @@
 | Options | `GET /api/v1/option/:question` | none | full list (city lists are large) |
 | Respondents | `POST /api/v1/user` | any signed-in user | body is passed straight to Mongo as a filter; returns **all** matching users, no pagination |
 | Answers | `GET /api/v1/user/:id/profile` | any signed-in user | user fields merged with `{question: answer}` |
-| Service auth | `POST /api/v1/user/apps` | none | see T2O-SEC-01 |
+| Service auth | app login route | — | not suitable for MADP; see the private findings |
 | Webhooks | — | — | ❌ none |
 
 ## 7. Security findings (report to the T2O owner; MADP does not depend on them)
-Severity is the auditor's estimate from code reading. None was exploited or tested against production.
-
-- **T2O-SEC-01 (critical):** `POST /api/v1/user/apps` → `appLoginUser(req.body)` finds a `role:"root"` app user by whatever fields the caller sends and returns a **365-day** JWT. No secret is checked. `GET /api/v1/user/apps` (no auth) lists app users. Anyone who can reach the API could obtain a root token for that tenant.
-- **T2O-SEC-02 (critical):** `GET /api/v1/user/birthday/today` has no authentication and returns names and e-mail addresses of members whose birthday is today.
-- **T2O-SEC-03 (high):** `POST /api/v1/user`, `GET /api/v1/user/:id/profile` and `GET /api/v1/user/:id/survey` only require *a* signed-in user, not an admin. Any member can list other members and read their answers. The `POST /api/v1/user` body is used unfiltered as a Mongo query (operator injection).
-- **T2O-SEC-04 (high):** `PUT/DELETE /api/v1/question/:id`, `PUT /api/v1/question`, option create/update/delete have no auth check.
-- **T2O-SEC-05 (medium):** `Profile.status()` aggregation matches `isActive/isDeleted` but not `origin`, so profile completion may mix tenants that share a database.
-- **T2O-SEC-06 (medium):** `sync.sh` restores a production `mongodump` into a local environment — personal data leaves production for development.
-- MFR has already locked several of these down (`utils/access.js`, Nov 2026); the same changes would close SEC-03.
+Security findings from this audit are kept in a private document shared with the panel owner, not in this public repository. They are summarised by severity in `SECURITY_PRIVACY.md` §5.
 
 ## 8. What MADP needs from T2O (see INTEGRATION_GAP_ANALYSIS.md)
 A scoped, revocable integration credential; a paginated, updated-since member endpoint; an updated-since answers endpoint; deletion/consent-withdrawal events; and confirmation of the exact `origin` host value used in production.

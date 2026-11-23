@@ -15,7 +15,7 @@ that the panel owner must approve.
 | Pagination | ❌ | ❌ | ❌ | ❓ |
 | Updated-since / cursor | ❌ | ❌ | ❌ | ❓ |
 | Webhooks / outbound events | ❌ | ❌ | ❌ (in-process EventEmitter only) | ❓ |
-| Scoped service credential | ⚠️ `/user/apps` (insecure, T2O-SEC-01) | ❌ member JWT, 7 days | ❌ | ❓ |
+| Scoped service credential | ⚠️ app login exists but is not suitable | ❌ member JWT, 7 days | ❌ | ❓ |
 | Consent record | ⚠️ `User.consent` + answers | ⚠️ `MemberPreference`, answers `terms-consent`/`news-letter` | ⚠️ `User.consent`, guardian consent | ❓ |
 | Deletion request / event | ❌ | ⚠️ `DataRequest`, manual, no event | ❌ | ❓ |
 | Questionnaire write API | ⚠️ exists, unauthenticated | ⚠️ exists, unauthenticated | ⚠️ exists, unauthenticated | ❓ |
@@ -28,7 +28,7 @@ Connectors page, so the UI cannot claim more than the audit found.
 
 | ID | Gap | Impact | MADP workaround in M1 (implemented) | Proposed panel change (needs approval) |
 |---|---|---|---|---|
-| G-01 | No scoped, revocable integration credential on any panel | Live import would need a person's admin JWT or the insecure T2O app login | Connector refuses LIVE unless a token is configured via env and the panel is listed in `LIVE_SOURCE_APPROVED_PANELS` | Add a read-only service client per panel: hashed secret, scopes `profile:read users:read answers:read`, rotation, audit log |
+| G-01 | No scoped, revocable integration credential on any panel | Live import would need a person's admin JWT or the unsuitable T2O app login | Connector refuses LIVE unless a token is configured via env and the panel is listed in `LIVE_SOURCE_APPROVED_PANELS` | Add a read-only service client per panel: hashed secret, scopes `profile:read users:read answers:read`, rotation, audit log |
 | G-02 | Respondent list is unpaginated | Full list per call; memory and timeouts at scale | Fetched once per run, paged locally at 200, checkpointed | `GET /api/v1/integration/members?cursor=&limit=&updatedSince=` |
 | G-03 | No updated-since for answers | Every sync re-reads every member | Content-hash comparison, so unchanged answers write nothing | `GET /api/v1/integration/answers?updatedSince=&cursor=` returning `{user, question, answer[], updatedAt}` |
 | G-04 | Tenant is `origin = Host` header | Calling the API through a different host returns another tenant's data or nothing | Connector refuses to start unless the base URL host equals the configured `tenantHost` | Confirm the production origin host for each panel |

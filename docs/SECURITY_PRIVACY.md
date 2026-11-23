@@ -51,27 +51,19 @@ Act 2023, GDPR and UK GDPR) has to be confirmed by counsel. Nothing here is lega
 ## 4. Live-access approval process (nothing has been accessed)
 MADP will not read real personal data until **all** of these are true for a panel:
 1. Kunal approves read-only access for that panel in writing in this project.
-2. The panel owner issues a scoped, revocable integration credential (gap G-01). MADP will not use the T2O `/user/apps`
+2. The panel owner issues a scoped, revocable integration credential (gap G-01). MADP will not use the T2O app
    login, a person's admin JWT, a database dump or direct database access.
 3. The credential is placed in secure configuration (an environment secret), never in chat, git or a prompt.
 4. The production origin host is confirmed (G-04), and the panel is added to `LIVE_SOURCE_APPROVED_PANELS`.
 5. A **dry run** is executed first and its counts are reviewed before a real import.
 
-## 5. Findings in the source panels (from the code audit; not exploited, not tested live)
-These sit outside MADP's code, but they affect the data MADP would ingest. Fixing them needs the panel owner's
-approval, and MADP has changed nothing in the panel repos.
+## 5. Findings in the source panels
+The code audit found issues in the panel repositories that affect the data MADP would ingest. They were found by
+reading code only, and none was exploited or tested live. Details are kept in a private document shared with the
+panel owner and are not published here until they are fixed. MADP has changed nothing in the panel repositories.
 
-| ID | Severity | Finding |
-|---|---|---|
-| T2O-SEC-01 | Critical | `POST /api/v1/user/apps` returns a 365-day root JWT for any request that matches an app user's fields. No secret is checked |
-| T2O-SEC-02 | Critical | `GET /api/v1/user/birthday/today` returns names and e-mails without authentication |
-| T2O-SEC-03 | High | Any signed-in member can list members and read others' answers. The request body is used as a raw Mongo filter |
-| T2O-SEC-04, MFR-SEC-01, MHO-SEC-02 | High | Question and option write routes have no authentication |
-| MHO-SEC-01 | High | `isAdmin` throws an undefined `HttpError`, so non-admin requests crash instead of getting 403 |
-| MHO-SEC-03 | Medium | MHO production runs the T2O backend image, so this repo's code is not what serves health data |
-| T2O-SEC-05 | Medium | Profile completion aggregation does not filter by tenant |
-| T2O-SEC-06 | Medium | `sync.sh` copies a production dump into local development |
-| MFR-SEC-02 | Medium | No scoped service credentials; admin tokens are 7-day member JWTs |
-| MHO-SEC-04 | Medium | Log paths are committed; confirm no personal data is written there |
-
-MFR's November 2026 access lock-down (`utils/access.js`) is a good template for fixing T2O-SEC-03 and MHO-SEC-01.
+| Panel | Critical | High | Medium |
+|---|---|---|---|
+| T2O | 2 | 2 | 2 |
+| MFR | 0 | 1 | 1 |
+| MHO | 0 | 2 | 2 |

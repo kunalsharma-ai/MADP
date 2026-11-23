@@ -42,7 +42,4 @@
 | Service accounts / webhooks | — | ❌ |
 
 ## 7. Security findings
-- **MHO-SEC-01 (high):** `utils/isAdmin.js` throws `new HttpError(...)` inside a callback, but `HttpError` is not imported; a non-admin request would crash the handler instead of returning 403. Combined with the image mismatch above, the real behaviour must be tested.
-- **MHO-SEC-02 (high):** question/option write endpoints have no auth check (as T2O-SEC-04).
-- **MHO-SEC-03 (medium):** production runs code that is not in this repository (T2O image), so reviews of this repo do not cover what serves health data.
-- **MHO-SEC-04 (medium):** `logs/` and `app/logs/admin-logs` are committed paths; confirm no personal data is ever written there.
+Security findings from this audit are kept in a private document shared with the panel owner, not in this public repository. They are summarised by severity in `SECURITY_PRIVACY.md` §5.

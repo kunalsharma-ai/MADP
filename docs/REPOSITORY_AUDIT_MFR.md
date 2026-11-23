@@ -39,11 +39,8 @@
 | Respondents | `POST /api/v1/user` | `requireAdmin` (role re-read from DB), body passed through `safeFilter()`; unpaginated |
 | Summary | `GET /api/v1/user/summarize` | `requireAdmin` |
 | Answers | `POST /api/v1/user/:user/profile-data` `{questions:[...]}` | `selfOrAdmin` — returns only the listed questions |
-| Service accounts | — | ❌ no `/user/apps`; an integration would need a member account with an admin role and a 7-day JWT |
+| Service accounts | — | ❌ none; an integration would need a member account with an admin role and a 7-day JWT |
 | Webhooks | — | ❌ |
 
 ## 7. Security findings
-- **MFR-SEC-01 (high):** `PUT /api/v1/question`, `PUT/PATCH/DELETE /api/v1/question/:id` and option writes have no auth check (same as T2O-SEC-04).
-- **MFR-SEC-02 (medium):** admin tokens are ordinary 7-day member JWTs; there is no scoped, revocable service credential for integrations.
-- **MFR-SEC-03 (low):** invalid `package.json` (see §1) — not a vulnerability, but deployments from a clean checkout will fail.
-- Positive: the Nov 2026 member-API lock-down (`requireAdmin`, `selfOrAdmin`, `safeFilter`, field allow-lists) is the model the other two panels should follow.
+Security findings from this audit are kept in a private document shared with the panel owner, not in this public repository. They are summarised by severity in `SECURITY_PRIVACY.md` §5.
