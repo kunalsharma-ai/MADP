@@ -40,9 +40,23 @@ Connectors page, so the UI cannot claim more than the audit found.
 | G-10 | No questionnaire-write integration contract | Spec §6 deploy-to-panel cannot be done safely | Not implemented; builder is M4+ | Authenticated `POST /api/v1/integration/questions` with approval id |
 | G-11 | Consent split across user fields, answers and preference collections | Consent eligibility may be wrong | Consent is modelled per panel and purpose in `consent_record`; not yet populated from sources | Expose a per-member consent summary with timestamps and evidence |
 
-## 3. Blocked items (need Kunal)
+## 3. Evidence received 2026-11-23
+Kunal shared two reference files (kept in the project files, not in this public repo):
+- **OpenAPI 3.0 document, "Turn2Opinion Backend API"** (marked "observed", 87 paths). It describes **one backend
+  serving all three tenants** by `Host`, and lists production servers `https://www.turn2opinion.com`,
+  `https://www.myfrequentrewards.com` and `https://www.myhealthopinions.com`. Every panel route MADP calls
+  (`ENDPOINTS` in `http-connector.ts`) is present in it. It adds evidence for G-06 (MHO runs the T2O backend) and
+  raises a new question: whether **MFR production** also runs the T2O backend rather than the `mfr-api` code in the
+  MFR repo. The two differ in answer routes and access checks.
+- **T2O backend Mongoose models** (`model/*.js`, 24 files, schema code only, no member data). 22 files match the
+  T2O repo exactly. `User.js` is an older version (no teen-consent fields) and `Testimonials.js` differs, so this is
+  probably a deployed or branch build of the T2O backend. It is not the MFR question export (G-07 stays open).
+
+## 4. Blocked items (need Kunal)
 1. Approval for live, read-only access to each panel, and an integration credential delivered via secure configuration (never chat or git).
-2. The production origin host for T2O, MFR and MHO.
+2. Confirmation that the tenant `origin` values are exactly `www.turn2opinion.com`, `www.myfrequentrewards.com` and
+   `www.myhealthopinions.com` (with `www.`). The OpenAPI document's prose names the hosts without `www.`.
 3. The MFR definitions export.
-4. Confirmation of which backend image MHO production runs.
+4. Confirmation of which backend MHO **and MFR** production run (the OpenAPI document suggests the T2O backend for
+   both).
 5. Panel-owner decision on the security fixes in `SECURITY_PRIVACY.md` §5.

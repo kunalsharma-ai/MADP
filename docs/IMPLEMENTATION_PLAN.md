@@ -12,7 +12,7 @@ linking, overlap-safe counts, the question registry and mapping review, and the 
 **Gate:** build, typecheck, unit and integration tests are green, and the admin console runs end to end on DEMO data.
 
 ## M2 — All three panel connectors live (T2O, MFR and MHO in parallel)
-Depends on approvals and credentials (gap analysis §3).
+Depends on approvals and credentials (gap analysis §4).
 1. Dry run per panel against production with an approved read-only credential, and review the counts.
 2. Full backfill per panel, plus a reconciliation report (source count vs imported vs rejected).
 3. ✅ Retry with backoff and a dead-letter queue (done, DEMO and stub tested). BullMQ workers for backfills and
