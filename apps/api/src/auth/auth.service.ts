@@ -1,6 +1,6 @@
 import { ForbiddenException, Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import argon2 from 'argon2';
-import { and, eq, isNull, sql } from 'drizzle-orm';
+import { and, eq, isNull, lt, or, sql } from 'drizzle-orm';
 import { SignJWT, jwtVerify } from 'jose';
 import * as OTPAuth from 'otpauth';
 import type { ApiEnv } from '@madp/config';
@@ -16,6 +16,9 @@ import type { Principal } from './auth.types.js';
 const MAX_FAILED = 5;
 const LOCK_MINUTES = 15;
 const ISSUER = 'madp-api';
+// Checked when the e-mail is unknown, so a wrong e-mail takes as long as a wrong password (no way to find out by timing
+// which addresses have an account).
+const DUMMY_HASH = argon2.hash('not-a-real-password-0000', { type: argon2.argon2id });
 
 @Injectable()
 export class AuthService {
@@ -99,12 +102,15 @@ export class AuthService {
       });
       throw new UnauthorizedException('Invalid credentials');
     };
-    if (!user || !user.isActive) return fail('unknown_or_inactive');
+    if (!user || !user.isActive) {
+      await argon2.verify(await DUMMY_HASH, req.password).catch(() => false);
+      return fail('unknown_or_inactive');
+    }
     if (user.lockedUntil && user.lockedUntil > new Date()) return fail('locked');
     if (!(await argon2.verify(user.passwordHash, req.password))) return fail('bad_password');
     if (user.mfaEnabled) {
       if (!req.totp) return fail('totp_required');
-      if (!this.verifyTotp(this.crypto.decrypt(user.totpSecretEnc)!, req.totp)) return fail('bad_totp');
+      if (!(await this.useTotp(user, req.totp))) return fail('bad_totp');
     }
     const mfaSetupRequired = this.env.REQUIRE_MFA && !user.mfaEnabled;
     await this.database.db
@@ -249,16 +255,38 @@ export class AuthService {
   ): Promise<{ token: string; user: SessionUser }> {
     const user = await this.database.db.query.adminUsers.findFirst({ where: eq(adminUsers.id, p.id) });
     if (!user?.totpSecretEnc) throw new ForbiddenException('Start MFA enrolment first');
-    if (!this.verifyTotp(this.crypto.decrypt(user.totpSecretEnc)!, code))
-      throw new UnauthorizedException('Invalid code');
+    if (!(await this.useTotp(user, code))) throw new UnauthorizedException('Invalid code');
     await this.database.db.update(adminUsers).set({ mfaEnabled: true }).where(eq(adminUsers.id, p.id));
     await this.audit.record({ actorId: p.id, actorType: 'admin', action: 'auth.mfa.enabled', ip });
     const full = this.toPrincipal({ ...user, mfaEnabled: true }, await this.accessOf(user.id), 'full', p.sessionId);
     return { token: await this.sign(full), user: this.toSessionUser({ ...user, mfaEnabled: true }, full) };
   }
 
-  private verifyTotp(base32: string, code: string): boolean {
-    const totp = new OTPAuth.TOTP({ secret: OTPAuth.Secret.fromBase32(base32), digits: 6, period: 30 });
-    return totp.validate({ token: code, window: 1 }) !== null;
+  /**
+   * Checks an authenticator code and uses it up: a code (and any older one) is accepted once, so a code seen over
+   * someone's shoulder or copied from a captured sign-in can't be used again in the same 90 seconds.
+   */
+  private async useTotp(user: typeof adminUsers.$inferSelect, code: string): Promise<boolean> {
+    if (!user.totpSecretEnc) return false;
+    const totp = new OTPAuth.TOTP({
+      secret: OTPAuth.Secret.fromBase32(this.crypto.decrypt(user.totpSecretEnc)!),
+      digits: 6,
+      period: 30,
+    });
+    const now = Date.now();
+    const delta = totp.validate({ token: code, window: 1, timestamp: now });
+    if (delta === null) return false;
+    const step = Math.floor(now / 30_000) + delta;
+    const used = await this.database.db
+      .update(adminUsers)
+      .set({ totpLastStep: step })
+      .where(
+        and(
+          eq(adminUsers.id, user.id),
+          or(isNull(adminUsers.totpLastStep), lt(adminUsers.totpLastStep, step)),
+        ),
+      )
+      .returning({ id: adminUsers.id });
+    return used.length === 1;
   }
 }

@@ -38,16 +38,22 @@ describe('authentication', () => {
       .post('/api/v1/auth/login')
       .send({ email: 'super_admin@example.invalid', password: 'correct horse battery staple' })
       .expect(401);
+    // the code used to confirm enrolment is used up, so sign in with the next one (accepted 30 seconds early)
+    const code = superTotp.generate({ timestamp: Date.now() + 30_000 });
     const ok = await request(t.server)
       .post('/api/v1/auth/login')
-      .send({
-        email: 'super_admin@example.invalid',
-        password: 'correct horse battery staple',
-        totp: superTotp.generate(),
-      })
+      .send({ email: 'super_admin@example.invalid', password: 'correct horse battery staple', totp: code })
       .expect(200);
     expect(ok.body.mfaSetupRequired).toBe(false);
     expect(ok.body.user.permissions).toContain('health.sensitive.read');
+  });
+
+  it('an authenticator code works once: the same code again is refused', async () => {
+    const used = superTotp.generate({ timestamp: Date.now() + 30_000 });
+    await request(t.server)
+      .post('/api/v1/auth/login')
+      .send({ email: 'super_admin@example.invalid', password: 'correct horse battery staple', totp: used })
+      .expect(401);
   });
 
   it('a session that has not enrolled MFA can only reach MFA enrolment', async () => {

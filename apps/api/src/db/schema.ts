@@ -352,6 +352,8 @@ export const adminUsers = pgTable('admin_user', {
   passwordHash: text('password_hash').notNull(),
   totpSecretEnc: text('totp_secret_enc'),
   mfaEnabled: boolean('mfa_enabled').notNull().default(false),
+  /** The 30-second step of the last accepted authenticator code; a code is accepted once (no replay). */
+  totpLastStep: integer('totp_last_step'),
   isActive: boolean('is_active').notNull().default(true),
   failedAttempts: integer('failed_attempts').notNull().default(0),
   lockedUntil: timestamp('locked_until', { withTimezone: true }),
