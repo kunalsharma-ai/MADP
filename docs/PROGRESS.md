@@ -379,3 +379,18 @@ Screenshots are in `docs/screenshots/`.
 - The Docker image builds of `apps/api` and `apps/admin` were not verified: Docker Hub rate-limited the base image pull
   (HTTP 429) in the build sandbox. The compose data services were verified.
 - Not deployed anywhere.
+
+## Super admin step 3a: segments, audiences, surveys, points, quality, referrals (24 Nov 2026)
+
+- Panel side (kunalsharma-ai/MFR#51, merged, not deployed): `/api/admin/v1` segments, audiences, surveys and
+  invitations, points adjustments and holds, quality score changes, referral fraud view.
+- MADP: `SegmentsController`, `SurveysController`, `PointsQualityController` and question bank versions and translations.
+  Every write is audited with old and new values and a reason. Reads that show member names are audited.
+- Four eyes: adjustments at or above the brand's `fourEyesPoints` (default 50,000) wait for a second admin; the panel
+  refuses the requester.
+- Invitations are dry runs by default and never send e-mail. A real run needs `invitations.send` and a reason.
+- Screens: Segments & audiences, Surveys (list and detail with invite and reconcile), Points approvals, Quality &
+  referrals, member points and quality card, question bank Versions tab.
+- Tests: `apps/api/test/panel-admin-step3.test.ts` (6), MFR `tests/admin.step3.test.mjs` (6).
+- Previews: `/mnt/project-files/madp/preview-console/step3a-segments-surveys-points-quality/` (DEMO data).
+- Not done: the T2O and MHO columns need their panel admin API connected (step 6). Live verification waits for deploy.

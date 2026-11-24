@@ -87,4 +87,8 @@ export class PanelAdminService {
   static forbidden(): never {
     throw new ForbiddenException('Not permitted on this brand');
   }
+
+  static reasonRequired(): never {
+    throw new BadRequestException({ code: 'reason_required', message: 'A reason is required' });
+  }
 }

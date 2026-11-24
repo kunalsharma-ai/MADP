@@ -4,6 +4,7 @@ import { withPanel } from '@/lib/panel';
 import { Badge, Card, CardHeader, EmptyState, PageHeader, Table, fmt, fmtDate } from '@/components/ui';
 import { STATUS_TONE, type MemberRow } from '../shared';
 import { MemberActions } from './member-actions';
+import { PointsQuality } from './points-quality';
 
 export const metadata: Metadata = { title: 'Member' };
 
@@ -164,17 +165,20 @@ export default async function MemberPage({ params }: { params: Promise<{ id: str
               )}
             </Card>
           </div>
-          <MemberActions
-            member={{
-              id: m.id,
-              status: m.status,
-              segment: m.segment,
-              category: m.category,
-              emailVerified: m.emailVerified,
-              phoneVerified: m.phoneVerified,
-            }}
-            canUnmask={m.canUnmask}
-          />
+          <div className="grid content-start gap-4">
+            <MemberActions
+              member={{
+                id: m.id,
+                status: m.status,
+                segment: m.segment,
+                category: m.category,
+                emailVerified: m.emailVerified,
+                phoneVerified: m.phoneVerified,
+              }}
+              canUnmask={m.canUnmask}
+            />
+            <PointsQuality member={m.id} score={m.qualityScore ?? null} />
+          </div>
         </div>
       </>
     );

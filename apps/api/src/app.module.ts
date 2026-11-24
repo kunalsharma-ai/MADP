@@ -52,6 +52,11 @@ import { BrandsController } from './brands/brands.controller.js';
 import { PanelAdminService } from './panel-admin/panel-admin.service.js';
 import { MembersController } from './panel-admin/members.controller.js';
 import { QuestionBankController } from './panel-admin/question-bank.controller.js';
+import {
+  PointsQualityController,
+  SegmentsController,
+  SurveysController,
+} from './panel-admin/engagement-admin.controller.js';
 import { HealthController } from './common/health.controller.js';
 import { MetaController } from './common/meta.controller.js';
 
@@ -75,6 +80,9 @@ export class AppModule {
         BrandsController,
         MembersController,
         QuestionBankController,
+        SegmentsController,
+        SurveysController,
+        PointsQualityController,
         IdentityController,
         WebhookController,
         EngagementController,

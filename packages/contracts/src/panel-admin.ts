@@ -152,3 +152,237 @@ export const BankFile = z
   })
   .passthrough();
 export type BankFile = z.infer<typeof BankFile>;
+
+// ---- question bank versions and translations ----------------------------------------------------------------------
+export const VersionCreate = z.object({ note: z.string().trim().max(500).optional() });
+export type VersionCreate = z.infer<typeof VersionCreate>;
+export const VersionAction = z.enum(['review', 'publish', 'discard']);
+export type VersionAction = z.infer<typeof VersionAction>;
+const Lang = z
+  .string()
+  .trim()
+  .regex(/^[a-z]{2}(-[A-Z]{2})?$/, 'a language code like hi or pt-BR');
+export const TranslationSet = z.object({
+  lang: Lang,
+  label: z.string().trim().max(500).optional(),
+  description: z.string().max(2000).optional(),
+  options: z
+    .array(z.object({ value: z.string().trim().min(1).max(200), label: z.string().trim().min(1).max(500) }))
+    .max(2000)
+    .optional(),
+});
+export type TranslationSet = z.infer<typeof TranslationSet>;
+export const MissingTranslations = z.object({
+  lang: Lang,
+  page: z.coerce.number().int().min(1).max(10_000).optional(),
+});
+export type MissingTranslations = z.infer<typeof MissingTranslations>;
+
+// ---- step 3a: segments, audiences, surveys, points, quality, referrals --------------------------------------------
+const Country = z
+  .string()
+  .trim()
+  .regex(/^[a-zA-Z]{2}$/, 'a two-letter country code');
+export const SegmentTheme = z.enum([
+  'consumer',
+  'professional',
+  'teen',
+  'healthcare',
+  'patient',
+  'caregiver',
+]);
+export const SegmentUpdate = z
+  .object({
+    signupOpen: z.boolean().optional(),
+    countries: z.array(Country).max(250).optional(),
+    minAge: z.number().int().min(13).max(99).optional(),
+    coreProfiles: z.array(z.string().trim().toLowerCase().min(1).max(80)).max(50).optional(),
+    theme: SegmentTheme.nullable().optional(),
+    reason: Reason,
+  })
+  .strict();
+export type SegmentUpdate = z.infer<typeof SegmentUpdate>;
+
+export const AudienceFilter = z
+  .object({
+    categories: z.array(z.string().trim().toLowerCase().min(1).max(40)).max(20).optional(),
+    countries: z.array(Country).max(250).optional(),
+    ageMin: z.number().int().min(13).max(120).optional(),
+    ageMax: z.number().int().min(13).max(120).optional(),
+    qualityMin: z.number().min(0).max(200).optional(),
+    qualityMax: z.number().min(0).max(200).optional(),
+    activeWithinDays: z.number().int().min(1).max(3650).optional(),
+    verifiedEmail: z.boolean().optional(),
+    answers: z
+      .array(
+        z.object({
+          question: z.string().trim().toLowerCase().min(1).max(80),
+          values: z.array(z.string().trim().min(1).max(200)).min(1).max(100),
+        }),
+      )
+      .max(20)
+      .optional(),
+  })
+  .strict();
+export type AudienceFilter = z.infer<typeof AudienceFilter>;
+export const AudienceCount = z.object({ filter: AudienceFilter.default({}) });
+export type AudienceCount = z.infer<typeof AudienceCount>;
+export const AudienceSave = z.object({
+  name: z.string().trim().min(2).max(120),
+  description: z.string().max(500).optional(),
+  filter: AudienceFilter,
+});
+export type AudienceSave = z.infer<typeof AudienceSave>;
+
+const Slug = z
+  .string()
+  .trim()
+  .toLowerCase()
+  .regex(/^[a-z0-9][a-z0-9-]{1,79}$/, '2 to 80 lower-case letters, digits or dashes');
+const SurveyFields = {
+  name: z.string().trim().min(1).max(200),
+  slug: Slug,
+  category: z.string().trim().toLowerCase().min(1).max(40),
+  source: z.string().trim().toLowerCase().min(1).max(40),
+  points: z.number().int().min(0).max(100_000),
+  loi: z.number().int().min(1).max(180),
+  summary: z.string().max(500).optional(),
+  description: z.string().max(5000).optional(),
+  link: z
+    .string()
+    .trim()
+    .regex(/^https:\/\/\S+$/, 'an https link')
+    .or(z.literal(''))
+    .optional(),
+  activeFrom: z.string().datetime({ offset: true }).or(z.literal('')).nullable().optional(),
+  activeTo: z.string().datetime({ offset: true }).or(z.literal('')).nullable().optional(),
+  minQualityScore: z.number().min(0).max(200).nullable().optional(),
+  premium: z
+    .object({
+      enabled: z.boolean(),
+      industries: z.array(z.string().trim().toLowerCase().max(80)).max(50).default([]),
+      seniority: z.array(z.string().trim().toLowerCase().max(80)).max(50).default([]),
+    })
+    .optional(),
+  autoInvite: z.boolean().optional(),
+  batchSize: z.number().int().min(1).max(1_000_000).nullable().optional(),
+};
+export const SurveyCreate = z.object({ ...SurveyFields, reason: Reason.optional() }).strict();
+export type SurveyCreate = z.infer<typeof SurveyCreate>;
+export const SurveyUpdate = z.object(SurveyFields).partial().extend({ reason: Reason.optional() }).strict();
+export type SurveyUpdate = z.infer<typeof SurveyUpdate>;
+export const SurveyStatus = z.enum(['draft', 'active', 'paused', 'closed']);
+export type SurveyStatus = z.infer<typeof SurveyStatus>;
+export const SurveyStatusChange = z.object({ status: SurveyStatus, reason: Reason.optional() });
+export type SurveyStatusChange = z.infer<typeof SurveyStatusChange>;
+export const SurveyList = z.object({
+  status: SurveyStatus.optional(),
+  category: z.string().trim().max(40).optional(),
+  q: z.string().trim().max(80).optional(),
+});
+export type SurveyList = z.infer<typeof SurveyList>;
+export const InviteTarget = z
+  .object({
+    audienceId: ObjectId.optional(),
+    filter: AudienceFilter.optional(),
+    limit: z.number().int().min(1).max(50_000).optional(),
+  })
+  .strict();
+export type InviteTarget = z.infer<typeof InviteTarget>;
+export const InviteRun = InviteTarget.extend({
+  dryRun: z.boolean().default(true),
+  reason: Reason.optional(),
+});
+export type InviteRun = z.infer<typeof InviteRun>;
+export const ResponseStatus = z.enum([
+  'invited',
+  'dropout',
+  'complete',
+  'terminate',
+  'overquota',
+  'rejected',
+]);
+export const ResponseList = z.object({
+  status: ResponseStatus.optional(),
+  page: z.coerce.number().int().min(1).max(10_000).optional(),
+});
+export type ResponseList = z.infer<typeof ResponseList>;
+export const Reconcile = z.object({
+  approve: z.array(ObjectId).max(10_000).default([]),
+  reject: z.array(ObjectId).max(10_000).default([]),
+  reason: Reason,
+});
+export type Reconcile = z.infer<typeof Reconcile>;
+
+export const PointsReason = z.enum([
+  'goodwill',
+  'survey_credit_missing',
+  'survey_reversal',
+  'fraud_reversal',
+  'duplicate_payment',
+  'support_fix',
+  'migration',
+  'other',
+]);
+export const PointsAdjust = z.object({
+  points: z
+    .number()
+    .int()
+    .min(-10_000_000)
+    .max(10_000_000)
+    .refine((n) => n !== 0, 'not 0'),
+  reasonCode: PointsReason,
+  note: Reason,
+});
+export type PointsAdjust = z.infer<typeof PointsAdjust>;
+export const PointsDecision = z.object({
+  decision: z.enum(['approve', 'reject']),
+  note: z.string().max(500).optional(),
+});
+export type PointsDecision = z.infer<typeof PointsDecision>;
+export const ApprovalList = z.object({
+  status: z.enum(['pending', 'applied', 'rejected', 'all']).default('pending'),
+});
+export type ApprovalList = z.infer<typeof ApprovalList>;
+export const HoldCreate = z.object({
+  member: ObjectId,
+  source: z.enum(['survey', 'reward']),
+  entry: ObjectId,
+  reason: Reason,
+  memberNote: z.string().max(200).optional(),
+  expectedBy: day.optional(),
+});
+export type HoldCreate = z.infer<typeof HoldCreate>;
+export const HoldRelease = z.object({ reason: Reason });
+export type HoldRelease = z.infer<typeof HoldRelease>;
+
+export const QualityRule = z.enum([
+  'speeding',
+  'straightlining',
+  'open_end_quality',
+  'attention_check',
+  'client_rejection',
+  'duplicate_account',
+  'manual_review',
+  'restore',
+]);
+export const QualityChange = z.object({
+  rule: QualityRule,
+  delta: z
+    .number()
+    .int()
+    .min(-200)
+    .max(200)
+    .refine((n) => n !== 0, 'not 0'),
+  note: Reason,
+  survey: z.string().trim().max(80).optional(),
+});
+export type QualityChange = z.infer<typeof QualityChange>;
+export const QualityReview = z.object({
+  below: z.coerce.number().min(0).max(200).default(60),
+  category: z.string().trim().max(40).optional(),
+  page: z.coerce.number().int().min(1).max(10_000).optional(),
+});
+export type QualityReview = z.infer<typeof QualityReview>;
+export const ReferralFraud = z.object({ minReferrals: z.coerce.number().int().min(2).max(1000).default(5) });
+export type ReferralFraud = z.infer<typeof ReferralFraud>;
