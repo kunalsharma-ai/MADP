@@ -67,6 +67,20 @@ Staff accounts are now skipped (`isStaff`, kunalsharma-ai/turn2opinion#21, merge
 - Health-filtered counts suppress cells below 10 (`SENSITIVE_MIN_CELL_SIZE`).
 - Tests: `test/mho-controls.test.ts` (2), plus updated `platform` and `attributes` tests.
 
+### Engagement studio, part 1 (2026-11-24)
+- Templates per panel, with versions, automatic checks (known placeholders only, unsubscribe and preference links,
+  no scripts), and review by a second person. Approved versions never change.
+- Campaigns need an approved version and a second person's approval, and can be paused.
+- Dry runs decide, member by member, who would get the message and when (outside their local quiet hours), or why
+  not: membership not active, minor, opted out, no consent, no usable e-mail, bounced, already sent, weekly or
+  monthly cap. Marketing messages need an e-mail marketing consent. No panel exports one yet, so every marketing
+  dry run holds everyone back; onboarding messages need the panel's terms.
+- Per-person communication timeline with a transparent contact-load score per panel.
+- Nothing is sent: there is no provider yet, and sending needs the owner's approval.
+- Brand kits (sender, footer, logo, colours) are placeholders until each panel owner supplies them.
+- Tests: `test/engagement.test.ts` (4) and `src/engagement/engagement.test.ts` (6).
+- Next: birthday and festival calendar, lifecycle automations (inactive, incomplete profile, survey reminders).
+
 ### Next for T2O
 A T2O-only dry run against the live backend once the token is in the cloud environment, with counts shown to Kunal
 before any write.

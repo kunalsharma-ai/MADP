@@ -102,6 +102,8 @@ export const sourceIdentities = pgTable(
     city: text('city'),
     gender: text('gender'),
     birthYear: smallint('birth_year'),
+    /** IANA time zone the member gave the panel; used for quiet hours. */
+    timezone: text('timezone'),
     sourceActive: boolean('source_active').notNull().default(true),
     sourceCreatedAt: timestamp('source_created_at', { withTimezone: true }),
     sourceUpdatedAt: timestamp('source_updated_at', { withTimezone: true }),
@@ -382,4 +384,128 @@ export const auditEvents = pgTable(
     ip: text('ip'),
   },
   (t) => [index('audit_event_at_idx').on(t.at), index('audit_event_actor_idx').on(t.actorId)],
+);
+
+// ---------------------------------------------------------------------------------------------------------------
+// Engagement (Milestone 4, part 1). Templates and campaigns belong to one panel: each brand keeps its own sender,
+// footer, consents and history. Nothing is sent from here yet: runs are dry runs that record what would happen.
+
+/** A reusable message for one panel. Its content lives in versions; an approved version never changes. */
+export const messageTemplates = pgTable(
+  'message_template',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    panel: panelCode('panel').notNull(),
+    key: text('key').notNull(),
+    name: text('name').notNull(),
+    /** welcome, newsletter, birthday, festival, reengagement, profile_recovery, survey_reminder, service. */
+    kind: text('kind').notNull(),
+    channel: text('channel').notNull().default('email'),
+    createdBy: uuid('created_by'),
+    createdAt: created(),
+  },
+  (t) => [uniqueIndex('message_template_key').on(t.panel, t.key)],
+);
+
+export const messageTemplateVersions = pgTable(
+  'message_template_version',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    templateId: uuid('template_id')
+      .notNull()
+      .references(() => messageTemplates.id),
+    version: integer('version').notNull(),
+    language: text('language').notNull().default('en'),
+    subject: text('subject').notNull(),
+    bodyHtml: text('body_html').notNull(),
+    bodyText: text('body_text').notNull(),
+    /** draft -> in_review -> approved | rejected; approved -> retired. */
+    status: text('status').notNull().default('draft'),
+    createdBy: uuid('created_by'),
+    reviewedBy: uuid('reviewed_by'),
+    reviewedAt: timestamp('reviewed_at', { withTimezone: true }),
+    reviewNote: text('review_note'),
+    createdAt: created(),
+  },
+  (t) => [uniqueIndex('message_template_version_key').on(t.templateId, t.version)],
+);
+
+/** Per-panel contact rules. Frequency caps and quiet hours apply to every non-service message of that panel. */
+export const fatiguePolicies = pgTable('fatigue_policy', {
+  panel: panelCode('panel').primaryKey(),
+  maxPerWeek: integer('max_per_week').notNull().default(2),
+  maxPerMonth: integer('max_per_month').notNull().default(6),
+  /** Local hours (0-23) in the member's time zone when nothing is scheduled. */
+  quietStartHour: smallint('quiet_start_hour').notNull().default(21),
+  quietEndHour: smallint('quiet_end_hour').notNull().default(8),
+  /** Fatigue score bands: score >= value -> band. */
+  bands: jsonb('bands').notNull().default(sql`'{"high": 60, "medium": 30}'::jsonb`),
+  updatedBy: uuid('updated_by'),
+  updatedAt: updated(),
+});
+
+export const campaigns = pgTable(
+  'campaign',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    dataMode: dataMode('data_mode').notNull(),
+    panel: panelCode('panel').notNull(),
+    name: text('name').notNull(),
+    kind: text('kind').notNull(),
+    templateVersionId: uuid('template_version_id')
+      .notNull()
+      .references(() => messageTemplateVersions.id),
+    /** Audience: categories and countries within this panel. */
+    audience: jsonb('audience').notNull(),
+    /** draft -> approved -> paused | archived. Only an approved campaign can run. */
+    status: text('status').notNull().default('draft'),
+    createdBy: uuid('created_by'),
+    approvedBy: uuid('approved_by'),
+    approvedAt: timestamp('approved_at', { withTimezone: true }),
+    createdAt: created(),
+    updatedAt: updated(),
+  },
+  (t) => [index('campaign_panel_idx').on(t.dataMode, t.panel, t.status)],
+);
+
+export const campaignRuns = pgTable('campaign_run', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  campaignId: uuid('campaign_id')
+    .notNull()
+    .references(() => campaigns.id),
+  dryRun: boolean('dry_run').notNull(),
+  counts: jsonb('counts'),
+  requestedBy: uuid('requested_by'),
+  startedAt: timestamp('started_at', { withTimezone: true }).notNull().defaultNow(),
+  finishedAt: timestamp('finished_at', { withTimezone: true }),
+});
+
+/**
+ * One line of a person's communication timeline: planned, suppressed (with the reason), and later the provider's
+ * delivery states. Dry-run lines are flagged and never count towards frequency caps.
+ */
+export const communicationEvents = pgTable(
+  'communication_event',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    dataMode: dataMode('data_mode').notNull(),
+    masterPersonId: uuid('master_person_id')
+      .notNull()
+      .references(() => masterPersons.id),
+    panel: panelCode('panel').notNull(),
+    campaignId: uuid('campaign_id').references(() => campaigns.id),
+    runId: uuid('run_id').references(() => campaignRuns.id),
+    channel: text('channel').notNull(),
+    /** planned, suppressed, queued, sent, delivered, bounced, complained, failed, opened, clicked, opted_out. */
+    state: text('state').notNull(),
+    reason: text('reason'),
+    dryRun: boolean('dry_run').notNull(),
+    plannedFor: timestamp('planned_for', { withTimezone: true }),
+    occurredAt: timestamp('occurred_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    index('communication_event_person_idx').on(t.masterPersonId, t.occurredAt),
+    index('communication_event_run_idx').on(t.runId),
+    index('communication_event_panel_state_idx').on(t.panel, t.state, t.occurredAt),
+  ],
 );

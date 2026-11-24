@@ -40,6 +40,14 @@ MFA completed. The machine-readable document is served at `GET /api/v1/openapi.j
 | `POST /identity/source-identities/:id/unlink` `{reason}` | `identity.review` | Unmerges one panel account: back to its previous person if that is still empty, otherwise to a new one. Works for automatic links too. Audited |
 | `GET /identity/persons/:id/history` | `identity.review` | Merge and unmerge events (append only) |
 | `POST /webhooks/:panel` (signed, see `packages/contracts/src/webhooks.ts`) | public, HMAC signature | 202 `accepted` or `duplicate`; starts a sync of that panel. 401 on a bad signature or a stale timestamp, 400 if the body has anything but `type` and `occurredAt`, 404 when the panel has no webhook secret. Covered by `apps/api/test/webhooks.test.ts` |
+| `GET /communications/templates?panel` · `POST /communications/templates` | `communications.read` · `communications.manage` | Templates per panel with their versions, and the brand kits (unconfirmed until each panel owner supplies them) |
+| `POST /communications/templates/:id/versions` `{subject, bodyHtml, bodyText, language?}` | `communications.manage` | New draft version; returns the template checks (`problems`) |
+| `POST /communications/template-versions/:id/submit` · `…/review` `{decision, note?}` | `communications.manage` · `communications.approve` | Review needs the checks to pass and someone other than the author |
+| `GET /communications/template-versions/:id/preview` | `communications.read` | Renders with sample values only |
+| `GET`/`PUT /communications/policies/:panel` | `communications.read` / `communications.approve` | Frequency caps, quiet hours, fatigue bands |
+| `GET`/`POST /communications/campaigns` · `POST …/:id/decision` `{approve\|pause\|resume\|archive}` | `communications.read` · `communications.manage` · `communications.approve` | Campaigns need an approved version and a second person's approval |
+| `POST /communications/campaigns/:id/run` `{dryRun}` | `communications.manage` | Dry run only (`dryRun: false` is 403): per member, planned with a send time outside quiet hours, or suppressed with a reason. Covered by `apps/api/test/engagement.test.ts` |
+| `GET /communications/timeline/:personId?panel&includeDryRuns&limit` | `communications.read` | Per-person timeline and a per-panel contact-load score with its factors. Audited |
 | `GET /webhooks/inbox?panel` | `connectors.read` | Which panels have webhooks on, received and open counts, last 100 events (type and times only) |
 
 ## 2. Source panel endpoints MADP calls (verified in source, not live)

@@ -47,6 +47,12 @@ export default async function PanellistPage({
     throw e;
   }
   const byPanel = Object.groupBy(d.answers, (a) => a.panel);
+  type Timeline = {
+    items: { id: string; panel: keyof typeof PANELS; state: string; reason: string | null; dryRun: boolean; plannedFor: string | null; occurredAt: string; campaign: string | null }[];
+    fatigue: { panel: keyof typeof PANELS; score: number | null; band: string; factors: { factor: string; value: number; points: number }[] }[];
+  };
+  // Only roles with communications.read see the timeline; others get the profile without it.
+  const timeline = await api<Timeline>(`/communications/timeline/${encodeURIComponent(id)}?limit=50`).catch(() => null);
   return (
     <>
       <PageHeader
@@ -206,6 +212,40 @@ export default async function PanellistPage({
         ))}
         {d.answers.length === 0 ? <p className="px-5 py-6 text-sm text-fg-3">No answers visible.</p> : null}
       </Card>
+      {timeline ? (
+        <Card className="mt-4">
+          <CardHeader title="Communication timeline" hint="Per panel. Dry-run lines show what a campaign would do; nothing was sent." />
+          {timeline.fatigue.length ? (
+            <div className="flex flex-wrap gap-4 px-5 pt-4 text-[12px] text-fg-2">
+              {timeline.fatigue.map((f) => (
+                <div key={f.panel}>
+                  <span className="font-medium">{PANELS[f.panel].shortName} contact load: {f.band}</span>
+                  {f.score !== null ? ` (${f.score})` : ''}
+                  <span className="text-fg-3"> · {f.factors.map((x) => `${x.factor}: ${x.value}`).join(' · ')}</span>
+                </div>
+              ))}
+            </div>
+          ) : null}
+          {timeline.items.length ? (
+            <ul className="divide-y divide-border">
+              {timeline.items.map((e) => (
+                <li key={e.id} className="flex flex-wrap items-center gap-2 px-5 py-2 text-[13px]">
+                  <PanelChip panel={e.panel} />
+                  <span>{e.campaign ?? 'Message'}</span>
+                  <Badge tone={e.state === 'suppressed' ? 'warn' : 'neutral'}>{e.state}</Badge>
+                  {e.reason ? <span className="text-fg-3">{e.reason.replaceAll('_', ' ')}</span> : null}
+                  {e.dryRun ? <Badge>dry run</Badge> : null}
+                  <span className="ml-auto text-[12px] text-fg-3">
+                    {e.plannedFor ? `for ${fmtDate(e.plannedFor)}` : fmtDate(e.occurredAt)}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="px-5 py-6 text-sm text-fg-3">No messages yet.</p>
+          )}
+        </Card>
+      ) : null}
     </>
   );
 }

@@ -59,7 +59,7 @@ Act 2023, GDPR and UK GDPR) has to be confirmed by counsel. Nothing here is lega
 | Deletion propagation (source event → MADP → downstream), with deletion receipts | M3 |
 | KMS-backed keys, and rotation of `PII_HASH_KEY` (needs every e-mail re-hashed) | M3 |
 | Access reviews and break-glass procedure | M3 |
-| Outbound messaging policy, suppression, quiet hours, provider credentials kept in a vault | M4 |
+| Outbound sending through a provider, with credentials kept in a vault (policy, suppression and quiet hours are built and dry-run only) | M4 |
 | Signed service auth for Supply360 (client credentials plus request signing), scoped per service client | M6 |
 | Dependency and container scanning, backups and restore drills, incident runbook | M6 |
 

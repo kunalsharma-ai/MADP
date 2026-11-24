@@ -25,6 +25,8 @@ import { IdentityController } from './identity/identity.controller.js';
 import { KeyRotationService } from './crypto/key-rotation.service.js';
 import { WebhookService } from './webhooks/webhook.service.js';
 import { WebhookController } from './webhooks/webhook.controller.js';
+import { EngagementService } from './engagement/engagement.service.js';
+import { EngagementController } from './engagement/engagement.controller.js';
 import { HealthController } from './common/health.controller.js';
 import { MetaController } from './common/meta.controller.js';
 
@@ -46,6 +48,7 @@ export class AppModule {
         AuditController,
         IdentityController,
         WebhookController,
+        EngagementController,
       ],
       providers: [
         { provide: API_ENV, useValue: env },
@@ -61,6 +64,7 @@ export class AppModule {
         IdentityService,
         KeyRotationService,
         WebhookService,
+        EngagementService,
         { provide: APP_GUARD, useClass: ThrottlerGuard },
         { provide: APP_GUARD, useClass: AuthGuard },
       ],
