@@ -60,6 +60,27 @@ Status codes: 200 × 4552
 Status codes: 200 × 6393
 16 concurrent clients for 60.1 s: 106.4 requests/s, error rate 0.00%.
 
+## 2026-11-24: 5,000 demo people, after the verification summary change
+
+Same database and mix, 16 concurrent clients for 60 seconds. The verification summary went from p50 386 ms and p95
+473 ms to p50 147 ms and p95 210 ms. The filtered audience count (p50 272 ms) is now the slowest call.
+
+| Endpoint | Requests | p50 ms | p95 ms | p99 ms | Errors |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| audience counts | 1938 | 193 | 255 | 293 | 0 |
+| audience counts, filtered | 962 | 272 | 347 | 391 | 0 |
+| geography, world | 680 | 117 | 167 | 189 | 0 |
+| overlap | 333 | 132 | 182 | 225 | 0 |
+| panellist directory | 930 | 52 | 78 | 96 | 0 |
+| verification summary | 325 | 147 | 210 | 256 | 0 |
+| consent summary | 340 | 134 | 200 | 269 | 0 |
+| report: audience by country | 627 | 56 | 83 | 96 | 0 |
+| health | 316 | 12 | 25 | 35 | 0 |
+| **All** | 6451 | 149 | 293 | 346 | 0 |
+
+Status codes: 200 × 6451
+16 concurrent clients for 60.1 s: 107.3 requests/s, error rate 0.00%.
+
 ## 2026-11-24: 300 demo people (preview database)
 
 16 concurrent clients for 30 seconds:
@@ -88,6 +109,11 @@ Status codes: 200 × 8913
 - **The consent summary was the slowest call:** p50 934 ms and p99 4.8 s at 16 clients. It ran three queries per
   panel, one after another, with a set of subqueries for every member. It now runs three set-based queries for all
   panels at once, and gives the same numbers (checked against the old output on the 5,000-person database). One call on
-  its own dropped from about 260 ms to about 50 ms. The verification summary, at about 0.4 s, is next in line.
+  its own dropped from about 260 ms to about 50 ms.
+- **The verification summary was next:** p50 386 ms at 16 clients. It ran four queries per panel, and two of its
+  checks looked up the time zone names and the panel's shared e-mails again for every member. It now runs four
+  queries for all panels at once, works those two lists out once per call, and gives the same numbers (checked against
+  the old output on the 5,000-person and preview databases, and by a test that compares every check with its
+  drill-down). One call on its own dropped from about 90 ms to about 30 ms; under load, see the run below.
 - Audience counts grow with the population (about 50 ms at 300 people, 190 ms at 5,000). At the real panel sizes,
   check that the count cache is used.

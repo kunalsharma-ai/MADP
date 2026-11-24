@@ -27,6 +27,21 @@ type Actor = Pick<AuditEntry, 'actorId' | 'actorType' | 'actorRole' | 'ip' | 'us
 /** One SQL condition per check, over `s` (source_identity) of active memberships `m` in one panel. */
 function checkSql(check: QualityCheck, mode: DataMode, panel: PanelCode): SQL {
   switch (check) {
+    case 'unknown_timezone':
+      return sql`coalesce(s.timezone, '') <> '' and not exists (select 1 from pg_timezone_names tz where tz.name = s.timezone)`;
+    case 'shared_email_in_panel':
+      return sql`s.email_hash in (
+        select s2.email_hash from panel_membership m2 join source_identity s2 on s2.id = m2.source_identity_id
+        where m2.data_mode = ${mode} and m2.panel = ${panel} and m2.status = 'active' and s2.email_hash is not null
+        group by s2.email_hash having count(*) > 1)`;
+    default:
+      return rowCheckSql(check);
+  }
+}
+
+/** The checks that need only the member's own row. */
+function rowCheckSql(check: Exclude<QualityCheck, 'unknown_timezone' | 'shared_email_in_panel'>): SQL {
+  switch (check) {
     case 'missing_country':
       return sql`coalesce(s.country, '') = ''`;
     case 'missing_birth_year':
@@ -35,17 +50,10 @@ function checkSql(check: QualityCheck, mode: DataMode, panel: PanelCode): SQL {
       return sql`s.birth_year is not null and (extract(year from now())::int - s.birth_year < ${MIN_AGE} or extract(year from now())::int - s.birth_year > ${MAX_AGE})`;
     case 'missing_timezone':
       return sql`coalesce(s.timezone, '') = ''`;
-    case 'unknown_timezone':
-      return sql`coalesce(s.timezone, '') <> '' and not exists (select 1 from pg_timezone_names tz where tz.name = s.timezone)`;
     case 'no_email':
       return sql`s.email_hash is null`;
     case 'email_rejected':
       return sql`s.email_verification = 'rejected'`;
-    case 'shared_email_in_panel':
-      return sql`s.email_hash in (
-        select s2.email_hash from panel_membership m2 join source_identity s2 on s2.id = m2.source_identity_id
-        where m2.data_mode = ${mode} and m2.panel = ${panel} and m2.status = 'active' and s2.email_hash is not null
-        group by s2.email_hash having count(*) > 1)`;
     case 'quality_below_default':
       return sql`s.quality_score < ${DEFAULT_QUALITY}`;
     case 'no_quality_score':
@@ -67,6 +75,51 @@ const CHECK_LABELS: Record<QualityCheck, { label: string; why: string }> = {
 };
 
 /**
+ * The same checks as `checkSql`, for the summary query: `sh` is the joined row of e-mails shared in the member's panel
+ * and `tz` the joined time zone name, so neither is looked up per member.
+ */
+function summaryCheckSql(check: QualityCheck): SQL {
+  if (check === 'shared_email_in_panel') return sql`sh.email_hash is not null`;
+  if (check === 'unknown_timezone') return sql`coalesce(s.timezone, '') <> '' and tz.name is null`;
+  return rowCheckSql(check);
+}
+
+type Evidence = { pending: number; verified: number; expired: number; rejected: number; revoked: number };
+
+function panelSummary(
+  panel: PanelCode,
+  v: Record<string, string> | undefined,
+  evidence: { claim: string; status: string; expired: boolean; n: string }[],
+  idr: { n: string } | undefined,
+) {
+  const n = (k: string) => Number(v?.[k] ?? 0);
+  const byClaim: Record<string, Evidence> = {};
+  for (const r of evidence) {
+    const b = (byClaim[r.claim] ??= { pending: 0, verified: 0, expired: 0, rejected: 0, revoked: 0 });
+    const key = r.expired ? 'expired' : (r.status as keyof Evidence);
+    b[key] += Number(r.n);
+  }
+  return {
+    panel,
+    members: n('members'),
+    sourceReported: {
+      email: { verified: n('email_verified'), unverified: n('email_unverified'), rejected: n('email_rejected') },
+      phone: { verified: n('phone_verified'), unverified: n('phone_unverified'), rejected: n('phone_rejected') },
+      qualityScore: {
+        none: n('q_none'),
+        below50: n('q_0'),
+        from50to99: n('q_50'),
+        from100to149: n('q_100'),
+        from150: n('q_150'),
+      },
+    },
+    checks: Object.fromEntries(QUALITY_CHECKS.map((k) => [k, n(k)])),
+    evidence: byClaim,
+    identityReviewOpen: Number(idr?.n ?? 0),
+  };
+}
+
+/**
  * Verification and data quality center (screen 8). Everything is per panel and never added across panels.
  * Verification states and quality scores are what each panel reported; MADP's own checks run on its copy of the
  * member record; independent evidence is recorded by one admin and decided by another.
@@ -78,76 +131,65 @@ export class VerificationService {
     private readonly audit: AuditService,
   ) {}
 
+  /**
+   * All panels in four set-based queries, so the cost does not grow with the number of panels. The time zone names
+   * and the shared e-mails are worked out once per call and joined, not looked up again for every member.
+   */
   async summary(mode: DataMode, panels: PanelCode[]) {
-    const out = [];
-    for (const panel of panels) out.push(await this.panelSummary(mode, panel));
+    const db = this.database.db;
+    const inPanels = sql.join(panels.map((p) => sql`${p}`), sql`, `);
+    const checkCols = sql.join(
+      QUALITY_CHECKS.map((c) => sql`count(*) filter (where ${summaryCheckSql(c)}) as ${sql.identifier(c)}`),
+      sql`, `,
+    );
+    const counts = (
+      await db.execute<Record<string, string>>(sql`
+        with s as materialized (
+          select m.panel as member_panel, s.* from panel_membership m join source_identity s on s.id = m.source_identity_id
+          where m.data_mode = ${mode} and m.panel in (${inPanels}) and m.status = 'active'),
+        shared as (select member_panel, email_hash from s where email_hash is not null group by 1, 2 having count(*) > 1),
+        tz as materialized (select distinct name from pg_timezone_names)
+        select s.member_panel::text as panel, count(*) as members,
+          count(*) filter (where s.email_verification = 'verified') as email_verified,
+          count(*) filter (where s.email_verification = 'unverified') as email_unverified,
+          count(*) filter (where s.email_verification = 'rejected') as email_rejected,
+          count(*) filter (where s.phone_verification = 'verified') as phone_verified,
+          count(*) filter (where s.phone_verification = 'unverified') as phone_unverified,
+          count(*) filter (where s.phone_verification = 'rejected') as phone_rejected,
+          count(*) filter (where s.quality_score is null) as q_none,
+          count(*) filter (where s.quality_score < 50) as q_0,
+          count(*) filter (where s.quality_score >= 50 and s.quality_score < 100) as q_50,
+          count(*) filter (where s.quality_score >= 100 and s.quality_score < 150) as q_100,
+          count(*) filter (where s.quality_score >= 150) as q_150,
+          ${checkCols}
+        from s left join shared sh on sh.member_panel = s.member_panel and sh.email_hash = s.email_hash
+          left join tz on tz.name = s.timezone
+        group by s.member_panel`)
+    ).rows;
+    const evidence = (
+      await db.execute<{ panel: string; claim: string; status: string; expired: boolean; n: string }>(sql`
+        select e.panel::text as panel, e.claim, e.status, (e.status = 'verified' and e.expires_on < current_date) as expired,
+          count(*) as n
+        from verification_evidence e join panel_membership m on m.id = e.panel_membership_id
+        where e.data_mode = ${mode} and e.panel in (${inPanels}) and m.status = 'active' group by 1, 2, 3, 4`)
+    ).rows;
+    const identity = (
+      await db.execute<{ panel: string; n: string }>(sql`select s.panel::text as panel, count(*) as n
+        from identity_match_candidate c join source_identity s on s.id = c.source_identity_id
+        where c.data_mode = ${mode} and s.panel in (${inPanels}) and c.status = 'pending' group by 1`)
+    ).rows;
     return {
       dataMode: mode,
       asOf: new Date().toISOString(),
       checks: QUALITY_CHECKS.map((key) => ({ key, ...CHECK_LABELS[key] })),
-      panels: out,
-    };
-  }
-
-  private async panelSummary(mode: DataMode, panel: PanelCode) {
-    const db = this.database.db;
-    const base = sql`from panel_membership m join source_identity s on s.id = m.source_identity_id
-      where m.data_mode = ${mode} and m.panel = ${panel} and m.status = 'active'`;
-    const [v] = (
-      await db.execute<Record<string, string>>(sql`select count(*) as members,
-        count(*) filter (where s.email_verification = 'verified') as email_verified,
-        count(*) filter (where s.email_verification = 'unverified') as email_unverified,
-        count(*) filter (where s.email_verification = 'rejected') as email_rejected,
-        count(*) filter (where s.phone_verification = 'verified') as phone_verified,
-        count(*) filter (where s.phone_verification = 'unverified') as phone_unverified,
-        count(*) filter (where s.phone_verification = 'rejected') as phone_rejected,
-        count(*) filter (where s.quality_score is null) as q_none,
-        count(*) filter (where s.quality_score < 50) as q_0,
-        count(*) filter (where s.quality_score >= 50 and s.quality_score < 100) as q_50,
-        count(*) filter (where s.quality_score >= 100 and s.quality_score < 150) as q_100,
-        count(*) filter (where s.quality_score >= 150) as q_150
-        ${base}`)
-    ).rows;
-    const n = (k: string) => Number(v?.[k] ?? 0);
-    const checkCols = sql.join(
-      QUALITY_CHECKS.map((c) => sql`count(*) filter (where ${checkSql(c, mode, panel)}) as ${sql.identifier(c)}`),
-      sql`, `,
-    );
-    const [c] = (await db.execute<Record<string, string>>(sql`select ${checkCols} ${base}`)).rows;
-    const evidence = (
-      await db.execute<{ claim: string; status: string; expired: boolean; n: string }>(sql`
-        select e.claim, e.status, (e.status = 'verified' and e.expires_on < current_date) as expired, count(*) as n
-        from verification_evidence e join panel_membership m on m.id = e.panel_membership_id
-        where e.data_mode = ${mode} and e.panel = ${panel} and m.status = 'active' group by 1, 2, 3`)
-    ).rows;
-    const [idr] = (
-      await db.execute<{ n: string }>(sql`select count(*) as n from identity_match_candidate c
-        join source_identity s on s.id = c.source_identity_id
-        where c.data_mode = ${mode} and s.panel = ${panel} and c.status = 'pending'`)
-    ).rows;
-    const byClaim: Record<string, { pending: number; verified: number; expired: number; rejected: number; revoked: number }> = {};
-    for (const r of evidence) {
-      const b = (byClaim[r.claim] ??= { pending: 0, verified: 0, expired: 0, rejected: 0, revoked: 0 });
-      const key = r.expired ? 'expired' : (r.status as keyof typeof b);
-      b[key] += Number(r.n);
-    }
-    return {
-      panel,
-      members: n('members'),
-      sourceReported: {
-        email: { verified: n('email_verified'), unverified: n('email_unverified'), rejected: n('email_rejected') },
-        phone: { verified: n('phone_verified'), unverified: n('phone_unverified'), rejected: n('phone_rejected') },
-        qualityScore: {
-          none: n('q_none'),
-          below50: n('q_0'),
-          from50to99: n('q_50'),
-          from100to149: n('q_100'),
-          from150: n('q_150'),
-        },
-      },
-      checks: Object.fromEntries(QUALITY_CHECKS.map((k) => [k, Number(c?.[k] ?? 0)])),
-      evidence: byClaim,
-      identityReviewOpen: Number(idr?.n ?? 0),
+      panels: panels.map((panel) =>
+        panelSummary(
+          panel,
+          counts.find((r) => r.panel === panel),
+          evidence.filter((r) => r.panel === panel),
+          identity.find((r) => r.panel === panel),
+        ),
+      ),
     };
   }
 
