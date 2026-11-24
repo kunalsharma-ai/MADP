@@ -37,6 +37,23 @@ Kunal's mailer packs for all three panels are in MADP, read-only.
 - Previews use the designers' sample data.
 - The T2O profile reminders need their Liquid logic rewritten as plain text, or sending left to the panel.
 - Nothing is sent. Sending needs a provider and Kunal's approval.
+## Site and legal pages editor (2026-11-24)
+
+The privacy, terms, GDPR and cookie pages and other site pages of T2O, MFR and MHO, edited from the console. The
+panel keeps the pages (kunalsharma-ai/MFR#64, turn2opinion#33, MHO#15: `app/admin/content.js`); MADP calls its signed
+admin API with the admin's own id as the actor.
+- Screen: Support > Site & legal pages (`content.manage`, one brand). A list with live version and draft state, a new
+  page form, and a page screen with a plain-text editor, a preview, review and publish, the live text and the published
+  versions with "copy into draft" to roll back.
+- API: `/panel/content` (list, create), `/panel/content/:id` (read, edit the draft), `/:id/review|publish|discard`,
+  `/:id/revisions`, `/:id/revisions/:version`, `/:id/revisions/:version/restore`. Every write is audited
+  (`content.page.*`) with old and new values.
+- Legal pages (privacy, terms, gdpr, cookies, or kind legal) need four eyes: published only from review, by an admin
+  who neither asked for review nor made the last edit. The panel enforces it; the screen explains why Publish is off.
+- Bodies are the panel's blocks (text, headings, lists, notes, tables), checked in MADP before any call. No HTML can
+  reach a site: links are plain https or e-mail addresses.
+- Until a page is published, the sites show their built-in text.
+- `test/content-admin.test.ts` (7 tests) covers all three brands against a stand-in that keeps the panel's rules.
 ## Admin app: nonce-based Content-Security-Policy (2026-11-24)
 - Every page view gets a fresh 128-bit nonce (`apps/admin/src/proxy.ts`). Scripts run only from the admin's own origin
   with that nonce (`'strict-dynamic'` for Next.js chunks); `'unsafe-inline'` scripts are gone, and `'unsafe-eval'` is

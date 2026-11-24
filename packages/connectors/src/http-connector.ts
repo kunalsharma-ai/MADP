@@ -447,6 +447,15 @@ export const PANEL_ADMIN_ROUTES = {
   help: '/api/admin/v1/help',
   helpEntry: (id: string) => `/api/admin/v1/help/${encodeURIComponent(id)}`,
   helpStatus: (id: string) => `/api/admin/v1/help/${encodeURIComponent(id)}/status`,
+  // content and legal pages (MFR#64, turn2opinion#33, MHO#15: app/admin/content.js)
+  content: '/api/admin/v1/content',
+  contentPage: (id: string) => `/api/admin/v1/content/${encodeURIComponent(id)}`,
+  contentAction: (id: string, action: 'review' | 'publish' | 'discard') =>
+    `/api/admin/v1/content/${encodeURIComponent(id)}/${action}`,
+  contentRevisions: (id: string) => `/api/admin/v1/content/${encodeURIComponent(id)}/revisions`,
+  contentRevision: (id: string, version: number) => `/api/admin/v1/content/${encodeURIComponent(id)}/revisions/${version}`,
+  contentRestore: (id: string, version: number) =>
+    `/api/admin/v1/content/${encodeURIComponent(id)}/revisions/${version}/restore`,
   // step 4 (MFR backend app/admin/routes.js)
   switches: '/api/admin/v1/switches',
   switch: (key: string) => `/api/admin/v1/switches/${encodeURIComponent(key)}`,

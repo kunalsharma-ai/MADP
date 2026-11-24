@@ -297,3 +297,17 @@ export async function helpStatusAction(entry: string, status: string) {
     '/help-centre',
   );
 }
+
+// ---- content and legal pages (MFR#64, turn2opinion#33, MHO#15) ---------------------------------------------------
+export async function contentCreateAction(data: { key: string; kind?: string; lang?: string; title: string; body: unknown[] }) {
+  return run(() => api<{ id: string }>('/panel/content', { method: 'POST', json: data }), '/content');
+}
+export async function contentSaveAction(page: string, data: { title?: string; body?: unknown[] }) {
+  return run(() => api(`/panel/content/${id(page)}`, { method: 'PUT', json: data }), `/content/${page}`);
+}
+export async function contentMoveAction(page: string, action: 'review' | 'publish' | 'discard') {
+  return run(() => api(`/panel/content/${id(page)}/${action}`, { method: 'POST' }), `/content/${page}`);
+}
+export async function contentRestoreAction(page: string, version: number) {
+  return run(() => api(`/panel/content/${id(page)}/revisions/${version}/restore`, { method: 'POST' }), `/content/${page}`);
+}

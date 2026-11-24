@@ -142,6 +142,13 @@ export const NAV: NavGroup[] = [
         permission: 'content.manage',
         brandScoped: true,
       },
+      {
+        href: '/content',
+        label: 'Site & legal pages',
+        icon: 'Scale',
+        permission: 'content.manage',
+        brandScoped: true,
+      },
     ],
   },
   {
