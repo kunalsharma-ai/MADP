@@ -23,10 +23,10 @@ jobs:
       TEST_DATABASE_ADMIN_URL: postgres://madp:madp@localhost:5432/postgres
       TEST_MONGODB_URL: mongodb://localhost:27017
     steps:
-      - uses: actions/checkout@v5
-      - uses: pnpm/action-setup@v4
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
         with: { version: 12.23.0 }
-      - uses: actions/setup-node@v5
+      - uses: actions/setup-node@v7
         with: { node-version-file: .nvmrc, cache: pnpm }
       - run: pnpm install --frozen-lockfile
       # Security gates (Kunal, 24 Nov 2026): no committed secrets, and no known high or critical advisory in what ships.
