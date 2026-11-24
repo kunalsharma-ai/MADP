@@ -42,6 +42,8 @@ import { VerificationService } from './verification/verification.service.js';
 import { VerificationController } from './verification/verification.controller.js';
 import { ReportsService } from './reports/reports.service.js';
 import { ReportsController } from './reports/reports.controller.js';
+import { InsightsService } from './insights/insights.service.js';
+import { InsightsController } from './insights/insights.controller.js';
 import { ServiceAuthGuard } from './supply360/service-auth.guard.js';
 import { ServiceClientsController, Supply360Controller } from './supply360/supply360.controller.js';
 import { AdminsController } from './admins/admins.controller.js';
@@ -85,6 +87,7 @@ export class AppModule {
         FreshnessController,
         VerificationController,
         ReportsController,
+        InsightsController,
       ],
       providers: [
         { provide: API_ENV, useValue: env },
@@ -112,6 +115,7 @@ export class AppModule {
         FreshnessService,
         VerificationService,
         ReportsService,
+        InsightsService,
         { provide: APP_GUARD, useClass: ThrottlerGuard },
         { provide: APP_GUARD, useClass: AuthGuard },
       ],

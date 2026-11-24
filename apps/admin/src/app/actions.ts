@@ -280,3 +280,15 @@ export async function evidenceStepAction(id: string, step: 'verified' | 'rejecte
   revalidatePath('/verification');
   return `Evidence is now ${r.status}`;
 }
+
+export async function refreshInsightsAction() {
+  const r = await api<{ raised: number; updated: number; resolved: number }>('/insights/refresh', { method: 'POST', json: {} });
+  revalidatePath('/insights');
+  return `${r.raised} new, ${r.updated} still true, ${r.resolved} resolved`;
+}
+
+export async function decideInsightAction(id: string, decision: 'accepted' | 'dismissed', note: string) {
+  await api(`/insights/${encodeURIComponent(id)}/decision`, { method: 'POST', json: { decision, note } });
+  revalidatePath('/insights');
+  return decision === 'accepted' ? 'Accepted. Follow the recommendation from its screen.' : 'Dismissed for at least 7 days.';
+}

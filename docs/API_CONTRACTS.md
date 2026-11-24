@@ -182,3 +182,9 @@ All routes are `@BrandScoped({ allowAll: true })`: the `x-madp-brand` header lim
 - `GET /reports/:key?panel=&from=&to=` (`reports.read` + the report's own permission): `ReportResult` with `columns`, `rows`, `period`, `notes`, `dataMode`. 404 for an unknown key; 400 when `from` is after `to`.
 - `GET /reports/:key/export?format=csv|xlsx&panel=&from=&to=` (`reports.read`, `export.read`, the report's permission): a file named `madp-<key>-<brand>[-DEMO]-<date>.<ext>`, audited as `report.exported`.
 
+## 10. AI insights (implemented on DEMO data, 2026-11-24)
+`@BrandScoped({ allowAll: true })`. Rule keys: `INSIGHT_RULES` in `packages/contracts/src/insights.ts`.
+- `GET /insights?panel=&status=` (`insights.read`): `items`, `rules` (each rule's threshold in words) and `lastRefreshedAt`.
+- `POST /insights/refresh?panel=` (`insights.review`): `{ raised, updated, resolved }`, audited as `insights.refreshed`.
+- `POST /insights/:id/decision` `InsightDecision` (`insights.review`): accepted or dismissed with a note; 409 unless open.
+

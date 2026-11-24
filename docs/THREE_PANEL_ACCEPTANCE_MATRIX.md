@@ -31,6 +31,7 @@ copy of the panel backend for all three panels (`T2O_LOCAL_E2E.md`); that is sti
 | Profile freshness and missing attributes (6-month check) | 🟡 DEMO, `test/freshness.test.ts` | 🟡 DEMO | 🟡 DEMO; health questions hidden without health access |
 | Verification and data quality center, four-eyes evidence | 🟡 DEMO, `test/verification.test.ts` | 🟡 DEMO | 🟡 DEMO; HCP licence evidence |
 | Reports and CSV/XLSX exports (9 reports, audited) | 🟡 DEMO, `test/reports.test.ts` | 🟡 DEMO | 🟡 DEMO |
+| AI insights (rule-based, reviewed by a person) | 🟡 DEMO, `test/insights.test.ts` | 🟡 DEMO | 🟡 DEMO |
 | Privacy requests (access, correction, deletion with erasure hold, restriction) and retention | 🟡 DEMO, `test/privacy.test.ts`; panel deletion confirmed through the deletions feed | 🟡 DEMO | 🟡 DEMO |
 | Supply360 service API (counts, match, reservations, invitation authorisation, events, consent) | 🟡 DEMO, `test/supply360.test.ts` | 🟡 DEMO | 🟡 DEMO; health criteria refused in match, health counts only with the health scope |
 

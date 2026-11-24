@@ -99,6 +99,13 @@
       "when": 1795538359168,
       "tag": "0013_report_permissions",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1795539020909,
+      "tag": "0014_ai_insights",
+      "breakpoints": true
     }
   ]
 }

@@ -218,6 +218,19 @@ Staff accounts are now skipped (`isStaff`, kunalsharma-ai/turn2opinion#21, merge
 - The "Still true?" review and the archive of inactive members belong to the super admin console's Members module.
 - Admin screen: Data → Profile freshness. Tests: `test/freshness.test.ts` (4, all three panels).
 
+### AI insights and reviewable recommendations (screen 34, 2026-11-24)
+- Twelve fixed, documented rules run per panel over MADP's own counts: low reachability, profiles due for the
+  6-month check, never profiled, low quality scores, shared e-mails, identity review backlog, pending mappings,
+  pending survey points, stale sync, failed syncs, overdue privacy requests and evidence expiring within 30 days.
+- No AI model is called, per the owner's rule. A language model can be added later only with approval and would see
+  counts only. Insights hold counts and shares, never personal data.
+- A refresh updates open insights instead of duplicating them, resolves those whose rule stopped firing, and keeps
+  an accepted or dismissed insight quiet for 7 days. A person accepts or dismisses each insight with a note;
+  nothing is acted on automatically. Refreshes and decisions are audited.
+- Permissions `insights.read` (super admin, brand admin, panel manager, data steward, privacy officer, platform
+  admin, analyst) and `insights.review` (the same without platform admin and analyst). Migration 0014.
+- Admin screen: Overview → AI insights. Tests: `test/insights.test.ts` (5, all three panels).
+
 ### Reports, analytics and exports (screens 23 and 29, 2026-11-24)
 - A report registry (`src/reports/reports.service.ts`): each report is one table, per panel and never added across
   panels, with its own permission. Other modules add a report by adding an entry.
