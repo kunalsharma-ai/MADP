@@ -22,6 +22,7 @@ interface CatalogueItem {
 const DAY = /^\d{4}-\d{2}-\d{2}$/;
 
 function cell(v: string | number | null, type: string, key: string) {
+  if (v === '') return <span className="text-fg-3">—</span>;
   if (key === 'panel' && typeof v === 'string' && v in PANELS) return <PanelChip panel={v as PanelCode} />;
   if (key === 'country' && typeof v === 'string') return <Country code={v} />;
   if (v === null) return <span className="text-fg-3" title="Suppressed: too few people">&lt; min</span>;
