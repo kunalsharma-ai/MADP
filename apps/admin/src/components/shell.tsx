@@ -16,6 +16,7 @@ import {
   FileLock2,
   Hourglass,
   ScanSearch,
+  FileSpreadsheet,
   Globe2,
   LayoutDashboard,
   ListTree,
@@ -58,6 +59,7 @@ const ICONS = {
   FileLock2,
   Hourglass,
   ScanSearch,
+  FileSpreadsheet,
   UserCog,
   Building2,
 } as const;

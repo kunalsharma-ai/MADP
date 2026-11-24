@@ -175,3 +175,10 @@ All routes are `@BrandScoped({ allowAll: true })`: the `x-madp-brand` header lim
 - `POST /verification/evidence` `EvidenceCreate` (`verification.review`): 404 when the person is not a member of that panel.
 - `POST /verification/evidence/:id/decision` `EvidenceDecision` (`verification.review`): 403 for the admin who recorded it, 409 unless pending.
 - `POST /verification/evidence/:id/revoke` `EvidenceRevoke` (`verification.review`): verified evidence only.
+
+## 9. Reports and exports (implemented on DEMO data, 2026-11-24)
+`@BrandScoped({ allowAll: true })`. Keys: `REPORT_KEYS` in `packages/contracts/src/reports.ts`.
+- `GET /reports` (`reports.read`): the catalogue with `canView` and `canExport` for this admin and brand.
+- `GET /reports/:key?panel=&from=&to=` (`reports.read` + the report's own permission): `ReportResult` with `columns`, `rows`, `period`, `notes`, `dataMode`. 404 for an unknown key; 400 when `from` is after `to`.
+- `GET /reports/:key/export?format=csv|xlsx&panel=&from=&to=` (`reports.read`, `export.read`, the report's permission): a file named `madp-<key>-<brand>[-DEMO]-<date>.<ext>`, audited as `report.exported`.
+
