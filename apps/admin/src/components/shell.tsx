@@ -25,28 +25,42 @@ import {
   ShieldCheck,
   Sun,
   Users,
+  UserCog,
+  Building2,
 } from 'lucide-react';
 import type { SessionUser } from '@madp/contracts';
 import { NAV, PLANNED } from './nav';
 import { cn } from '@/lib/cn';
+import { setBrand } from '@/app/super-admin-actions';
 
-const ICONS = { LayoutDashboard, Globe2, Users, ListTree, GitCompareArrows, PlugZap, ShieldCheck, UserRoundCheck, Mail, Workflow, Coins, Network, BadgeCheck, FileLock2 } as const;
+const ICONS = { LayoutDashboard, Globe2, Users, ListTree, GitCompareArrows, PlugZap, ShieldCheck, UserRoundCheck, Mail, Workflow, Coins, Network, BadgeCheck, FileLock2, UserCog, Building2 } as const;
+const BRAND_LABEL: Record<string, string> = { all: 'All brands', t2o: 'Turn2Opinion', mfr: 'MyFrequentRewards', mho: 'MyHealthOpinions' };
 
 export function Shell({
   user,
   children,
   signOut,
+  brand,
+  allowAll,
 }: {
   user: SessionUser;
   children: ReactNode;
   signOut: () => Promise<void>;
+  /** Brand picked in the switcher: t2o, mfr, mho or all. */
+  brand: string;
+  allowAll: boolean;
 }) {
   const path = usePathname();
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const groups = NAV.map((g) => ({
     ...g,
-    items: g.items.filter((i) => user.permissions.includes(i.permission)),
+    // Cross-brand screens need the permission on every brand; brand-scoped screens on the picked brand.
+    items: g.items.filter(
+      (i) =>
+        user.permissions.includes(i.permission) ||
+        (i.brandScoped && brand !== 'all' && (user.brandPermissions[brand as 't2o'] ?? []).includes(i.permission)),
+    ),
   })).filter((g) => g.items.length);
   // The longest matching link wins, so /communications/automations does not also light up /communications.
   const current = groups
@@ -129,7 +143,11 @@ export function Shell({
           </nav>
           <div className="border-t border-white/5 px-4 py-3">
             <p className="truncate text-[13px] text-white">{user.displayName}</p>
-            <p className="truncate text-[11px] text-nav-text/60">{user.role.replace('_', ' ')}</p>
+            <p className="truncate text-[11px] text-nav-text/60">
+              {user.grants
+                .map((g) => `${g.role.replaceAll('_', ' ')}${g.brands ? ` (${g.brands.join(', ').toUpperCase()})` : ''}`)
+                .join(' · ')}
+            </p>
           </div>
         </div>
       </aside>
@@ -149,6 +167,25 @@ export function Shell({
               </>
             ) : null}
           </nav>
+          <label className="flex items-center gap-1.5 text-[12px] text-fg-3">
+            <span className="hidden md:inline">Brand</span>
+            <select
+              aria-label="Brand"
+              value={brand}
+              onChange={(e) => {
+                const next = e.target.value;
+                void setBrand(next).then(() => router.refresh());
+              }}
+              className="rounded-lg border border-border bg-surface px-2 py-1.5 text-[13px] text-fg"
+            >
+              {allowAll ? <option value="all">{BRAND_LABEL.all}</option> : null}
+              {user.brands.map((b) => (
+                <option key={b} value={b}>
+                  {BRAND_LABEL[b]}
+                </option>
+              ))}
+            </select>
+          </label>
           <button
             onClick={() => setOpen(true)}
             className="hidden items-center gap-2 rounded-lg border border-border bg-surface px-2.5 py-1.5 text-[13px] text-fg-3 sm:flex"

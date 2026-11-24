@@ -17,7 +17,14 @@ export class AuthController {
   @Post('login')
   @HttpCode(200)
   login(@Body(new ZodPipe(LoginRequest)) body: LoginRequest, @Req() req: Request) {
-    return this.auth.login(body, req.ip ?? null);
+    return this.auth.login(body, req.ip ?? null, String(req.headers['user-agent'] ?? '') || null);
+  }
+
+  @AllowMfaSetupScope()
+  @Post('logout')
+  @HttpCode(204)
+  async logout(@CurrentPrincipal() p: Principal, @Req() req: Request) {
+    await this.auth.logout(p, req.ip ?? null);
   }
 
   @AllowMfaSetupScope()
