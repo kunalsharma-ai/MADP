@@ -61,6 +61,7 @@ function fakePanel() {
     const h = (k: string) => String(req.headers[k] ?? '');
     const want = await signPanelAdmin(SECRET, {
       timestamp: h('x-madp-timestamp'),
+      nonce: h('x-madp-nonce'),
       method: req.method!,
       path: req.url!,
       origin: h('x-madp-origin'),
