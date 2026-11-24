@@ -416,3 +416,27 @@ Screenshots are in `docs/screenshots/`.
   A message that reaches teens needs `teen.read`; a ticket from a teen needs `teen.read`.
 - Screens: Ticket desk (list and detail), Portal messages, Help centre.
 - Tests: `apps/api/test/panel-admin-step3b.test.ts` (3), MFR `tests/admin.step3b.test.mjs` (3).
+
+## Super admin step 4: feature switches, rewards, engagement, Teen Panel, data requests (24 Nov 2026)
+
+- Panel side (kunalsharma-ai/MFR#53, merged, not deployed): a per-brand `FeatureSwitch` collection. Every money, legal
+  and e-mail feature asks the switch when it acts. That covers redemptions, teen learning rewards, the prize draw,
+  push, and the welcome, new-user, new-survey, birthday, lifecycle, weekly and expiry e-mails. The brand's kill switch
+  turns them all off. The defaults are unchanged, so everything is still off on every brand.
+- `/api/admin/v1` covers:
+  - switches
+  - the rewards catalogue and redemption queue
+  - draws and offers
+  - engagement tasks, ideas, stories and streaks
+  - teens (turning 18, guardian links)
+  - data requests (no code deletes anything)
+- MADP: `RewardsAdminController`.
+  - Switches: `switches.flip` plus the Super Admin role on that brand, with a reason.
+  - Redemptions: marking one paid needs `payouts.approve`. At the brand's four-eyes amount, the admin who approved it
+    can't also mark it paid. A teen's request needs `teen.read`.
+  - Teen ideas need `teen.review`.
+  - Turning 18 needs `teen.review` and `segments.manage`. A dry run comes first, and the real move is audited.
+  - Data requests need `data_requests.manage`.
+- Screens: Feature switches, Rewards, Engagement, Teen Panel (turning 18), Data requests.
+- Tests: `apps/api/test/panel-admin-step4.test.ts` (5) and MFR `tests/admin.step4.test.mjs` (6).
+- Nothing was switched on, sent or paid. Turning a switch on in production waits for Kunal.
