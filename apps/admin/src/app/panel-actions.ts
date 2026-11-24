@@ -311,3 +311,15 @@ export async function contentMoveAction(page: string, action: 'review' | 'publis
 export async function contentRestoreAction(page: string, version: number) {
   return run(() => api(`/panel/content/${id(page)}/revisions/${version}/restore`, { method: 'POST' }), `/content/${page}`);
 }
+
+// ---- question translations ----------------------------------------------------------------------------------------
+export async function translationSaveAction(
+  name: string,
+  body: { lang: string; label?: string; description?: string; options?: { value: string; label: string }[] },
+) {
+  return run(
+    () =>
+      api<{ optionsSet?: number }>(`/panel/questions/${id(name)}/translations`, { method: 'PUT', json: body }),
+    `/question-bank/${name}`,
+  );
+}

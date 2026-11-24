@@ -22,9 +22,11 @@ export interface QuestionData {
   hasNone?: boolean;
   hasSkip?: boolean;
   isMoney?: boolean;
+  translations?: Record<string, { label?: string; description?: string }>;
   options: {
     value: string;
     label: string;
+    translations?: Record<string, string>;
     isExclusive?: boolean;
     parentValue?: string[];
     countries?: string[];

@@ -3,6 +3,7 @@ import { api, ApiError } from '@/lib/api';
 import { withPanel } from '@/lib/panel';
 import { Badge, Card, CardHeader, PageHeader } from '@/components/ui';
 import { QuestionEditor, type QuestionData } from './question-editor';
+import { TranslationEditor } from './translation-editor';
 
 export const metadata: Metadata = { title: 'Question' };
 
@@ -53,6 +54,7 @@ export default async function QuestionPage({ params }: { params: Promise<{ name:
               </Card>
             ) : null}
             <QuestionEditor question={q} />
+            {q ? <TranslationEditor key={q.name} question={q} /> : null}
           </div>
         );
       })}

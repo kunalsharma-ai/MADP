@@ -164,8 +164,10 @@ const Lang = z
   .string()
   .trim()
   .regex(/^[a-z]{2}(-[A-Z]{2})?$/, 'a language code like hi or pt-BR');
+/** A translation's language: any code but English, which is the question's own wording (the panel refuses `en`). */
+const TranslationLang = Lang.refine((l) => l !== 'en', 'English is the question itself; pick another language');
 export const TranslationSet = z.object({
-  lang: Lang,
+  lang: TranslationLang,
   label: z.string().trim().max(500).optional(),
   description: z.string().max(2000).optional(),
   options: z
@@ -175,10 +177,16 @@ export const TranslationSet = z.object({
 });
 export type TranslationSet = z.infer<typeof TranslationSet>;
 export const MissingTranslations = z.object({
-  lang: Lang,
-  page: z.coerce.number().int().min(1).max(10_000).optional(),
+  lang: TranslationLang,
+  category: z.string().trim().toLowerCase().regex(/^[a-z0-9_-]{1,60}$/, 'a segment category').optional(),
 });
 export type MissingTranslations = z.infer<typeof MissingTranslations>;
+/**
+ * The panel's teen guardrail words (MFR `app/admin/qb.js`, TEEN_BLOCKED). The panel refuses them on questions teens can
+ * see, in the question and in its translations (422 `teen_guardrail`). The console uses the same list to warn early.
+ */
+export const TEEN_BLOCKED_WORDS =
+  /tobacco|nicotine|cigar|vap(e|ing)\b|smok|e-?cig|alcohol|beer|wine|liquor|spirits|whisk|vodka|health|medic|illness|disease|diagnos|prescri|pharma|cosmetic|make-?up|skin ?care|vehicle|\bcars?\b|motorcycle|automobile|auto insurance/i;
 
 // ---- step 3a: segments, audiences, surveys, points, quality, referrals --------------------------------------------
 const Country = z

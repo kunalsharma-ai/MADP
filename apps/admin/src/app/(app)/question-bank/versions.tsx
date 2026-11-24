@@ -12,6 +12,7 @@ export interface Version {
   counts: { questions?: number };
   diff?: Partial<Record<'questions' | 'options' | 'profiles', Diff>>;
   createdBy: string;
+  reviewRequestedBy?: string | null;
   publishedAt: string | null;
   createdAt: string;
 }
@@ -20,7 +21,7 @@ const d = (x?: Diff) => (x ? `+${x.added} −${x.removed} ~${x.changed}` : '—'
 const TONE = { draft: 'neutral', review: 'warn', published: 'teal', discarded: 'danger' } as const;
 
 /** Draft, review, then publish by a different admin (four eyes, checked by the panel). */
-export function VersionActions({ versions }: { versions: Version[] }) {
+export function VersionActions({ versions, me }: { versions: Version[]; me: string }) {
   const [pending, start] = useTransition();
   const [note, setNote] = useState('');
   const open = versions.find((v) => v.status === 'draft' || v.status === 'review');
@@ -99,7 +100,10 @@ export function VersionActions({ versions }: { versions: Version[] }) {
                         Send for review
                       </button>
                     ) : null}
-                    {v.status === 'review' ? (
+                    {v.status === 'review' && (v.createdBy === me || v.reviewRequestedBy === me) ? (
+                      <span className="self-center text-[12px] text-fg-3">Another admin publishes</span>
+                    ) : null}
+                    {v.status === 'review' && v.createdBy !== me && v.reviewRequestedBy !== me ? (
                       <button
                         className={btn.ghost}
                         disabled={pending}
