@@ -21,6 +21,12 @@ const config: NextConfig = {
           // Content-Security-Policy is set per request with a nonce in src/proxy.ts.
         ],
       },
+      {
+        // Logos and mailer images are public (the same files go out in e-mails). The e-mail previews render in a
+        // sandboxed frame, which has no origin of its own, so these must be loadable cross-origin.
+        source: '/:dir(brands|mailers)/:path*',
+        headers: [{ key: 'Cross-Origin-Resource-Policy', value: 'cross-origin' }],
+      },
     ];
   },
 };

@@ -12,6 +12,12 @@ describe('admin Content-Security-Policy', () => {
     expect(csp).toContain("base-uri 'none'");
     expect(csp).toContain('upgrade-insecure-requests');
   });
+  it('allows Google Fonts for styles and fonts only', () => {
+    const csp = contentSecurityPolicy('n', false).split('; ');
+    expect(csp).toContain("style-src 'self' 'unsafe-inline' https://fonts.googleapis.com");
+    expect(csp).toContain("font-src 'self' data: https://fonts.gstatic.com");
+    expect(csp.find((d) => d.startsWith('script-src'))).not.toContain('google');
+  });
   it('adds eval only in development', () => {
     expect(contentSecurityPolicy('n', true)).toContain("'unsafe-eval'");
   });

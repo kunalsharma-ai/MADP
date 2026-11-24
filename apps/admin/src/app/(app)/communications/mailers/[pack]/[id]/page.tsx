@@ -1,8 +1,8 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { KIND_BASIS, MERGE_FIELD_SOURCE_LABELS, type SessionUser, type AudienceCategory, type MailerTemplate, type MergeFieldSource, type PanelCode } from '@madp/contracts';
-import { api } from '@/lib/api';
-import { Badge, Card, CardHeader, CategoryChip, PageHeader, PanelChip, Table } from '@/components/ui';
+import { ApiError, api } from '@/lib/api';
+import { Badge, Card, CardHeader, CategoryChip, EmptyState, PageHeader, PanelChip, Table } from '@/components/ui';
 import { ToStudio } from './to-studio';
 
 export const metadata: Metadata = { title: 'Mailer' };
@@ -19,11 +19,30 @@ type Detail = {
 export default async function MailerPage({ params }: { params: Promise<{ pack: string; id: string }> }) {
   const { pack, id } = await params;
   const path = `/communications/mailers/${encodeURIComponent(pack)}/${encodeURIComponent(id)}`;
-  const [d, p, me] = await Promise.all([
+  const loaded = await Promise.all([
     api<Detail>(path),
     api<{ subject: string; preheader: string | null; html: string }>(`${path}/preview`),
     api<SessionUser>('/auth/me'),
-  ]);
+  ]).catch((e: unknown) => {
+    if (e instanceof ApiError && e.status === 404) return null;
+    throw e;
+  });
+  if (!loaded)
+    return (
+      <>
+        <PageHeader eyebrow="Mailer library" title="Not in this brand" />
+        <Card>
+          <EmptyState title="This mailer is not in the selected brand">
+            Mailers belong to one panel. Switch to that panel&apos;s brand at the top, or go back to the{' '}
+            <Link className="text-accent underline" href="/communications/mailers">
+              mailer library
+            </Link>
+            .
+          </EmptyState>
+        </Card>
+      </>
+    );
+  const [d, p, me] = loaded;
   const t = d.template;
   const canManage = (me.brandPermissions[d.pack.panel] ?? []).includes('communications.manage');
   return (

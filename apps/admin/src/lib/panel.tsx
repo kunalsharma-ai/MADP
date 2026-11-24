@@ -32,6 +32,17 @@ export async function withPanel(
           </EmptyState>
         </Card>
       );
+    // A panel answers 404 to its whole admin API until MADP_ADMIN_API_SECRETS is set, and to a record that is gone.
+    if (e instanceof ApiError && e.status === 404)
+      return (
+        <Card>
+          <EmptyState title={`${brand.toUpperCase()} answered “not found”`}>
+            Either the record was removed, or the panel&apos;s admin API is
+            switched off: it answers this to every request until MADP&apos;s shared secret is set on the panel
+            (MADP_ADMIN_API_SECRETS), which is a deploy step for Kunal to approve.
+          </EmptyState>
+        </Card>
+      );
     if (e instanceof ApiError && e.status === 403)
       return (
         <Card>

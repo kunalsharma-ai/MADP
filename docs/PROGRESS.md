@@ -37,6 +37,15 @@ Kunal's mailer packs for all three panels are in MADP, read-only.
 - Previews use the designers' sample data.
 - The T2O profile reminders need their Liquid logic rewritten as plain text, or sending left to the panel.
 - Nothing is sent. Sending needs a provider and Kunal's approval.
+## End-to-end check and go-live list (2026-11-24)
+
+- Every console screen was opened on a production build of the admin app for T2O, MFR, MHO and all brands (187
+  pages, DEMO data, a stand-in panel). Fixed what it found: a panel answering "not found" crashed 23 panel screens and
+  now shows what it means; e-mail previews now load the packs' fonts and images; the communications studio follows
+  the brand switcher; a mailer opened under another brand says so. After the fixes: 187 pages, no errors.
+- `docs/GO_LIVE.md` lists every secret, setting and scheduled job across MADP and the three panel repos, and the
+  decisions only Kunal can make.
+
 ## Site and legal pages editor (2026-11-24)
 
 The privacy, terms, GDPR and cookie pages and other site pages of T2O, MFR and MHO, edited from the console. The
