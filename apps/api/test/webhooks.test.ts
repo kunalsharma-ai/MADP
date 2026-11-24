@@ -76,9 +76,10 @@ describe('signed webhooks', () => {
     expect(r.status).toBe(202);
     expect(r.body).toEqual({ status: 'accepted' });
     const row = await until(async () => {
-      const [x] = await q<{ processed_at: Date | null; payload_ref: string }>(
-        sql`select processed_at, payload_ref from webhook_inbox where idempotency_key = 'evt-member-1'`,
+      const [x] = await q<{ processed_at: Date | null; payload_ref: string; error: string | null }>(
+        sql`select processed_at, payload_ref, error from webhook_inbox where idempotency_key = 'evt-member-1'`,
       );
+      if (x?.error) throw new Error(`webhook sync failed: ${x.error}`);
       return x?.processed_at ? x : null;
     });
     // Only a hash of the body is kept.

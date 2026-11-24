@@ -64,7 +64,8 @@ export class WebhookService {
   private async drain(panel: PanelCode) {
     do {
       this.again.delete(panel);
-      const startedAt = new Date();
+      // The cut-off comes from the database clock, the same clock that stamped received_at.
+      const startedAt = await this.dbNow();
       try {
         const res = await this.scheduler.runLocked(panel, null);
         if (!res) {
@@ -80,6 +81,11 @@ export class WebhookService {
         return;
       }
     } while (this.again.has(panel));
+  }
+
+  private async dbNow(): Promise<Date> {
+    const r = await this.database.db.execute<{ t: string | Date }>(sql`select clock_timestamp() as t`);
+    return new Date(r.rows[0]!.t);
   }
 
   /** Events received before the run started are covered by it. */
