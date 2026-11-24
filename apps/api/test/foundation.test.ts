@@ -181,6 +181,26 @@ describe('super admin foundation: roles per brand, sessions, hash-chained audit,
       .expect(200);
   });
 
+  it("seeds the legal footer, and keeps MHO's privacy link unset until it is confirmed", async () => {
+    const res = await request(t.server).get('/api/v1/brands').set(bearer(superToken)).expect(200);
+    for (const b of res.body.brands) {
+      expect(b.legalName).toBe('Frequent Research Fieldwork Solutions Private Limited');
+      expect(b.postalAddress).toContain('Delhi 110085');
+    }
+    expect(
+      res.body.brands.map((b: { panel: string; privacyUrl: string | null }) => [b.panel, b.privacyUrl]),
+    ).toEqual([
+      ['t2o', 'https://www.turn2opinion.com/privacy/'],
+      ['mfr', 'https://www.myfrequentrewards.com/privacy'],
+      ['mho', null],
+    ]);
+    await request(t.server)
+      .put('/api/v1/brands/mho/settings')
+      .set(bearer(superToken))
+      .send({ privacyUrl: 'http://www.myhealthopinions.com/privacy', reason: 'plain http is refused' })
+      .expect(400);
+  });
+
   it('keeps money settings for Super Admin and audits every change', async () => {
     await request(t.server)
       .put('/api/v1/brands/mfr/settings')

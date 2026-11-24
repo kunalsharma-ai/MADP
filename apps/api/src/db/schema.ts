@@ -438,6 +438,12 @@ export const brandSettings = pgTable('brand_setting', {
   archiveAfterMonths: smallint('archive_after_months').notNull().default(6),
   /** The brand's support address: the From and Reply-To of member e-mails, shown in e-mail previews. */
   supportEmail: text('support_email'),
+  /** Legal footer of member e-mails and legal pages: the company that runs the brand. */
+  legalName: text('legal_name'),
+  /** Registered postal address for the legal footer. */
+  postalAddress: text('postal_address'),
+  /** The brand's published privacy policy. Null until Kunal confirms it. */
+  privacyUrl: text('privacy_url'),
   updatedBy: uuid('updated_by'),
   updatedAt: updated(),
 });

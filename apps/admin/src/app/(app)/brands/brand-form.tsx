@@ -17,6 +17,9 @@ export interface BrandRow {
   profileReviewMonths: number;
   archiveAfterMonths: number;
   supportEmail: string | null;
+  legalName: string | null;
+  postalAddress: string | null;
+  privacyUrl: string | null;
   updatedAt: string;
 }
 
@@ -49,6 +52,9 @@ export function BrandSettingsForm({ brand, canMoney }: { brand: BrandRow; canMon
               origins: list(f.get('origins')),
               languages: list(f.get('languages')),
               ...(f.get('supportEmail') ? { supportEmail: String(f.get('supportEmail')) } : {}),
+              ...(f.get('legalName') ? { legalName: String(f.get('legalName')) } : {}),
+              ...(f.get('postalAddress') ? { postalAddress: String(f.get('postalAddress')) } : {}),
+              ...(f.get('privacyUrl') ? { privacyUrl: String(f.get('privacyUrl')) } : {}),
               profileReviewMonths: num(f, 'profileReviewMonths'),
               archiveAfterMonths: num(f, 'archiveAfterMonths'),
               ...(canMoney
@@ -84,6 +90,18 @@ export function BrandSettingsForm({ brand, canMoney }: { brand: BrandRow; canMon
       <label>
         Support e-mail (sender and reply-to)
         <input name="supportEmail" type="email" defaultValue={brand.supportEmail ?? ''} className={input} />
+      </label>
+      <label>
+        Legal company name
+        <input name="legalName" defaultValue={brand.legalName ?? ''} className={input} />
+      </label>
+      <label>
+        Postal address
+        <input name="postalAddress" defaultValue={brand.postalAddress ?? ''} className={input} />
+      </label>
+      <label>
+        Privacy policy link (https)
+        <input name="privacyUrl" type="url" defaultValue={brand.privacyUrl ?? ''} className={input} />
       </label>
       <div className="grid grid-cols-2 gap-3">
         <label>

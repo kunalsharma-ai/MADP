@@ -46,6 +46,9 @@ export const BrandSettingsUpdate = z.object({
   archiveAfterMonths: z.number().int().min(1).max(60).optional(),
   /** Sender and reply-to for member e-mails. Sending stays behind the e-mail switches. */
   supportEmail: z.string().trim().toLowerCase().email().max(200).optional(),
+  legalName: z.string().trim().min(2).max(200).optional(),
+  postalAddress: z.string().trim().min(5).max(400).optional(),
+  privacyUrl: z.string().trim().url().startsWith('https://').max(400).optional(),
   reason: z.string().trim().min(5).max(500),
 });
 export type BrandSettingsUpdate = z.infer<typeof BrandSettingsUpdate>;
