@@ -57,6 +57,7 @@ import {
   SegmentsController,
   SurveysController,
 } from './panel-admin/engagement-admin.controller.js';
+import { SupportAdminController } from './panel-admin/support-admin.controller.js';
 import { HealthController } from './common/health.controller.js';
 import { MetaController } from './common/meta.controller.js';
 
@@ -83,6 +84,7 @@ export class AppModule {
         SegmentsController,
         SurveysController,
         PointsQualityController,
+        SupportAdminController,
         IdentityController,
         WebhookController,
         EngagementController,

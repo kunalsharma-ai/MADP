@@ -223,3 +223,66 @@ export async function versionCreateAction(note: string) {
 export async function versionMoveAction(n: number, action: 'review' | 'publish' | 'discard') {
   return run(() => api(`/panel/qb/versions/${n}/${action}`, { method: 'POST' }), '/question-bank');
 }
+
+// ---- step 3b: tickets, portal messages, help centre ---------------------------------------------------------------
+export async function ticketReplyAction(ticket: string, message: string, internal: boolean) {
+  return run(
+    () =>
+      api<{ status: string; emailSent: boolean }>(`/panel/tickets/${id(ticket)}/reply`, {
+        method: 'POST',
+        json: { message, internal },
+      }),
+    `/tickets/${ticket}`,
+  );
+}
+export async function ticketStatusAction(ticket: string, status: string) {
+  return run(
+    () => api(`/panel/tickets/${id(ticket)}/status`, { method: 'POST', json: { status } }),
+    `/tickets/${ticket}`,
+  );
+}
+export async function ticketUpdateAction(ticket: string, patch: Record<string, string>) {
+  return run(() => api(`/panel/tickets/${id(ticket)}`, { method: 'PUT', json: patch }), `/tickets/${ticket}`);
+}
+export async function messageCreateAction(m: Record<string, unknown>) {
+  return run(() => api<{ id: string }>('/panel/messages', { method: 'POST', json: m }), '/messages');
+}
+export async function messagePreviewAction(message: string, audienceId?: string) {
+  return run(() =>
+    api<{ recipients: number; teens: number }>(`/panel/messages/${id(message)}/preview`, {
+      method: 'POST',
+      json: audienceId ? { audienceId } : {},
+    }),
+  );
+}
+export async function messageSendAction(message: string, reason: string, audienceId?: string) {
+  return run(
+    () =>
+      api<{ recipients: number }>(`/panel/messages/${id(message)}/send`, {
+        method: 'POST',
+        json: { reason, ...(audienceId ? { audienceId } : {}) },
+      }),
+    '/messages',
+  );
+}
+export async function messageWithdrawAction(message: string, reason: string) {
+  return run(
+    () => api(`/panel/messages/${id(message)}/withdraw`, { method: 'POST', json: { reason } }),
+    '/messages',
+  );
+}
+export async function helpSaveAction(entry: string | null, data: Record<string, unknown>) {
+  return run(
+    () =>
+      entry
+        ? api(`/panel/help/${id(entry)}`, { method: 'PUT', json: data })
+        : api<{ id: string }>('/panel/help', { method: 'POST', json: data }),
+    '/help-centre',
+  );
+}
+export async function helpStatusAction(entry: string, status: string) {
+  return run(
+    () => api(`/panel/help/${id(entry)}/status`, { method: 'POST', json: { status } }),
+    '/help-centre',
+  );
+}

@@ -430,6 +430,18 @@ export const PANEL_ADMIN_ROUTES = {
   qualityReview: '/api/admin/v1/quality/review',
   memberQuality: (id: string) => `/api/admin/v1/members/${encodeURIComponent(id)}/quality`,
   referralFraud: '/api/admin/v1/referrals/fraud',
+  tickets: '/api/admin/v1/tickets',
+  ticket: (id: string) => `/api/admin/v1/tickets/${encodeURIComponent(id)}`,
+  ticketReply: (id: string) => `/api/admin/v1/tickets/${encodeURIComponent(id)}/reply`,
+  ticketStatus: (id: string) => `/api/admin/v1/tickets/${encodeURIComponent(id)}/status`,
+  messages: '/api/admin/v1/messages',
+  message: (id: string) => `/api/admin/v1/messages/${encodeURIComponent(id)}`,
+  messagePreview: (id: string) => `/api/admin/v1/messages/${encodeURIComponent(id)}/preview`,
+  messageSend: (id: string) => `/api/admin/v1/messages/${encodeURIComponent(id)}/send`,
+  messageWithdraw: (id: string) => `/api/admin/v1/messages/${encodeURIComponent(id)}/withdraw`,
+  help: '/api/admin/v1/help',
+  helpEntry: (id: string) => `/api/admin/v1/help/${encodeURIComponent(id)}`,
+  helpStatus: (id: string) => `/api/admin/v1/help/${encodeURIComponent(id)}/status`,
 } as const;
 
 export interface PanelAdminConfig {

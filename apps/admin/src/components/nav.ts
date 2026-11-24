@@ -75,6 +75,32 @@ export const NAV: NavGroup[] = [
     ],
   },
   {
+    label: 'Support',
+    items: [
+      {
+        href: '/tickets',
+        label: 'Ticket desk',
+        icon: 'LifeBuoy',
+        permission: 'support.read',
+        brandScoped: true,
+      },
+      {
+        href: '/messages',
+        label: 'Portal messages',
+        icon: 'MessageSquare',
+        permission: 'support.read',
+        brandScoped: true,
+      },
+      {
+        href: '/help-centre',
+        label: 'Help centre',
+        icon: 'BookOpen',
+        permission: 'content.manage',
+        brandScoped: true,
+      },
+    ],
+  },
+  {
     label: 'Data',
     items: [
       { href: '/questions', label: 'Question registry', icon: 'ListTree', permission: 'questions.read' },
