@@ -107,6 +107,8 @@ export const ApiEnv = z.object({
   MFR_ADMIN_API_BASE_URL: blankIsUnset(z.string().url().optional()),
   MHO_ADMIN_API_BASE_URL: blankIsUnset(z.string().url().optional()),
   /** Minimum cell size below which counts are suppressed in privacy-sensitive views. */
+  /** Requests per minute per client address before the API answers 429. Login has its own, tighter limit. */
+  RATE_LIMIT_PER_MINUTE: z.coerce.number().int().min(10).default(300),
   MIN_CELL_SIZE: z.coerce.number().int().min(0).default(5),
   /** Minimum cell size for counts that use a special-category (health) filter. Never below MIN_CELL_SIZE. */
   SENSITIVE_MIN_CELL_SIZE: z.coerce.number().int().min(0).default(10),

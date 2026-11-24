@@ -35,6 +35,7 @@ copy of the panel backend for all three panels (`T2O_LOCAL_E2E.md`); that is sti
 | Geography explorer, world map, panel and category overlap | 🟡 DEMO, `test/geo.test.ts` | 🟡 DEMO | 🟡 DEMO |
 | Privacy requests (access, correction, deletion with erasure hold, restriction) and retention | 🟡 DEMO, `test/privacy.test.ts`; panel deletion confirmed through the deletions feed | 🟡 DEMO | 🟡 DEMO |
 | Supply360 service API (counts, match, reservations, invitation authorisation, events, consent) | 🟡 DEMO, `test/supply360.test.ts` | 🟡 DEMO | 🟡 DEMO; health criteria refused in match, health counts only with the health scope |
+| Production readiness: route security, token checks, headers, CORS, throttling, OpenAPI coverage, restore drill, load test | 🟡 local and DEMO only: `test/security.test.ts`, `ops/backup/restore-drill.sh`, `ops/load/load-test.mjs`; not deployed | 🟡 same | 🟡 same |
 
 ## Evidence
 - Integration tests: `apps/api/test/platform.test.ts` (19), `resilience.test.ts` (3, dead letters and reconciliation),
