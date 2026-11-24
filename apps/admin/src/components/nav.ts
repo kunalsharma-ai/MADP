@@ -45,6 +45,13 @@ export const NAV: NavGroup[] = [
       },
       { href: '/profiles', label: 'Profiles', icon: 'LayoutList', permission: 'qb.read', brandScoped: true },
       {
+        href: '/questionnaires',
+        label: 'Questionnaire builder',
+        icon: 'ListTree',
+        permission: 'qb.read',
+        brandScoped: true,
+      },
+      {
         href: '/segments',
         label: 'Segments & audiences',
         icon: 'Users',
@@ -217,6 +224,4 @@ export const NAV: NavGroup[] = [
   },
 ];
 
-export const PLANNED: { label: string; milestone: string }[] = [
-  { label: 'Questionnaire builder', milestone: 'M3' },
-];
+export const PLANNED: { label: string; milestone: string }[] = [];

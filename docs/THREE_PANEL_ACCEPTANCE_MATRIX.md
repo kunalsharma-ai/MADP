@@ -18,7 +18,7 @@ copy of the panel backend for all three panels (`T2O_LOCAL_E2E.md`); that is sti
 | 5. Options imported | 🟡 | 🟡 | 🟡 |
 | 6. Respondent identities imported | 🟡 synthetic people | 🟡 | 🟡 |
 | 7. Answers imported | 🟡 synthetic answers | 🟡 | 🟡 |
-| 8. Consent synchronised | 🟡 DEMO: guardian consent, terms and opt-ins from `User` fields, one current record per purpose; marketing opt-in mapped, T2O repo and changes feed don't have the field yet | 🟡 DEMO, same backend `User` fields; marketing opt-in `User.marketingOptIn` (MFR#54) mapped as `email_marketing`; the `news-letter` answer is never consent | 🟡 DEMO, same backend `User` fields and marketing opt-in (MHO#13); no health-data consent field exists at source |
+| 8. Consent synchronised | 🟡 DEMO: guardian consent, terms and opt-ins from `User` fields, one current record per purpose; marketing opt-in mapped and in the changes feed (turn2opinion#31, not deployed) | 🟡 DEMO, same backend `User` fields; marketing opt-in `User.marketingOptIn` (MFR#54) mapped as `email_marketing`; the `news-letter` answer is never consent | 🟡 DEMO, same backend `User` fields and marketing opt-in (MHO#13); no health-data consent field exists at source |
 | 9. Updates synchronised | 🟡 changes feed (turn2opinion#20) and `runSync`, local copy | 🟡 same, local copy | 🟡 same, local copy |
 | 10. Deletion propagated | 🟡 deletions feed, local copy | 🟡 | 🟡 |
 | 11. Webhook or polling verified | 🟡 polling scheduler on the local copy; signed webhook intake built and tested on DEMO, but the panel does not send webhooks yet | 🟡 same | 🟡 same |
@@ -35,6 +35,7 @@ copy of the panel backend for all three panels (`T2O_LOCAL_E2E.md`); that is sti
 | Geography explorer, world map, panel and category overlap | 🟡 DEMO, `test/geo.test.ts` | 🟡 DEMO | 🟡 DEMO |
 | Privacy requests (access, correction, deletion with erasure hold, restriction) and retention | 🟡 DEMO, `test/privacy.test.ts`; panel deletion confirmed through the deletions feed | 🟡 DEMO | 🟡 DEMO |
 | Supply360 service API (counts, match, reservations, invitation authorisation, events, consent) | 🟡 DEMO, `test/supply360.test.ts` | 🟡 DEMO | 🟡 DEMO; health criteria refused in match, health counts only with the health scope |
+| Questionnaire builder and review/publish (screens 11 and 12) | 🟡 stand-in panel only, `test/questionnaire.test.ts`; not run against a live panel | 🟡 same | 🟡 same |
 | Mailer library (owner's packs, merge fields mapped, previews; nothing sent) | 🟡 22 templates, `test/mailers.test.ts` | 🟡 22 templates (lifecycle and system) | 🟡 54 templates for healthcare professionals, caregivers and patients |
 | Production readiness: route security, token checks, headers, CORS, throttling, OpenAPI coverage, restore drill, load test | 🟡 local and DEMO only: `test/security.test.ts`, `ops/backup/restore-drill.sh`, `ops/load/load-test.mjs`; not deployed | 🟡 same | 🟡 same |
 
