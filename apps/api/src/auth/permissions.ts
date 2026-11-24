@@ -29,6 +29,9 @@ export const ROLE_PERMISSIONS: Record<AdminRole, Permission[]> = {
     'service_clients.manage',
     'consent.read',
     'consent.manage',
+    'privacy.read',
+    'privacy.request',
+    'privacy.execute',
   ],
   platform_admin: [
     'dashboard.read',
@@ -72,6 +75,9 @@ export const ROLE_PERMISSIONS: Record<AdminRole, Permission[]> = {
     'loyalty.approve',
     'consent.read',
     'consent.manage',
+    'privacy.read',
+    'privacy.request',
+    'privacy.execute',
   ],
   analyst: ['dashboard.read', 'audience.counts.read', 'questions.read'],
   support: [
@@ -82,6 +88,8 @@ export const ROLE_PERMISSIONS: Record<AdminRole, Permission[]> = {
     'loyalty.read',
     'consent.read',
     'consent.manage',
+    'privacy.read',
+    'privacy.request',
   ],
 };
 

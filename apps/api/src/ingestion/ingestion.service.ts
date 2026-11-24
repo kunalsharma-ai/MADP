@@ -16,6 +16,7 @@ import { Database, type Db } from '../db/database.js';
 import {
   categoryMemberships,
   consentRecords,
+  erasureHolds,
   deadLetters,
   identityMatchCandidates,
   importJobs,
@@ -79,6 +80,8 @@ export interface ImportCounts {
   consentsSynced: number;
   /** Panel admin and integration accounts the source marked as staff: never imported as members. */
   staffSkipped?: number;
+  /** Members skipped because a privacy request erased them in MADP and the panel has not deleted them yet. */
+  erasureHeld?: number;
 }
 
 /** Transient source failures go to the dead-letter queue; refused access or bad payloads fail the job. */
@@ -664,12 +667,12 @@ export class IngestionService {
    * panel's consents are withdrawn, and this panel's answers and answer history are removed. Other panels'
    * data for the same person is not touched. Returns false when MADP never held the member.
    */
-  private async removeMember(
+  async removeMember(
     panel: PanelCode,
     dataMode: DataMode,
-    jobId: string,
+    jobId: string | null,
     sourceMemberId: string,
-    reason: 'deleted' | 'soft_deleted',
+    reason: 'deleted' | 'soft_deleted' | 'privacy_request',
   ): Promise<boolean> {
     const db = this.database.db;
     const identity = await db.query.sourceIdentities.findFirst({
@@ -745,7 +748,22 @@ export class IngestionService {
       targetId: identity.masterPersonId,
       metadata: { panel, dataMode, reason, syncJobId: jobId },
     });
+    // The panel deleted a member that a privacy request erased in MADP: the request's panel step is done.
+    if (reason !== 'privacy_request') await this.onPanelDeleted?.(panel, dataMode, sourceMemberId);
     return true;
+  }
+
+  /** Set by PrivacyService, which owns erasure holds (avoids a circular constructor dependency). */
+  onPanelDeleted?: (panel: PanelCode, dataMode: DataMode, sourceMemberId: string) => Promise<void>;
+
+  /** Members erased on request: syncs must not bring them back while the panel still holds them. */
+  private async heldMembers(panel: PanelCode, dataMode: DataMode, ids: string[]) {
+    if (!ids.length) return new Set<string>();
+    const rows = await this.database.db
+      .select({ m: erasureHolds.sourceMemberId })
+      .from(erasureHolds)
+      .where(and(eq(erasureHolds.dataMode, dataMode), eq(erasureHolds.panel, panel), inArray(erasureHolds.sourceMemberId, ids)));
+    return new Set(rows.map((r) => r.m));
   }
 
   /** The panel removed all of a member's answers (T2O refresh): the current ones move to history. */
@@ -1001,8 +1019,11 @@ export class IngestionService {
     counts: ImportCounts,
   ) {
     const personByMember = new Map<string, string>();
+    const held = await this.heldMembers(panel, dataMode, items.map((r) => r.sourceMemberId));
+    if (held.size) counts.erasureHeld = (counts.erasureHeld ?? 0) + items.filter((r) => held.has(r.sourceMemberId)).length;
     await this.database.db.transaction(async (tx) => {
       for (const r of items) {
+        if (held.has(r.sourceMemberId)) continue;
         // Staging keeps a reference and a content hash only - no personal data is copied into MongoDB.
         await this.storeEvent(
           panel,

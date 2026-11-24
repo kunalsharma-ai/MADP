@@ -33,6 +33,12 @@ export const Permission = z.enum([
   'consent.read',
   /** Record a member's channel opt-out or its lifting. Never grants panel consent. */
   'consent.manage',
+  /** Privacy requests: see the queue and each request's trail. */
+  'privacy.read',
+  /** Log a privacy request received from a member. */
+  'privacy.request',
+  /** Verify, carry out or reject a privacy request (never one you logged yourself). */
+  'privacy.execute',
   'connectors.read',
   'connectors.run',
   'imports.run',

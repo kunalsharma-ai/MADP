@@ -151,3 +151,15 @@ not clicked, which wait until MADP sends invitations.
 | `POST /consent/persons/{personId}/preferences` | `consent.manage` | `{panel, channel: email|sms|push|whatsapp|all, status: opted_out|resumed, source, reason}`. 409 when it would not change anything; `resumed` only lifts a MADP opt-out |
 
 `consent.read`: super admin, privacy officer, support, data steward. `consent.manage`: super admin, privacy officer, support.
+
+## 6. Privacy requests (implemented on DEMO data, 2026-11-24)
+| Route | Permission | Notes |
+|---|---|---|
+| `GET /privacy/requests?status=` | `privacy.read` | Open, overdue and awaiting-panel counts, and requests (open first, by due date) |
+| `POST /privacy/requests` | `privacy.request` | `{personId, kind: access|correction|deletion|restriction, panels?, reference, jurisdiction?, dueInDays}`. 409 if an open request of that kind covers the panels |
+| `GET /privacy/requests/{id}` | `privacy.read` | With its trail and erasure holds |
+| `POST /privacy/requests/{id}/verify` · `/execute` · `/reject` · `/complete` | `privacy.execute` | `{note}`. Never by the person who logged it. `complete` only for a correction waiting on the panel |
+| `GET /privacy/requests/{id}/export` | `privacy.execute` + `panellists.pii.read` + `health.sensitive.read` | Decrypted export for a verified access request. Audited |
+| `GET /privacy/retention` · `POST /privacy/retention/{key}/purge` | `privacy.read` · `privacy.execute` | Schedule with rows due; evidence rules refuse a purge |
+
+`privacy.read`: super admin, privacy officer, support. `privacy.request`: the same. `privacy.execute`: super admin, privacy officer.

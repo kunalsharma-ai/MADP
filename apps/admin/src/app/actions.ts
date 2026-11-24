@@ -246,3 +246,21 @@ export async function recordPreferenceAction(personId: string, input: { panel: s
   revalidatePath('/consent');
   return input.status === 'opted_out' ? 'Opt-out recorded. MADP will not contact this member on that channel.' : 'Opt-out lifted.';
 }
+
+export async function createPrivacyRequestAction(input: { personId: string; kind: string; reference: string; jurisdiction?: string; dueInDays: number }) {
+  await api('/privacy/requests', { method: 'POST', json: input });
+  revalidatePath('/privacy');
+  return 'Request logged. A second person must verify and carry it out.';
+}
+
+export async function privacyStepAction(id: string, step: 'verify' | 'execute' | 'reject' | 'complete', note: string) {
+  const r = await api<{ status: string }>(`/privacy/requests/${encodeURIComponent(id)}/${step}`, { method: 'POST', json: { note } });
+  revalidatePath('/privacy');
+  return `Request is now ${r.status.replace('_', ' ')}`;
+}
+
+export async function purgeRetentionAction(key: string) {
+  const r = await api<{ removed: number }>(`/privacy/retention/${encodeURIComponent(key)}/purge`, { method: 'POST', json: {} });
+  revalidatePath('/privacy');
+  return `${r.removed} rows removed`;
+}
