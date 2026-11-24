@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { api } from '@/lib/api';
+import { Country } from '@/components/country';
 import { withPanel } from '@/lib/panel';
 import { Badge, Card, CardHeader, EmptyState, PageHeader, Table, btn, fmt, input } from '@/components/ui';
 import { ArchiveCheck } from './archive-check';
@@ -173,7 +174,7 @@ export default async function MembersPage({
                       <td className="px-5 py-2.5">
                         <Badge tone={m.segment === 'teen' ? 'accent' : 'neutral'}>{m.category}</Badge>
                       </td>
-                      <td className="px-5 py-2.5 uppercase">{m.country ?? '—'}</td>
+                      <td className="px-5 py-2.5">{m.country ? <Country code={m.country} compact /> : '—'}</td>
                       <td className="px-5 py-2.5">{m.birthYear ?? '—'}</td>
                       <td className="num px-5 py-2.5">{m.qualityScore}</td>
                       <td className="px-5 py-2.5">

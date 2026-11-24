@@ -13,21 +13,13 @@ import {
 import { api } from '@/lib/api';
 import { Card, CardHeader, DataModeBadge, DemoBanner, EmptyState, PageHeader, PanelChip, Stat, Table, btn, fmt, fmtDate } from '@/components/ui';
 import { cn } from '@/lib/cn';
+import { Country, countryName } from '@/components/country';
 import { WorldMap } from './world-map';
 
 export const metadata: Metadata = { title: 'Geography & overlap' };
 
 type SP = Promise<Record<string, string | string[] | undefined>>;
 const arr = (v: string | string[] | undefined) => (v === undefined ? [] : ([] as string[]).concat(v));
-const regionName = new Intl.DisplayNames(['en'], { type: 'region' });
-const countryName = (c: string) => {
-  if (c === 'unknown') return 'Not given';
-  try {
-    return regionName.of(c.toUpperCase()) ?? c.toUpperCase();
-  } catch {
-    return c.toUpperCase();
-  }
-};
 const place = (k: string) => (k === 'unknown' ? 'Not given' : k);
 const n = (v: number | null) => (v === null ? <span className="text-fg-3" title="Hidden: below the minimum cell size">hidden</span> : fmt(v));
 
@@ -110,6 +102,25 @@ export default async function GeoPage({ searchParams }: { searchParams: SP }) {
         <div className="px-5 py-3">
           <WorldMap values={mapValues} selected={country ?? null} hrefFor={(c) => keep({ country: c })} />
         </div>
+        <ul aria-label="Countries" className="flex flex-wrap gap-1.5 border-t border-border px-5 py-3">
+          {world.rows
+            .filter((r) => r.key !== 'unknown')
+            .map((r) => (
+              <li key={r.key}>
+                <Link
+                  href={keep({ country: r.key })}
+                  aria-current={country === r.key ? 'page' : undefined}
+                  className={cn(
+                    'inline-flex items-center gap-2 rounded-full border border-border px-2.5 py-1 text-[12px] hover:bg-surface-2',
+                    country === r.key && 'border-accent bg-accent-soft',
+                  )}
+                >
+                  <Country code={r.key} compact />
+                  <span className="font-mono text-fg-3">{n(r.uniquePeople)}</span>
+                </Link>
+              </li>
+            ))}
+        </ul>
       </Card>
 
       <div className="grid gap-4 xl:grid-cols-[1fr_340px]">
@@ -125,7 +136,7 @@ export default async function GeoPage({ searchParams }: { searchParams: SP }) {
                     <>
                       <span className="text-fg-3">/</span>
                       <Link className={cn(!state && 'font-semibold')} href={keep({ country })}>
-                        {countryName(country)}
+                        <Country code={country} />
                       </Link>
                     </>
                   ) : null}
@@ -148,10 +159,10 @@ export default async function GeoPage({ searchParams }: { searchParams: SP }) {
                 <tr key={r.key}>
                   <td className="px-5 py-1.5">
                     {view.level === 'city' || r.key === 'unknown' ? (
-                      view.level === 'country' ? countryName(r.key) : place(r.key)
+                      view.level === 'country' ? <Country code={r.key} /> : place(r.key)
                     ) : (
                       <Link className="text-accent underline" href={view.level === 'country' ? keep({ country: r.key }) : keep({ country, state: r.key })}>
-                        {view.level === 'country' ? countryName(r.key) : place(r.key)}
+                        {view.level === 'country' ? <Country code={r.key} /> : place(r.key)}
                       </Link>
                     )}
                   </td>

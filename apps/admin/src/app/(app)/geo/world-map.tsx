@@ -28,7 +28,7 @@ export function WorldMap({ values, selected, hrefFor }: { values: Record<string,
     <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label="Unique people by country" className="h-auto w-full">
       {PATHS.map((p) => {
         const hit = byNumeric.get(p.id);
-        const label = hit ? `${p.name}: ${hit.v === null ? 'fewer than the minimum shown' : `${hit.v} people`}` : p.name;
+        const label = hit ? `${p.name} (${hit.alpha2.toUpperCase()}): ${hit.v === null ? 'fewer than the minimum shown' : `${hit.v} people`}` : p.name;
         const shade = hit ? (hit.v === null ? 0.18 : 0.3 + 0.7 * (max === min ? 1 : ((hit.v ?? 0) - min) / (max - min))) : 0;
         const shape = (
           <path

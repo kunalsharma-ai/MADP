@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { PANELS, VERIFICATION_CLAIMS, type DataMode, type PanelCode, type SessionUser } from '@madp/contracts';
 import { api } from '@/lib/api';
+import { Country } from '@/components/country';
 import { Badge, Card, CardHeader, DataModeBadge, DemoBanner, EmptyState, PageHeader, PanelChip, Stat, Table, fmt, fmtDate } from '@/components/ui';
 import { EvidenceSteps, NewEvidence } from './verification-forms';
 
@@ -193,7 +194,7 @@ export default async function VerificationPage({ searchParams }: { searchParams:
                     <td className="px-5 py-1.5 font-mono text-[12px]">{i.sourceMember}</td>
                     <td className="px-5 py-1.5">{fmt(i.qualityScore)}</td>
                     <td className="px-5 py-1.5">{i.emailVerification}</td>
-                    <td className="px-5 py-1.5">{i.country ?? '—'}</td>
+                    <td className="px-5 py-1.5">{i.country ? <Country code={i.country} compact /> : '—'}</td>
                     {i.timezone !== undefined ? <td className="px-5 py-1.5 font-mono text-[12px]">{i.timezone ?? '—'}</td> : null}
                   </tr>
                 ))}

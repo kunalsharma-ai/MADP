@@ -8,6 +8,7 @@ import {
   type DataMode,
 } from '@madp/contracts';
 import { api } from '@/lib/api';
+import { Country } from '@/components/country';
 import type { PanellistRow } from '@/lib/types';
 import {
   Badge,
@@ -190,8 +191,15 @@ export default async function PanellistsPage({
                     '—'
                   )}
                 </td>
-                <td className="px-5 py-2.5 capitalize">
-                  {[p.city, p.country?.toUpperCase()].filter(Boolean).join(', ') || '—'}
+                <td className="px-5 py-2.5">
+                  {p.city || p.country ? (
+                    <span className="inline-flex items-center gap-1.5">
+                      {p.country ? <Country code={p.country} compact /> : null}
+                      {p.city ? <span className="capitalize">{p.city}</span> : null}
+                    </span>
+                  ) : (
+                    '—'
+                  )}
                 </td>
                 <td className="num px-5 py-2.5">{p.birthYear ?? '—'}</td>
                 <td className="px-5 py-2.5 font-mono text-xs">
