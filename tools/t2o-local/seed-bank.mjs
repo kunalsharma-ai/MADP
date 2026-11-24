@@ -20,7 +20,17 @@ const base = {
 const MULTI = /all that apply|select all|check all|choose all|multiple/i;
 const PHONE = /^(phone|alternate-phone|phone1|add-whatsapp|add-phone\d*)$/;
 const typeOf = (q, hasOpts) =>
-  /^verify-/.test(q.name) ? 'verify' : hasOpts ? (MULTI.test(q.label ?? '') ? 'multiselect' : 'select') : PHONE.test(q.name) ? 'phone' : q.name === 'dob' ? 'date' : 'text';
+  /^verify-/.test(q.name)
+    ? 'verify'
+    : hasOpts
+      ? MULTI.test(q.label ?? '')
+        ? 'multiselect'
+        : 'select'
+      : PHONE.test(q.name)
+        ? 'phone'
+        : q.name === 'dob'
+          ? 'date'
+          : 'text';
 const optCount = new Map();
 for (const o of f.options) optCount.set(o.question, (optCount.get(o.question) ?? 0) + 1);
 await db.collection('Question').insertMany(
@@ -50,8 +60,21 @@ for (const o of f.options) {
 }
 await db.collection('Option').insertMany([...merged.values()], { ordered: false });
 console.log('option rows after merging parent values', merged.size);
+// The panel backend allows one questionnaire per name and category (unique index name+category+origin). The MHO
+// exports repeat two HCP questionnaire names (the CareGiver export is labelled "healthcare professional"), so only
+// the first of each is loaded and the rest are reported.
+const seenProfile = new Set();
+const profiles = f.profiles.filter((p) => {
+  const k = `${p.name}\u0000${p.sourceCategory}`;
+  if (seenProfile.has(k)) {
+    console.log(`skipped duplicate questionnaire "${p.name}" (${p.sourceCategory}), slug ${p.slug}`);
+    return false;
+  }
+  seenProfile.add(k);
+  return true;
+});
 await db.collection('Profile').insertMany(
-  f.profiles.map((p) => ({
+  profiles.map((p) => ({
     ...base,
     name: p.name,
     slug: p.slug,
@@ -60,5 +83,5 @@ await db.collection('Profile').insertMany(
     points: 50,
   })),
 );
-console.log({ questions: f.questions.length, options: f.options.length, profiles: f.profiles.length });
+console.log({ questions: f.questions.length, options: f.options.length, profiles: profiles.length });
 await c.close();

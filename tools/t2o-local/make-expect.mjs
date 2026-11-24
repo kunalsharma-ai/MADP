@@ -22,9 +22,7 @@ fs.writeFileSync(
       ...(t.teen_fixed
         ? [row('teen, approved after the OTP fix', 'teen_fixed', 'minor', 'consumer', true, 'granted', 0)]
         : []),
-      ...(t.integration
-        ? [row('MADP integration account (admin role)', 'integration', 'b2c', 'consumer', false, null, 0)]
-        : []),
+      // The integration account is not listed: the panel marks it as staff and MADP does not import it.
     ],
     null,
     1,

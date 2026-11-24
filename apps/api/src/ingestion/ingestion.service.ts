@@ -73,6 +73,8 @@ export interface ImportCounts {
   deadLetteredMembers: number;
   /** Consent records written or refreshed from the source (guardian consent, terms, opt-ins). */
   consentsSynced: number;
+  /** Panel admin and integration accounts the source marked as staff: never imported as members. */
+  staffSkipped?: number;
 }
 
 /** Transient source failures go to the dead-letter queue; refused access or bad payloads fail the job. */
@@ -206,7 +208,9 @@ export class IngestionService {
         .map((q) => q.sourceQuestionId)
         .filter((id) => !DIRECT_IDENTIFIER_QUESTIONS.has(id));
       do {
-        const page = await connector.listRespondents(cursor, PAGE_SIZE);
+        const raw = await connector.listRespondents(cursor, PAGE_SIZE);
+        const page = { ...raw, items: raw.items.filter((r) => !r.isStaff) };
+        counts.staffSkipped = (counts.staffSkipped ?? 0) + raw.items.length - page.items.length;
         counts.pages++;
         counts.respondentsSeen += page.items.length;
         if (!opts.dryRun) {
@@ -373,7 +377,9 @@ export class IngestionService {
         maxPages,
         counts,
         (q) => connector.memberChanges!(q),
-        async (items) => {
+        async (all) => {
+          const items = all.filter((r) => !r.isStaff);
+          counts.staffSkipped = (counts.staffSkipped ?? 0) + all.length - items.length;
           counts.respondentsSeen += items.length;
           await this.ingestRespondents(panel, dataMode, jobId, items, counts);
           for (const r of items.filter((x) => x.isDeleted)) {

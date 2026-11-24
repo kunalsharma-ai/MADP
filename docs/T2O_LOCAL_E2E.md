@@ -80,3 +80,34 @@ answers. All four tests passed (`apps/api/test/t2o-local.test.ts`, 11 minutes).
 
 Each import reads 848 option lists, one request every 250 ms, so about 3.5 minutes per run. A paged or bulk
 options route on the panel would remove most of that.
+
+## MFR and MHO on the same backend copy (2026-11-24)
+
+All three panels run the T2O backend, with the Host header as the tenant key. So the same local copy served
+`mfr.localhost` and `mho.localhost` as two more tenants, each with its own bank (from MADP's fixtures) and
+`scripts/golive-setup.js` applied. A token from one tenant gets 403 on the other two. The accounts were made with
+`tools/t2o-local/panel-accounts.mjs` through the panel's own sign-up, e-mail code, guardian and activation routes,
+plus one admin integration account per panel. The test is the same file, run with `T2O_LOCAL_PANEL=mfr` or `mho`.
+**This is not live evidence.**
+
+| Step | MFR | MHO |
+|---|---|---|
+| Accounts | consumer (`b2c`), professional (`b2b`), teen with guardian YES, teen waiting (both `minor`) | healthcare professional, patient, care giver, teen patient with guardian YES, teen patient waiting (both `minor patient`) |
+| Dry run | 2 sections, 9 questions, 4 members; integration account left out | 4 sections, 35 questions, 5 members; integration account left out |
+| Import | 4 people, 15 answers, 18 consent records; reconciliation 4 of 4 | 5 people, 18 answers, 22 consent records; reconciliation 4 of 4 |
+| Categories | b2c → Consumer, b2b → Business Professional, teens → Consumer, flagged minor | → Healthcare Professional, Patient, Caregiver; teens → Patient, flagged minor |
+| Guardian consent | approved teen granted, waiting teen unknown | same |
+| MHO answers | n/a | special-category unless the question is a demographic one or asked only of healthcare professionals |
+| Re-import | idempotent | idempotent |
+| Sync, 3 runs | run 2 picked up the changed answer, 1 removal and 1 answer reset; run 3 read nothing | same |
+
+All four tests passed for each panel. The MFR bank is the placeholder fixture (2 sections), because the MFR question
+definitions are not in the repo.
+
+Found and fixed in the panel backend (kunalsharma-ai/turn2opinion#21, merged, not deployed):
+- `golive-setup.js` created the T2O member types for MHO. It now creates `healthcare professional`, `patient`,
+  `care giver` and `minor patient`.
+- An MHO teen patient was stored as `minor`. It is now `minor patient`, and the guardian reminders, the teen checks
+  and the registration status accept both.
+- The integration account was imported as a member. The admin member list and the members feed now carry `isStaff`,
+  and MADP skips staff accounts (`staffSkipped` in the import counts).
