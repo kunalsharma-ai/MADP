@@ -63,6 +63,7 @@ import {
   SurveysController,
 } from './panel-admin/engagement-admin.controller.js';
 import { SupportAdminController } from './panel-admin/support-admin.controller.js';
+import { ContentAdminController } from './panel-admin/content-admin.controller.js';
 import { RewardsAdminController } from './panel-admin/rewards-admin.controller.js';
 import { HealthController } from './common/health.controller.js';
 import { MetaController } from './common/meta.controller.js';
@@ -92,6 +93,7 @@ export class AppModule {
         SurveysController,
         PointsQualityController,
         SupportAdminController,
+        ContentAdminController,
         RewardsAdminController,
         IdentityController,
         WebhookController,

@@ -887,3 +887,66 @@ export const DataRequestDecision = z
   })
   .strict();
 export type DataRequestDecision = z.infer<typeof DataRequestDecision>;
+
+// ---- content and legal pages (kunalsharma-ai/MFR#64, turn2opinion#33, MHO#15: app/admin/content.js) ---------------
+/** Keys that are always legal pages on the panel, whatever kind is sent: four eyes to publish. */
+export const LEGAL_CONTENT_KEYS = ['privacy', 'terms', 'gdpr', 'cookies'] as const;
+export const ContentKind = z.enum(['legal', 'page']);
+export type ContentKind = z.infer<typeof ContentKind>;
+export const ContentState = z.enum(['editing', 'review', 'published', 'unpublished']);
+const ContentText = (max: number) =>
+  z
+    .string()
+    .trim()
+    .min(1)
+    .max(max);
+const ContentList = z.array(ContentText(5000)).min(1).max(100);
+/**
+ * One block of a page body, exactly as the panel accepts it: text, { h2 }, { h3 }, { ul }, { ol }, { note } or
+ * { table: { head, rows } }. No HTML: the sites render plain elements and turn https and e-mail addresses into links.
+ */
+export const ContentBlock = z.union([
+  ContentText(5000),
+  z.object({ h2: ContentText(200) }).strict(),
+  z.object({ h3: ContentText(200) }).strict(),
+  z.object({ note: ContentText(5000) }).strict(),
+  z.object({ ul: ContentList }).strict(),
+  z.object({ ol: ContentList }).strict(),
+  z
+    .object({
+      table: z
+        .object({
+          head: z.array(ContentText(5000)).min(1).max(12),
+          rows: z.array(z.array(z.string().trim().max(1000))).min(1).max(300),
+        })
+        .strict()
+        .refine((t) => t.rows.every((r) => r.length === t.head.length), 'every row has one cell per column'),
+    })
+    .strict(),
+]);
+export type ContentBlock = z.infer<typeof ContentBlock>;
+export const ContentBody = z.array(ContentBlock).min(1).max(400);
+export const ContentKey = z
+  .string()
+  .trim()
+  .toLowerCase()
+  .regex(/^[a-z0-9][a-z0-9-]{1,59}$/, '2 to 60 lower-case letters, digits or dashes');
+export const ContentLang = z.string().regex(/^[a-z]{2}(-[A-Z]{2})?$/, 'a language code, e.g. en or es-MX');
+export const ContentListQuery = z.object({
+  kind: ContentKind.optional(),
+  lang: ContentLang.optional(),
+  key: ContentKey.optional(),
+  state: ContentState.optional(),
+});
+export type ContentListQuery = z.infer<typeof ContentListQuery>;
+export const ContentCreate = z
+  .object({ key: ContentKey, kind: ContentKind.optional(), lang: ContentLang.optional(), title: ContentText(200), body: ContentBody })
+  .strict();
+export type ContentCreate = z.infer<typeof ContentCreate>;
+export const ContentUpdate = z
+  .object({ title: ContentText(200).optional(), body: ContentBody.optional() })
+  .strict()
+  .refine((b) => b.title !== undefined || b.body !== undefined, 'Send title, body or both');
+export type ContentUpdate = z.infer<typeof ContentUpdate>;
+export const ContentAction = z.enum(['review', 'publish', 'discard']);
+export type ContentAction = z.infer<typeof ContentAction>;

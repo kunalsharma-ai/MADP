@@ -6,6 +6,7 @@ import { useEffect, useState, type ReactNode } from 'react';
 import { Command } from 'cmdk';
 import { useTheme } from 'next-themes';
 import {
+  Scale,
   GitCompareArrows,
   UserRoundCheck,
   Dices,
@@ -89,6 +90,7 @@ const ICONS = {
   Sprout,
   FileX2,
   ToggleRight,
+  Scale,
 } as const;
 const BRAND_LABEL: Record<string, string> = {
   all: 'All brands',
