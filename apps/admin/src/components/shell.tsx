@@ -17,6 +17,7 @@ import {
   Hourglass,
   ScanSearch,
   FileSpreadsheet,
+  Sparkles,
   Globe2,
   LayoutDashboard,
   ListTree,
@@ -60,6 +61,7 @@ const ICONS = {
   Hourglass,
   ScanSearch,
   FileSpreadsheet,
+  Sparkles,
   UserCog,
   Building2,
 } as const;

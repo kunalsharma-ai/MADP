@@ -1092,3 +1092,36 @@ export const verificationEvidence = pgTable(
     index('verification_evidence_membership_idx').on(t.panelMembershipId),
   ],
 );
+
+/**
+ * Rule-based insights (screen 34), one open row per data mode, panel and rule. Counts only. A person accepts or
+ * dismisses each one; a refresh resolves open insights whose rule no longer fires.
+ */
+export const insights = pgTable(
+  'insight',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    dataMode: dataMode('data_mode').notNull(),
+    panel: panelCode('panel').notNull(),
+    rule: text('rule').notNull(),
+    /** info, warning, critical. */
+    severity: text('severity').notNull(),
+    title: text('title').notNull(),
+    detail: text('detail').notNull(),
+    recommendation: text('recommendation').notNull(),
+    /** Where to act, an admin path such as /identity. */
+    link: text('link'),
+    evidence: jsonb('evidence').notNull(),
+    /** open, accepted, dismissed, resolved. */
+    status: text('status').notNull().default('open'),
+    firstSeenAt: timestamp('first_seen_at', { withTimezone: true }).notNull().defaultNow(),
+    lastSeenAt: timestamp('last_seen_at', { withTimezone: true }).notNull().defaultNow(),
+    decidedBy: uuid('decided_by'),
+    decidedAt: timestamp('decided_at', { withTimezone: true }),
+    decisionNote: text('decision_note'),
+  },
+  (t) => [
+    uniqueIndex('insight_open_uq').on(t.dataMode, t.panel, t.rule).where(sql`status = 'open'`),
+    index('insight_status_idx').on(t.dataMode, t.status, t.lastSeenAt),
+  ],
+);

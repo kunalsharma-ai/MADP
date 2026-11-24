@@ -15,3 +15,4 @@ export * from './supply360.js';
 export * from './panel-admin.js';
 export * from './verification.js';
 export * from './reports.js';
+export * from './insights.js';

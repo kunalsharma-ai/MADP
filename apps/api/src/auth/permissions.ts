@@ -54,6 +54,8 @@ export const DEFAULT_ROLES: Record<
       'points.read',
       'support.read',
       'reports.read',
+      'insights.read',
+      'insights.review',
     ],
   },
   question_bank_editor: {
@@ -137,6 +139,7 @@ export const DEFAULT_ROLES: Record<
       'loyalty.reconcile',
       'service_clients.manage',
       'reports.read',
+      'insights.read',
     ],
   },
   data_steward: {
@@ -159,6 +162,8 @@ export const DEFAULT_ROLES: Record<
       'consent.read',
       'reports.read',
       'export.read',
+      'insights.read',
+      'insights.review',
     ],
   },
   privacy_officer: {
@@ -186,12 +191,14 @@ export const DEFAULT_ROLES: Record<
       'privacy.execute',
       'reports.read',
       'export.read',
+      'insights.read',
+      'insights.review',
     ],
   },
   analyst: {
     name: 'Analyst',
     description: 'MADP dashboards and counts.',
-    permissions: ['dashboard.read', 'audience.counts.read', 'questions.read', 'reports.read', 'export.read'],
+    permissions: ['dashboard.read', 'audience.counts.read', 'questions.read', 'reports.read', 'export.read', 'insights.read'],
   },
   support: {
     name: 'Support (MADP)',

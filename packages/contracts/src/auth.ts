@@ -62,6 +62,10 @@ export const Permission = z.enum([
   'verification.read',
   /** Record independent verification evidence, and decide evidence someone else recorded. */
   'verification.review',
+  /** AI insights (screen 34): rule-based recommendations. */
+  'insights.read',
+  /** Accept or dismiss an insight, and refresh them. */
+  'insights.review',
   'connectors.read',
   'connectors.run',
   'imports.run',
