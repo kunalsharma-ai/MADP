@@ -6,8 +6,10 @@ contract tests are recorded as evidence of readiness, not as a pass.
 Legend: ✅ passed with live evidence · 🟡 implemented and tested on DEMO or stub only · 🔶 partly implemented ·
 ⛔ blocked on access or approval · ❌ not started.
 
-**As of 2026-11-24, no column has passed for any panel.** Columns 3 to 14 have also run end to end against a local
-copy of the panel backend for all three panels (`T2O_LOCAL_E2E.md`); that is still not live evidence.
+**As of 2026-11-24 (late), no column has passed for any panel.** Columns 3 to 14 have also run end to end against a local
+copy of the panel backend for all three panels (`T2O_LOCAL_E2E.md`); that is still not live evidence. The console's
+panel admin API (`/api/admin/v1`) is one API on the shared backend (MFR `main`) that serves all three brands by
+`x-madp-origin`; its rows below are tested against a stand-in, not a deployed panel.
 
 | Column | T2O | MFR | MHO |
 |---|---|---|---|
@@ -38,7 +40,11 @@ copy of the panel backend for all three panels (`T2O_LOCAL_E2E.md`); that is sti
 | Questionnaire builder and review/publish (screens 11 and 12) | 🟡 stand-in panel only, `test/questionnaire.test.ts`; not run against a live panel | 🟡 same | 🟡 same |
 | Super admin console through the panel admin API (members, question bank, surveys, points, rewards, prize machines, engagement, teens, tickets, messages, help, switches, the 11 step 5 reports), brand kept apart | 🟡 local panel backend with DEMO data: every console panel screen loads as T2O with no other brand's data (`step6-three-brands` previews); MFR `tests/admin.crossbrand.test.mjs` (MFR#59) | 🟡 same; MFR's own screens and tests since step 2 | 🟡 same; MHO segments (patient, healthcare professional, caregiver) shown with their labels |
 | Mailer library (owner's packs, merge fields mapped, previews; nothing sent) | 🟡 22 templates, `test/mailers.test.ts` | 🟡 22 templates (lifecycle and system) | 🟡 54 templates for healthcare professionals, caregivers and patients |
-| Production readiness: route security, token checks, headers, CORS, throttling, OpenAPI coverage, restore drill, load test | 🟡 local and DEMO only: `test/security.test.ts`, `ops/backup/restore-drill.sh`, `ops/load/load-test.mjs`; not deployed | 🟡 same | 🟡 same |
+| Mailer to studio template (campaign mailers become draft studio templates, studio review applies; nothing sent) | 🟡 DEMO, `test/mailer-studio.test.ts`; the two profile-reminder mailers need Liquid logic and are refused with the reason | 🟡 DEMO | 🟡 DEMO |
+| Question bank Excel export and import (dry run first, formulas refused) | 🟡 stand-in panel, `test/qb-workbook.test.ts` | 🟡 stand-in panel; the MFR teen bank round-trips clean | 🟡 stand-in panel |
+| Question versions (draft, review, publish by a second admin) and translations (teen guardrail on translations) | 🟡 stand-in panel, `test/panel-admin-step3.test.ts`, `test/qb-translations.test.ts`; panel side on MFR `main` (versions.js, MFR#66) | 🟡 same | 🟡 same |
+| Site and legal pages editor (draft, review, publish by a second admin for legal pages, revisions) | 🟡 stand-in panel, `test/content-admin.test.ts`; panel side turn2opinion#33 | 🟡 same; MFR#64 | 🟡 same; MHO#15 |
+| Production readiness: route security, token checks, headers, nonce CSP, CORS, throttling, OpenAPI coverage, restore drill, load test, every screen on a production build | 🟡 local and DEMO only: `test/security.test.ts`, `ops/backup/restore-drill.sh`, `ops/load/load-test.mjs` (p95 under 170 ms at 5,000 people, `PERFORMANCE.md`), 187-page production-build check; not deployed. Go-live list: `GO_LIVE.md` | 🟡 same | 🟡 same |
 
 ## Evidence
 - Integration tests: `apps/api/test/platform.test.ts` (19), `resilience.test.ts` (3, dead letters and reconciliation),
