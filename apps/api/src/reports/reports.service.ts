@@ -16,6 +16,8 @@ import { ConsentService } from '../consent/consent.service.js';
 import { VerificationService } from '../verification/verification.service.js';
 import { FreshnessService, DEFAULT_STALE_DAYS } from '../profiles/freshness.service.js';
 import { LoyaltyService } from '../loyalty/loyalty.service.js';
+import { PanelAdminService } from '../panel-admin/panel-admin.service.js';
+import { PANEL_ADMIN_ROUTES as R } from '@madp/connectors';
 
 type Row = Record<string, string | number | null>;
 interface Ctx {
@@ -26,6 +28,8 @@ interface Ctx {
   /** Exclusive upper bound: the day after `to`. */
   toExclusive: Date;
   permissions: Permission[];
+  /** The admin asking, passed to the panel admin API for its own log. */
+  actor: string;
 }
 interface ReportDef {
   key: ReportKey;
@@ -42,7 +46,11 @@ interface ReportDef {
   run: (ctx: Ctx) => Promise<{ rows: Row[]; notes?: string[] }>;
 }
 
-const col = (key: string, label: string, type: ReportColumn['type'] = 'number'): ReportColumn => ({ key, label, type });
+const col = (key: string, label: string, type: ReportColumn['type'] = 'number'): ReportColumn => ({
+  key,
+  label,
+  type,
+});
 const panelCol = col('panel', 'Panel', 'text');
 const n = (v: unknown) => (v === null || v === undefined ? 0 : Number(v));
 const iso = (d: Date) => d.toISOString().slice(0, 10);
@@ -63,20 +71,71 @@ export class ReportsService {
     private readonly verification: VerificationService,
     private readonly freshness: FreshnessService,
     private readonly loyalty: LoyaltyService,
+    private readonly panelAdmin: PanelAdminService,
   ) {
     const q = async <R extends Row>(query: ReturnType<typeof sql>) =>
       (await this.database.db.execute<R>(query)).rows;
     const minCell = this.env.MIN_CELL_SIZE;
+    /**
+     * A report read from each panel's admin API (GET /reports/:name). One block of rows per panel, never added
+     * across panels. Rows broken down by country have counts below the minimum cell size blanked.
+     */
+    const fromPanels =
+      (
+        name: string,
+        opts: { countryCounts?: string[]; value?: (rows: Row[], panel: PanelCode) => Promise<Row[]> } = {},
+      ) =>
+      async (c: Ctx) => {
+        const rows: Row[] = [];
+        const notes: string[] = [];
+        for (const panel of c.panels) {
+          if (!this.panelAdmin.configured(panel)) {
+            notes.push(
+              `${panel.toUpperCase()}: the panel admin API is not connected yet, so there are no rows for it.`,
+            );
+            continue;
+          }
+          try {
+            const r = await this.panelAdmin.call<{ rows: Row[] }>(panel, c.actor, 'GET', R.report(name), {
+              from: iso(c.from),
+              to: iso(c.to),
+            });
+            // A null from the panel means "no value" (for example no guardian replies yet). Only MADP's own small-cell
+            // rule below sets null, which the console shows as suppressed.
+            let list: Row[] = r.rows.map((x) => ({
+              panel,
+              ...Object.fromEntries(Object.entries(x).map(([k, v]) => [k, v === null ? '' : v])),
+            }));
+            if (opts.value) list = await opts.value(list, panel);
+            for (const row of list) {
+              if (row.country && opts.countryCounts)
+                for (const k of opts.countryCounts) if (n(row[k]) > 0 && n(row[k]) < minCell) row[k] = null;
+              rows.push(row);
+            }
+          } catch (e) {
+            notes.push(`${panel.toUpperCase()}: the panel did not answer (${(e as Error).message}).`);
+          }
+        }
+        if (opts.countryCounts) notes.push(`Counts below ${minCell} in a country row are left blank.`);
+        return { rows, notes };
+      };
+    const seg = [col('segmentLabel', 'Segment', 'text')];
     this.defs = [
       {
         key: 'audience_by_category',
         title: 'Audience by category',
-        description: 'Active panel accounts and the five audience categories, per panel. A person can be in several categories.',
+        description:
+          'Active panel accounts and the five audience categories, per panel. A person can be in several categories.',
         group: 'Audience',
         permission: 'audience.counts.read',
         pii: false,
         period: false,
-        columns: [panelCol, col('category', 'Category', 'text'), col('people', 'Active people'), col('minors', 'Of whom minors')],
+        columns: [
+          panelCol,
+          col('category', 'Category', 'text'),
+          col('people', 'Active people'),
+          col('minors', 'Of whom minors'),
+        ],
         run: async (c) => ({
           rows: await q(sql`select cm.panel::text as panel, cm.category::text as category,
               count(distinct cm.master_person_id)::int as people,
@@ -96,7 +155,12 @@ export class ReportsService {
         permission: 'audience.counts.read',
         pii: false,
         period: false,
-        columns: [panelCol, col('country', 'Country', 'text'), col('state', 'State or province', 'text'), col('members', 'Active members')],
+        columns: [
+          panelCol,
+          col('country', 'Country', 'text'),
+          col('state', 'State or province', 'text'),
+          col('members', 'Active members'),
+        ],
         run: async (c) => {
           const rows = await q<{ panel: string; country: string; state: string; members: number }>(sql`
             select pm.panel::text as panel, coalesce(nullif(si.country, ''), 'Unknown') as country,
@@ -114,7 +178,11 @@ export class ReportsService {
           });
           return {
             rows: out,
-            notes: hidden ? [`${hidden} rows with fewer than ${minCell} members are left blank so nobody can be singled out.`] : [],
+            notes: hidden
+              ? [
+                  `${hidden} rows with fewer than ${minCell} members are left blank so nobody can be singled out.`,
+                ]
+              : [],
           };
         },
       },
@@ -143,7 +211,11 @@ export class ReportsService {
           for (const p of c.panels) {
             const s = await this.consent.summary(c.mode, p);
             const x = s.panels[0]!;
-            rows.push({ panel: p, ...x.contactable, madpOptOuts: Object.values(x.madpOptOuts).reduce((a, b) => a + b, 0) });
+            rows.push({
+              panel: p,
+              ...x.contactable,
+              madpOptOuts: Object.values(x.madpOptOuts).reduce((a, b) => a + b, 0),
+            });
             notes.push(...x.gaps);
           }
           return { rows, notes };
@@ -157,15 +229,36 @@ export class ReportsService {
         permission: 'verification.read',
         pii: false,
         period: false,
-        columns: [panelCol, col('check', 'Check', 'text'), col('members', 'Members'), col('share', 'Share of active (%)')],
+        columns: [
+          panelCol,
+          col('check', 'Check', 'text'),
+          col('members', 'Members'),
+          col('share', 'Share of active (%)'),
+        ],
         run: async (c) => {
           const s = await this.verification.summary(c.mode, c.panels);
           const rows: Row[] = [];
           for (const p of s.panels) {
             const share = (x: number) => (p.members ? Math.round((x / p.members) * 1000) / 10 : null);
-            rows.push({ panel: p.panel, check: 'E-mail verified (panel)', members: p.sourceReported.email.verified, share: share(p.sourceReported.email.verified) });
-            rows.push({ panel: p.panel, check: 'Phone verified (panel)', members: p.sourceReported.phone.verified, share: share(p.sourceReported.phone.verified) });
-            for (const ch of s.checks) rows.push({ panel: p.panel, check: ch.label, members: p.checks[ch.key] ?? 0, share: share(p.checks[ch.key] ?? 0) });
+            rows.push({
+              panel: p.panel,
+              check: 'E-mail verified (panel)',
+              members: p.sourceReported.email.verified,
+              share: share(p.sourceReported.email.verified),
+            });
+            rows.push({
+              panel: p.panel,
+              check: 'Phone verified (panel)',
+              members: p.sourceReported.phone.verified,
+              share: share(p.sourceReported.phone.verified),
+            });
+            for (const ch of s.checks)
+              rows.push({
+                panel: p.panel,
+                check: ch.label,
+                members: p.checks[ch.key] ?? 0,
+                share: share(p.checks[ch.key] ?? 0),
+              });
           }
           return { rows };
         },
@@ -208,7 +301,8 @@ export class ReportsService {
       {
         key: 'loyalty_liability',
         title: 'Loyalty liability',
-        description: 'Points owed per panel and their value at each brand’s points rate. Wallets are never added across panels.',
+        description:
+          'Points owed per panel and their value at each brand’s points rate. Wallets are never added across panels.',
         group: 'Loyalty',
         permission: 'loyalty.read',
         pii: false,
@@ -244,14 +338,18 @@ export class ReportsService {
                 outstandingValue: Math.round((approved / rate) * 100) / 100,
               };
             }),
-            notes: [l.note, 'Values use each brand’s points rate from Brands & settings (1,000 points = 1 USD unless changed).'],
+            notes: [
+              l.note,
+              'Values use each brand’s points rate from Brands & settings (1,000 points = 1 USD unless changed).',
+            ],
           };
         },
       },
       {
         key: 'communication_delivery',
         title: 'Campaign delivery',
-        description: 'Messages per campaign or automation and their delivery states in the period. Dry runs are shown apart.',
+        description:
+          'Messages per campaign or automation and their delivery states in the period. Dry runs are shown apart.',
         group: 'Engagement',
         permission: 'communications.read',
         pii: false,
@@ -288,7 +386,9 @@ export class ReportsService {
             where ce.data_mode = ${c.mode} and ce.panel = any(${`{${c.panels.join(',')}}`}::panel_code[])
               and ce.occurred_at >= ${c.from} and ce.occurred_at < ${c.toExclusive}
             group by 1, 2, 3, 4 order by 1, 2, 3, 4`),
-          notes: ['No e-mail provider is connected yet, so only dry runs and suppressions appear until sending is approved.'],
+          notes: [
+            'No e-mail provider is connected yet, so only dry runs and suppressions appear until sending is approved.',
+          ],
         }),
       },
       {
@@ -299,7 +399,13 @@ export class ReportsService {
         permission: 'privacy.read',
         pii: false,
         period: true,
-        columns: [panelCol, col('kind', 'Kind', 'text'), col('status', 'Status', 'text'), col('requests', 'Requests'), col('overdue', 'Overdue')],
+        columns: [
+          panelCol,
+          col('kind', 'Kind', 'text'),
+          col('status', 'Status', 'text'),
+          col('requests', 'Requests'),
+          col('overdue', 'Overdue'),
+        ],
         run: async (c) => ({
           rows: await q(sql`select p.panel, r.kind, r.status, count(*)::int as requests,
               count(*) filter (where r.status not in ('completed', 'rejected') and r.due_at < now())::int as overdue
@@ -336,6 +442,263 @@ export class ReportsService {
             group by 1, 2 order by 1, 2`),
         }),
       },
+      // ---- step 5: the super admin spec's reports, from each panel ----------------------------------------------
+      {
+        key: 'panel_health',
+        title: 'Panel health',
+        description:
+          'Members, active in the last 30 days, new sign-ups in the period and archived, by segment and country.',
+        group: 'Audience',
+        permission: 'reports.read',
+        pii: false,
+        period: true,
+        columns: [
+          panelCol,
+          ...seg,
+          col('country', 'Country', 'text'),
+          col('total', 'Members'),
+          col('active30', 'Active in 30 days'),
+          col('newInPeriod', 'New in period'),
+          col('archived', 'Archived'),
+        ],
+        run: fromPanels('panel_health', { countryCounts: ['total', 'active30', 'newInPeriod', 'archived'] }),
+      },
+      {
+        key: 'signup_funnel',
+        title: 'Sign-up funnel',
+        description:
+          'Members who registered in the period and how many verified their e-mail, gave consent, finished a first profile and a first survey.',
+        group: 'Audience',
+        permission: 'reports.read',
+        pii: false,
+        period: true,
+        columns: [
+          panelCol,
+          ...seg,
+          col('source', 'Source', 'text'),
+          col('registered', 'Registered'),
+          col('verifiedEmail', 'Verified e-mail'),
+          col('consent', 'Consent'),
+          col('firstProfile', 'First profile'),
+          col('firstSurvey', 'First survey'),
+        ],
+        run: fromPanels('signup_funnel'),
+      },
+      {
+        key: 'teen_pipeline',
+        title: 'Teen pipeline',
+        description:
+          'Teen registrations at each of the eleven statuses, now and for those started in the period, with the median guardian reply time.',
+        group: 'Governance',
+        permission: 'teen.read',
+        pii: false,
+        period: true,
+        columns: [
+          panelCol,
+          col('status', 'Status', 'text'),
+          col('now', 'Now'),
+          col('startedInPeriod', 'Started in period'),
+          col('medianGuardianReplyHours', 'Median guardian reply (hours)'),
+          col('guardianReplies', 'Guardian replies'),
+        ],
+        run: fromPanels('teen_pipeline'),
+      },
+      {
+        key: 'profile_completion',
+        title: 'Profile completion',
+        description:
+          'Per profile: members who started and finished it, and the question where most members stop.',
+        group: 'Data',
+        permission: 'reports.read',
+        pii: false,
+        period: false,
+        columns: [
+          panelCol,
+          col('name', 'Profile', 'text'),
+          col('segment', 'Segment', 'text'),
+          col('questions', 'Questions'),
+          col('started', 'Started'),
+          col('finished', 'Finished'),
+          col('completionRate', 'Finished (%)'),
+          col('dropOffQuestion', 'Drop-off question', 'text'),
+          col('dropOffMembers', 'Members lost there'),
+        ],
+        run: fromPanels('profile_completion'),
+      },
+      {
+        key: 'survey_performance',
+        title: 'Survey performance',
+        description:
+          'Per survey with activity in the period: invites, starts, completes, screen-outs, over quota, incidence and length.',
+        group: 'Operations',
+        permission: 'reports.read',
+        pii: false,
+        period: true,
+        columns: [
+          panelCol,
+          col('name', 'Survey', 'text'),
+          col('status', 'Status', 'text'),
+          col('invites', 'Invites'),
+          col('starts', 'Starts'),
+          col('completes', 'Completes'),
+          col('screenOuts', 'Screen-outs'),
+          col('overQuota', 'Over quota'),
+          col('incidence', 'Incidence (%)'),
+          col('loi', 'LOI (min)'),
+          col('pointsPaid', 'Points paid'),
+        ],
+        run: fromPanels('survey_performance'),
+      },
+      {
+        key: 'points_by_segment',
+        title: 'Points and liability by segment',
+        description:
+          'Points issued and redeemed each month, and what is still unspent at month end with its value at the brand’s points rate.',
+        group: 'Loyalty',
+        permission: 'reports.read',
+        pii: false,
+        period: true,
+        columns: [
+          panelCol,
+          ...seg,
+          col('month', 'Month', 'text'),
+          col('issued', 'Issued'),
+          col('redeemed', 'Redeemed'),
+          col('unspentAtMonthEnd', 'Unspent at month end'),
+          col('unspentValue', 'Unspent value', 'money'),
+          col('currency', 'Currency', 'text'),
+          col('entriesOnHoldNow', 'Entries on hold now'),
+        ],
+        run: fromPanels('points_liability', {
+          value: async (rows, panel) => {
+            const [r] = await q<{ currency: string; rate: number }>(sql`
+              select currency, points_per_currency_unit as rate from brand_setting where panel = ${panel}`);
+            const rate = r?.rate ?? 1000;
+            return rows.map((x) => ({
+              ...x,
+              unspentValue: Math.round((n(x.unspentAtMonthEnd) / rate) * 100) / 100,
+              currency: r?.currency ?? 'USD',
+            }));
+          },
+        }),
+      },
+      {
+        key: 'redemptions',
+        title: 'Redemptions',
+        description:
+          'Redemptions requested in the period by payout method and country: approved, paid, rejected and average days to pay.',
+        group: 'Loyalty',
+        permission: 'reports.read',
+        pii: false,
+        period: true,
+        columns: [
+          panelCol,
+          col('method', 'Method', 'text'),
+          col('country', 'Country', 'text'),
+          col('requested', 'Requested'),
+          col('approved', 'Approved'),
+          col('paid', 'Paid'),
+          col('rejected', 'Rejected'),
+          col('waiting', 'Waiting'),
+          col('points', 'Points'),
+          col('avgDaysToPay', 'Average days to pay'),
+        ],
+        run: fromPanels('redemptions', {
+          countryCounts: ['requested', 'approved', 'paid', 'rejected', 'waiting'],
+        }),
+      },
+      {
+        key: 'quality',
+        title: 'Quality',
+        description: 'Quality score spread (0 to 200), and members flagged below 60, by segment and country.',
+        group: 'Data',
+        permission: 'reports.read',
+        pii: false,
+        period: false,
+        columns: [
+          panelCol,
+          ...seg,
+          col('country', 'Country', 'text'),
+          col('members', 'Members'),
+          col('score0to49', 'Score 0-49'),
+          col('score50to99', 'Score 50-99'),
+          col('score100to149', 'Score 100-149'),
+          col('score150to200', 'Score 150-200'),
+          col('flaggedBelow60', 'Flagged (below 60)'),
+        ],
+        run: fromPanels('quality', {
+          countryCounts: [
+            'members',
+            'score0to49',
+            'score50to99',
+            'score100to149',
+            'score150to200',
+            'flaggedBelow60',
+          ],
+        }),
+      },
+      {
+        key: 'referrals',
+        title: 'Referrals',
+        description:
+          'Members who joined from a referral each month, how many verified and finished a first survey, and referrers that look suspicious now.',
+        group: 'Engagement',
+        permission: 'reports.read',
+        pii: false,
+        period: true,
+        columns: [
+          panelCol,
+          col('month', 'Month', 'text'),
+          col('joins', 'Joins'),
+          col('verifiedEmail', 'Verified e-mail'),
+          col('firstSurvey', 'First survey'),
+          col('referrers', 'Referrers'),
+          col('suspectedReferrersNow', 'Suspected referrers now'),
+        ],
+        run: fromPanels('referrals'),
+      },
+      {
+        key: 'support',
+        title: 'Support',
+        description:
+          'Tickets opened in the period by topic and agent: still open, resolved and average first reply time.',
+        group: 'Operations',
+        permission: 'reports.read',
+        pii: false,
+        period: true,
+        columns: [
+          panelCol,
+          col('topic', 'Topic', 'text'),
+          col('agent', 'Agent', 'text'),
+          col('opened', 'Opened'),
+          col('open', 'Still open'),
+          col('resolved', 'Resolved'),
+          col('replied', 'Replied'),
+          col('avgFirstReplyHours', 'Average first reply (hours)'),
+        ],
+        run: fromPanels('support'),
+      },
+      {
+        key: 'engagement',
+        title: 'Engagement',
+        description:
+          'Daily poll answers, members with streak days and monthly challenges done, by segment and month.',
+        group: 'Engagement',
+        permission: 'reports.read',
+        pii: false,
+        period: true,
+        columns: [
+          panelCol,
+          ...seg,
+          col('month', 'Month', 'text'),
+          col('pollAnswers', 'Poll answers'),
+          col('membersWithStreakDays', 'Members with streak days'),
+          col('streakDays', 'Streak days'),
+          col('challengesDone', 'Challenges done'),
+          col('challengePoints', 'Challenge points'),
+        ],
+        run: fromPanels('engagement'),
+      },
     ];
   }
 
@@ -353,18 +716,29 @@ export class ReportsService {
       period: d.period,
       pii: d.pii,
       canView: permissions.includes(d.permission),
-      canExport: permissions.includes(d.permission) && permissions.includes('export.read') && (!d.pii || permissions.includes('export.pii')),
+      canExport:
+        permissions.includes(d.permission) &&
+        permissions.includes('export.read') &&
+        (!d.pii || permissions.includes('export.pii')),
     }));
   }
 
-  async run(mode: DataMode, key: ReportKey, panels: PanelCode[], p: ReportParams, permissions: Permission[]): Promise<ReportResult> {
+  async run(
+    mode: DataMode,
+    key: ReportKey,
+    panels: PanelCode[],
+    p: ReportParams,
+    permissions: Permission[],
+    actor = 'madp-reports',
+  ): Promise<ReportResult> {
     const d = this.def(key);
-    if (!permissions.includes(d.permission)) throw new ForbiddenException(`This report needs ${d.permission}`);
+    if (!permissions.includes(d.permission))
+      throw new ForbiddenException(`This report needs ${d.permission}`);
     const today = new Date(`${iso(new Date())}T00:00:00Z`);
     const to = p.to ? new Date(`${p.to}T00:00:00Z`) : today;
     const from = p.from ? new Date(`${p.from}T00:00:00Z`) : new Date(to.getTime() - 29 * 86_400_000);
     const toExclusive = new Date(to.getTime() + 86_400_000);
-    const r = await d.run({ mode, panels, from, to, toExclusive, permissions });
+    const r = await d.run({ mode, panels, from, to, toExclusive, permissions, actor });
     return {
       key,
       title: d.title,
@@ -372,7 +746,12 @@ export class ReportsService {
       generatedAt: new Date().toISOString(),
       period: d.period ? { from: iso(from), to: iso(to) } : null,
       columns: d.columns,
-      rows: r.rows,
+      // A field a row does not carry is empty, not suppressed: only a null means "too few people to show".
+      rows: r.rows.map((row) => {
+        const out = { ...row };
+        for (const c of d.columns) if (out[c.key] === undefined) out[c.key] = '';
+        return out;
+      }),
       notes: r.notes ?? [],
     };
   }

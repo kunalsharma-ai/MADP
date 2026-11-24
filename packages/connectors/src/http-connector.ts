@@ -447,6 +447,8 @@ export const PANEL_ADMIN_ROUTES = {
   switch: (key: string) => `/api/admin/v1/switches/${encodeURIComponent(key)}`,
   // prize machines, one per segment (MFR#56)
   prizeMachines: '/api/admin/v1/prize-machines',
+  // step 5 reports, aggregate counts per brand (MFR#58)
+  report: (name: string) => `/api/admin/v1/reports/${encodeURIComponent(name)}`,
   prizeMachine: (segment: string) => `/api/admin/v1/prize-machines/${encodeURIComponent(segment)}`,
   prizeMachinePlays: (segment: string) => `/api/admin/v1/prize-machines/${encodeURIComponent(segment)}/plays`,
   catalogue: '/api/admin/v1/rewards/catalogue',

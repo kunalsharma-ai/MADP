@@ -114,6 +114,48 @@ function fakePanel() {
       changedAt: null,
       plays: { last30Days: 0, pointsLast30Days: 0 },
     });
+    if (p.startsWith(`${V}/reports/`)) {
+      const name = p.split('/').pop();
+      if (name === 'panel_health')
+        return ok({
+          rows: [
+            {
+              segment: 'b2c',
+              segmentLabel: 'Consumer',
+              country: 'india',
+              total: 40,
+              active30: 3,
+              newInPeriod: 12,
+              archived: 0,
+            },
+            {
+              segment: 'b2b',
+              segmentLabel: 'Business Professional',
+              country: null,
+              total: 2,
+              active30: 1,
+              newInPeriod: 0,
+              archived: 0,
+            },
+          ],
+          query: url.search,
+        });
+      if (name === 'points_liability')
+        return ok({
+          rows: [
+            {
+              segment: 'b2c',
+              segmentLabel: 'Consumer',
+              month: '2026-11',
+              issued: 5000,
+              redeemed: 1000,
+              unspentAtMonthEnd: 4000,
+              entriesOnHoldNow: 0,
+            },
+          ],
+        });
+      return ok({ rows: [] });
+    }
     if (p === `${V}/prize-machines`)
       return ok({ switchOn: false, machines: ['consumer', 'professional', 'teen'].map((s) => machine(s)) });
     if (p.startsWith(`${V}/prize-machines/`) && p.endsWith('/plays'))
@@ -549,5 +591,30 @@ describe('super admin step 4 through the panel admin API', () => {
       .expect(200);
     expect(plays.body.items).toHaveLength(1);
     expect((await audit('prize_machine.plays.view')).length).toBe(1);
+  });
+  it('step 5 reports come from each panel, per panel, with small country cells blanked and points valued', async () => {
+    const r = await request(t.server)
+      .get('/api/v1/reports/panel_health?from=2026-11-01&to=2026-11-24')
+      .set(bearer(superToken, 'mfr'))
+      .expect(200);
+    expect(r.body.rows.every((x: { panel: string }) => x.panel === 'mfr')).toBe(true);
+    expect(panel.seen.at(-1)!.path).toBe('/api/admin/v1/reports/panel_health?from=2026-11-01&to=2026-11-24');
+    const india = r.body.rows.find((x: { country: string | null }) => x.country === 'india');
+    expect([india.total, india.active30, india.newInPeriod]).toEqual([40, null, 12]);
+    // A member with no country comes back as an empty value, never as "suppressed".
+    const noCountry = r.body.rows.find((x: { country: string | null }) => x.country === '');
+    expect(noCountry.total).toBe(2);
+    expect(r.body.rows.some((x: Record<string, unknown>) => x.segmentLabel === null)).toBe(false);
+    const pts = await request(t.server)
+      .get('/api/v1/reports/points_by_segment')
+      .set(bearer(superToken, 'mfr'))
+      .expect(200);
+    expect(pts.body.rows[0].unspentValue).toBe(4);
+    await request(t.server).get('/api/v1/reports/teen_pipeline').set(bearer(finance, 'mfr')).expect(403);
+    const csv = await request(t.server)
+      .get('/api/v1/reports/panel_health/export?format=csv')
+      .set(bearer(superToken, 'mfr'))
+      .expect(200);
+    expect(csv.text).toContain('Consumer');
   });
 });
