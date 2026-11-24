@@ -11,9 +11,18 @@ import {
   ServiceClientCreate,
   ServiceCountsRequest,
   SessionUser,
+  ContactPreferenceCreate,
+  PrivacyRequestCreate,
+  PrivacyStep,
+  EvidenceCreate,
+  EvidenceDecision,
+  EvidenceRevoke,
+  InsightDecision,
+  GeoRequest,
 } from '@madp/contracts';
 
-const json = (s: z.ZodType) => z.toJSONSchema(s, { target: 'openapi-3.0' } as never);
+// Request bodies are described as the client sends them (before transforms such as lower-casing).
+const json = (s: z.ZodType) => z.toJSONSchema(s, { target: 'openapi-3.0', io: 'input', unrepresentable: 'any' } as never);
 const ok = (description: string, schema?: z.ZodType) => ({
   200: { description, ...(schema ? { content: { 'application/json': { schema: json(schema) } } } : {}) },
 });
@@ -34,7 +43,7 @@ export function openApiDocument() {
     openapi: '3.1.0',
     info: {
       title: 'MADP API',
-      version: '1.0.0-m6',
+      version: '1.1.0-m6',
       description:
         'Master Audience Data Platform. Every audience response states its dataMode (demo | live).',
     },
@@ -154,6 +163,41 @@ export function openApiDocument() {
         post: { security: secured, summary: 'Create a service client (secret shown once)', requestBody: body(ServiceClientCreate), responses: ok('Client') },
       },
       '/service-clients/{id}/revoke': { post: { security: secured, summary: 'Revoke a service client', responses: ok('Client') } },
+      // Screens 2 to 4, 8, 13, 14, 15, 23, 29 and 34 (admin session; brand from x-madp-brand where noted).
+      '/audience/geo': { post: { security: secured, summary: 'Unique people by country, state or city (audience.counts.read)', requestBody: body(GeoRequest), responses: ok('GeoResponse') } },
+      '/audience/overlap': { post: { security: secured, summary: 'Panel combinations and category overlap (audience.counts.read)', requestBody: body(CountsRequest), responses: ok('OverlapResponse') } },
+      '/consent/summary': { get: { security: secured, summary: 'Consent and reachability funnel per panel (consent.read)', responses: ok('Summary') } },
+      '/consent/events': { get: { security: secured, summary: 'Append-only consent history (consent.read)', responses: ok('Events') } },
+      '/consent/preferences': { get: { security: secured, summary: 'Channel opt-outs recorded in MADP (consent.read)', responses: ok('Preferences') } },
+      '/consent/persons/{personId}': { get: { security: secured, summary: "A person's consent, audited (consent.read)", responses: ok('Person consent') } },
+      '/consent/persons/{personId}/preferences': { post: { security: secured, summary: 'Record or lift a channel opt-out (consent.manage)', requestBody: body(ContactPreferenceCreate), responses: ok('Preference') } },
+      '/privacy/requests': {
+        get: { security: secured, summary: 'Privacy requests with due dates (privacy.read)', responses: ok('Requests') },
+        post: { security: secured, summary: 'Log a privacy request (privacy.request)', requestBody: body(PrivacyRequestCreate), responses: ok('Request') },
+      },
+      '/privacy/requests/{id}': { get: { security: secured, summary: 'One request and its trail (privacy.read)', responses: ok('Request') } },
+      '/privacy/requests/{id}/verify': { post: { security: secured, summary: 'Verify the requester; not by whoever logged it (privacy.execute)', requestBody: body(PrivacyStep), responses: ok('Request') } },
+      '/privacy/requests/{id}/execute': { post: { security: secured, summary: 'Carry out; deletion erases MADP copy and holds the member (privacy.execute)', requestBody: body(PrivacyStep), responses: ok('Request') } },
+      '/privacy/requests/{id}/reject': { post: { security: secured, summary: 'Reject (privacy.execute)', requestBody: body(PrivacyStep), responses: ok('Request') } },
+      '/privacy/requests/{id}/complete': { post: { security: secured, summary: 'Complete (privacy.execute)', requestBody: body(PrivacyStep), responses: ok('Request') } },
+      '/privacy/requests/{id}/export': { get: { security: secured, summary: 'Access export, audited (privacy.execute + PII + health)', responses: ok('Export') } },
+      '/privacy/retention': { get: { security: secured, summary: 'Retention schedule (privacy.read)', responses: ok('Rules') } },
+      '/privacy/retention/{key}/purge': { post: { security: secured, summary: 'Purge a purgeable technical table (privacy.execute)', responses: ok('Removed rows') } },
+      '/profiles/freshness': { get: { security: secured, summary: 'Profile completeness and 6-month check (audience.counts.read)', responses: ok('Freshness') } },
+      '/verification/summary': { get: { security: secured, summary: 'Verification and data quality per panel (verification.read; x-madp-brand)', responses: ok('Summary') } },
+      '/verification/checks': { get: { security: secured, summary: 'Members failing a check, ids only (verification.read + panellists.read)', responses: ok('Drill-down') } },
+      '/verification/evidence': {
+        get: { security: secured, summary: 'Verification evidence (verification.read)', responses: ok('Evidence') },
+        post: { security: secured, summary: 'Record evidence for review (verification.review)', requestBody: body(EvidenceCreate), responses: ok('Evidence') },
+      },
+      '/verification/evidence/{id}/decision': { post: { security: secured, summary: 'Verify or reject; not by the recorder (verification.review)', requestBody: body(EvidenceDecision), responses: ok('Evidence') } },
+      '/verification/evidence/{id}/revoke': { post: { security: secured, summary: 'Revoke verified evidence (verification.review)', requestBody: body(EvidenceRevoke), responses: ok('Evidence') } },
+      '/reports': { get: { security: secured, summary: 'Report catalogue with view and export rights (reports.read; x-madp-brand)', responses: ok('Catalogue') } },
+      '/reports/{key}': { get: { security: secured, summary: "Run a report (reports.read + the report's permission)", responses: ok('ReportResult') } },
+      '/reports/{key}/export': { get: { security: secured, summary: 'CSV or XLSX download, audited (export.read)', responses: ok('File') } },
+      '/insights': { get: { security: secured, summary: 'Rule-based insights (insights.read; x-madp-brand)', responses: ok('Insights') } },
+      '/insights/refresh': { post: { security: secured, summary: 'Run the rules (insights.review)', responses: ok('Raised, updated, resolved') } },
+      '/insights/{id}/decision': { post: { security: secured, summary: 'Accept or dismiss (insights.review)', requestBody: body(InsightDecision), responses: ok('Insight') } },
       '/supply360/attributes': { get: service('Attribute catalogue (no special-category keys without health.aggregate)', 'attributes.read') },
       '/supply360/counts': { post: service('Aggregate counts with small-cell suppression', 'audience.counts', ServiceCountsRequest) },
       '/supply360/match': { post: service('Eligible members as pseudonymous refs, no personal data', 'audience.match', MatchRequest) },
