@@ -36,6 +36,8 @@ import { ConsentService } from './consent/consent.service.js';
 import { ConsentController } from './consent/consent.controller.js';
 import { PrivacyService } from './privacy/privacy.service.js';
 import { PrivacyController } from './privacy/privacy.controller.js';
+import { FreshnessService } from './profiles/freshness.service.js';
+import { FreshnessController } from './profiles/freshness.controller.js';
 import { ServiceAuthGuard } from './supply360/service-auth.guard.js';
 import { ServiceClientsController, Supply360Controller } from './supply360/supply360.controller.js';
 import { AdminsController } from './admins/admins.controller.js';
@@ -71,6 +73,7 @@ export class AppModule {
         ServiceClientsController,
         ConsentController,
         PrivacyController,
+        FreshnessController,
       ],
       providers: [
         { provide: API_ENV, useValue: env },
@@ -94,6 +97,7 @@ export class AppModule {
         ServiceAuthGuard,
         ConsentService,
         PrivacyService,
+        FreshnessService,
         { provide: APP_GUARD, useClass: ThrottlerGuard },
         { provide: APP_GUARD, useClass: AuthGuard },
       ],
