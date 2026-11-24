@@ -1,0 +1,27 @@
+{{ user.fullName }} invited you to MyFrequentRewards
+
+{{ user.fullName }} thinks you would like MyFrequentRewards, so they sent you
+this invitation.
+
+WHAT IT IS
+MyFrequentRewards is an online research panel run by Frequent Research
+Fieldwork Solutions Pvt. Ltd. Members answer surveys on everyday topics
+and are paid for their time.
+
+  - Every invitation shows the reward and the length before you start
+  - You can decline any study, and declining costs you nothing
+  - Rewards are paid by UPI, bank transfer, PayPal, vouchers or gift cards
+  - Joining is free, and you can close the account whenever you like
+
+ACCEPT THE INVITATION
+{{ ref.link }}
+
+All research is conducted in accordance with the MRS Code of Conduct. Your answers are reported anonymously and non-attributably, and are never sold on or used for advertising.
+
+If this invitation was not meant for you, ignore it — nothing is created
+until you accept.
+
+You are receiving this because a MyFrequentRewards member sent you an invitation.
+
+Frequent Research Fieldwork Solutions Pvt. Ltd.
+Mangolpur Kalan, New Delhi 110085, India

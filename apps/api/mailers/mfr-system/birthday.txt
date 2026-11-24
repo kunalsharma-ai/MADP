@@ -1,0 +1,19 @@
+Happy birthday, {{ user.name.first }}
+
+{{ user.name.first }},
+
+Wishing you a wonderful birthday filled with happiness, memorable
+moments and plenty of reasons to smile.
+
+We are glad to have you in the MyFrequentRewards panel community, and
+grateful for the opinions you share with us through the year.
+
+No survey attached, and nothing to do. Just a good wish.
+
+May the year ahead be full of good opportunities and happy moments.
+
+You are receiving this because you are a MyFrequentRewards member and today is the birthday on your profile.
+Email preferences: https://www.myfrequentrewards.com/account/preferences
+
+Frequent Research Fieldwork Solutions Pvt. Ltd.
+Mangolpur Kalan, New Delhi 110085, India

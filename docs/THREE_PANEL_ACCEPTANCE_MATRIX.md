@@ -35,6 +35,7 @@ copy of the panel backend for all three panels (`T2O_LOCAL_E2E.md`); that is sti
 | Geography explorer, world map, panel and category overlap | 🟡 DEMO, `test/geo.test.ts` | 🟡 DEMO | 🟡 DEMO |
 | Privacy requests (access, correction, deletion with erasure hold, restriction) and retention | 🟡 DEMO, `test/privacy.test.ts`; panel deletion confirmed through the deletions feed | 🟡 DEMO | 🟡 DEMO |
 | Supply360 service API (counts, match, reservations, invitation authorisation, events, consent) | 🟡 DEMO, `test/supply360.test.ts` | 🟡 DEMO | 🟡 DEMO; health criteria refused in match, health counts only with the health scope |
+| Mailer library (owner's packs, merge fields mapped, previews; nothing sent) | 🟡 22 templates, `test/mailers.test.ts` | 🟡 22 templates (lifecycle and system) | 🟡 54 templates for healthcare professionals, caregivers and patients |
 
 ## Evidence
 - Integration tests: `apps/api/test/platform.test.ts` (19), `resilience.test.ts` (3, dead letters and reconciliation),

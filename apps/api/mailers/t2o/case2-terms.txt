@@ -1,0 +1,48 @@
+WHY YOU'RE GETTING THIS
+Your account is built, but it's not active yet.
+The research terms haven't been accepted, and without that consent we're
+not allowed to match you to any study.
+One tap · Step 3 of 4 · Member {{ member.member_id | default: "your member ID" }}
+
+Hi {{ member.first_name | default: "there" }},
+
+Your password works and your details are saved. One consent is all that
+stands between you and your first profile.
+
+WHAT'S HOLDING THINGS UP
+  [done]  Your account is created and your password works.
+  [open]  The research terms have not been accepted.
+  [open]  Without that consent no invitation can be sent, even though
+          your account is otherwise ready.
+It's one tap on the portal. There is no form to fill in.
+
+ACCEPT AND ACTIVATE
+{{ links.accept_terms | default: "https://www.turn2opinion.com/account/terms" }}
+
+WHAT YOU'RE AGREEING TO
+  - Your answers are used for research only and reported in aggregate.
+  - Taking part is always optional - decline any survey, it costs nothing.
+  - You can close your account whenever you like.
+  - You keep your data rights: access, correction and deletion.
+Read in full: https://www.turn2opinion.com/terms and https://www.turn2opinion.com/privacy
+
+THE MOMENT YOU ACCEPT
+  - Your Basic profile opens: about 2 minutes, +50 points, +1 quality score.
+  - It lays the first stone of your Opinion Kingdom.
+  - Surveys then open one at a time, each matched to you.
+
+YOUR SIGN-UP, 4 STEPS
+  1. Register                  done
+  2. Set your password         done
+  3. Accept the research terms you are here
+  4. Build your Basic profile
+
+Turn2Opinion is run by Frequent Research, certified to ISO 20252 for market, opinion and social research and a member of ESOMAR. Your answers are used for research only, reported in aggregate, and never sold or used for advertising.
+
+Questions? support@turn2opinion.com · +91 81300 15743 · WhatsApp +91 81782 00573
+
+You are receiving this because your Turn2Opinion account set-up is unfinished.
+
+Turn2Opinion — Speak your mind. Shape what’s next. Get rewarded.
+Frequent Research Fieldwork Solutions Pvt. Ltd.
+Mangolpur Kalan, New Delhi 110085, India

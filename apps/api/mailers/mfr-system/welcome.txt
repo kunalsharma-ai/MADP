@@ -1,0 +1,20 @@
+Your MyFrequentRewards account is active
+
+{{ user.name.first }},
+
+Your password has been created and your account is now active.
+
+WHAT TO DO NEXT
+  1. Log in to your dashboard
+  2. Complete your profile — this is what decides which studies you match
+  3. Start receiving survey invitations and earning rewards
+
+LOG IN TO MY ACCOUNT
+https://{{ user.origin }}/?login
+
+All research is conducted in accordance with the MRS Code of Conduct. Your answers are reported anonymously and non-attributably, and are never sold on or used for advertising.
+
+You are receiving this because your MyFrequentRewards account was just activated.
+
+Frequent Research Fieldwork Solutions Pvt. Ltd.
+Mangolpur Kalan, New Delhi 110085, India

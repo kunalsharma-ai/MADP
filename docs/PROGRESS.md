@@ -1,5 +1,26 @@
 # Progress
 
+## Mailer library (2026-11-24)
+
+Kunal's mailer packs for all three panels are in MADP, read-only.
+
+### Completed and tested
+- 98 Liquid templates in 6 packs: T2O v1 (22), MFR v6 lifecycle (4) and system (18), and MHO healthcare
+  professional, caregiver and patient (18 each). `ops/mailers/import-mailers.mjs` re-imports them when a pack changes.
+  The data is in `apps/api/mailers`, and the images the templates use are in `apps/admin/public/mailers` for previews.
+- Every merge field is mapped to where its value comes from (`MERGE_FIELDS` in `packages/contracts/src/mailers.ts`).
+  The test fails if a pack adds a field nobody has mapped.
+- Communications, Mailer library: a catalogue by pack, showing who sends each one. System emails are sent by the panel
+  at the event. New survey, birthday and the two profile reminders can be used as MADP campaigns. Each template page
+  shows the designers' sample render in a sandboxed frame, the subjects, trigger, merge fields, plain text and Liquid.
+- `test/mailers.test.ts` (4 tests) covers all three panels, field mapping, previews and brand scoping.
+
+### Not yet
+- Previews use the designers' sample data. MADP campaigns still use the studio's own templates; turning a library
+  template into a studio template is the next step.
+- The footer comes from Brands & settings (#27) once that merges.
+- Nothing is sent. Sending needs a provider and Kunal's approval.
+
 ## Super admin console, step 2: members, question bank and profiles (2026-11-24)
 
 Spec modules 1 to 4 for MFR. The panel side is in kunalsharma-ai/MFR#44 and #45 (merged, not deployed).

@@ -1,0 +1,31 @@
+You're approved
+
+Hi {{ user.name.first }},
+
+Your parent or guardian has confirmed their consent, so your Turn2Opinion
+registration is approved. You can start taking part now.
+
+  Consent         Confirmed by your parent or guardian
+  Account status  Approved
+  You can now     Take eligible surveys and earn rewards
+
+GO TO MY ACCOUNT
+https://{{ user.origin }}/?login
+
+START HERE
+  - Basic profile: about 2 minutes, +50 points, +1 quality score.
+  - Every profile and survey you finish raises a building in your
+    Opinion Kingdom.
+
+A QUICK REMINDER
+Please make sure the answers you give in your profile and in surveys are
+accurate and truthful. That is what keeps the research reliable, and it
+is the one thing we ask of everyone on Turn2Opinion.
+
+Questions? support@turn2opinion.com · +91 81300 15743 · WhatsApp +91 81782 00573
+
+You are receiving this because your parent or guardian approved your Turn2Opinion registration.
+
+Turn2Opinion — Speak your mind. Shape what’s next. Get rewarded.
+Frequent Research Fieldwork Solutions Pvt. Ltd.
+Mangolpur Kalan, New Delhi 110085, India

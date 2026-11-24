@@ -1,0 +1,27 @@
+We have your request - ticket {{ data.ticketNo }}
+
+Hi {{ user.name }},
+
+Thank you for contacting Turn2Opinion. Your support request has been
+logged and our team is reviewing it.
+
+  Ticket number  {{ data.ticketNo }}
+  Subject        {{ data.subject }}
+  Status         Open, with our support team
+  Response time  Within 24 to 48 hours
+
+WHAT HAPPENS NEXT
+Our team will review your request and reply with an update. You do not
+need to do anything in the meantime.
+
+PLEASE DO NOT REPLY TO THIS EMAIL
+Replies to this address are not monitored. To add details or respond,
+use the Support Ticket system on your account, quoting {{ data.ticketNo }}.
+
+Questions? support@turn2opinion.com · +91 81300 15743 · WhatsApp +91 81782 00573
+
+You are receiving this because you submitted a support request to Turn2Opinion.
+
+Turn2Opinion — Speak your mind. Shape what’s next. Get rewarded.
+Frequent Research Fieldwork Solutions Pvt. Ltd.
+Mangolpur Kalan, New Delhi 110085, India

@@ -1,0 +1,18 @@
+Update on your ticket {{ reply.ticketNo }}
+
+A new message has been added to your support ticket.
+
+  Ticket number  {{ reply.ticketNo }}
+  Status         Updated
+
+LATEST UPDATE
+{{ reply.message }}
+
+PLEASE DO NOT REPLY TO THIS EMAIL
+Replies to this address are not monitored. To respond or add details,
+use the Support Ticket system on your account, quoting {{ reply.ticketNo }}.
+
+You are receiving this because a support ticket you opened has been updated.
+
+Frequent Research Fieldwork Solutions Pvt. Ltd.
+Mangolpur Kalan, New Delhi 110085, India

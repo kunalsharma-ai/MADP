@@ -1,0 +1,34 @@
+{{ survey.name }} - about {{ survey.time }} minutes
+
+Hi {{ user.name.first }},
+
+A new survey is open and you match the audience for it.
+
+  Survey          {{ survey.name }}
+  Reward          {{ survey.points }} points
+  Estimated time  {{ survey.time }} minutes
+
+START THE SURVEY
+{{ survey.link }}
+
+You can stop at any point, and declining a study never affects your
+standing or your balance.
+
+TIPS FOR A SMOOTH SURVEY
+  - Answer honestly - there are no right or wrong answers.
+  - Read each question; quality checks look for rushed answers.
+  - If you're screened out early, it's about the audience the client
+    needs, not about you.
+
+Turn2Opinion is run by Frequent Research, certified to ISO 20252 for market, opinion and social research and a member of ESOMAR. Your answers are used for research only, reported in aggregate, and never sold or used for advertising.
+
+If you cannot open the link, write to support@turn2opinion.com and we will help.
+
+Questions? support@turn2opinion.com · +91 81300 15743 · WhatsApp +91 81782 00573
+
+You are receiving this because you are a Turn2Opinion member matched to this study.
+Email preferences: https://www.turn2opinion.com/account/preferences
+
+Turn2Opinion — Speak your mind. Shape what’s next. Get rewarded.
+Frequent Research Fieldwork Solutions Pvt. Ltd.
+Mangolpur Kalan, New Delhi 110085, India

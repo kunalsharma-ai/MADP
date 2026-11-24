@@ -1,0 +1,34 @@
+One item is still outstanding on your account
+
+{{ member.first_name | default: "there" }},
+
+WHAT IS HOLDING THINGS UP
+  - Your account is created and your password works. Both done.
+  - The research terms have not been accepted.
+  - Without that consent we are not permitted to match you to any study,
+    so no invitation can be sent even though your account is otherwise ready.
+
+It is one tap on the portal. There is no form to fill in.
+
+ACCEPT AND ACTIVATE
+{{ links.accept_terms | default: "https://www.myfrequentrewards.com/account/terms" }}
+
+WHERE YOU ARE
+  1. Register        done
+  2. Set password    done
+  3. Accept terms    you are here
+  4. Build profile
+
+WHAT HAPPENS THE MOMENT YOU DO
+  Your Prize Machine comes online with 37 capsules in it.
+  Every profile you finish wins one, worth 100 reward points.
+  1,000 points = $1, paid by UPI, bank transfer, PayPal or vouchers.
+
+All research is conducted in accordance with the MRS Code of Conduct. Your answers are reported anonymously and non-attributably, and are never sold on or used for advertising.
+Participation is always optional, and you can withdraw at any time.
+
+You are receiving this because your MyFrequentRewards account setup is unfinished.
+Questions? support@myfrequentrewards.com
+
+Frequent Research Fieldwork Solutions Pvt. Ltd.
+Mangolpur Kalan, New Delhi 110085, India

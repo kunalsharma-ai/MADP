@@ -1,0 +1,12 @@
+New registration on the MyFrequentRewards panel
+
+A new panelist has registered successfully.
+
+  Name     {{ user.name.first }}
+  User ID  {{ user._id }}
+  Panel    MyFrequentRewards
+
+This notification is generated automatically after a new registration.
+Review the account in the admin panel if any further action is required.
+
+Internal notification from the MyFrequentRewards registration system.

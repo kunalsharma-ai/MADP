@@ -151,6 +151,12 @@ export const NAV: NavGroup[] = [
         permission: 'communications.read',
       },
       {
+        href: '/communications/mailers',
+        label: 'Mailer library',
+        icon: 'LayoutList',
+        permission: 'communications.read',
+      },
+      {
         href: '/communications/automations',
         label: 'Lifecycle automations',
         icon: 'Workflow',
