@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { api } from '@/lib/api';
 import { Card, CardHeader, PageHeader, PanelChip, fmt, fmtDate } from '@/components/ui';
+import { BrandLogo } from '@/components/brand-logo';
 import { BrandSettingsForm, type BrandRow } from './brand-form';
 
 export const metadata: Metadata = { title: 'Brands & settings' };
@@ -18,7 +19,12 @@ export default async function BrandsPage() {
         {brands.map((b) => (
           <Card key={b.panel}>
             <CardHeader
-              title={b.displayName}
+              title={
+                <span className="flex items-center gap-2.5">
+                  <BrandLogo panel={b.panel} size={36} />
+                  {b.displayName}
+                </span>
+              }
               hint={<span>Updated {fmtDate(b.updatedAt)}</span>}
               action={<PanelChip panel={b.panel} />}
             />
