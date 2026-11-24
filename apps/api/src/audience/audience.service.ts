@@ -154,33 +154,34 @@ export class AudienceService {
     if (attr?.resolved.some((r) => r.sensitivity === 'special_category'))
       minimumCellSize = Math.max(minimumCellSize, this.env.SENSITIVE_MIN_CELL_SIZE);
     const base = sql`from panel_membership pm join master_person mp on mp.id = pm.master_person_id join source_identity si on si.id = pm.source_identity_id where ${this.where(mode, f, ids)}`;
-    const totals = await db.execute<{ people: string; memberships: string }>(
-      sql`select count(distinct pm.master_person_id) as people, count(*) as memberships ${base}`,
-    );
-    const byPanel = await db.execute<{ key: string; n: string }>(
-      sql`select pm.panel::text as key, count(distinct pm.master_person_id) as n ${base} group by 1 order by 1`,
-    );
-    const byCountry = await db.execute<{ key: string; n: string }>(
-      sql`select coalesce(mp.country, 'unknown') as key, count(distinct pm.master_person_id) as n ${base} group by 1 order by 2 desc`,
-    );
     const catFilter = f.categories?.length
       ? sql`and cm.category::text in (${sql.join(
           f.categories.map((c) => sql`${c}`),
           sql`, `,
         )})`
       : sql``;
-    const byCategory = await db.execute<{ key: string; n: string }>(sql`
-      select cm.category::text as key, count(distinct cm.master_person_id) as n
-      from category_membership cm
-      where cm.data_mode = ${mode} ${catFilter} and exists (
-        select 1 from panel_membership pm join master_person mp on mp.id = pm.master_person_id join source_identity si on si.id = pm.source_identity_id
-        where pm.master_person_id = cm.master_person_id and pm.panel = cm.panel and ${this.where(mode, f, ids)})
-      group by 1 order by 1`);
-    const catTotal = await db.execute<{ n: string }>(sql`
-      select count(*) as n from (select distinct cm.master_person_id, cm.category from category_membership cm
-      where cm.data_mode = ${mode} ${catFilter} and exists (
-        select 1 from panel_membership pm join master_person mp on mp.id = pm.master_person_id join source_identity si on si.id = pm.source_identity_id
-        where pm.master_person_id = cm.master_person_id and pm.panel = cm.panel and ${this.where(mode, f, ids)})) x`);
+    // One pass over the matching memberships, kept for the totals and every breakdown.
+    const rows = (
+      await db.execute<{ kind: string; key: string; n: string }>(sql`
+        with hit as materialized (
+          select pm.master_person_id as person, pm.panel, coalesce(mp.country, 'unknown') as country ${base}),
+        cat as (
+          select distinct cm.master_person_id as person, cm.category::text as category
+          from category_membership cm join hit on hit.person = cm.master_person_id and hit.panel = cm.panel
+          where cm.data_mode = ${mode} ${catFilter})
+        select 'total' as kind, 'people' as key, count(distinct person) as n from hit
+        union all select 'total', 'memberships', count(*) from hit
+        union all select 'total', 'categories', count(*) from cat
+        union all (select 'panel', panel::text, count(distinct person) from hit group by 2)
+        union all (select 'country', country, count(distinct person) from hit group by 2)
+        union all (select 'category', category, count(distinct person) from cat group by 2)`)
+    ).rows;
+    const total = (key: string) => Number(rows.find((r) => r.kind === 'total' && r.key === key)?.n ?? 0);
+    const part = (kind: string) => rows.filter((r) => r.kind === kind);
+    const byKey = (a: { key: string }, b: { key: string }) => (a.key < b.key ? -1 : a.key > b.key ? 1 : 0);
+    const byPanel = part('panel').sort(byKey);
+    const byCountry = part('country').sort((a, b) => Number(b.n) - Number(a.n) || byKey(a, b));
+    const byCategory = part('category').sort(byKey);
     const panels = f.panels?.length ? f.panels : [...PANEL_CODES];
     const sync = await db.execute<{ min: Date | null; max: Date | null }>(sql`
       select min(last_success_at) as min, max(last_success_at) as max from sync_checkpoint
@@ -198,12 +199,12 @@ export class AudienceService {
     const iso = (d: Date | string | null | undefined) => (d ? new Date(d).toISOString() : null);
     return {
       dataMode: mode,
-      uniquePeople: Number(totals.rows[0]?.people ?? 0),
-      panelMemberships: Number(totals.rows[0]?.memberships ?? 0),
-      categoryMemberships: Number(catTotal.rows[0]?.n ?? 0),
-      byPanel: cell(byPanel.rows),
-      byCategory: cell(byCategory.rows),
-      byCountry: cell(byCountry.rows),
+      uniquePeople: total('people'),
+      panelMemberships: total('memberships'),
+      categoryMemberships: total('categories'),
+      byPanel: cell(byPanel),
+      byCategory: cell(byCategory),
+      byCountry: cell(byCountry),
       minimumCellSize,
       computedAt: new Date().toISOString(),
       freshestSourceSyncAt: iso(sync.rows[0]?.max),
