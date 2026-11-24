@@ -42,6 +42,40 @@ export async function memberUnmaskAction(member: string, fields: string[], reaso
     }),
   );
 }
+export type MemberEmailResult = {
+  sent: boolean;
+  switch: string;
+  wouldSend: { template: string; to: string; brand: string; subject: string };
+};
+export async function memberEmailAction(member: string, kind: 'reset-password' | 'resend-welcome', reason: string) {
+  return run(() =>
+    api<MemberEmailResult>(`/panel/members/${id(member)}/${kind}`, { method: 'POST', json: { reason } }),
+  );
+}
+export type LoginAsResult = { sessionId: string; url: string; redeemBy: string; expiresAt: string; refused: string[] };
+export async function memberLoginAsAction(member: string, reason: string) {
+  return run(() =>
+    api<LoginAsResult>(`/panel/members/${id(member)}/login-as`, { method: 'POST', json: { reason } }),
+  );
+}
+export type AdminSessionRow = {
+  id: string;
+  actor: string;
+  reason: string;
+  issuedAt: string;
+  usedAt: string | null;
+  expiresAt: string;
+  endedAt: string | null;
+  state: 'waiting' | 'open' | 'unused' | 'expired' | 'ended';
+};
+export async function memberAdminSessionsAction(member: string) {
+  return run(() => api<{ items: AdminSessionRow[] }>(`/panel/members/${id(member)}/admin-sessions`));
+}
+export async function memberEndSessionAction(member: string, session: string) {
+  return run(() =>
+    api(`/panel/members/${id(member)}/admin-sessions/${id(session)}/end`, { method: 'POST', json: {} }),
+  );
+}
 export async function archiveRunAction(dryRun: boolean, reason?: string) {
   return run(
     () =>

@@ -64,6 +64,48 @@ export const UnmaskField = z.enum(['email', 'phone', 'dob', 'address', 'payment'
 export const MemberUnmask = z.object({ fields: z.array(UnmaskField).min(1).max(6), reason: Reason });
 export type MemberUnmask = z.infer<typeof MemberUnmask>;
 
+/** Reset link, welcome again or "log in as member": the admin's reason, nothing else. */
+export const MemberActionReason = z.object({ reason: Reason }).strict();
+export type MemberActionReason = z.infer<typeof MemberActionReason>;
+
+/**
+ * Answer of the panel's reset-password and resend-welcome routes. Nothing is sent while the brand's
+ * email_admin_actions switch is off; `wouldSend` says what would go out, with the address masked.
+ */
+export const MemberEmailResult = z.object({
+  sent: z.boolean(),
+  switch: z.string(),
+  wouldSend: z.object({ template: z.string(), to: z.string(), brand: z.string(), subject: z.string() }),
+});
+export type MemberEmailResult = z.infer<typeof MemberEmailResult>;
+
+/** A one-use "log in as member" link: open it within `redeemBy`; the session ends at `expiresAt` (15 minutes). */
+export const MemberLoginAs = z.object({
+  sessionId: z.string(),
+  url: z.string().url(),
+  redeemBy: z.string(),
+  expiresAt: z.string(),
+  refused: z.array(z.string()),
+});
+export type MemberLoginAs = z.infer<typeof MemberLoginAs>;
+
+export const AdminSessionState = z.enum(['waiting', 'open', 'unused', 'expired', 'ended']);
+export const MemberAdminSessions = z.object({
+  items: z.array(
+    z.object({
+      id: z.string(),
+      actor: z.string(),
+      reason: z.string(),
+      issuedAt: z.string(),
+      usedAt: z.string().nullable(),
+      expiresAt: z.string(),
+      endedAt: z.string().nullable(),
+      state: AdminSessionState,
+    }),
+  ),
+});
+export type MemberAdminSessions = z.infer<typeof MemberAdminSessions>;
+
 export const ArchiveRun = z.object({
   months: z.number().int().min(1).max(60).optional(),
   dryRun: z.boolean().default(true),

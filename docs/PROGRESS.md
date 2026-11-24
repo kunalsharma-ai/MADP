@@ -153,6 +153,18 @@ Spec modules 1 to 4 for MFR. The panel side is in kunalsharma-ai/MFR#44 and #45 
   (they were sent as a list, which the panel would have saved under the wrong options), English is refused, and the
   report filters by segment. Tests: `test/qb-translations.test.ts` (5, all three brands).
 
+- Member actions on the member page (Account help card): e-mail a password reset link, send the welcome again, and
+  log in as the member. The panel side (MFR `app/admin/memberactions.js`) is **not merged yet: it waits for Kunal's
+  approval to change the MFR repo** (patch in project files `madp/patches/mfr-member-actions.patch`). E-mails go out
+  only when the new `email_admin_actions` switch is on (off by default); until then the console shows the template,
+  masked address and brand. The reset is the member's own forgot-password code, never a password. Log in as member is
+  Super Admin only (`members.impersonate`), needs a reason, refuses teens and panel admins, and gives a one-use link
+  (2 minutes to open) for a session that ends 15 minutes after issue. The panel refuses password, e-mail, payout and
+  guardian changes, redemptions and point spending, answering or survey taking, data export and deletion in that
+  session, and on MHO it reads no answers. The link is never stored or logged; MADP audits the request, the session id
+  and its end. Tests: `test/member-actions.test.ts` (3, all three brands) and MFR `tests/admin.memberactions.test.mjs`
+  (6).
+
 ### Not yet
 - Merge duplicates, reset password, resend welcome e-mail, log in as member.
 - T2O and MHO: the same backend serves them (step 6). Leak tests per brand come before they are switched on.
