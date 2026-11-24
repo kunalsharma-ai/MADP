@@ -509,6 +509,8 @@ export const messageTemplates = pgTable(
     /** welcome, newsletter, birthday, festival, reengagement, profile_recovery, survey_reminder, service. */
     kind: text('kind').notNull(),
     channel: text('channel').notNull().default('email'),
+    /** Set when the template was made from a mailer pack: { pack, template, importedAt, assetHost }. */
+    source: jsonb('source'),
     createdBy: uuid('created_by'),
     createdAt: created(),
   },

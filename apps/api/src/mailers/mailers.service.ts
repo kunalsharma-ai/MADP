@@ -1,8 +1,9 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { MERGE_FIELDS, type MailerPack, type MailerTemplate, type PanelCode } from '@madp/contracts';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { MERGE_FIELDS, type MailerPack, type MailerTemplate, type PanelCode, type StudioTemplateSource } from '@madp/contracts';
+import { ensureFooterLinks, liquidToStudio, summarise, type StudioBlock } from './to-studio.js';
 
 /** apps/api/mailers, from both src/mailers (tests) and dist/mailers (build). */
 const DIR = fileURLToPath(new URL('../../mailers/', import.meta.url));
@@ -36,6 +37,46 @@ export class MailersService {
       fields: template.fields.map((f) => ({ field: f, ...(MERGE_FIELDS[f] ?? { source: null, label: 'Not mapped yet', madpField: null, personal: false }) })),
       liquid: read('liquid'),
       text: read('txt'),
+      studio: this.studioBlocks(pack, template),
+    };
+  }
+
+  /** Why this mailer cannot become a studio template; empty when it can. */
+  private studioBlocks(pack: MailerPack, template: MailerTemplate): StudioBlock[] {
+    if (template.internal) return [{ code: 'internal', message: 'Sent to the team, not to members.' }];
+    if (!template.campaignKind) return [{ code: 'not_a_campaign', message: 'The panel sends it when the event happens; MADP campaigns cannot.' }];
+    return this.convert(pack, template, 0).blocks;
+  }
+
+  private convert(pack: MailerPack, template: MailerTemplate, subjectIndex: number) {
+    const read = (ext: string) => readFileSync(join(DIR, pack.id, `${template.id}.${ext}`), 'utf8');
+    const subject = liquidToStudio(template.subjects[subjectIndex] ?? template.subjects[0] ?? template.name);
+    const html = liquidToStudio(read('liquid'));
+    const text = liquidToStudio(read('txt'));
+    const blocks = summarise([...subject.blocks, ...html.blocks, ...text.blocks]);
+    return { blocks, subject: subject.out, html: html.out, text: text.out };
+  }
+
+  /**
+   * The studio template a mailer becomes: subject, HTML and text with the library merge fields turned into studio
+   * placeholders, the footer links added where the pack has none, and where it came from. Refused, with the reasons,
+   * when the mailer needs Liquid logic or values only the panel has at send time.
+   */
+  toStudio(panels: PanelCode[], packId: string, id: string, subjectIndex = 0) {
+    const { pack, template } = this.find(panels, packId, id);
+    const blocks = this.studioBlocks(pack, template);
+    if (blocks.length) throw new BadRequestException({ message: 'This mailer cannot become a studio template', blocks });
+    const c = this.convert(pack, template, subjectIndex);
+    const footer = ensureFooterLinks(c.html, c.text);
+    const source: StudioTemplateSource = { pack: pack.id, template: template.id, importedAt: this.catalogue.importedAt, assetHost: pack.assetHost };
+    return {
+      panel: pack.panel,
+      kind: template.campaignKind!,
+      key: `${pack.id}-${template.id}`.slice(0, 63),
+      name: `${template.name} · ${pack.title}`.slice(0, 120),
+      source,
+      version: { language: 'en', subject: c.subject, bodyHtml: footer.html, bodyText: footer.text },
+      added: footer.added,
     };
   }
 

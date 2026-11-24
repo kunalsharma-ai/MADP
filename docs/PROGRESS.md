@@ -15,10 +15,27 @@ Kunal's mailer packs for all three panels are in MADP, read-only.
   shows the designers' sample render in a sandboxed frame, the subjects, trigger, merge fields, plain text and Liquid.
 - `test/mailers.test.ts` (4 tests) covers all three panels, field mapping, previews and brand scoping.
 
+### Library mailers as studio templates (2026-11-24)
+- A campaign mailer becomes a draft studio template from its library page ("Use in a MADP campaign"), in the mailer's
+  own panel (`POST /communications/mailers/:pack/:id/studio`, `communications.manage`, one brand). It then goes through
+  the studio's usual four-eyes review. Importing again adds a new draft version to the same template; a studio key
+  already used by a hand-made template is refused (409).
+- Library merge fields become studio placeholders (`user.name.first` and `member.first_name` to `firstName`,
+  `user.mail` and `member.email` to `email`, `links.profiles` to `profileUrl`, `links.account` to `accountUrl`, and the
+  unsubscribe and preferences links). Liquid fallbacks are kept: the studio now renders `{{ name | default: "x" }}`.
+- Where a pack has no unsubscribe or preferences link in a part, one plain line is added and listed for the reviewer.
+- Refused, with the reasons on the page: mailers that use Liquid logic or filters (the T2O profile reminders), need
+  values only the panel has when it sends (new-survey mailers), or that the panel sends at an event.
+- Ready today: the birthday greeting in all six packs (T2O, MFR, MHO patient, caregiver and HCP) and the MFR profile
+  reminders (no profiles, partial profiles).
+- The studio lint now also refuses anything left in braces that is not a studio placeholder, so Liquid never goes out
+  as literal text. A template from a pack keeps the pack's own logo and footer in the preview, with images served by
+  the admin app.
+- `test/mailer-studio.test.ts` (12 tests) covers all three panels.
+
 ### Not yet
-- Previews use the designers' sample data. MADP campaigns still use the studio's own templates; turning a library
-  template into a studio template is the next step.
-- The footer comes from Brands & settings (#27) once that merges.
+- Previews use the designers' sample data.
+- The T2O profile reminders need their Liquid logic rewritten as plain text, or sending left to the panel.
 - Nothing is sent. Sending needs a provider and Kunal's approval.
 ## Production readiness (Milestone 6, 2026-11-24)
 

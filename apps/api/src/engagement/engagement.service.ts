@@ -17,6 +17,7 @@ import {
   type DataMode,
   type FatiguePolicyUpdate,
   type PanelCode,
+  type StudioTemplateSource,
   type SuppressionReason,
   type TemplateCreate,
   type TemplateVersionCreate,
@@ -97,6 +98,37 @@ export class EngagementService {
       brandKits: await this.brandKits(),
       items: templates.map((t) => ({ ...t, versions: versions.filter((v) => v.templateId === t.id) })),
     };
+  }
+
+  /**
+   * A studio template made from a mailer pack (see MailersService.toStudio). The first time it creates the template
+   * with its source; after that it adds a new draft version to the same template. A studio key already used by a
+   * template from somewhere else is refused rather than overwritten.
+   */
+  async createFromMailer(
+    m: { panel: PanelCode; kind: CampaignKind; key: string; name: string; source: StudioTemplateSource; version: TemplateVersionCreate },
+    actor: Actor,
+  ) {
+    let t = await this.db.query.messageTemplates.findFirst({
+      where: and(eq(messageTemplates.panel, m.panel), eq(messageTemplates.key, m.key)),
+    });
+    const same = (x: unknown) => {
+      const s = x as StudioTemplateSource | null;
+      return !!s && s.pack === m.source.pack && s.template === m.source.template;
+    };
+    if (t && !same(t.source)) throw new ConflictException(`A ${m.panel.toUpperCase()} template with key ${m.key} exists and was not made from this mailer`);
+    const created = !t;
+    if (!t) {
+      [t] = await this.db
+        .insert(messageTemplates)
+        .values({ panel: m.panel, key: m.key, name: m.name, kind: m.kind, channel: 'email', source: m.source, createdBy: actor.id })
+        .returning();
+      await this.log(actor, 'template.created', 'message_template', t!.id, { panel: m.panel, kind: m.kind, fromMailer: `${m.source.pack}/${m.source.template}` });
+    } else {
+      await this.db.update(messageTemplates).set({ source: m.source }).where(eq(messageTemplates.id, t.id));
+    }
+    const version = await this.addVersion(t!.id, m.version, actor);
+    return { template: { ...t!, source: m.source }, created, version };
   }
 
   /** New versions start as drafts. Editing an approved version is not possible: add a new version instead. */
@@ -184,11 +216,27 @@ export class EngagementService {
     const gaps = brandKitGaps(brand);
     const body = render(v, {
       firstName: 'Sample',
+      email: 'sample@example.invalid',
       panelName: brand.displayName,
       unsubscribeUrl: `${sample}/unsubscribe`,
       preferencesUrl: `${sample}/preferences`,
       profileUrl: `${sample}/profile`,
+      accountUrl: `${sample}/account`,
     });
+    const source = t.source as StudioTemplateSource | null;
+    if (source) {
+      // A mailer pack carries its own logo, legal footer and privacy link. Its images point at the panels' mail asset
+      // host; the preview uses the copies the admin app serves, as the mailer library does.
+      return {
+        brand,
+        from: brand.senderAddress ? `${brand.senderName} <${brand.senderAddress}>` : null,
+        brandWarning: gaps.length ? `Still not set in Brands & settings: ${gaps.join(', ')}.` : null,
+        problems: lintTemplate(t.kind as CampaignKind, v),
+        source,
+        ...body,
+        html: body.html.split(source.assetHost).join(`/mailers/${source.pack}/`),
+      };
+    }
     const esc = (x: string) => x.replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
     const header = brand.logo ? `<div style="padding:16px 0"><img src="${esc(brand.logo)}" alt="${esc(brand.displayName)}" height="48"></div>` : '';
     const footer = `<hr style="border:0;border-top:1px solid #e5e7eb;margin:24px 0 12px"><p style="font:12px/1.5 sans-serif;color:#6b7280">${

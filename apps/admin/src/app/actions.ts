@@ -138,6 +138,16 @@ export async function createTemplateAction(panel: string, key: string, name: str
   revalidatePath('/communications');
 }
 
+/** A campaign mailer becomes a draft studio version, in the mailer's own panel. The API checks that brand's grants. */
+export async function mailerToStudioAction(pack: string, id: string, panel: string, subject: number) {
+  const r = await api<{ created: boolean; version: { version: number; problems: string[] }; added: string[] }>(
+    `/communications/mailers/${encodeURIComponent(pack)}/${encodeURIComponent(id)}/studio`,
+    { method: 'POST', json: { subject }, headers: { 'x-madp-brand': panel } },
+  );
+  revalidatePath('/communications');
+  return r.created ? `Studio template created, draft version ${r.version.version}` : `Draft version ${r.version.version} added`;
+}
+
 export async function addTemplateVersion(templateId: string, subject: string, bodyHtml: string, bodyText: string) {
   const r = await api<{ id: string; problems: string[] }>(
     `/communications/templates/${encodeURIComponent(templateId)}/versions`,

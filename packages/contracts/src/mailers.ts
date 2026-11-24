@@ -121,3 +121,36 @@ export const MailerParams = z.object({
   id: z.string().regex(/^[a-z0-9-]{1,60}$/),
 });
 export type MailerParams = z.infer<typeof MailerParams>;
+
+/**
+ * The library merge fields a studio template can carry, and the studio placeholder that fills each one. Anything
+ * else (survey details, one-time codes, profile counts) is only known to the panel at send time, so a mailer that
+ * uses it stays a panel email.
+ */
+export const MAILER_TO_STUDIO: Record<string, string> = {
+  'user.name.first': 'firstName',
+  'member.first_name': 'firstName',
+  'user.mail': 'email',
+  'member.email': 'email',
+  'links.profiles': 'profileUrl',
+  'links.account': 'accountUrl',
+  unsubscribe_url: 'unsubscribeUrl',
+  preferences_url: 'preferencesUrl',
+};
+
+/** Where a studio template came from, when it was made from a mailer pack. */
+export interface StudioTemplateSource {
+  pack: string;
+  template: string;
+  importedAt: string;
+  /** The pack's image host, so previews can point at the copies the admin app serves. */
+  assetHost: string;
+}
+
+export const MailerToStudio = z.object({
+  /** Studio key; defaults to the pack and template ids. */
+  key: z.string().regex(/^[a-z0-9][a-z0-9-]{1,62}$/).optional(),
+  /** Which of the pack's subject lines to use, from 0. */
+  subject: z.number().int().min(0).max(9).default(0),
+});
+export type MailerToStudio = z.infer<typeof MailerToStudio>;

@@ -6,7 +6,7 @@ export const metadata: Metadata = { title: 'Template preview' };
 
 export default async function PreviewPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const p = await api<{ subject: string; from: string | null; html: string; text: string; brandWarning: string | null; problems: string[] }>(
+  const p = await api<{ subject: string; from: string | null; html: string; text: string; brandWarning: string | null; problems: string[]; source?: { pack: string } }>(
     `/communications/template-versions/${encodeURIComponent(id)}/preview`,
   );
   return (
@@ -24,7 +24,7 @@ export default async function PreviewPage({ params }: { params: Promise<{ id: st
         <Card>
           <CardHeader title="HTML" />
           {/* Sandboxed: no scripts, no same-origin access. */}
-          <iframe title="HTML preview" sandbox="" srcDoc={p.html} className="h-[480px] w-full rounded-b-xl bg-white" />
+          <iframe title="HTML preview" sandbox="" srcDoc={p.html} className={`${p.source ? 'h-[900px]' : 'h-[480px]'} w-full rounded-b-xl bg-white`} />
         </Card>
         <Card>
           <CardHeader title="Plain text" />
