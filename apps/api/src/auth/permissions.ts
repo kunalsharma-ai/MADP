@@ -136,6 +136,7 @@ export const DEFAULT_ROLES: Record<
       'loyalty.read',
       'loyalty.reconcile',
       'service_clients.manage',
+      'reports.read',
     ],
   },
   data_steward: {
@@ -156,6 +157,8 @@ export const DEFAULT_ROLES: Record<
       'communications.manage',
       'loyalty.read',
       'consent.read',
+      'reports.read',
+      'export.read',
     ],
   },
   privacy_officer: {
@@ -181,12 +184,14 @@ export const DEFAULT_ROLES: Record<
       'privacy.read',
       'privacy.request',
       'privacy.execute',
+      'reports.read',
+      'export.read',
     ],
   },
   analyst: {
     name: 'Analyst',
     description: 'MADP dashboards and counts.',
-    permissions: ['dashboard.read', 'audience.counts.read', 'questions.read'],
+    permissions: ['dashboard.read', 'audience.counts.read', 'questions.read', 'reports.read', 'export.read'],
   },
   support: {
     name: 'Support (MADP)',

@@ -177,6 +177,20 @@ Staff accounts are now skipped (`isStaff`, kunalsharma-ai/turn2opinion#21, merge
 - The "Still true?" review and the archive of inactive members belong to the super admin console's Members module.
 - Admin screen: Data → Profile freshness. Tests: `test/freshness.test.ts` (4, all three panels).
 
+### Reports, analytics and exports (screens 23 and 29, 2026-11-24)
+- A report registry (`src/reports/reports.service.ts`): each report is one table, per panel and never added across
+  panels, with its own permission. Other modules add a report by adding an entry.
+- Nine reports: audience by category, audience by country and state (small cells blank below `MIN_CELL_SIZE`),
+  consent funnel, data quality checks, profile freshness, loyalty liability valued at each brand's points rate
+  (1,000 points = 1 USD unless changed in Brands & settings), campaign delivery (screen 23), privacy requests and
+  deadlines, and sync health. Delivery, privacy and sync reports take a period (last 30 days by default).
+- CSV and Excel downloads need `export.read`, carry `data_mode` on every row (Excel also gets an About sheet and a
+  "(DEMO)" sheet name), escape cells a spreadsheet would run as formulas, and are audited as `report.exported`.
+  A report holding personal data would also need `export.pii`; none does.
+- Brand scoped like the other screens. Roles: analyst, data steward and privacy officer gain `reports.read` and
+  `export.read`; platform admin gains `reports.read` (migration 0013).
+- Admin screen: Overview → Reports & exports. Tests: `test/reports.test.ts` (8, all three panels).
+
 ### Verification and data quality center (screen 8, 2026-11-24)
 - Per panel, never added across panels: e-mail and phone verification and quality-score bands exactly as each
   panel reported them (labelled source-reported), open identity matches, and ten MADP checks on active members:

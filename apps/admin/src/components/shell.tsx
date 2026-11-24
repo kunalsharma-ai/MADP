@@ -16,6 +16,7 @@ import {
   FileLock2,
   Hourglass,
   ScanSearch,
+  FileSpreadsheet,
   Globe2,
   LayoutDashboard,
   ListTree,
@@ -35,7 +36,7 @@ import { NAV, PLANNED } from './nav';
 import { cn } from '@/lib/cn';
 import { setBrand } from '@/app/super-admin-actions';
 
-const ICONS = { LayoutDashboard, Globe2, Users, ListTree, GitCompareArrows, PlugZap, ShieldCheck, UserRoundCheck, Mail, Workflow, Coins, Network, BadgeCheck, FileLock2, Hourglass, ScanSearch, UserCog, Building2 } as const;
+const ICONS = { LayoutDashboard, Globe2, Users, ListTree, GitCompareArrows, PlugZap, ShieldCheck, UserRoundCheck, Mail, Workflow, Coins, Network, BadgeCheck, FileLock2, Hourglass, ScanSearch, FileSpreadsheet, UserCog, Building2 } as const;
 const BRAND_LABEL: Record<string, string> = { all: 'All brands', t2o: 'Turn2Opinion', mfr: 'MyFrequentRewards', mho: 'MyHealthOpinions' };
 
 export function Shell({

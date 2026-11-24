@@ -19,6 +19,7 @@ export const NAV: NavGroup[] = [
     label: 'Overview',
     items: [
       { href: '/', label: 'Executive dashboard', icon: 'LayoutDashboard', permission: 'dashboard.read' },
+      { href: '/reports', label: 'Reports & exports', icon: 'FileSpreadsheet', permission: 'reports.read' },
     ],
   },
   {
