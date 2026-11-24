@@ -60,6 +60,13 @@ Staff accounts are now skipped (`isStaff`, kunalsharma-ai/turn2opinion#21, merge
 - Field-encryption keys can be rotated: several keys by id, one active, and `keys:rotate` re-encrypts stored values.
 - Tests: `test/webhooks.test.ts` (7), `src/webhooks/signature.test.ts` (3), crypto and config unit tests.
 
+### Stricter MHO controls (2026-11-24)
+- Health answers need the health permission and a stated purpose, recorded in the audit log. This covers the profile
+  screen and counts with health filters.
+- A minor's MHO health answers stay hidden until the guardian's consent is granted on MHO.
+- Health-filtered counts suppress cells below 10 (`SENSITIVE_MIN_CELL_SIZE`).
+- Tests: `test/mho-controls.test.ts` (2), plus updated `platform` and `attributes` tests.
+
 ### Next for T2O
 A T2O-only dry run against the live backend once the token is in the cloud environment, with counts shown to Kunal
 before any write.

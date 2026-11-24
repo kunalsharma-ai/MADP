@@ -42,6 +42,7 @@ export class AudienceService {
     mode: DataMode,
     filters: AttributeFilter[],
     caller: CountsCaller | undefined,
+    purpose?: string,
   ): Promise<{ personIds: string[]; resolved: ResolvedFilter[] } | null> {
     if (!filters.length) return null;
     const db = this.database.db;
@@ -59,6 +60,9 @@ export class AudienceService {
       if (!def) throw new NotFoundException(`Unknown attribute ${f.key}`);
       if (def.sensitivity === 'special_category' && !caller?.permissions.includes('health.sensitive.read')) {
         throw new ForbiddenException(`Filtering on ${f.key} requires health.sensitive.read`);
+      }
+      if (def.sensitivity === 'special_category' && caller && !purpose) {
+        throw new ForbiddenException(`Filtering on ${f.key} needs a stated purpose (purpose)`);
       }
       const mappings = await db
         .select()
@@ -141,8 +145,11 @@ export class AudienceService {
     caller?: CountsCaller,
   ): Promise<CountsResponse> {
     const db = this.database.db;
-    const attr = await this.resolveAttributes(mode, f.attributes ?? [], caller);
+    const attr = await this.resolveAttributes(mode, f.attributes ?? [], caller, f.purpose);
     const ids = attr?.personIds ?? null;
+    // Counts narrowed by health or other special-category answers use a larger minimum cell.
+    if (attr?.resolved.some((r) => r.sensitivity === 'special_category'))
+      minimumCellSize = Math.max(minimumCellSize, this.env.SENSITIVE_MIN_CELL_SIZE);
     const base = sql`from panel_membership pm join master_person mp on mp.id = pm.master_person_id join source_identity si on si.id = pm.source_identity_id where ${this.where(mode, f, ids)}`;
     const totals = await db.execute<{ people: string; memberships: string }>(
       sql`select count(distinct pm.master_person_id) as people, count(*) as memberships ${base}`,

@@ -1,7 +1,7 @@
 import { Controller, Get, NotFoundException, Param, ParseUUIDPipe, Query, Req } from '@nestjs/common';
 import { sql } from 'drizzle-orm';
 import { z } from 'zod';
-import { AudienceCategory, PanelCode } from '@madp/contracts';
+import { AudienceCategory, HealthAccessPurpose, PanelCode } from '@madp/contracts';
 import type { Request } from 'express';
 import { CurrentPrincipal, RequirePermissions } from '../auth/decorators.js';
 import type { Principal } from '../auth/auth.types.js';
@@ -125,8 +125,9 @@ export class PanellistsController {
   }
 
   /**
-   * 360-degree profile. PII is decrypted only for `panellists.pii.read`; MHO special-category (health)
-   * answers only for `health.sensitive.read`. Every view is audited.
+   * 360-degree profile. PII is decrypted only for `panellists.pii.read`. Special-category (health) answers need
+   * `health.sensitive.read` and a stated `purpose`; a minor's MHO health answers also need the guardian's consent
+   * to be granted. Every view is audited with its purpose.
    */
   @RequirePermissions('panellists.read')
   @Get(':id')
@@ -134,12 +135,14 @@ export class PanellistsController {
     @Param('id', new ParseUUIDPipe()) id: string,
     @CurrentPrincipal() p: Principal,
     @Req() req: Request,
+    @Query('purpose', new ZodPipe(HealthAccessPurpose.optional())) purpose?: HealthAccessPurpose,
   ) {
     const db = this.database.db;
     const person = await db.query.masterPersons.findFirst({ where: (m, { eq }) => eq(m.id, id) });
     if (!person) throw new NotFoundException();
     const canPii = p.permissions.includes('panellists.pii.read');
-    const canHealth = p.permissions.includes('health.sensitive.read');
+    const mayHealth = p.permissions.includes('health.sensitive.read');
+    const canHealth = mayHealth && Boolean(purpose);
     const identities = await db.query.sourceIdentities.findMany({
       where: (s, { eq }) => eq(s.masterPersonId, id),
     });
@@ -171,14 +174,24 @@ export class PanellistsController {
           .toArray()
       ).map((d) => [`${d.panel}|${d.sourceQuestionId}|${d.version}`, d.label]),
     );
-    const hiddenSensitive = answers.filter((a) => a.sensitivity === 'special_category').length;
+    // A minor's health answers from a panel stay hidden until that panel's guardian consent is granted.
+    const minorPanels = new Set(categories.filter((c) => c.isMinor).map((c) => c.panel));
+    const guardianOk = new Set(
+      consents.filter((c) => c.purpose === 'guardian_consent' && c.status === 'granted').map((c) => c.panel),
+    );
+    const minorLocked = (a: { panel: PanelCode; sensitivity: string }) =>
+      a.sensitivity === 'special_category' && minorPanels.has(a.panel) && !guardianOk.has(a.panel);
+    const showAnswer = (a: { panel: PanelCode; sensitivity: string }) =>
+      a.sensitivity !== 'special_category' || (canHealth && !minorLocked(a));
+    const hiddenSensitive = answers.filter((a) => !showAnswer(a)).length;
+    const hiddenMinor = canHealth ? answers.filter(minorLocked).length : 0;
     await this.audit.record({
       actorId: p.id,
       actorType: 'admin',
       action: 'panellist.viewed',
       targetType: 'master_person',
       targetId: id,
-      metadata: { pii: canPii, health: canHealth },
+      metadata: { pii: canPii, health: canHealth, purpose: purpose ?? null, hiddenSensitive },
       ip: req.ip ?? null,
     });
     return {
@@ -194,7 +207,13 @@ export class PanellistsController {
         fieldSources: person.fieldSources ?? {},
         createdAt: person.createdAt,
       },
-      access: { pii: canPii, healthSensitive: canHealth },
+      access: {
+        pii: canPii,
+        healthSensitive: canHealth,
+        /** The viewer may see health answers but has to say why first. */
+        healthPurposeRequired: mayHealth && !purpose && answers.some((a) => a.sensitivity === 'special_category'),
+        purpose: purpose ?? null,
+      },
       identities: identities.map((i) => ({
         id: i.id,
         panel: i.panel,
@@ -237,7 +256,7 @@ export class PanellistsController {
         createdAt: c.createdAt,
       })),
       answers: answers
-        .filter((a) => canHealth || a.sensitivity !== 'special_category')
+        .filter(showAnswer)
         .map((a) => ({
           panel: a.panel,
           sourceQuestionId: a.sourceQuestionId,
@@ -248,7 +267,9 @@ export class PanellistsController {
           sourceUpdatedAt: a.sourceUpdatedAt,
           ingestedAt: a.ingestedAt,
         })),
-      hiddenSensitiveAnswers: canHealth ? 0 : hiddenSensitive,
+      hiddenSensitiveAnswers: hiddenSensitive,
+      /** Of those, hidden because the member is a minor without granted guardian consent on that panel. */
+      hiddenMinorAnswers: hiddenMinor,
     };
   }
 }

@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import { PANELS } from '@madp/contracts';
+import { HEALTH_ACCESS_PURPOSE_LABELS, HealthAccessPurpose, PANELS } from '@madp/contracts';
 import { api, ApiError } from '@/lib/api';
 import type { PanellistDetail } from '@/lib/types';
 import {
@@ -27,11 +27,21 @@ const CONSENT_PURPOSE_LABELS: Record<string, string> = {
 };
 const CONSENT_TONE = { granted: 'teal', denied: 'danger', withdrawn: 'warn', unknown: 'neutral' } as const;
 
-export default async function PanellistPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function PanellistPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<{ purpose?: string }>;
+}) {
   const { id } = await params;
+  const sp = await searchParams;
+  const purpose = HealthAccessPurpose.safeParse(sp.purpose).data;
   let d: PanellistDetail;
   try {
-    d = await api<PanellistDetail>(`/panellists/${encodeURIComponent(id)}`);
+    d = await api<PanellistDetail>(
+      `/panellists/${encodeURIComponent(id)}${purpose ? `?purpose=${encodeURIComponent(purpose)}` : ''}`,
+    );
   } catch (e) {
     if (e instanceof ApiError && (e.status === 404 || e.status === 400)) notFound();
     throw e;
@@ -148,10 +158,32 @@ export default async function PanellistPage({ params }: { params: Promise<{ id: 
           title="Profile answers"
           hint="As received from each panel, with question version and source time"
         />
-        {d.hiddenSensitiveAnswers > 0 ? (
+        {d.hiddenSensitiveAnswers > 0 && d.access.healthPurposeRequired ? (
+          <form method="get" className="mx-5 mt-4 flex flex-wrap items-center gap-2 rounded-lg bg-surface-2 px-3 py-2 text-[13px] text-fg-2">
+            <span>
+              {d.hiddenSensitiveAnswers} health or special-category answers are hidden. Say why you need them; the
+              reason is kept in the audit log.
+            </span>
+            <select name="purpose" required aria-label="Purpose" className="rounded-md border border-border bg-surface px-2 py-1">
+              <option value="">Choose a purpose…</option>
+              {HealthAccessPurpose.options.map((k) => (
+                <option key={k} value={k}>
+                  {HEALTH_ACCESS_PURPOSE_LABELS[k]}
+                </option>
+              ))}
+            </select>
+            <button className="rounded-md border border-border bg-surface px-2.5 py-1 font-medium">Show</button>
+          </form>
+        ) : d.hiddenSensitiveAnswers > 0 ? (
           <p className="mx-5 mt-4 rounded-lg bg-surface-2 px-3 py-2 text-[13px] text-fg-2">
-            {d.hiddenSensitiveAnswers} health or special-category answers are hidden. Viewing them needs the
-            health-data permission.
+            {d.hiddenMinorAnswers > 0
+              ? `${d.hiddenMinorAnswers} health answers stay hidden because this member is a minor and the guardian has not consented on that panel.`
+              : `${d.hiddenSensitiveAnswers} health or special-category answers are hidden. Viewing them needs the health-data permission.`}
+          </p>
+        ) : null}
+        {d.access.purpose ? (
+          <p className="mx-5 mt-4 text-[12px] text-fg-3">
+            Health answers shown for: {HEALTH_ACCESS_PURPOSE_LABELS[d.access.purpose as HealthAccessPurpose]}. This view is logged.
           </p>
         ) : null}
         {Object.entries(byPanel).map(([panel, answers]) => (

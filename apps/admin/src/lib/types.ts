@@ -147,7 +147,7 @@ export interface PanellistDetail {
     gender: string | null;
     createdAt: string;
   };
-  access: { pii: boolean; healthSensitive: boolean };
+  access: { pii: boolean; healthSensitive: boolean; healthPurposeRequired: boolean; purpose: string | null };
   identities: {
     id: string;
     panel: PanelCode;
@@ -186,6 +186,7 @@ export interface PanellistDetail {
     ingestedAt: string;
   }[];
   hiddenSensitiveAnswers: number;
+  hiddenMinorAnswers: number;
 }
 
 export interface AuditRow {

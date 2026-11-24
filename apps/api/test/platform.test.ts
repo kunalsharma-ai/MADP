@@ -233,7 +233,7 @@ describe('access control on personal and health data', () => {
         .get(`/api/v1/panellists/${p.id}`)
         .set(bearer(steward.token))
         .expect(200);
-      expect(d.body.access).toEqual({ pii: false, healthSensitive: false });
+      expect(d.body.access).toMatchObject({ pii: false, healthSensitive: false, healthPurposeRequired: false });
       expect(d.body.identities[0].name).toBeNull();
       expect(d.body.answers.every((a: { sensitivity: string }) => a.sensitivity !== 'special_category')).toBe(
         true,
@@ -251,12 +251,14 @@ describe('access control on personal and health data', () => {
       .get('/api/v1/panellists?panel=mho&limit=5')
       .set(bearer(superToken))
       .expect(200);
+    const adult = list.body.items.find((i: { minor: boolean }) => !i.minor);
     const d = await request(t.server)
-      .get(`/api/v1/panellists/${list.body.items[0].id}`)
+      .get(`/api/v1/panellists/${adult.id}?purpose=data_quality_review`)
       .set(bearer(superToken))
       .expect(200);
     expect(d.body.identities[0].email).toMatch(/@example\.invalid$/);
     expect(d.body.hiddenSensitiveAnswers).toBe(0);
+    expect(d.body.access).toMatchObject({ healthSensitive: true, purpose: 'data_quality_review' });
   });
 
   it('keyset pagination returns disjoint pages', async () => {
