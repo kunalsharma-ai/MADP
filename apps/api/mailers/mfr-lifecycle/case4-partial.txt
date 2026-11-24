@@ -1,0 +1,43 @@
+You are a Player now — 400 points banked
+
+{{ member.first_name | default: "there" }},
+
+Four capsules collected, 400 reward points banked, and your rank is up from
+Rookie to Player. That is the hard part done.
+
+WHAT IS STILL OPEN
+  - The four general profiles are complete. Well done.
+  - The category profiles are not, and those are the ones survey
+    invitations are screened against.
+  - So you are being matched to a narrower set of studies than you
+    could be — the longer, better-paid ones are the ones you are missing.
+
+Each category profile takes two to three minutes and pays the same 100 points.
+
+WHERE YOU ARE
+  Capsules collected   4 of 37
+  Reward points        400
+  Arcade rank          Player
+  To your first $1     600 points, which is 6 more profiles
+  To rank Pro          13 more capsules
+
+COLLECT MY NEXT CAPSULE
+{{ links.profiles | default: "https://www.myfrequentrewards.com/account/profiles" }}
+
+WHAT THE CATEGORY PROFILES UNLOCK
+  Health & wellness      27 questions  about 5 min  +100 pts
+     Opens healthcare and patient studies
+  Technology & digital   17 questions  about 3 min  +100 pts
+     Opens product testing and B2B technology research
+  Banking & financial    30 questions  about 6 min  +100 pts
+     Opens financial services research
+  Automobile             27 questions  about 5 min  +100 pts
+     Opens automotive and mobility studies
+
+All research is conducted in accordance with the MRS Code of Conduct. Your answers are reported anonymously and non-attributably, and are never sold on or used for advertising.
+
+You are receiving this because you have unfinished MyFrequentRewards profiles.
+Email preferences: {{ preferences_url | default: "https://www.myfrequentrewards.com/account/preferences" }}
+
+Frequent Research Fieldwork Solutions Pvt. Ltd.
+Mangolpur Kalan, New Delhi 110085, India

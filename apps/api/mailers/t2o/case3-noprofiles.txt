@@ -1,0 +1,50 @@
+WHY YOU'RE GETTING THIS
+Your account is active - but matching can't see you yet.
+No profile is complete, and surveys are matched on your profile.
+Basic profile about 2 min · +50 points · +1 quality score
+
+Hi {{ member.first_name | default: "there" }},
+
+Nothing is broken. Your account is active and your terms are accepted.
+
+WHAT'S HOLDING THINGS UP
+  [done]  Your account is active and your terms are accepted.
+  [open]  No profile has been completed, and surveys are matched on it.
+  [open]  With nothing to match against, you aren't in the running for
+          any study - which is why you haven't heard from us.
+Your Basic profile takes about two minutes and fixes it.
+
+START MY BASIC PROFILE
+{{ links.profiles | default: "https://www.turn2opinion.com/member/profiles" }}
+
+HOW IT PAYS
+  +50 Opinion Points and +1 quality score for every profile and survey.
+  37 items are open to you = 1850 points to earn.
+  Redeem from your dashboard once you reach the minimum shown there.
+
+YOUR OPINION KINGDOM
+  Campsite (0) -> Hamlet (1) -> Village (2) -> Town (5) -> City (10) -> Kingdom (18) -> Empire (28) -> Legendary Realm (37)
+  You are at Campsite. One item makes you a Hamlet.
+
+THE ORDER THINGS OPEN IN
+  Basic          19 questions  about 2 min  +50 pts  (About you)
+  Educational    13 questions  about 2 min  +50 pts  (About you)
+  Professional   26 questions  about 3 min  +50 pts  (Survey 1)
+  Financial       9 questions  about 1 min  +50 pts  (Survey 2)
+  Basic opens Educational. Educational breaks the seal on surveys,
+  which then open one at a time.
+
+Your answers are saved as you go - stop any time and pick up where you
+left off.
+
+Turn2Opinion is run by Frequent Research, certified to ISO 20252 for market, opinion and social research and a member of ESOMAR. Your answers are used for research only, reported in aggregate, and never sold or used for advertising.
+
+Questions? support@turn2opinion.com · +91 81300 15743 · WhatsApp +91 81782 00573
+
+You are receiving this because you are a Turn2Opinion member with no completed profiles.
+Email preferences: {{ preferences_url | default: "https://www.turn2opinion.com/account/preferences" }}
+Unsubscribe: {{ unsubscribe_url | default: "https://www.turn2opinion.com/account/preferences" }}
+
+Turn2Opinion — Speak your mind. Shape what’s next. Get rewarded.
+Frequent Research Fieldwork Solutions Pvt. Ltd.
+Mangolpur Kalan, New Delhi 110085, India

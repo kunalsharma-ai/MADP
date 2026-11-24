@@ -1,0 +1,2933 @@
+{
+ "importedAt": "2026-11-24",
+ "packs": [
+  {
+   "id": "t2o",
+   "title": "Turn2Opinion mailers v1",
+   "panel": "t2o",
+   "category": null,
+   "assetHost": "https://www.frequentresearch.com/mailer/t2o-v1/",
+   "templates": [
+    {
+     "id": "case1-password",
+     "code": "L1",
+     "name": "Password never set",
+     "group": "Lifecycle reminders",
+     "transactional": true,
+     "internal": false,
+     "trigger": "Registered on the portal but never set a password",
+     "subjects": [
+      "{{ member.first_name | default: \"Hi\" }}, your Turn2Opinion account can’t be used yet",
+      "One password stands between you and your first paid survey",
+      "Step 2 of 4: set your Turn2Opinion password"
+     ],
+     "subjectsSample": [
+      "Aarav, your Turn2Opinion account can’t be used yet",
+      "One password stands between you and your first paid survey",
+      "Step 2 of 4: set your Turn2Opinion password"
+     ],
+     "preheader": "Without a password we can’t send you a single survey. Setting one takes about 40 seconds.",
+     "cta": "Set my password",
+     "reason": "You are receiving this because you registered for a Turn2Opinion account and the set-up is unfinished.",
+     "campaignKind": null,
+     "fields": [
+      "links.set_password",
+      "member.email",
+      "member.first_name",
+      "member.member_id"
+     ]
+    },
+    {
+     "id": "case2-terms",
+     "code": "L2",
+     "name": "Terms not accepted",
+     "group": "Lifecycle reminders",
+     "transactional": true,
+     "internal": false,
+     "trigger": "Password created, research terms not accepted / no return login",
+     "subjects": [
+      "{{ member.first_name | default: \"Hi\" }}, one item is still open on your Turn2Opinion account",
+      "Two of four done — the next step is one tap",
+      "Your Turn2Opinion account is built but not active yet"
+     ],
+     "subjectsSample": [
+      "Aarav, one item is still open on your Turn2Opinion account",
+      "Two of four done — the next step is one tap",
+      "Your Turn2Opinion account is built but not active yet"
+     ],
+     "preheader": "Without your consent to the research terms we can’t match you to any study. It’s one tap.",
+     "cta": "Accept and activate",
+     "reason": "You are receiving this because your Turn2Opinion account set-up is unfinished.",
+     "campaignKind": null,
+     "fields": [
+      "links.accept_terms",
+      "member.email",
+      "member.first_name",
+      "member.member_id"
+     ]
+    },
+    {
+     "id": "case3-noprofiles",
+     "code": "L3",
+     "name": "No profiles completed",
+     "group": "Lifecycle reminders",
+     "transactional": false,
+     "internal": false,
+     "trigger": "Registered and terms accepted, but no profile completed",
+     "subjects": [
+      "{{ member.first_name | default: \"Hi\" }}, your account is active — but matching can’t see you yet",
+      "Your Opinion Kingdom is still a campsite",
+      "Your first 50 points are about two minutes away"
+     ],
+     "subjectsSample": [
+      "Aarav, your account is active — but matching can’t see you yet",
+      "Your Opinion Kingdom is still a campsite",
+      "Your first 50 points are about two minutes away"
+     ],
+     "preheader": "Surveys are matched on your profile. Your Basic profile takes about two minutes and earns 50 points.",
+     "cta": "Start my Basic profile",
+     "reason": "You are receiving this because you are a Turn2Opinion member with no completed profiles.",
+     "campaignKind": "profile_recovery",
+     "fields": [
+      "links.profiles",
+      "member.email",
+      "member.first_name",
+      "preferences_url",
+      "profile.completed_count",
+      "unsubscribe_url"
+     ]
+    },
+    {
+     "id": "case4-partial",
+     "code": "L4",
+     "name": "Partial profiles",
+     "group": "Lifecycle reminders",
+     "transactional": false,
+     "internal": false,
+     "trigger": "About-you profiles complete, surveys outstanding",
+     "subjects": [
+      "{{ member.first_name | default: \"Hi\" }}, {{ profile.completed_count | times: 50 }} points banked — your next survey is open",
+      "Your kingdom is growing. The next building is one survey away",
+      "{{ profile.total_count | default: 37 | minus: profile.completed_count }} buildings still waiting in your Opinion Kingdom"
+     ],
+     "subjectsSample": [
+      "Aarav, 200 points banked — your next survey is open",
+      "Your kingdom is growing. The next building is one survey away",
+      "33 buildings still waiting in your Opinion Kingdom"
+     ],
+     "preheader": "Your About-you profiles are done. Surveys now open one at a time — the next is ready for you.",
+     "cta": "Continue my next survey",
+     "reason": "You are receiving this because you have unfinished Turn2Opinion profiles and surveys.",
+     "campaignKind": "profile_recovery",
+     "fields": [
+      "links.account",
+      "links.profiles",
+      "member.email",
+      "member.first_name",
+      "preferences_url",
+      "profile.completed_count",
+      "profile.next_name",
+      "profile.total_count",
+      "unsubscribe_url"
+     ]
+    },
+    {
+     "id": "respondent",
+     "code": "01",
+     "name": "Verify email & set password",
+     "group": "Account & security",
+     "transactional": true,
+     "internal": false,
+     "trigger": "New respondent registered; email not yet verified",
+     "subjects": [
+      "Verify your email to activate your Turn2Opinion account",
+      "{{ user.name.first }}, one tap to activate your account",
+      "Confirm your email and set your Turn2Opinion password"
+     ],
+     "subjectsSample": [
+      "Verify your email to activate your Turn2Opinion account",
+      "Aarav, one tap to activate your account",
+      "Confirm your email and set your Turn2Opinion password"
+     ],
+     "preheader": "Confirm your address and choose a password in one step. The link is valid for 24 hours.",
+     "cta": "Verify my email",
+     "reason": "You are receiving this because this address was used to register for a Turn2Opinion account.",
+     "campaignKind": null,
+     "fields": [
+      "otp.code",
+      "user._id",
+      "user.mail",
+      "user.name.first",
+      "user.origin"
+     ]
+    },
+    {
+     "id": "welcome",
+     "code": "02",
+     "name": "Account active",
+     "group": "Account & security",
+     "transactional": true,
+     "internal": false,
+     "trigger": "Password created; account now active",
+     "subjects": [
+      "Your Turn2Opinion account is active",
+      "{{ user.name.first }}, you’re in — your first profile is waiting",
+      "Welcome to Turn2Opinion: here’s your first step"
+     ],
+     "subjectsSample": [
+      "Your Turn2Opinion account is active",
+      "Aarav, you’re in — your first profile is waiting",
+      "Welcome to Turn2Opinion: here’s your first step"
+     ],
+     "preheader": "Your password is set. Start with your Basic profile — about 2 minutes and your first 50 points.",
+     "cta": "Log in to my dashboard",
+     "reason": "You are receiving this because your Turn2Opinion account was just activated.",
+     "campaignKind": null,
+     "fields": [
+      "user.mail",
+      "user.name.first",
+      "user.origin"
+     ]
+    },
+    {
+     "id": "forgot-password",
+     "code": "03",
+     "name": "Forgot password",
+     "group": "Account & security",
+     "transactional": true,
+     "internal": false,
+     "trigger": "Password reset requested from the login page",
+     "subjects": [
+      "Reset your Turn2Opinion password",
+      "{{ user.name.first }}, here’s your password reset link",
+      "Your Turn2Opinion password reset"
+     ],
+     "subjectsSample": [
+      "Reset your Turn2Opinion password",
+      "Aarav, here’s your password reset link",
+      "Your Turn2Opinion password reset"
+     ],
+     "preheader": "Use the link inside to choose a new password. It works once, for 24 hours.",
+     "cta": "Reset my password",
+     "reason": "You are receiving this because a password reset was requested for your account.",
+     "campaignKind": null,
+     "fields": [
+      "otp.code",
+      "user._id",
+      "user.mail",
+      "user.name.first",
+      "user.origin"
+     ]
+    },
+    {
+     "id": "reset-password",
+     "code": "04",
+     "name": "Reset password",
+     "group": "Account & security",
+     "transactional": true,
+     "internal": false,
+     "trigger": "Password reset requested (record-led variant of 03)",
+     "subjects": [
+      "Create a new Turn2Opinion password",
+      "{{ user.name.first }}, create your new password",
+      "Your password reset link is inside"
+     ],
+     "subjectsSample": [
+      "Create a new Turn2Opinion password",
+      "Aarav, create your new password",
+      "Your password reset link is inside"
+     ],
+     "preheader": "A single-use link to choose a new password, valid for 24 hours.",
+     "cta": "Create a new password",
+     "reason": "You are receiving this because a password reset was requested for your account.",
+     "campaignKind": null,
+     "fields": [
+      "otp.code",
+      "user._id",
+      "user.mail",
+      "user.name.first",
+      "user.origin"
+     ]
+    },
+    {
+     "id": "change-email",
+     "code": "05",
+     "name": "Email change — confirm",
+     "group": "Account & security",
+     "transactional": true,
+     "internal": false,
+     "trigger": "Email change requested; confirmation sent to the current address",
+     "subjects": [
+      "Confirm the email change on your Turn2Opinion account",
+      "{{ user.name.first }}, was this you? Confirm your email change",
+      "Action needed: confirm your new email address"
+     ],
+     "subjectsSample": [
+      "Confirm the email change on your Turn2Opinion account",
+      "Aarav, was this you? Confirm your email change",
+      "Action needed: confirm your new email address"
+     ],
+     "preheader": "Someone asked to move your account to a new address. Confirm only if it was you.",
+     "cta": "Yes, confirm this change",
+     "reason": "You are receiving this because a change of email address was requested on your account.",
+     "campaignKind": null,
+     "fields": [
+      "email",
+      "token",
+      "user.mail",
+      "user.name.first",
+      "user.origin"
+     ]
+    },
+    {
+     "id": "change-email-verify",
+     "code": "06",
+     "name": "Email change — verify new address",
+     "group": "Account & security",
+     "transactional": true,
+     "internal": false,
+     "trigger": "Email change approved; verification sent to the new address",
+     "subjects": [
+      "Verify your new Turn2Opinion email address",
+      "{{ user.name.first }}, one last step to switch your email",
+      "Confirm this is your new address"
+     ],
+     "subjectsSample": [
+      "Verify your new Turn2Opinion email address",
+      "Aarav, one last step to switch your email",
+      "Confirm this is your new address"
+     ],
+     "preheader": "The last step of your email change. Until you verify, the account keeps the old address.",
+     "cta": "Verify this address",
+     "reason": "You are receiving this because this address was given as the new address for a Turn2Opinion account.",
+     "campaignKind": null,
+     "fields": [
+      "email",
+      "token",
+      "user.mail",
+      "user.name.first",
+      "user.origin"
+     ]
+    },
+    {
+     "id": "parent-consent",
+     "code": "07",
+     "name": "Parental consent required",
+     "group": "Teen consent (13–17)",
+     "transactional": true,
+     "internal": false,
+     "trigger": "Registrant indicated they are under 18 and gave a guardian email",
+     "subjects": [
+      "Your consent is needed for {{ user.name.first }}’s Turn2Opinion account",
+      "Parent or guardian approval required — Turn2Opinion",
+      "Please review your child’s Turn2Opinion registration"
+     ],
+     "subjectsSample": [
+      "Your consent is needed for Aarav’s Turn2Opinion account",
+      "Parent or guardian approval required — Turn2Opinion",
+      "Please review your child’s Turn2Opinion registration"
+     ],
+     "preheader": "The account stays inactive until a parent or guardian approves it. Declining is a perfectly ordinary answer.",
+     "cta": "Review and approve",
+     "reason": "You are receiving this because your email address was given as the parent or guardian contact during a registration.",
+     "campaignKind": null,
+     "fields": [
+      "otp.code",
+      "user._id",
+      "user.name.first",
+      "user.origin",
+      "user.parent.name.first",
+      "user.parent.relation"
+     ]
+    },
+    {
+     "id": "minor",
+     "code": "08",
+     "name": "Parental consent (compact)",
+     "group": "Teen consent (13–17)",
+     "transactional": true,
+     "internal": false,
+     "trigger": "Under-18 registration — shorter consent request",
+     "subjects": [
+      "Your consent is required — Turn2Opinion",
+      "Approve {{ user.name.first }}’s Turn2Opinion account",
+      "A quick approval for your child’s registration"
+     ],
+     "subjectsSample": [
+      "Your consent is required — Turn2Opinion",
+      "Approve Aarav’s Turn2Opinion account",
+      "A quick approval for your child’s registration"
+     ],
+     "preheader": "Your child registered and gave your email. The account stays inactive until you approve.",
+     "cta": "Review and approve",
+     "reason": "You are receiving this because your email address was given as the parent or guardian contact during a registration.",
+     "campaignKind": null,
+     "fields": [
+      "otp.code",
+      "user._id",
+      "user.name.first",
+      "user.origin",
+      "user.parent.name.first",
+      "user.parent.relation"
+     ]
+    },
+    {
+     "id": "minor-permitted-parent",
+     "code": "09",
+     "name": "Consent confirmed — guardian",
+     "group": "Teen consent (13–17)",
+     "transactional": true,
+     "internal": false,
+     "trigger": "Guardian completed the consent verification",
+     "subjects": [
+      "Your consent has been recorded — Turn2Opinion",
+      "Thank you — {{ user.name.first }}’s registration is approved",
+      "Consent confirmed for your child’s account"
+     ],
+     "subjectsSample": [
+      "Your consent has been recorded — Turn2Opinion",
+      "Thank you — Aarav’s registration is approved",
+      "Consent confirmed for your child’s account"
+     ],
+     "preheader": "Your approval is recorded and the account is now active. Your rights as a guardian are below.",
+     "cta": null,
+     "reason": "You are receiving this because you completed a parental consent verification.",
+     "campaignKind": null,
+     "fields": [
+      "user.name.first",
+      "user.parent.name.first"
+     ]
+    },
+    {
+     "id": "minor-permitted-child",
+     "code": "10",
+     "name": "Registration approved — member",
+     "group": "Teen consent (13–17)",
+     "transactional": true,
+     "internal": false,
+     "trigger": "Guardian approved; the young member can now take part",
+     "subjects": [
+      "You’re approved — welcome to Turn2Opinion",
+      "{{ user.name.first }}, your account is ready",
+      "Good news: your parent said yes"
+     ],
+     "subjectsSample": [
+      "You’re approved — welcome to Turn2Opinion",
+      "Aarav, your account is ready",
+      "Good news: your parent said yes"
+     ],
+     "preheader": "Your parent or guardian confirmed their consent. Log in and start your Basic profile.",
+     "cta": "Go to my account",
+     "reason": "You are receiving this because your parent or guardian approved your Turn2Opinion registration.",
+     "campaignKind": null,
+     "fields": [
+      "user.mail",
+      "user.name.first",
+      "user.origin"
+     ]
+    },
+    {
+     "id": "invite",
+     "code": "11",
+     "name": "Referral invitation",
+     "group": "Engagement",
+     "transactional": false,
+     "internal": false,
+     "trigger": "An existing member invited this address",
+     "subjects": [
+      "{{ user.fullName }} invited you to Turn2Opinion",
+      "{{ user.fullName }} thinks your opinion is worth rewarding",
+      "An invitation to get rewarded for your opinions"
+     ],
+     "subjectsSample": [
+      "Aarav Mehta invited you to Turn2Opinion",
+      "Aarav Mehta thinks your opinion is worth rewarding",
+      "An invitation to get rewarded for your opinions"
+     ],
+     "preheader": "Free to join, no investment. Share your opinions in paid surveys and get rewarded your way.",
+     "cta": "Accept the invitation",
+     "reason": "You are receiving this because a Turn2Opinion member sent you an invitation.",
+     "campaignKind": null,
+     "fields": [
+      "ref.link",
+      "user.fullName"
+     ]
+    },
+    {
+     "id": "newsurvey",
+     "code": "12",
+     "name": "New survey available",
+     "group": "Engagement",
+     "transactional": false,
+     "internal": false,
+     "trigger": "Member matched to an open study",
+     "subjects": [
+      "{{ survey.name }} — {{ survey.points }} points, about {{ survey.time }} min",
+      "{{ user.name.first }}, a new survey matches your profile",
+      "New on Turn2Opinion: {{ survey.name }}"
+     ],
+     "subjectsSample": [
+      "Streaming habits 2026 — 300 points, about 10 min",
+      "Aarav, a new survey matches your profile",
+      "New on Turn2Opinion: Streaming habits 2026"
+     ],
+     "preheader": "You match the audience for a new study. The reward and length are inside — decide in a second.",
+     "cta": "Start the survey",
+     "reason": "You are receiving this because you are a Turn2Opinion member matched to this study.",
+     "campaignKind": "survey_reminder",
+     "fields": [
+      "survey.link",
+      "survey.name",
+      "survey.points",
+      "survey.time",
+      "user.mail",
+      "user.name.first"
+     ]
+    },
+    {
+     "id": "birthday",
+     "code": "13",
+     "name": "Birthday greeting",
+     "group": "Engagement",
+     "transactional": false,
+     "internal": false,
+     "trigger": "Member’s birthday",
+     "subjects": [
+      "Happy birthday, {{ user.name.first }}!",
+      "A birthday wish from Turn2Opinion",
+      "{{ user.name.first }}, today is all yours"
+     ],
+     "subjectsSample": [
+      "Happy birthday, Aarav!",
+      "A birthday wish from Turn2Opinion",
+      "Aarav, today is all yours"
+     ],
+     "preheader": "No survey, nothing to do — just a good wish from all of us.",
+     "cta": null,
+     "reason": "You are receiving this because you are a Turn2Opinion member and today is the birthday on your profile.",
+     "campaignKind": "birthday",
+     "fields": [
+      "user.mail",
+      "user.name.first"
+     ]
+    },
+    {
+     "id": "ticket-created-user",
+     "code": "14",
+     "name": "Ticket received — member",
+     "group": "Support",
+     "transactional": true,
+     "internal": false,
+     "trigger": "Member submitted a support ticket",
+     "subjects": [
+      "We have your request — ticket {{ data.ticketNo }}",
+      "Ticket {{ data.ticketNo }} received: {{ data.subject }}",
+      "Your Turn2Opinion support request is logged"
+     ],
+     "subjectsSample": [
+      "We have your request — ticket TKT-20931",
+      "Ticket TKT-20931 received: Points not showing for survey SV-31207",
+      "Your Turn2Opinion support request is logged"
+     ],
+     "preheader": "Your request is logged and with our team. Expect a reply within 24 to 48 hours.",
+     "cta": null,
+     "reason": "You are receiving this because you submitted a support request to Turn2Opinion.",
+     "campaignKind": null,
+     "fields": [
+      "data.subject",
+      "data.ticketNo",
+      "user.email",
+      "user.name"
+     ]
+    },
+    {
+     "id": "ticket-created-team",
+     "code": "15",
+     "name": "New ticket — team",
+     "group": "Support",
+     "transactional": true,
+     "internal": true,
+     "trigger": "Internal: a member opened a support ticket",
+     "subjects": [
+      "New ticket {{ data.ticketNo }}: {{ data.subject }}",
+      "[T2O] New ticket {{ data.ticketNo }} from {{ user.name }}",
+      "Turn2Opinion support — new ticket {{ data.ticketNo }}"
+     ],
+     "subjectsSample": [
+      "New ticket TKT-20931: Points not showing for survey SV-31207",
+      "[T2O] New ticket TKT-20931 from Aarav Mehta",
+      "Turn2Opinion support — new ticket TKT-20931"
+     ],
+     "preheader": "Open, awaiting first response. Member details inside.",
+     "cta": null,
+     "reason": "Internal notification from the Turn2Opinion support system.",
+     "campaignKind": null,
+     "fields": [
+      "data.subject",
+      "data.ticketNo",
+      "user.email",
+      "user.name"
+     ]
+    },
+    {
+     "id": "ticket-updated-user",
+     "code": "16",
+     "name": "Ticket updated — member",
+     "group": "Support",
+     "transactional": true,
+     "internal": false,
+     "trigger": "A ticket the member opened received a reply",
+     "subjects": [
+      "Update on your ticket {{ reply.ticketNo }}",
+      "We’ve replied to ticket {{ reply.ticketNo }}",
+      "Turn2Opinion support: a new reply for you"
+     ],
+     "subjectsSample": [
+      "Update on your ticket TKT-20931",
+      "We’ve replied to ticket TKT-20931",
+      "Turn2Opinion support: a new reply for you"
+     ],
+     "preheader": "A new message has been added to your support ticket. The full reply is inside.",
+     "cta": null,
+     "reason": "You are receiving this because a support ticket you opened has been updated.",
+     "campaignKind": null,
+     "fields": [
+      "repliedBy.fullName",
+      "reply.message",
+      "reply.ticketNo",
+      "user.email"
+     ]
+    },
+    {
+     "id": "ticket-updated-team",
+     "code": "17",
+     "name": "Ticket updated — team",
+     "group": "Support",
+     "transactional": true,
+     "internal": true,
+     "trigger": "Internal: a ticket received a new reply",
+     "subjects": [
+      "Ticket {{ reply.ticketNo }} updated by {{ repliedBy.fullName }}",
+      "[T2O] Ticket {{ reply.ticketNo }} — new reply",
+      "Turn2Opinion support — ticket {{ reply.ticketNo }} awaiting review"
+     ],
+     "subjectsSample": [
+      "Ticket TKT-20931 updated by Support Team",
+      "[T2O] Ticket TKT-20931 — new reply",
+      "Turn2Opinion support — ticket TKT-20931 awaiting review"
+     ],
+     "preheader": "A new message was added. Review and respond if needed.",
+     "cta": null,
+     "reason": "Internal notification from the Turn2Opinion support system.",
+     "campaignKind": null,
+     "fields": [
+      "repliedBy.fullName",
+      "reply.message",
+      "reply.ticketNo"
+     ]
+    },
+    {
+     "id": "newuser",
+     "code": "18",
+     "name": "New registration — admin",
+     "group": "Admin",
+     "transactional": true,
+     "internal": true,
+     "trigger": "Internal: a new member registered",
+     "subjects": [
+      "New registration on Turn2Opinion",
+      "[T2O] New member: {{ user.name.first }} ({{ user._id }})",
+      "Turn2Opinion — new member registered"
+     ],
+     "subjectsSample": [
+      "New registration on Turn2Opinion",
+      "[T2O] New member: Aarav (6720b4c1e9f3)",
+      "Turn2Opinion — new member registered"
+     ],
+     "preheader": "A new member has registered successfully. Details inside.",
+     "cta": null,
+     "reason": "Internal notification from the Turn2Opinion registration system.",
+     "campaignKind": null,
+     "fields": [
+      "user._id",
+      "user.name.first"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "mfr-lifecycle",
+   "title": "MyFrequentRewards lifecycle reminders v6",
+   "panel": "mfr",
+   "category": null,
+   "assetHost": "https://www.frequentresearch.com/mailer/v6/",
+   "templates": [
+    {
+     "id": "case1-password",
+     "code": null,
+     "name": "Password never set",
+     "group": "Case 1",
+     "transactional": true,
+     "internal": false,
+     "trigger": "Registered on the panel portal but never set a password",
+     "subjects": [
+      "{{ member.first_name | default: \"Your\" }}, your account is registered but not yet usable",
+      "Your Prize Machine is locked — a password is the key",
+      "One step left: set your MyFrequentRewards password"
+     ],
+     "subjectsSample": [
+      "Priya, your account is registered but not yet usable",
+      "Your Prize Machine is locked — a password is the key",
+      "One step left: set your MyFrequentRewards password"
+     ],
+     "preheader": "Without a password we cannot send you anything. Setting one takes about 40 seconds.",
+     "cta": "Set my password",
+     "reason": "You are receiving this because you registered for a MyFrequentRewards account.",
+     "campaignKind": null,
+     "fields": [
+      "links.set_password",
+      "member.email",
+      "member.first_name",
+      "member.member_id",
+      "preferences_url"
+     ]
+    },
+    {
+     "id": "case2-terms",
+     "code": null,
+     "name": "Terms not accepted",
+     "group": "Case 2",
+     "transactional": true,
+     "internal": false,
+     "trigger": "Password created, research terms not accepted / no return login",
+     "subjects": [
+      "{{ member.first_name | default: \"Your\" }}, one item is still outstanding on your account",
+      "Two of three done — the last step takes one tap",
+      "Your account is built but not yet active"
+     ],
+     "subjectsSample": [
+      "Priya, one item is still outstanding on your account",
+      "Two of three done — the last step takes one tap",
+      "Your account is built but not yet active"
+     ],
+     "preheader": "Accepting the research terms is what lets us match you to studies. One tap.",
+     "cta": "Accept and activate",
+     "reason": "You are receiving this because your MyFrequentRewards account setup is unfinished.",
+     "campaignKind": null,
+     "fields": [
+      "links.accept_terms",
+      "member.email",
+      "member.first_name",
+      "member.member_id",
+      "preferences_url"
+     ]
+    },
+    {
+     "id": "case3-noprofiles",
+     "code": null,
+     "name": "No profiles completed",
+     "group": "Case 3",
+     "transactional": false,
+     "internal": false,
+     "trigger": "Registered and terms accepted, but no profiles completed",
+     "subjects": [
+      "{{ member.first_name | default: \"Your\" }} account is active — but matching cannot see you yet",
+      "37 capsules in your machine, and an empty tray",
+      "Your first capsule is about four minutes away"
+     ],
+     "subjectsSample": [
+      "Priya, your account is active — but matching cannot see you yet",
+      "37 capsules in your machine, and an empty tray",
+      "Your first capsule is about four minutes away"
+     ],
+     "preheader": "Studies are matched on your profile. Without one, there is nothing to match against.",
+     "cta": "Start my first profile",
+     "reason": "You are receiving this because you are a MyFrequentRewards member with no completed profiles.",
+     "campaignKind": "profile_recovery",
+     "fields": [
+      "links.profiles",
+      "member.email",
+      "member.first_name",
+      "preferences_url",
+      "unsubscribe_url"
+     ]
+    },
+    {
+     "id": "case4-partial",
+     "code": null,
+     "name": "Partial profiles",
+     "group": "Case 4",
+     "transactional": false,
+     "internal": false,
+     "trigger": "First 4 profiles complete, survey-linked profiles outstanding",
+     "subjects": [
+      "{{ member.first_name | default: \"You\" }} are a Player now — 400 points banked",
+      "Four capsules collected. The category ones pay the same",
+      "You are 600 points from your first dollar"
+     ],
+     "subjectsSample": [
+      "Priya, you are a Player now — 400 points banked",
+      "Four capsules collected. The category ones pay the same",
+      "You are 600 points from your first dollar"
+     ],
+     "preheader": "Six more profiles takes you to 1,000 points, which is $1. Two to three minutes each.",
+     "cta": "Collect my next capsule",
+     "reason": "You are receiving this because you have unfinished MyFrequentRewards profiles.",
+     "campaignKind": "profile_recovery",
+     "fields": [
+      "links.account",
+      "links.profiles",
+      "member.email",
+      "member.first_name",
+      "preferences_url",
+      "unsubscribe_url"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "mfr-system",
+   "title": "MyFrequentRewards system templates v6",
+   "panel": "mfr",
+   "category": null,
+   "assetHost": "https://www.frequentresearch.com/mailer/v7/",
+   "templates": [
+    {
+     "id": "respondent",
+     "code": null,
+     "name": "Verify email & set password",
+     "group": "Auth",
+     "transactional": true,
+     "internal": false,
+     "trigger": "New respondent registered; email not yet verified",
+     "subjects": [
+      "Verify your email to activate your MyFrequentRewards account",
+      "{{ user.name.first }}, one step left to activate your account",
+      "Confirm your email address and set your password"
+     ],
+     "subjectsSample": [
+      "Verify your email to activate your MyFrequentRewards account",
+      "Priya, one step left to activate your account",
+      "Confirm your email address and set your password"
+     ],
+     "preheader": "Confirm your address and choose a password. The link is valid for 24 hours.",
+     "cta": "Verify my email address",
+     "reason": "You are receiving this because this address was used to register for a MyFrequentRewards account.",
+     "campaignKind": null,
+     "fields": [
+      "member.email",
+      "otp.code",
+      "preferences_url",
+      "user._id",
+      "user.name.first",
+      "user.origin"
+     ]
+    },
+    {
+     "id": "welcome",
+     "code": null,
+     "name": "Account active",
+     "group": "Auth",
+     "transactional": true,
+     "internal": false,
+     "trigger": "Password created; account now active",
+     "subjects": [
+      "Your MyFrequentRewards account is active",
+      "{{ user.name.first }}, you are all set — welcome to the panel",
+      "Welcome aboard. Your account is ready to use"
+     ],
+     "subjectsSample": [
+      "Your MyFrequentRewards account is active",
+      "Priya, you are all set — welcome to the panel",
+      "Welcome aboard. Your account is ready to use"
+     ],
+     "preheader": "Log in and complete your profile to start matching to studies.",
+     "cta": "Log in to my account",
+     "reason": "You are receiving this because your MyFrequentRewards account was just activated.",
+     "campaignKind": null,
+     "fields": [
+      "member.email",
+      "preferences_url",
+      "user.name.first",
+      "user.origin"
+     ]
+    },
+    {
+     "id": "forgot-password",
+     "code": null,
+     "name": "Forgot password",
+     "group": "Auth",
+     "transactional": true,
+     "internal": false,
+     "trigger": "Password reset requested from the login page",
+     "subjects": [
+      "Reset your MyFrequentRewards password"
+     ],
+     "subjectsSample": [],
+     "preheader": "The link works for 24 hours. If you did not request it, nothing has changed.",
+     "cta": "Reset my password",
+     "reason": "You are receiving this because a password reset was requested for your account.",
+     "campaignKind": null,
+     "fields": [
+      "member.email",
+      "otp.code",
+      "preferences_url",
+      "user._id",
+      "user.name.first",
+      "user.origin"
+     ]
+    },
+    {
+     "id": "reset-password",
+     "code": null,
+     "name": "Reset password",
+     "group": "Auth",
+     "transactional": true,
+     "internal": false,
+     "trigger": "Password reset requested (hero-led variant of #3)",
+     "subjects": [
+      "Create a new password for your MyFrequentRewards account"
+     ],
+     "subjectsSample": [],
+     "preheader": "Requested just now. The link works for 24 hours and can be used once.",
+     "cta": "Create a new password",
+     "reason": "You are receiving this because a password reset was requested for your account.",
+     "campaignKind": null,
+     "fields": [
+      "member.email",
+      "otp.code",
+      "preferences_url",
+      "user._id",
+      "user.mail",
+      "user.name.first",
+      "user.origin"
+     ]
+    },
+    {
+     "id": "change-email",
+     "code": null,
+     "name": "Email change — confirm",
+     "group": "Auth",
+     "transactional": true,
+     "internal": false,
+     "trigger": "Email change requested; confirmation sent to the current address",
+     "subjects": [
+      "Confirm the email change on your MyFrequentRewards account"
+     ],
+     "subjectsSample": [],
+     "preheader": "Approve the move from your current address. Valid for 24 hours.",
+     "cta": "Confirm this change",
+     "reason": "You are receiving this because a change of email address was requested on your account.",
+     "campaignKind": null,
+     "fields": [
+      "email",
+      "member.email",
+      "preferences_url",
+      "token",
+      "user.mail",
+      "user.name.first",
+      "user.origin"
+     ]
+    },
+    {
+     "id": "change-email-verify",
+     "code": null,
+     "name": "Email change — verify new address",
+     "group": "Auth",
+     "transactional": true,
+     "internal": false,
+     "trigger": "Email change approved; verification sent to the new address",
+     "subjects": [
+      "Verify your new MyFrequentRewards email address"
+     ],
+     "subjectsSample": [],
+     "preheader": "Last step of the change. This link is valid for 24 hours.",
+     "cta": "Verify this address",
+     "reason": "You are receiving this because this address was given as the new address for a MyFrequentRewards account.",
+     "campaignKind": null,
+     "fields": [
+      "email",
+      "member.email",
+      "preferences_url",
+      "token",
+      "user.mail",
+      "user.name.first",
+      "user.origin"
+     ]
+    },
+    {
+     "id": "parent-consent",
+     "code": null,
+     "name": "Parental consent required",
+     "group": "Minor consent",
+     "transactional": true,
+     "internal": false,
+     "trigger": "Registrant indicated they are under 18 and gave a guardian email",
+     "subjects": [
+      "Your consent is required for your child’s MyFrequentRewards account"
+     ],
+     "subjectsSample": [],
+     "preheader": "The account stays inactive until a parent or guardian approves it.",
+     "cta": "Verify and approve",
+     "reason": "You are receiving this because your email address was given as the parent or guardian contact during a registration.",
+     "campaignKind": null,
+     "fields": [
+      "member.email",
+      "otp.code",
+      "preferences_url",
+      "user._id",
+      "user.name.first",
+      "user.origin",
+      "user.parent.name.first",
+      "user.parent.relation"
+     ]
+    },
+    {
+     "id": "minor",
+     "code": null,
+     "name": "Parental consent (compact)",
+     "group": "Minor consent",
+     "transactional": true,
+     "internal": false,
+     "trigger": "Under-18 registration — shorter consent request",
+     "subjects": [
+      "Approve your child’s MyFrequentRewards registration"
+     ],
+     "subjectsSample": [],
+     "preheader": "Verified parental approval is required before a minor can take part.",
+     "cta": "Verify and approve",
+     "reason": "You are receiving this because your email address was given as the parent or guardian contact during a registration.",
+     "campaignKind": null,
+     "fields": [
+      "member.email",
+      "otp.code",
+      "preferences_url",
+      "user._id",
+      "user.name.first",
+      "user.origin",
+      "user.parent.name.first",
+      "user.parent.relation"
+     ]
+    },
+    {
+     "id": "minor-permitted-parent",
+     "code": null,
+     "name": "Consent confirmed — guardian",
+     "group": "Minor consent",
+     "transactional": true,
+     "internal": false,
+     "trigger": "Guardian completed the consent verification",
+     "subjects": [
+      "Your consent has been recorded"
+     ],
+     "subjectsSample": [],
+     "preheader": "Thank you. Your child’s MyFrequentRewards registration is now approved.",
+     "cta": "Contact our support team",
+     "reason": "You are receiving this because you completed a parental consent verification.",
+     "campaignKind": null,
+     "fields": [
+      "member.email",
+      "preferences_url",
+      "user.name.first",
+      "user.parent.name.first"
+     ]
+    },
+    {
+     "id": "minor-permitted-child",
+     "code": null,
+     "name": "Registration approved — member",
+     "group": "Minor consent",
+     "transactional": true,
+     "internal": false,
+     "trigger": "Guardian approved; the young member can now take part",
+     "subjects": [
+      "You’re approved — welcome to MyFrequentRewards"
+     ],
+     "subjectsSample": [],
+     "preheader": "Your parent or guardian has confirmed their consent. You can start now.",
+     "cta": "Go to my account",
+     "reason": "You are receiving this because your parent or guardian approved your MyFrequentRewards registration.",
+     "campaignKind": null,
+     "fields": [
+      "member.email",
+      "preferences_url",
+      "user.name.first",
+      "user.origin"
+     ]
+    },
+    {
+     "id": "invite",
+     "code": null,
+     "name": "Referral invitation",
+     "group": "Engagement",
+     "transactional": false,
+     "internal": false,
+     "trigger": "An existing member invited this address",
+     "subjects": [
+      "{{ user.fullName }} invited you to MyFrequentRewards",
+      "An invitation to share your opinion — and get paid for it",
+      "You have been invited to join a research panel"
+     ],
+     "subjectsSample": [
+      "Priya Sharma invited you to MyFrequentRewards",
+      "An invitation to share your opinion — and get paid for it",
+      "You have been invited to join a research panel"
+     ],
+     "preheader": "Take paid surveys matched to you. Joining is free and takes a couple of minutes.",
+     "cta": "Accept the invitation",
+     "reason": "You are receiving this because a MyFrequentRewards member sent you an invitation.",
+     "campaignKind": null,
+     "fields": [
+      "member.email",
+      "preferences_url",
+      "ref.link",
+      "unsubscribe_url",
+      "user.fullName"
+     ]
+    },
+    {
+     "id": "newsurvey",
+     "code": null,
+     "name": "New survey available",
+     "group": "Engagement",
+     "transactional": false,
+     "internal": false,
+     "trigger": "Member matched to an open study",
+     "subjects": [
+      "A {{ survey.time }}-minute survey for you: {{ survey.name }}",
+      "{{ user.name.first }}, {{ survey.points }} points for about {{ survey.time }} minutes",
+      "New survey available: {{ survey.name }}"
+     ],
+     "subjectsSample": [
+      "A 12-minute survey for you: Everyday grocery choices",
+      "Priya, 250 points for about 12 minutes",
+      "New survey available: Everyday grocery choices"
+     ],
+     "preheader": "The reward and the length are shown before you start. You can decline.",
+     "cta": "Start the survey",
+     "reason": "You are receiving this because you are a MyFrequentRewards member matched to this study.",
+     "campaignKind": "survey_reminder",
+     "fields": [
+      "member.email",
+      "preferences_url",
+      "survey.link",
+      "survey.name",
+      "survey.points",
+      "survey.time",
+      "unsubscribe_url",
+      "user.name.first"
+     ]
+    },
+    {
+     "id": "birthday",
+     "code": null,
+     "name": "Birthday greeting",
+     "group": "Engagement",
+     "transactional": false,
+     "internal": false,
+     "trigger": "Member’s birthday",
+     "subjects": [
+      "Happy birthday, {{ user.name.first }}",
+      "A birthday wish from everyone at MyFrequentRewards",
+      "Wishing you a wonderful day, {{ user.name.first }}"
+     ],
+     "subjectsSample": [
+      "Happy birthday, Priya",
+      "A birthday wish from everyone at MyFrequentRewards",
+      "Wishing you a wonderful day, Priya"
+     ],
+     "preheader": "No survey, no ask — just a good wish from the panel team.",
+     "cta": null,
+     "reason": "You are receiving this because you are a MyFrequentRewards member and today is the birthday on your profile.",
+     "campaignKind": "birthday",
+     "fields": [
+      "member.email",
+      "preferences_url",
+      "unsubscribe_url",
+      "user.name.first"
+     ]
+    },
+    {
+     "id": "ticket-created-user",
+     "code": null,
+     "name": "Ticket received — member",
+     "group": "Support",
+     "transactional": true,
+     "internal": false,
+     "trigger": "Member submitted a support ticket",
+     "subjects": [
+      "We have your request — ticket {{ data.ticketNo }}"
+     ],
+     "subjectsSample": [
+      "We have your request — ticket TKT-10482"
+     ],
+     "preheader": "Our team will come back to you within 24 to 48 hours.",
+     "cta": null,
+     "reason": "You are receiving this because you submitted a support request to MyFrequentRewards.",
+     "campaignKind": null,
+     "fields": [
+      "data.subject",
+      "data.ticketNo",
+      "member.email",
+      "preferences_url",
+      "user.name"
+     ]
+    },
+    {
+     "id": "ticket-created-team",
+     "code": null,
+     "name": "New ticket — team",
+     "group": "Support",
+     "transactional": true,
+     "internal": true,
+     "trigger": "Internal: a member opened a support ticket",
+     "subjects": [
+      "New ticket {{ data.ticketNo }} — {{ data.subject }}"
+     ],
+     "subjectsSample": [
+      "New ticket TKT-10482 — Reward not credited for survey SV-20418"
+     ],
+     "preheader": "Opened by Priya Sharma. Awaiting first response.",
+     "cta": null,
+     "reason": "Internal notification from the MyFrequentRewards support system.",
+     "campaignKind": null,
+     "fields": [
+      "data.subject",
+      "data.ticketNo",
+      "member.email",
+      "preferences_url",
+      "user.email",
+      "user.name"
+     ]
+    },
+    {
+     "id": "ticket-updated-user",
+     "code": null,
+     "name": "Ticket updated — member",
+     "group": "Support",
+     "transactional": true,
+     "internal": false,
+     "trigger": "Support added a reply to the member’s ticket",
+     "subjects": [
+      "Update on your ticket {{ reply.ticketNo }}"
+     ],
+     "subjectsSample": [
+      "Update on your ticket TKT-10482"
+     ],
+     "preheader": "A new message has been added to your support ticket.",
+     "cta": null,
+     "reason": "You are receiving this because a support ticket you opened has been updated.",
+     "campaignKind": null,
+     "fields": [
+      "member.email",
+      "preferences_url",
+      "reply.message",
+      "reply.ticketNo"
+     ]
+    },
+    {
+     "id": "ticket-updated-team",
+     "code": null,
+     "name": "Ticket updated — team",
+     "group": "Support",
+     "transactional": true,
+     "internal": true,
+     "trigger": "Internal: a ticket received a new reply",
+     "subjects": [
+      "Ticket {{ reply.ticketNo }} updated by {{ repliedBy.fullName }}"
+     ],
+     "subjectsSample": [
+      "Ticket TKT-10482 updated by Support Team"
+     ],
+     "preheader": "A new message was added. Review and respond if needed.",
+     "cta": null,
+     "reason": "Internal notification from the MyFrequentRewards support system.",
+     "campaignKind": null,
+     "fields": [
+      "member.email",
+      "preferences_url",
+      "repliedBy.fullName",
+      "reply.message",
+      "reply.ticketNo"
+     ]
+    },
+    {
+     "id": "newuser",
+     "code": null,
+     "name": "New registration — admin",
+     "group": "Admin",
+     "transactional": true,
+     "internal": true,
+     "trigger": "Internal: a new panelist completed registration",
+     "subjects": [
+      "New registration on the MyFrequentRewards panel"
+     ],
+     "subjectsSample": [],
+     "preheader": "A new panelist has registered. Details inside.",
+     "cta": null,
+     "reason": "Internal notification from the MyFrequentRewards registration system.",
+     "campaignKind": null,
+     "fields": [
+      "member.email",
+      "preferences_url",
+      "user._id",
+      "user.name.first"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "mho-hcp",
+   "title": "MyHealthOpinions healthcare professional mailers v1",
+   "panel": "mho",
+   "category": "healthcare_professional",
+   "assetHost": "https://www.myhealthopinions.com/mailer/v1/hcp/",
+   "templates": [
+    {
+     "id": "respondent",
+     "code": null,
+     "name": "Verify email & set password",
+     "group": "Auth",
+     "transactional": true,
+     "internal": false,
+     "trigger": "New healthcare professional registered; email not yet verified",
+     "subjects": [
+      "Verify your email to activate your MyHealthOpinions professional account",
+      "{{ user.name.first }}, one step left to activate your account",
+      "Confirm your email address and set your password"
+     ],
+     "subjectsSample": [
+      "Verify your email to activate your MyHealthOpinions professional account",
+      "Ananya, one step left to activate your account",
+      "Confirm your email address and set your password"
+     ],
+     "preheader": "Confirm your address and choose a password. The link is valid for 24 hours.",
+     "cta": null,
+     "reason": null,
+     "campaignKind": null,
+     "fields": [
+      "otp.code",
+      "preferences_url",
+      "user._id",
+      "user.mail",
+      "user.name.first",
+      "user.origin"
+     ]
+    },
+    {
+     "id": "welcome",
+     "code": null,
+     "name": "Account active",
+     "group": "Auth",
+     "transactional": true,
+     "internal": false,
+     "trigger": "Password created; account activated",
+     "subjects": [
+      "Your MyHealthOpinions account is active",
+      "{{ user.name.first }}, you’re in — here’s what to do first",
+      "Your Clinical Genome starts with 11 profiles"
+     ],
+     "subjectsSample": [
+      "Your MyHealthOpinions account is active",
+      "Ananya, you’re in — here’s what to do first",
+      "Your Clinical Genome starts with 11 profiles"
+     ],
+     "preheader": "Your password is set. Complete your profiles to earn +70 points each and start receiving studies.",
+     "cta": null,
+     "reason": null,
+     "campaignKind": null,
+     "fields": [
+      "preferences_url",
+      "user.mail",
+      "user.memberId",
+      "user.name.first",
+      "user.origin"
+     ]
+    },
+    {
+     "id": "forgot-password",
+     "code": null,
+     "name": "Forgot password",
+     "group": "Auth",
+     "transactional": true,
+     "internal": false,
+     "trigger": "Member asked for a password reset link",
+     "subjects": [
+      "Reset your MyHealthOpinions password",
+      "{{ user.name.first }}, here is your password reset link",
+      "Your password reset link (valid 24 hours)"
+     ],
+     "subjectsSample": [
+      "Reset your MyHealthOpinions password",
+      "Ananya, here is your password reset link",
+      "Your password reset link (valid 24 hours)"
+     ],
+     "preheader": "The link works for 24 hours. If you did not request it, nothing has changed.",
+     "cta": null,
+     "reason": null,
+     "campaignKind": null,
+     "fields": [
+      "otp.code",
+      "preferences_url",
+      "user._id",
+      "user.mail",
+      "user.name.first",
+      "user.origin"
+     ]
+    },
+    {
+     "id": "reset-password",
+     "code": null,
+     "name": "Reset password",
+     "group": "Auth",
+     "transactional": true,
+     "internal": false,
+     "trigger": "Password reset requested from the account or by support",
+     "subjects": [
+      "Create a new password for your MyHealthOpinions account",
+      "{{ user.name.first }}, create your new password",
+      "Your new-password link is ready"
+     ],
+     "subjectsSample": [
+      "Create a new password for your MyHealthOpinions account",
+      "Ananya, create your new password",
+      "Your new-password link is ready"
+     ],
+     "preheader": "Requested just now. The link works for 24 hours and can be used once.",
+     "cta": null,
+     "reason": null,
+     "campaignKind": null,
+     "fields": [
+      "otp.code",
+      "preferences_url",
+      "user._id",
+      "user.mail",
+      "user.memberId",
+      "user.name.first",
+      "user.origin"
+     ]
+    },
+    {
+     "id": "change-email",
+     "code": null,
+     "name": "Email change — confirm",
+     "group": "Auth",
+     "transactional": true,
+     "internal": false,
+     "trigger": "Member asked to change their email address (sent to the CURRENT address)",
+     "subjects": [
+      "Confirm the email change on your account",
+      "{{ user.name.first }}, did you ask to change your email?",
+      "Action needed: confirm your new email address"
+     ],
+     "subjectsSample": [
+      "Confirm the email change on your account",
+      "Ananya, did you ask to change your email?",
+      "Action needed: confirm your new email address"
+     ],
+     "preheader": "Nothing changes until you confirm. If this was not you, ignore this email.",
+     "cta": null,
+     "reason": null,
+     "campaignKind": null,
+     "fields": [
+      "email",
+      "preferences_url",
+      "token",
+      "user.mail",
+      "user.name.first",
+      "user.origin"
+     ]
+    },
+    {
+     "id": "change-email-verify",
+     "code": null,
+     "name": "Email change — verify new address",
+     "group": "Auth",
+     "transactional": true,
+     "internal": false,
+     "trigger": "Change confirmed from the old address (sent to the NEW address)",
+     "subjects": [
+      "Verify your new email address",
+      "{{ user.name.first }}, one last step to switch your email",
+      "Is this your new MyHealthOpinions address?"
+     ],
+     "subjectsSample": [
+      "Verify your new email address",
+      "Ananya, one last step to switch your email",
+      "Is this your new MyHealthOpinions address?"
+     ],
+     "preheader": "The last step of your email change. Until you verify, the old address stays in use.",
+     "cta": null,
+     "reason": null,
+     "campaignKind": null,
+     "fields": [
+      "email",
+      "preferences_url",
+      "token",
+      "user.mail",
+      "user.name.first",
+      "user.origin"
+     ]
+    },
+    {
+     "id": "consent-required",
+     "code": null,
+     "name": "Consent required",
+     "group": "Consent",
+     "transactional": true,
+     "internal": false,
+     "trigger": "Account active, but no consent record for the current terms version",
+     "subjects": [
+      "Please review and sign your panel terms",
+      "{{ user.name.first }}, one step before your first invitation",
+      "Action needed: your Healthcare Professionals consent"
+     ],
+     "subjectsSample": [
+      "Please review and sign your panel terms",
+      "Ananya, one step before your first invitation",
+      "Action needed: your Healthcare Professionals consent"
+     ],
+     "preheader": "About 5 minutes, in plain language. Invitations start as soon as it is signed.",
+     "cta": null,
+     "reason": null,
+     "campaignKind": null,
+     "fields": [
+      "preferences_url",
+      "user.mail",
+      "user.name.first",
+      "user.origin"
+     ]
+    },
+    {
+     "id": "consent-updated",
+     "code": null,
+     "name": "Terms updated — renew consent",
+     "group": "Consent",
+     "transactional": true,
+     "internal": false,
+     "trigger": "Terms version changed; the member’s latest consent is for an older version",
+     "subjects": [
+      "We’ve updated the panel terms — please review",
+      "{{ user.name.first }}, your consent needs renewing",
+      "Updated terms: invitations paused until you sign"
+     ],
+     "subjectsSample": [
+      "We’ve updated the panel terms — please review",
+      "Ananya, your consent needs renewing",
+      "Updated terms: invitations paused until you sign"
+     ],
+     "preheader": "Your balance is untouched. Changed clauses are marked, so it takes a few minutes.",
+     "cta": null,
+     "reason": null,
+     "campaignKind": null,
+     "fields": [
+      "consent.version",
+      "preferences_url",
+      "user.mail",
+      "user.name.first",
+      "user.origin"
+     ]
+    },
+    {
+     "id": "consent-signed",
+     "code": null,
+     "name": "Consent signed — your copy",
+     "group": "Consent",
+     "transactional": true,
+     "internal": false,
+     "trigger": "Member signed the current terms version",
+     "subjects": [
+      "Your consent is signed — here is your copy",
+      "{{ user.name.first }}, you’re all set for invitations",
+      "Consent recorded: your copy for safekeeping"
+     ],
+     "subjectsSample": [
+      "Your consent is signed — here is your copy",
+      "Ananya, you’re all set for invitations",
+      "Consent recorded: your copy for safekeeping"
+     ],
+     "preheader": "Keep this email. It records which version you signed, and when.",
+     "cta": null,
+     "reason": null,
+     "campaignKind": null,
+     "fields": [
+      "consent.optionalCount",
+      "consent.signedAt",
+      "consent.version",
+      "preferences_url",
+      "user.mail",
+      "user.memberId",
+      "user.name.first",
+      "user.origin"
+     ]
+    },
+    {
+     "id": "member-approved",
+     "code": null,
+     "name": "Credentials verified",
+     "group": "Consent",
+     "transactional": true,
+     "internal": false,
+     "trigger": "Licence / registration documents reviewed and approved",
+     "subjects": [
+      "Your professional credentials are verified",
+      "{{ user.name.first }}, you’re a verified clinician on the panel",
+      "Verified: professional studies are now open to you"
+     ],
+     "subjectsSample": [
+      "Your professional credentials are verified",
+      "Ananya, you’re a verified clinician on the panel",
+      "Verified: professional studies are now open to you"
+     ],
+     "preheader": "Your licence details were checked, so verified-only studies can now reach you.",
+     "cta": null,
+     "reason": null,
+     "campaignKind": null,
+     "fields": [
+      "preferences_url",
+      "user.mail",
+      "user.memberId",
+      "user.name.first",
+      "user.origin"
+     ]
+    },
+    {
+     "id": "invite",
+     "code": null,
+     "name": "Referral invitation",
+     "group": "Engagement",
+     "transactional": false,
+     "internal": false,
+     "trigger": "Member sent a referral invitation",
+     "subjects": [
+      "{{ user.fullName }} invited you to MyHealthOpinions",
+      "{{ user.fullName }} thinks your clinical insight is worth hearing",
+      "You’re invited: paid health research, free to join"
+     ],
+     "subjectsSample": [
+      "Dr. Ananya Rao invited you to MyHealthOpinions",
+      "Dr. Ananya Rao thinks your clinical insight is worth hearing",
+      "You’re invited: paid health research, free to join"
+     ],
+     "preheader": "Free to join. Every invitation shows the reward and the length before you start.",
+     "cta": null,
+     "reason": null,
+     "campaignKind": null,
+     "fields": [
+      "ref.link",
+      "user.fullName"
+     ]
+    },
+    {
+     "id": "newsurvey",
+     "code": null,
+     "name": "New survey available",
+     "group": "Engagement",
+     "transactional": false,
+     "internal": false,
+     "trigger": "Member matched to an open study",
+     "subjects": [
+      "A {{ survey.time }}-minute study for you: {{ survey.name }}",
+      "{{ user.name.first }}, {{ survey.points }} pts for about {{ survey.time }} minutes",
+      "New study in your specialty: {{ survey.name }}"
+     ],
+     "subjectsSample": [
+      "A 18-minute study for you: Heart-failure management in outpatient cardiology",
+      "Ananya, 1,500 pts for about 18 minutes",
+      "New study in your specialty: Heart-failure management in outpatient cardiology"
+     ],
+     "preheader": "The reward and the length are shown before you start. You can decline.",
+     "cta": null,
+     "reason": null,
+     "campaignKind": "survey_reminder",
+     "fields": [
+      "preferences_url",
+      "survey.link",
+      "survey.name",
+      "survey.points",
+      "survey.time",
+      "unsubscribe_url",
+      "user.mail",
+      "user.name.first"
+     ]
+    },
+    {
+     "id": "birthday",
+     "code": null,
+     "name": "Birthday greeting",
+     "group": "Engagement",
+     "transactional": false,
+     "internal": false,
+     "trigger": "Member’s birthday (date of birth on profile)",
+     "subjects": [
+      "Happy birthday, {{ user.name.first }}",
+      "{{ user.name.first }}, a birthday wish from MyHealthOpinions",
+      "Wishing you a wonderful birthday"
+     ],
+     "subjectsSample": [
+      "Happy birthday, Ananya",
+      "Ananya, a birthday wish from MyHealthOpinions",
+      "Wishing you a wonderful birthday"
+     ],
+     "preheader": "No survey attached, nothing to do. Just a good wish.",
+     "cta": null,
+     "reason": null,
+     "campaignKind": "birthday",
+     "fields": [
+      "preferences_url",
+      "unsubscribe_url",
+      "user.mail",
+      "user.name.first"
+     ]
+    },
+    {
+     "id": "ticket-created-user",
+     "code": null,
+     "name": "Ticket received — member",
+     "group": "Support",
+     "transactional": true,
+     "internal": false,
+     "trigger": "Member opened a support ticket",
+     "subjects": [
+      "We have your request — ticket {{ data.ticketNo }}",
+      "Ticket {{ data.ticketNo }}: {{ data.subject }}",
+      "Support request received ({{ data.ticketNo }})"
+     ],
+     "subjectsSample": [
+      "We have your request — ticket TKT-20716",
+      "Ticket TKT-20716: Honorarium for study HS-30512 not yet credited",
+      "Support request received (TKT-20716)"
+     ],
+     "preheader": "Logged and with our support team. Expect a reply within 24 to 48 hours.",
+     "cta": null,
+     "reason": null,
+     "campaignKind": null,
+     "fields": [
+      "data.subject",
+      "data.ticketNo",
+      "preferences_url",
+      "user.email",
+      "user.name"
+     ]
+    },
+    {
+     "id": "ticket-created-team",
+     "code": null,
+     "name": "New ticket — team",
+     "group": "Support",
+     "transactional": true,
+     "internal": true,
+     "trigger": "Member opened a support ticket (internal copy to support)",
+     "subjects": [
+      "New ticket {{ data.ticketNo }} · Healthcare Professionals",
+      "[Healthcare Professionals] {{ data.subject }}",
+      "Ticket {{ data.ticketNo }} awaiting first response"
+     ],
+     "subjectsSample": [
+      "New ticket TKT-20716 · Healthcare Professionals",
+      "[Healthcare Professionals] Honorarium for study HS-30512 not yet credited",
+      "Ticket TKT-20716 awaiting first response"
+     ],
+     "preheader": "Dr. Ananya Rao opened a ticket on the Healthcare Professionals panel.",
+     "cta": null,
+     "reason": null,
+     "campaignKind": null,
+     "fields": [
+      "data.subject",
+      "data.ticketNo",
+      "user.email",
+      "user.name"
+     ]
+    },
+    {
+     "id": "ticket-updated-user",
+     "code": null,
+     "name": "Ticket updated — member",
+     "group": "Support",
+     "transactional": true,
+     "internal": false,
+     "trigger": "Support replied to the member’s ticket",
+     "subjects": [
+      "Update on your ticket {{ reply.ticketNo }}",
+      "New reply on ticket {{ reply.ticketNo }}",
+      "Our support team has replied"
+     ],
+     "subjectsSample": [
+      "Update on your ticket TKT-20716",
+      "New reply on ticket TKT-20716",
+      "Our support team has replied"
+     ],
+     "preheader": "A new message on your support ticket — the full reply is inside.",
+     "cta": null,
+     "reason": null,
+     "campaignKind": null,
+     "fields": [
+      "preferences_url",
+      "repliedBy.fullName",
+      "reply.message",
+      "reply.ticketNo",
+      "user.email",
+      "user.name"
+     ]
+    },
+    {
+     "id": "ticket-updated-team",
+     "code": null,
+     "name": "Ticket updated — team",
+     "group": "Support",
+     "transactional": true,
+     "internal": true,
+     "trigger": "A ticket received a new message (internal copy)",
+     "subjects": [
+      "Ticket {{ reply.ticketNo }} updated · Healthcare Professionals",
+      "[Healthcare Professionals] New message on {{ reply.ticketNo }}",
+      "{{ reply.ticketNo }} awaiting review"
+     ],
+     "subjectsSample": [
+      "Ticket TKT-20716 updated · Healthcare Professionals",
+      "[Healthcare Professionals] New message on TKT-20716",
+      "TKT-20716 awaiting review"
+     ],
+     "preheader": "Updated by MHO Support Team. Review and respond if needed.",
+     "cta": null,
+     "reason": null,
+     "campaignKind": null,
+     "fields": [
+      "repliedBy.fullName",
+      "reply.message",
+      "reply.ticketNo"
+     ]
+    },
+    {
+     "id": "newuser",
+     "code": null,
+     "name": "New registration — admin",
+     "group": "Admin",
+     "transactional": true,
+     "internal": true,
+     "trigger": "A new healthcare professional registered",
+     "subjects": [
+      "New registration on the Healthcare Professionals panel",
+      "New healthcare professional: {{ user.name.first }}",
+      "[Healthcare Professionals] New panelist {{ user._id }}"
+     ],
+     "subjectsSample": [
+      "New registration on the Healthcare Professionals panel",
+      "New healthcare professional: Ananya",
+      "[Healthcare Professionals] New panelist 64f2c1a9e5b7"
+     ],
+     "preheader": "A new panelist registered on the MyHealthOpinions Healthcare Professionals panel.",
+     "cta": null,
+     "reason": null,
+     "campaignKind": null,
+     "fields": [
+      "user._id",
+      "user.name.first"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "mho-caregiver",
+   "title": "MyHealthOpinions caregiver mailers v1",
+   "panel": "mho",
+   "category": "caregiver",
+   "assetHost": "https://www.myhealthopinions.com/mailer/v1/caregiver/",
+   "templates": [
+    {
+     "id": "respondent",
+     "code": null,
+     "name": "Verify email & set password",
+     "group": "Auth",
+     "transactional": true,
+     "internal": false,
+     "trigger": "New caregiver member registered; email not yet verified",
+     "subjects": [
+      "Verify your email to join the MyHealthOpinions caregiver circle",
+      "{{ user.name.first }}, one step left to activate your account",
+      "Confirm your email address and set your password"
+     ],
+     "subjectsSample": [
+      "Verify your email to join the MyHealthOpinions caregiver circle",
+      "Meera, one step left to activate your account",
+      "Confirm your email address and set your password"
+     ],
+     "preheader": "Confirm your address and choose a password. The link is valid for 24 hours.",
+     "cta": null,
+     "reason": null,
+     "campaignKind": null,
+     "fields": [
+      "otp.code",
+      "preferences_url",
+      "user._id",
+      "user.mail",
+      "user.name.first",
+      "user.origin"
+     ]
+    },
+    {
+     "id": "welcome",
+     "code": null,
+     "name": "Account active",
+     "group": "Auth",
+     "transactional": true,
+     "internal": false,
+     "trigger": "Password created; account activated",
+     "subjects": [
+      "Your MyHealthOpinions account is active",
+      "{{ user.name.first }}, you’re in — here’s what to do first",
+      "Your Circle of Care starts here"
+     ],
+     "subjectsSample": [
+      "Your MyHealthOpinions account is active",
+      "Meera, you’re in — here’s what to do first",
+      "Your Circle of Care starts here"
+     ],
+     "preheader": "Your password is set. 7 short profiles unlock your caregiver surveys.",
+     "cta": null,
+     "reason": null,
+     "campaignKind": null,
+     "fields": [
+      "preferences_url",
+      "user.mail",
+      "user.memberId",
+      "user.name.first",
+      "user.origin"
+     ]
+    },
+    {
+     "id": "forgot-password",
+     "code": null,
+     "name": "Forgot password",
+     "group": "Auth",
+     "transactional": true,
+     "internal": false,
+     "trigger": "Member asked for a password reset link",
+     "subjects": [
+      "Reset your MyHealthOpinions password",
+      "{{ user.name.first }}, here is your password reset link",
+      "Your password reset link (valid 24 hours)"
+     ],
+     "subjectsSample": [
+      "Reset your MyHealthOpinions password",
+      "Meera, here is your password reset link",
+      "Your password reset link (valid 24 hours)"
+     ],
+     "preheader": "The link works for 24 hours. If you did not request it, nothing has changed.",
+     "cta": null,
+     "reason": null,
+     "campaignKind": null,
+     "fields": [
+      "otp.code",
+      "preferences_url",
+      "user._id",
+      "user.mail",
+      "user.name.first",
+      "user.origin"
+     ]
+    },
+    {
+     "id": "reset-password",
+     "code": null,
+     "name": "Reset password",
+     "group": "Auth",
+     "transactional": true,
+     "internal": false,
+     "trigger": "Password reset requested from the account or by support",
+     "subjects": [
+      "Create a new password for your MyHealthOpinions account",
+      "{{ user.name.first }}, create your new password",
+      "Your new-password link is ready"
+     ],
+     "subjectsSample": [
+      "Create a new password for your MyHealthOpinions account",
+      "Meera, create your new password",
+      "Your new-password link is ready"
+     ],
+     "preheader": "Requested just now. The link works for 24 hours and can be used once.",
+     "cta": null,
+     "reason": null,
+     "campaignKind": null,
+     "fields": [
+      "otp.code",
+      "preferences_url",
+      "user._id",
+      "user.mail",
+      "user.memberId",
+      "user.name.first",
+      "user.origin"
+     ]
+    },
+    {
+     "id": "change-email",
+     "code": null,
+     "name": "Email change — confirm",
+     "group": "Auth",
+     "transactional": true,
+     "internal": false,
+     "trigger": "Member asked to change their email address (sent to the CURRENT address)",
+     "subjects": [
+      "Confirm the email change on your account",
+      "{{ user.name.first }}, did you ask to change your email?",
+      "Action needed: confirm your new email address"
+     ],
+     "subjectsSample": [
+      "Confirm the email change on your account",
+      "Meera, did you ask to change your email?",
+      "Action needed: confirm your new email address"
+     ],
+     "preheader": "Nothing changes until you confirm. If this was not you, ignore this email.",
+     "cta": null,
+     "reason": null,
+     "campaignKind": null,
+     "fields": [
+      "email",
+      "preferences_url",
+      "token",
+      "user.mail",
+      "user.name.first",
+      "user.origin"
+     ]
+    },
+    {
+     "id": "change-email-verify",
+     "code": null,
+     "name": "Email change — verify new address",
+     "group": "Auth",
+     "transactional": true,
+     "internal": false,
+     "trigger": "Change confirmed from the old address (sent to the NEW address)",
+     "subjects": [
+      "Verify your new email address",
+      "{{ user.name.first }}, one last step to switch your email",
+      "Is this your new MyHealthOpinions address?"
+     ],
+     "subjectsSample": [
+      "Verify your new email address",
+      "Meera, one last step to switch your email",
+      "Is this your new MyHealthOpinions address?"
+     ],
+     "preheader": "The last step of your email change. Until you verify, the old address stays in use.",
+     "cta": null,
+     "reason": null,
+     "campaignKind": null,
+     "fields": [
+      "email",
+      "preferences_url",
+      "token",
+      "user.mail",
+      "user.name.first",
+      "user.origin"
+     ]
+    },
+    {
+     "id": "consent-required",
+     "code": null,
+     "name": "Consent required",
+     "group": "Consent",
+     "transactional": true,
+     "internal": false,
+     "trigger": "Account active, but no consent record for the current terms version",
+     "subjects": [
+      "Please review and sign your panel terms",
+      "{{ user.name.first }}, one step before your first invitation",
+      "Action needed: your Caregivers consent"
+     ],
+     "subjectsSample": [
+      "Please review and sign your panel terms",
+      "Meera, one step before your first invitation",
+      "Action needed: your Caregivers consent"
+     ],
+     "preheader": "About 5 minutes, in plain language. Invitations start as soon as it is signed.",
+     "cta": null,
+     "reason": null,
+     "campaignKind": null,
+     "fields": [
+      "preferences_url",
+      "user.mail",
+      "user.name.first",
+      "user.origin"
+     ]
+    },
+    {
+     "id": "consent-updated",
+     "code": null,
+     "name": "Terms updated — renew consent",
+     "group": "Consent",
+     "transactional": true,
+     "internal": false,
+     "trigger": "Terms version changed; the member’s latest consent is for an older version",
+     "subjects": [
+      "We’ve updated the panel terms — please review",
+      "{{ user.name.first }}, your consent needs renewing",
+      "Updated terms: invitations paused until you sign"
+     ],
+     "subjectsSample": [
+      "We’ve updated the panel terms — please review",
+      "Meera, your consent needs renewing",
+      "Updated terms: invitations paused until you sign"
+     ],
+     "preheader": "Your balance is untouched. Changed clauses are marked, so it takes a few minutes.",
+     "cta": null,
+     "reason": null,
+     "campaignKind": null,
+     "fields": [
+      "consent.version",
+      "preferences_url",
+      "user.mail",
+      "user.name.first",
+      "user.origin"
+     ]
+    },
+    {
+     "id": "consent-signed",
+     "code": null,
+     "name": "Consent signed — your copy",
+     "group": "Consent",
+     "transactional": true,
+     "internal": false,
+     "trigger": "Member signed the current terms version",
+     "subjects": [
+      "Your consent is signed — here is your copy",
+      "{{ user.name.first }}, you’re all set for invitations",
+      "Consent recorded: your copy for safekeeping"
+     ],
+     "subjectsSample": [
+      "Your consent is signed — here is your copy",
+      "Meera, you’re all set for invitations",
+      "Consent recorded: your copy for safekeeping"
+     ],
+     "preheader": "Keep this email. It records which version you signed, and when.",
+     "cta": null,
+     "reason": null,
+     "campaignKind": null,
+     "fields": [
+      "consent.optionalCount",
+      "consent.signedAt",
+      "consent.version",
+      "preferences_url",
+      "user.mail",
+      "user.memberId",
+      "user.name.first",
+      "user.origin"
+     ]
+    },
+    {
+     "id": "member-approved",
+     "code": null,
+     "name": "Membership approved",
+     "group": "Consent",
+     "transactional": true,
+     "internal": false,
+     "trigger": "Account reviewed and approved for surveys",
+     "subjects": [
+      "Your membership is approved",
+      "{{ user.name.first }}, you’re approved — welcome to the circle",
+      "Approved: your caregiver surveys can open"
+     ],
+     "subjectsSample": [
+      "Your membership is approved",
+      "Meera, you’re approved — welcome to the circle",
+      "Approved: your caregiver surveys can open"
+     ],
+     "preheader": "Your account is cleared for caregiver surveys. They open one at a time.",
+     "cta": null,
+     "reason": null,
+     "campaignKind": null,
+     "fields": [
+      "preferences_url",
+      "user.mail",
+      "user.memberId",
+      "user.name.first",
+      "user.origin"
+     ]
+    },
+    {
+     "id": "invite",
+     "code": null,
+     "name": "Referral invitation",
+     "group": "Engagement",
+     "transactional": false,
+     "internal": false,
+     "trigger": "Member sent a referral invitation",
+     "subjects": [
+      "{{ user.fullName }} invited you to MyHealthOpinions",
+      "{{ user.fullName }} thinks your caregiving voice is worth hearing",
+      "You’re invited: paid health research, free to join"
+     ],
+     "subjectsSample": [
+      "Meera Nair invited you to MyHealthOpinions",
+      "Meera Nair thinks your caregiving voice is worth hearing",
+      "You’re invited: paid health research, free to join"
+     ],
+     "preheader": "Free to join. Every invitation shows the reward and the length before you start.",
+     "cta": null,
+     "reason": null,
+     "campaignKind": null,
+     "fields": [
+      "ref.link",
+      "user.fullName"
+     ]
+    },
+    {
+     "id": "newsurvey",
+     "code": null,
+     "name": "New survey available",
+     "group": "Engagement",
+     "transactional": false,
+     "internal": false,
+     "trigger": "Member matched to an open study",
+     "subjects": [
+      "A {{ survey.time }}-minute survey for you: {{ survey.name }}",
+      "{{ user.name.first }}, {{ survey.points }} Care Points for about {{ survey.time }} minutes",
+      "New caregiver survey: {{ survey.name }}"
+     ],
+     "subjectsSample": [
+      "A 15-minute survey for you: Caring for a parent with dementia at home",
+      "Meera, 750 Care Points for about 15 minutes",
+      "New caregiver survey: Caring for a parent with dementia at home"
+     ],
+     "preheader": "The reward and the length are shown before you start. You can decline.",
+     "cta": null,
+     "reason": null,
+     "campaignKind": "survey_reminder",
+     "fields": [
+      "preferences_url",
+      "survey.link",
+      "survey.name",
+      "survey.points",
+      "survey.time",
+      "unsubscribe_url",
+      "user.mail",
+      "user.name.first"
+     ]
+    },
+    {
+     "id": "birthday",
+     "code": null,
+     "name": "Birthday greeting",
+     "group": "Engagement",
+     "transactional": false,
+     "internal": false,
+     "trigger": "Member’s birthday (date of birth on profile)",
+     "subjects": [
+      "Happy birthday, {{ user.name.first }}",
+      "{{ user.name.first }}, a birthday wish from MyHealthOpinions",
+      "Wishing you a wonderful birthday"
+     ],
+     "subjectsSample": [
+      "Happy birthday, Meera",
+      "Meera, a birthday wish from MyHealthOpinions",
+      "Wishing you a wonderful birthday"
+     ],
+     "preheader": "No survey attached, nothing to do. Just a good wish.",
+     "cta": null,
+     "reason": null,
+     "campaignKind": "birthday",
+     "fields": [
+      "preferences_url",
+      "unsubscribe_url",
+      "user.mail",
+      "user.name.first"
+     ]
+    },
+    {
+     "id": "ticket-created-user",
+     "code": null,
+     "name": "Ticket received — member",
+     "group": "Support",
+     "transactional": true,
+     "internal": false,
+     "trigger": "Member opened a support ticket",
+     "subjects": [
+      "We have your request — ticket {{ data.ticketNo }}",
+      "Ticket {{ data.ticketNo }}: {{ data.subject }}",
+      "Support request received ({{ data.ticketNo }})"
+     ],
+     "subjectsSample": [
+      "We have your request — ticket TKT-20716",
+      "Ticket TKT-20716: Care Points from last survey missing",
+      "Support request received (TKT-20716)"
+     ],
+     "preheader": "Logged and with our support team. Expect a reply within 24 to 48 hours.",
+     "cta": null,
+     "reason": null,
+     "campaignKind": null,
+     "fields": [
+      "data.subject",
+      "data.ticketNo",
+      "preferences_url",
+      "user.email",
+      "user.name"
+     ]
+    },
+    {
+     "id": "ticket-created-team",
+     "code": null,
+     "name": "New ticket — team",
+     "group": "Support",
+     "transactional": true,
+     "internal": true,
+     "trigger": "Member opened a support ticket (internal copy to support)",
+     "subjects": [
+      "New ticket {{ data.ticketNo }} · Caregivers",
+      "[Caregivers] {{ data.subject }}",
+      "Ticket {{ data.ticketNo }} awaiting first response"
+     ],
+     "subjectsSample": [
+      "New ticket TKT-20716 · Caregivers",
+      "[Caregivers] Care Points from last survey missing",
+      "Ticket TKT-20716 awaiting first response"
+     ],
+     "preheader": "Meera Nair opened a ticket on the Caregivers panel.",
+     "cta": null,
+     "reason": null,
+     "campaignKind": null,
+     "fields": [
+      "data.subject",
+      "data.ticketNo",
+      "user.email",
+      "user.name"
+     ]
+    },
+    {
+     "id": "ticket-updated-user",
+     "code": null,
+     "name": "Ticket updated — member",
+     "group": "Support",
+     "transactional": true,
+     "internal": false,
+     "trigger": "Support replied to the member’s ticket",
+     "subjects": [
+      "Update on your ticket {{ reply.ticketNo }}",
+      "New reply on ticket {{ reply.ticketNo }}",
+      "Our support team has replied"
+     ],
+     "subjectsSample": [
+      "Update on your ticket TKT-20716",
+      "New reply on ticket TKT-20716",
+      "Our support team has replied"
+     ],
+     "preheader": "A new message on your support ticket — the full reply is inside.",
+     "cta": null,
+     "reason": null,
+     "campaignKind": null,
+     "fields": [
+      "preferences_url",
+      "repliedBy.fullName",
+      "reply.message",
+      "reply.ticketNo",
+      "user.email",
+      "user.name"
+     ]
+    },
+    {
+     "id": "ticket-updated-team",
+     "code": null,
+     "name": "Ticket updated — team",
+     "group": "Support",
+     "transactional": true,
+     "internal": true,
+     "trigger": "A ticket received a new message (internal copy)",
+     "subjects": [
+      "Ticket {{ reply.ticketNo }} updated · Caregivers",
+      "[Caregivers] New message on {{ reply.ticketNo }}",
+      "{{ reply.ticketNo }} awaiting review"
+     ],
+     "subjectsSample": [
+      "Ticket TKT-20716 updated · Caregivers",
+      "[Caregivers] New message on TKT-20716",
+      "TKT-20716 awaiting review"
+     ],
+     "preheader": "Updated by MHO Support Team. Review and respond if needed.",
+     "cta": null,
+     "reason": null,
+     "campaignKind": null,
+     "fields": [
+      "repliedBy.fullName",
+      "reply.message",
+      "reply.ticketNo"
+     ]
+    },
+    {
+     "id": "newuser",
+     "code": null,
+     "name": "New registration — admin",
+     "group": "Admin",
+     "transactional": true,
+     "internal": true,
+     "trigger": "A new caregiver member registered",
+     "subjects": [
+      "New registration on the Caregivers panel",
+      "New caregiver member: {{ user.name.first }}",
+      "[Caregivers] New panelist {{ user._id }}"
+     ],
+     "subjectsSample": [
+      "New registration on the Caregivers panel",
+      "New caregiver member: Meera",
+      "[Caregivers] New panelist 64f2c1a9e5b7"
+     ],
+     "preheader": "A new panelist registered on the MyHealthOpinions Caregivers panel.",
+     "cta": null,
+     "reason": null,
+     "campaignKind": null,
+     "fields": [
+      "user._id",
+      "user.name.first"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "mho-patient",
+   "title": "MyHealthOpinions patient mailers v1",
+   "panel": "mho",
+   "category": "patient",
+   "assetHost": "https://www.myhealthopinions.com/mailer/v1/patient/",
+   "templates": [
+    {
+     "id": "respondent",
+     "code": null,
+     "name": "Verify email & set password",
+     "group": "Auth",
+     "transactional": true,
+     "internal": false,
+     "trigger": "New patient member registered; email not yet verified",
+     "subjects": [
+      "Verify your email to start with MyHealthOpinions",
+      "{{ user.name.first }}, one step left to activate your account",
+      "Confirm your email address and set your password"
+     ],
+     "subjectsSample": [
+      "Verify your email to start with MyHealthOpinions",
+      "Rohan, one step left to activate your account",
+      "Confirm your email address and set your password"
+     ],
+     "preheader": "Confirm your address and choose a password. The link is valid for 24 hours.",
+     "cta": null,
+     "reason": null,
+     "campaignKind": null,
+     "fields": [
+      "otp.code",
+      "preferences_url",
+      "user._id",
+      "user.mail",
+      "user.name.first",
+      "user.origin"
+     ]
+    },
+    {
+     "id": "welcome",
+     "code": null,
+     "name": "Account active",
+     "group": "Auth",
+     "transactional": true,
+     "internal": false,
+     "trigger": "Password created; account activated",
+     "subjects": [
+      "Your MyHealthOpinions account is active",
+      "{{ user.name.first }}, you’re in — here’s what to do first",
+      "Your Health Pulse starts here"
+     ],
+     "subjectsSample": [
+      "Your MyHealthOpinions account is active",
+      "Rohan, you’re in — here’s what to do first",
+      "Your Health Pulse starts here"
+     ],
+     "preheader": "Your password is set. 6 short profiles unlock your health surveys.",
+     "cta": null,
+     "reason": null,
+     "campaignKind": null,
+     "fields": [
+      "preferences_url",
+      "user.mail",
+      "user.memberId",
+      "user.name.first",
+      "user.origin"
+     ]
+    },
+    {
+     "id": "forgot-password",
+     "code": null,
+     "name": "Forgot password",
+     "group": "Auth",
+     "transactional": true,
+     "internal": false,
+     "trigger": "Member asked for a password reset link",
+     "subjects": [
+      "Reset your MyHealthOpinions password",
+      "{{ user.name.first }}, here is your password reset link",
+      "Your password reset link (valid 24 hours)"
+     ],
+     "subjectsSample": [
+      "Reset your MyHealthOpinions password",
+      "Rohan, here is your password reset link",
+      "Your password reset link (valid 24 hours)"
+     ],
+     "preheader": "The link works for 24 hours. If you did not request it, nothing has changed.",
+     "cta": null,
+     "reason": null,
+     "campaignKind": null,
+     "fields": [
+      "otp.code",
+      "preferences_url",
+      "user._id",
+      "user.mail",
+      "user.name.first",
+      "user.origin"
+     ]
+    },
+    {
+     "id": "reset-password",
+     "code": null,
+     "name": "Reset password",
+     "group": "Auth",
+     "transactional": true,
+     "internal": false,
+     "trigger": "Password reset requested from the account or by support",
+     "subjects": [
+      "Create a new password for your MyHealthOpinions account",
+      "{{ user.name.first }}, create your new password",
+      "Your new-password link is ready"
+     ],
+     "subjectsSample": [
+      "Create a new password for your MyHealthOpinions account",
+      "Rohan, create your new password",
+      "Your new-password link is ready"
+     ],
+     "preheader": "Requested just now. The link works for 24 hours and can be used once.",
+     "cta": null,
+     "reason": null,
+     "campaignKind": null,
+     "fields": [
+      "otp.code",
+      "preferences_url",
+      "user._id",
+      "user.mail",
+      "user.memberId",
+      "user.name.first",
+      "user.origin"
+     ]
+    },
+    {
+     "id": "change-email",
+     "code": null,
+     "name": "Email change — confirm",
+     "group": "Auth",
+     "transactional": true,
+     "internal": false,
+     "trigger": "Member asked to change their email address (sent to the CURRENT address)",
+     "subjects": [
+      "Confirm the email change on your account",
+      "{{ user.name.first }}, did you ask to change your email?",
+      "Action needed: confirm your new email address"
+     ],
+     "subjectsSample": [
+      "Confirm the email change on your account",
+      "Rohan, did you ask to change your email?",
+      "Action needed: confirm your new email address"
+     ],
+     "preheader": "Nothing changes until you confirm. If this was not you, ignore this email.",
+     "cta": null,
+     "reason": null,
+     "campaignKind": null,
+     "fields": [
+      "email",
+      "preferences_url",
+      "token",
+      "user.mail",
+      "user.name.first",
+      "user.origin"
+     ]
+    },
+    {
+     "id": "change-email-verify",
+     "code": null,
+     "name": "Email change — verify new address",
+     "group": "Auth",
+     "transactional": true,
+     "internal": false,
+     "trigger": "Change confirmed from the old address (sent to the NEW address)",
+     "subjects": [
+      "Verify your new email address",
+      "{{ user.name.first }}, one last step to switch your email",
+      "Is this your new MyHealthOpinions address?"
+     ],
+     "subjectsSample": [
+      "Verify your new email address",
+      "Rohan, one last step to switch your email",
+      "Is this your new MyHealthOpinions address?"
+     ],
+     "preheader": "The last step of your email change. Until you verify, the old address stays in use.",
+     "cta": null,
+     "reason": null,
+     "campaignKind": null,
+     "fields": [
+      "email",
+      "preferences_url",
+      "token",
+      "user.mail",
+      "user.name.first",
+      "user.origin"
+     ]
+    },
+    {
+     "id": "consent-required",
+     "code": null,
+     "name": "Consent required",
+     "group": "Consent",
+     "transactional": true,
+     "internal": false,
+     "trigger": "Account active, but no consent record for the current terms version",
+     "subjects": [
+      "Please review and sign your panel terms",
+      "{{ user.name.first }}, one step before your first invitation",
+      "Action needed: your Patients consent"
+     ],
+     "subjectsSample": [
+      "Please review and sign your panel terms",
+      "Rohan, one step before your first invitation",
+      "Action needed: your Patients consent"
+     ],
+     "preheader": "About 5 minutes, in plain language. Invitations start as soon as it is signed.",
+     "cta": null,
+     "reason": null,
+     "campaignKind": null,
+     "fields": [
+      "preferences_url",
+      "user.mail",
+      "user.name.first",
+      "user.origin"
+     ]
+    },
+    {
+     "id": "consent-updated",
+     "code": null,
+     "name": "Terms updated — renew consent",
+     "group": "Consent",
+     "transactional": true,
+     "internal": false,
+     "trigger": "Terms version changed; the member’s latest consent is for an older version",
+     "subjects": [
+      "We’ve updated the panel terms — please review",
+      "{{ user.name.first }}, your consent needs renewing",
+      "Updated terms: invitations paused until you sign"
+     ],
+     "subjectsSample": [
+      "We’ve updated the panel terms — please review",
+      "Rohan, your consent needs renewing",
+      "Updated terms: invitations paused until you sign"
+     ],
+     "preheader": "Your balance is untouched. Changed clauses are marked, so it takes a few minutes.",
+     "cta": null,
+     "reason": null,
+     "campaignKind": null,
+     "fields": [
+      "consent.version",
+      "preferences_url",
+      "user.mail",
+      "user.name.first",
+      "user.origin"
+     ]
+    },
+    {
+     "id": "consent-signed",
+     "code": null,
+     "name": "Consent signed — your copy",
+     "group": "Consent",
+     "transactional": true,
+     "internal": false,
+     "trigger": "Member signed the current terms version",
+     "subjects": [
+      "Your consent is signed — here is your copy",
+      "{{ user.name.first }}, you’re all set for invitations",
+      "Consent recorded: your copy for safekeeping"
+     ],
+     "subjectsSample": [
+      "Your consent is signed — here is your copy",
+      "Rohan, you’re all set for invitations",
+      "Consent recorded: your copy for safekeeping"
+     ],
+     "preheader": "Keep this email. It records which version you signed, and when.",
+     "cta": null,
+     "reason": null,
+     "campaignKind": null,
+     "fields": [
+      "consent.optionalCount",
+      "consent.signedAt",
+      "consent.version",
+      "preferences_url",
+      "user.mail",
+      "user.memberId",
+      "user.name.first",
+      "user.origin"
+     ]
+    },
+    {
+     "id": "member-approved",
+     "code": null,
+     "name": "Membership approved",
+     "group": "Consent",
+     "transactional": true,
+     "internal": false,
+     "trigger": "Account reviewed and approved for surveys",
+     "subjects": [
+      "Your membership is approved",
+      "{{ user.name.first }}, you’re approved — your surveys are waiting",
+      "Approved: you can start taking part"
+     ],
+     "subjectsSample": [
+      "Your membership is approved",
+      "Rohan, you’re approved — your surveys are waiting",
+      "Approved: you can start taking part"
+     ],
+     "preheader": "Your account is cleared for health surveys. Keep your profile current for the best matches.",
+     "cta": null,
+     "reason": null,
+     "campaignKind": null,
+     "fields": [
+      "preferences_url",
+      "user.mail",
+      "user.memberId",
+      "user.name.first",
+      "user.origin"
+     ]
+    },
+    {
+     "id": "invite",
+     "code": null,
+     "name": "Referral invitation",
+     "group": "Engagement",
+     "transactional": false,
+     "internal": false,
+     "trigger": "Member sent a referral invitation",
+     "subjects": [
+      "{{ user.fullName }} invited you to MyHealthOpinions",
+      "{{ user.fullName }} thinks your health experience is worth hearing",
+      "You’re invited: paid health research, free to join"
+     ],
+     "subjectsSample": [
+      "Rohan Mehta invited you to MyHealthOpinions",
+      "Rohan Mehta thinks your health experience is worth hearing",
+      "You’re invited: paid health research, free to join"
+     ],
+     "preheader": "Free to join. Every invitation shows the reward and the length before you start.",
+     "cta": null,
+     "reason": null,
+     "campaignKind": null,
+     "fields": [
+      "ref.link",
+      "user.fullName"
+     ]
+    },
+    {
+     "id": "newsurvey",
+     "code": null,
+     "name": "New survey available",
+     "group": "Engagement",
+     "transactional": false,
+     "internal": false,
+     "trigger": "Member matched to an open study",
+     "subjects": [
+      "A {{ survey.time }}-minute survey for you: {{ survey.name }}",
+      "{{ user.name.first }}, {{ survey.points }} points for about {{ survey.time }} minutes",
+      "New health survey: {{ survey.name }}"
+     ],
+     "subjectsSample": [
+      "A 12-minute survey for you: Living with type 2 diabetes: daily routines",
+      "Rohan, 600 points for about 12 minutes",
+      "New health survey: Living with type 2 diabetes: daily routines"
+     ],
+     "preheader": "The reward and the length are shown before you start. You can decline.",
+     "cta": null,
+     "reason": null,
+     "campaignKind": "survey_reminder",
+     "fields": [
+      "preferences_url",
+      "survey.link",
+      "survey.name",
+      "survey.points",
+      "survey.time",
+      "unsubscribe_url",
+      "user.mail",
+      "user.name.first"
+     ]
+    },
+    {
+     "id": "birthday",
+     "code": null,
+     "name": "Birthday greeting",
+     "group": "Engagement",
+     "transactional": false,
+     "internal": false,
+     "trigger": "Member’s birthday (date of birth on profile)",
+     "subjects": [
+      "Happy birthday, {{ user.name.first }}",
+      "{{ user.name.first }}, a birthday wish from MyHealthOpinions",
+      "Wishing you a wonderful birthday"
+     ],
+     "subjectsSample": [
+      "Happy birthday, Rohan",
+      "Rohan, a birthday wish from MyHealthOpinions",
+      "Wishing you a wonderful birthday"
+     ],
+     "preheader": "No survey attached, nothing to do. Just a good wish.",
+     "cta": null,
+     "reason": null,
+     "campaignKind": "birthday",
+     "fields": [
+      "preferences_url",
+      "unsubscribe_url",
+      "user.mail",
+      "user.name.first"
+     ]
+    },
+    {
+     "id": "ticket-created-user",
+     "code": null,
+     "name": "Ticket received — member",
+     "group": "Support",
+     "transactional": true,
+     "internal": false,
+     "trigger": "Member opened a support ticket",
+     "subjects": [
+      "We have your request — ticket {{ data.ticketNo }}",
+      "Ticket {{ data.ticketNo }}: {{ data.subject }}",
+      "Support request received ({{ data.ticketNo }})"
+     ],
+     "subjectsSample": [
+      "We have your request — ticket TKT-20716",
+      "Ticket TKT-20716: Points for my diabetes survey not showing",
+      "Support request received (TKT-20716)"
+     ],
+     "preheader": "Logged and with our support team. Expect a reply within 24 to 48 hours.",
+     "cta": null,
+     "reason": null,
+     "campaignKind": null,
+     "fields": [
+      "data.subject",
+      "data.ticketNo",
+      "preferences_url",
+      "user.email",
+      "user.name"
+     ]
+    },
+    {
+     "id": "ticket-created-team",
+     "code": null,
+     "name": "New ticket — team",
+     "group": "Support",
+     "transactional": true,
+     "internal": true,
+     "trigger": "Member opened a support ticket (internal copy to support)",
+     "subjects": [
+      "New ticket {{ data.ticketNo }} · Patients",
+      "[Patients] {{ data.subject }}",
+      "Ticket {{ data.ticketNo }} awaiting first response"
+     ],
+     "subjectsSample": [
+      "New ticket TKT-20716 · Patients",
+      "[Patients] Points for my diabetes survey not showing",
+      "Ticket TKT-20716 awaiting first response"
+     ],
+     "preheader": "Rohan Mehta opened a ticket on the Patients panel.",
+     "cta": null,
+     "reason": null,
+     "campaignKind": null,
+     "fields": [
+      "data.subject",
+      "data.ticketNo",
+      "user.email",
+      "user.name"
+     ]
+    },
+    {
+     "id": "ticket-updated-user",
+     "code": null,
+     "name": "Ticket updated — member",
+     "group": "Support",
+     "transactional": true,
+     "internal": false,
+     "trigger": "Support replied to the member’s ticket",
+     "subjects": [
+      "Update on your ticket {{ reply.ticketNo }}",
+      "New reply on ticket {{ reply.ticketNo }}",
+      "Our support team has replied"
+     ],
+     "subjectsSample": [
+      "Update on your ticket TKT-20716",
+      "New reply on ticket TKT-20716",
+      "Our support team has replied"
+     ],
+     "preheader": "A new message on your support ticket — the full reply is inside.",
+     "cta": null,
+     "reason": null,
+     "campaignKind": null,
+     "fields": [
+      "preferences_url",
+      "repliedBy.fullName",
+      "reply.message",
+      "reply.ticketNo",
+      "user.email",
+      "user.name"
+     ]
+    },
+    {
+     "id": "ticket-updated-team",
+     "code": null,
+     "name": "Ticket updated — team",
+     "group": "Support",
+     "transactional": true,
+     "internal": true,
+     "trigger": "A ticket received a new message (internal copy)",
+     "subjects": [
+      "Ticket {{ reply.ticketNo }} updated · Patients",
+      "[Patients] New message on {{ reply.ticketNo }}",
+      "{{ reply.ticketNo }} awaiting review"
+     ],
+     "subjectsSample": [
+      "Ticket TKT-20716 updated · Patients",
+      "[Patients] New message on TKT-20716",
+      "TKT-20716 awaiting review"
+     ],
+     "preheader": "Updated by MHO Support Team. Review and respond if needed.",
+     "cta": null,
+     "reason": null,
+     "campaignKind": null,
+     "fields": [
+      "repliedBy.fullName",
+      "reply.message",
+      "reply.ticketNo"
+     ]
+    },
+    {
+     "id": "newuser",
+     "code": null,
+     "name": "New registration — admin",
+     "group": "Admin",
+     "transactional": true,
+     "internal": true,
+     "trigger": "A new patient member registered",
+     "subjects": [
+      "New registration on the Patients panel",
+      "New patient member: {{ user.name.first }}",
+      "[Patients] New panelist {{ user._id }}"
+     ],
+     "subjectsSample": [
+      "New registration on the Patients panel",
+      "New patient member: Rohan",
+      "[Patients] New panelist 64f2c1a9e5b7"
+     ],
+     "preheader": "A new panelist registered on the MyHealthOpinions Patients panel.",
+     "cta": null,
+     "reason": null,
+     "campaignKind": null,
+     "fields": [
+      "user._id",
+      "user.name.first"
+     ]
+    }
+   ]
+  }
+ ]
+}

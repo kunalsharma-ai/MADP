@@ -1,0 +1,38 @@
+Your consent is required
+
+Dear {{ user.parent.name.first }},
+
+Your child, {{ user.name.first }}, has registered on Turn2Opinion and indicated that
+they are under the age of 18, giving your email address as their {{ user.parent.relation }}.
+
+In accordance with our Child Protection and Privacy Policy we require
+verified parental approval before allowing access to the platform.
+
+  Child           {{ user.name.first }}
+  Your relation   {{ user.parent.relation }}
+  Account status  Inactive, pending your approval
+
+WHAT WE COLLECT, WITH YOUR CONSENT
+  - Basic profile information such as name, age and gender
+  - Survey participation responses
+  - Reward-related details, if applicable
+
+REVIEW AND APPROVE
+https://{{ user.origin }}/auth/parent-consent?user={{ user._id }}&code={{ otp.code }}
+
+This link expires after 24 hours. If consent is not given, the account
+remains inactive.
+
+YOUR RIGHTS AS A PARENT OR GUARDIAN
+  - Review your child's information shared with us
+  - Withdraw consent at any time
+  - Request account deletion
+  - Contact us for any clarification
+
+Questions? support@turn2opinion.com · +91 81300 15743 · WhatsApp +91 81782 00573
+
+You are receiving this because your email address was given as the parent or guardian contact during a registration.
+
+Turn2Opinion — Speak your mind. Shape what’s next. Get rewarded.
+Frequent Research Fieldwork Solutions Pvt. Ltd.
+Mangolpur Kalan, New Delhi 110085, India

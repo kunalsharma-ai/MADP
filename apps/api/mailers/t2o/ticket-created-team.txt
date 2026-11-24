@@ -1,0 +1,15 @@
+New ticket {{ data.ticketNo }}
+
+A new support ticket has been opened on Turn2Opinion.
+
+  Ticket number  {{ data.ticketNo }}
+  Subject        {{ data.subject }}
+  From           {{ user.name }}
+  Email          {{ user.email }}
+  Status         Open, awaiting first response
+
+ACTION REQUIRED
+Review the ticket and respond to the member. If more information is
+needed, follow up using the contact details above.
+
+Internal notification from the Turn2Opinion support system.

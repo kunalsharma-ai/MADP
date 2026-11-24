@@ -1,0 +1,27 @@
+Verify your new email address
+
+Hi {{ user.name.first }},
+
+This is the last step of the email change on your Turn2Opinion account.
+Verifying confirms that this address belongs to you.
+
+  Moving from  {{ user.mail }}
+  Moving to    {{ email }}
+  Valid for    24 hours
+
+VERIFY THIS ADDRESS
+https://{{ user.origin }}/auth/change-email?updatecode={{ token }}
+
+Until you verify, the account keeps using the old address.
+
+IF YOU WERE NOT EXPECTING THIS
+Ignore this email. Nothing changes without this confirmation, and the
+link expires on its own.
+
+Questions? support@turn2opinion.com · +91 81300 15743 · WhatsApp +91 81782 00573
+
+You are receiving this because this address was given as the new address for a Turn2Opinion account.
+
+Turn2Opinion — Speak your mind. Shape what’s next. Get rewarded.
+Frequent Research Fieldwork Solutions Pvt. Ltd.
+Mangolpur Kalan, New Delhi 110085, India

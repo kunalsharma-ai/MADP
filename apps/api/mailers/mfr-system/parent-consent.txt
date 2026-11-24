@@ -1,0 +1,47 @@
+Your consent is required
+
+Dear {{ user.parent.name.first }},
+
+Your child, {{ user.name.first }}, has registered on MyFrequentRewards, an online
+survey and market research panel operated by Frequent Research Fieldwork
+Solutions Pvt. Ltd.
+
+WHY YOU ARE RECEIVING THIS
+During registration your child indicated that they are under the age of 18
+and gave your email address as their {{ user.parent.relation }}. Under our Child Protection
+and Privacy Policy we require verified parental approval before a minor can
+access the platform.
+
+  Child          {{ user.name.first }}
+  Your relation  {{ user.parent.relation }}
+  Account status Inactive, pending your approval
+  Valid for      24 hours
+
+WHAT WE COLLECT, WITH YOUR CONSENT
+  - Basic profile information such as name, age and gender
+  - Survey participation responses
+  - Reward-related details, if applicable
+We do not collect sensitive personal information from minors without
+explicit parental approval.
+
+BEFORE YOU APPROVE
+By completing the verification you confirm that you:
+  - Are the legal parent or guardian
+  - Approve your child's participation
+  - Understand our Privacy Policy and Terms of Use
+
+VERIFY AND APPROVE
+https://{{ user.origin }}/auth/parent-consent?user={{ user._id }}&code={{ otp.code }}
+
+If consent is not given, the account simply remains inactive.
+
+YOUR RIGHTS AS A PARENT OR GUARDIAN
+  - Review the information your child has shared with us
+  - Withdraw consent at any time
+  - Request deletion of the account
+  - Contact us for any clarification
+
+You are receiving this because your email address was given as the parent or guardian contact during a registration.
+
+Frequent Research Fieldwork Solutions Pvt. Ltd.
+Mangolpur Kalan, New Delhi 110085, India

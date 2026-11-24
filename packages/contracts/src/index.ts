@@ -16,3 +16,4 @@ export * from './panel-admin.js';
 export * from './verification.js';
 export * from './reports.js';
 export * from './insights.js';
+export * from './mailers.js';

@@ -1,0 +1,12 @@
+New registration on Turn2Opinion
+
+A new member has registered successfully.
+
+  Name     {{ user.name.first }}
+  User ID  {{ user._id }}
+  Panel    Turn2Opinion
+
+This notification is generated automatically after a new registration.
+Review the account in the admin panel if any further action is required.
+
+Internal notification from the Turn2Opinion registration system.

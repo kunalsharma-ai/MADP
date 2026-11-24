@@ -1,0 +1,30 @@
+Your Turn2Opinion account is active
+
+Hi {{ user.name.first }},
+
+Your password has been created and your account is now active.
+
+WHAT TO DO NEXT
+  1. Log in to your dashboard
+  2. Complete your Basic profile - this decides which studies you match
+     (about 2 min, +50 points, +1 quality score)
+  3. Start receiving survey invitations and earning rewards
+
+LOG IN TO MY DASHBOARD
+https://{{ user.origin }}/?login
+
+HOW TURN2OPINION WORKS
+  - Every profile and survey you finish raises a building in your
+    Opinion Kingdom: +50 points and +1 quality score.
+  - Each invitation shows its reward and length before you start.
+  - Redeem by PayPal, Wire Transfer, Amazon Gift Card, or UPI in India.
+
+Turn2Opinion is run by Frequent Research, certified to ISO 20252 for market, opinion and social research and a member of ESOMAR. Your answers are used for research only, reported in aggregate, and never sold or used for advertising.
+
+Questions? support@turn2opinion.com · +91 81300 15743 · WhatsApp +91 81782 00573
+
+You are receiving this because your Turn2Opinion account was just activated.
+
+Turn2Opinion — Speak your mind. Shape what’s next. Get rewarded.
+Frequent Research Fieldwork Solutions Pvt. Ltd.
+Mangolpur Kalan, New Delhi 110085, India

@@ -1,0 +1,30 @@
+Confirm the email change on your account
+
+Hi {{ user.name.first }},
+
+We received a request to change the email address on your Turn2Opinion
+account.
+
+  Current address  {{ user.mail }}
+  New address      {{ email }}
+  Valid for        24 hours
+
+CONFIRM THIS CHANGE
+https://{{ user.origin }}/auth/change-email?confcode={{ token }}
+
+AFTER YOU CONFIRM
+We send one more link to the new address. The change completes when that
+link is opened - until then your account keeps this address.
+
+IF YOU DID NOT REQUEST THIS
+Do not click the link. Your address stays as it is, and the request
+expires on its own. Please contact support@turn2opinion.com so we can check
+the account.
+
+Questions? support@turn2opinion.com · +91 81300 15743 · WhatsApp +91 81782 00573
+
+You are receiving this because a change of email address was requested on your account.
+
+Turn2Opinion — Speak your mind. Shape what’s next. Get rewarded.
+Frequent Research Fieldwork Solutions Pvt. Ltd.
+Mangolpur Kalan, New Delhi 110085, India

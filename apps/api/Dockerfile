@@ -9,6 +9,7 @@ WORKDIR /app
 ENV NODE_ENV=production
 COPY --from=build /out .
 COPY --from=build /repo/apps/api/drizzle ./drizzle
+COPY --from=build /repo/apps/api/mailers ./mailers
 USER node
 EXPOSE 4000
 CMD ["sh", "-c", "node dist/scripts/migrate.js && node dist/main.js"]

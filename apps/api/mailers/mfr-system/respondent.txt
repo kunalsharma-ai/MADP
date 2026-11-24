@@ -1,0 +1,32 @@
+Verify your email to activate your account
+
+{{ user.name.first }},
+
+WHAT IS HOLDING THINGS UP
+  - Your registration has been received.
+  - Your email address has not been verified yet.
+  - Until it is, the account stays inactive and no survey invitations
+    can be sent to it.
+
+Verifying takes about a minute and sets your password at the same time.
+
+VERIFY MY EMAIL ADDRESS
+https://{{ user.origin }}/set-password?user={{ user._id }}&code={{ otp.code }}
+
+This link expires 24 hours after it was sent.
+
+ONCE VERIFIED YOU CAN
+  - Create your password
+  - Complete your profile
+  - Take research surveys matched to you
+  - Earn rewards for every completed survey
+
+If you did not register for MyFrequentRewards, ignore this message.
+No account will be activated.
+
+All research is conducted in accordance with the MRS Code of Conduct. Your answers are reported anonymously and non-attributably, and are never sold on or used for advertising.
+
+You are receiving this because this address was used to register for a MyFrequentRewards account.
+
+Frequent Research Fieldwork Solutions Pvt. Ltd.
+Mangolpur Kalan, New Delhi 110085, India

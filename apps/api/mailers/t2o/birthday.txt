@@ -1,0 +1,20 @@
+Happy birthday, {{ user.name.first }}!
+
+Wishing you a wonderful birthday filled with happiness, memorable moments
+and plenty of reasons to smile.
+
+We're glad to have you in the Turn2Opinion community, and grateful for
+every opinion you've shared with us this year.
+
+No survey attached, and nothing to do. Just a good wish.
+
+May the year ahead be full of good opportunities and happy moments.
+
+Questions? support@turn2opinion.com · +91 81300 15743 · WhatsApp +91 81782 00573
+
+You are receiving this because you are a Turn2Opinion member and today is the birthday on your profile.
+Email preferences: https://www.turn2opinion.com/account/preferences
+
+Turn2Opinion — Speak your mind. Shape what’s next. Get rewarded.
+Frequent Research Fieldwork Solutions Pvt. Ltd.
+Mangolpur Kalan, New Delhi 110085, India

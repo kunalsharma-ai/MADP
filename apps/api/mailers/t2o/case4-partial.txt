@@ -1,0 +1,45 @@
+WHY YOU'RE GETTING THIS
+{{ profile.completed_count | default: 0 }} buildings raised - and {{ profile.total_count | default: 37 | minus: profile.completed_count }} still waiting.
+Your About-you profiles are done and surveys are open. Each one you finish
+opens the next, and widens the studies you're matched to.
+
+Hi {{ member.first_name | default: "there" }},
+
+Your kingdom is a {% assign t2o_n = profile.completed_count | default: 0 %}{% if t2o_n >= 37 %}Legendary Realm{% elsif t2o_n >= 28 %}Empire{% elsif t2o_n >= 18 %}Kingdom{% elsif t2o_n >= 10 %}City{% elsif t2o_n >= 5 %}Town{% elsif t2o_n >= 2 %}Village{% elsif t2o_n >= 1 %}Hamlet{% elsif t2o_n >= 0 %}Campsite{% endif %} now: {{ profile.completed_count | default: 0 }} items complete,
+{{ profile.completed_count | default: 0 | times: 50 }} Opinion Points and a quality score of {{ profile.completed_count | default: 0 }}.
+
+WHERE YOU ARE
+  Items complete     {{ profile.completed_count | default: 0 }} of {{ profile.total_count | default: 37 }}
+  Opinion Points     {{ profile.completed_count | default: 0 | times: 50 }}
+  Quality score      {{ profile.completed_count | default: 0 }}
+  Kingdom level      {% assign t2o_n = profile.completed_count | default: 0 %}{% if t2o_n >= 37 %}Legendary Realm{% elsif t2o_n >= 28 %}Empire{% elsif t2o_n >= 18 %}Kingdom{% elsif t2o_n >= 10 %}City{% elsif t2o_n >= 5 %}Town{% elsif t2o_n >= 2 %}Village{% elsif t2o_n >= 1 %}Hamlet{% elsif t2o_n >= 0 %}Campsite{% endif %}
+  Next level         {% assign t2o_n = profile.completed_count | default: 0 %}{% if t2o_n < 1 %}{{ 1 | minus: t2o_n }} more to reach Hamlet{% elsif t2o_n < 2 %}{{ 2 | minus: t2o_n }} more to reach Village{% elsif t2o_n < 5 %}{{ 5 | minus: t2o_n }} more to reach Town{% elsif t2o_n < 10 %}{{ 10 | minus: t2o_n }} more to reach City{% elsif t2o_n < 18 %}{{ 18 | minus: t2o_n }} more to reach Kingdom{% elsif t2o_n < 28 %}{{ 28 | minus: t2o_n }} more to reach Empire{% elsif t2o_n < 37 %}{{ 37 | minus: t2o_n }} more to reach Legendary Realm{% else %}Every building raised{% endif %}
+
+WHAT'S STILL OPEN
+  [done]  Your About-you profiles (Basic, Educational) are complete.
+  [open]  {{ profile.total_count | default: 37 | minus: profile.completed_count }} surveys are still sealed - each opens when you finish the one before.
+Next up: {{ profile.next_name | default: "your next survey" }}. Every survey earns +50 points and +1 quality score.
+
+CONTINUE MY NEXT SURVEY
+{{ links.profiles | default: "https://www.turn2opinion.com/member/profiles" }}
+
+See my kingdom: {{ links.account | default: "https://www.turn2opinion.com/member" }}
+
+WHY KEEP GOING
+  - Same reward for every item: +50 points and +1 quality score.
+  - Category surveys open the studies you're not yet seen for -
+    banking, tech, travel, B2B and more.
+  - Your answers are saved as you go - pick up where you left off.
+  - {{ profile.total_count | default: 37 | minus: profile.completed_count | times: 50 }} points still to earn, at your own pace.
+
+Turn2Opinion is run by Frequent Research, certified to ISO 20252 for market, opinion and social research and a member of ESOMAR. Your answers are used for research only, reported in aggregate, and never sold or used for advertising.
+
+Questions? support@turn2opinion.com · +91 81300 15743 · WhatsApp +91 81782 00573
+
+You are receiving this because you have unfinished Turn2Opinion profiles and surveys.
+Email preferences: {{ preferences_url | default: "https://www.turn2opinion.com/account/preferences" }}
+Unsubscribe: {{ unsubscribe_url | default: "https://www.turn2opinion.com/account/preferences" }}
+
+Turn2Opinion — Speak your mind. Shape what’s next. Get rewarded.
+Frequent Research Fieldwork Solutions Pvt. Ltd.
+Mangolpur Kalan, New Delhi 110085, India

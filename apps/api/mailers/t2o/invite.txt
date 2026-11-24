@@ -1,0 +1,30 @@
+{{ user.fullName }} invited you to Turn2Opinion
+
+{{ user.fullName }} thinks you'd like Turn2Opinion, so they sent you this invitation.
+
+WHAT IT IS
+Turn2Opinion is an online research community run by Frequent Research
+Fieldwork Solutions Pvt. Ltd. Members - everyday consumers and business
+professionals - answer paid surveys and are rewarded for their time.
+
+  - Every invitation shows the reward and the length before you start
+  - You can decline any study, and declining costs you nothing
+  - Rewards by PayPal, Wire Transfer, Amazon Gift Card - and UPI in India
+  - Joining is free, and you can close the account whenever you like
+
+ACCEPT THE INVITATION
+{{ ref.link }}
+
+Turn2Opinion is run by Frequent Research, certified to ISO 20252 for market, opinion and social research and a member of ESOMAR. Your answers are used for research only, reported in aggregate, and never sold or used for advertising.
+
+If this invitation was not meant for you, ignore it - nothing is created
+until you accept.
+
+Questions? support@turn2opinion.com · +91 81300 15743 · WhatsApp +91 81782 00573
+
+You are receiving this because a Turn2Opinion member sent you an invitation.
+Email preferences: https://www.turn2opinion.com/account/preferences
+
+Turn2Opinion — Speak your mind. Shape what’s next. Get rewarded.
+Frequent Research Fieldwork Solutions Pvt. Ltd.
+Mangolpur Kalan, New Delhi 110085, India

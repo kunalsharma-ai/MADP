@@ -1,0 +1,34 @@
+Your consent has been recorded
+
+Dear {{ user.parent.name.first }},
+
+Thank you for confirming your consent for your child, {{ user.name.first }}, to
+participate in Turn2Opinion. Your approval has been recorded and their
+registration is now approved.
+
+  Child           {{ user.name.first }}
+  Consent         Recorded
+  Account status  Approved and active
+
+YOUR CHILD'S PARTICIPATION
+{{ user.name.first }} may now take part in eligible surveys and earn rewards by sharing
+opinions on various topics.
+
+A SAFE RESEARCH ENVIRONMENT
+We appreciate your support in helping us maintain a safe, secure and
+responsible research environment for all participants.
+
+YOUR RIGHTS AS A PARENT OR GUARDIAN
+  - Review your child's information shared with us
+  - Withdraw consent at any time
+  - Request account deletion
+  - Contact us for any clarification
+Contact our support team: https://www.turn2opinion.com/contact
+
+Questions? support@turn2opinion.com · +91 81300 15743 · WhatsApp +91 81782 00573
+
+You are receiving this because you completed a parental consent verification.
+
+Turn2Opinion — Speak your mind. Shape what’s next. Get rewarded.
+Frequent Research Fieldwork Solutions Pvt. Ltd.
+Mangolpur Kalan, New Delhi 110085, India
