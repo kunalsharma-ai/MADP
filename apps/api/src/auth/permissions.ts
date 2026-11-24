@@ -14,6 +14,7 @@ export const ROLE_PERMISSIONS: Record<AdminRole, Permission[]> = {
     'questions.read',
     'questions.write',
     'mappings.review',
+    'identity.review',
     'connectors.read',
     'connectors.run',
     'imports.run',
@@ -37,6 +38,7 @@ export const ROLE_PERMISSIONS: Record<AdminRole, Permission[]> = {
     'questions.read',
     'questions.write',
     'mappings.review',
+    'identity.review',
     'connectors.read',
   ],
   privacy_officer: [
@@ -45,6 +47,7 @@ export const ROLE_PERMISSIONS: Record<AdminRole, Permission[]> = {
     'panellists.read',
     'panellists.pii.read',
     'health.sensitive.read',
+    'identity.review',
     'audit.read',
     'connectors.read',
   ],

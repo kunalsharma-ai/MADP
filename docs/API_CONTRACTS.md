@@ -35,6 +35,10 @@ MFA completed. The machine-readable document is served at `GET /api/v1/openapi.j
 | `POST /connectors/:panel/sync` | `imports.run` | One automatic-sync run now: only what changed since the last run (members with consent, answers, deletions). 409 while an import or sync of that panel runs. Audited. Covered by `apps/api/test/sync.test.ts` |
 | `GET /sync-status` | `connectors.read` | Per panel: scheduled or not, interval, feed checkpoints, last run and its counts, parked answer batches |
 | `GET /audit?before&limit` | `audit.read` | Audit events, newest first |
+| `GET /identity/candidates?status&panel&limit` | `identity.review` | Cross-panel match candidates with masked e-mails and the other accounts of the candidate person. Audited. Covered by `apps/api/test/identity.test.ts` |
+| `POST /identity/candidates/:id/decision` `{decision: approve\|reject, reason?}` | `identity.review` | Approve merges the account into the candidate person (409 if already decided, or if that person already has a live membership on the same panel). Audited |
+| `POST /identity/source-identities/:id/unlink` `{reason}` | `identity.review` | Unmerges one panel account: back to its previous person if that is still empty, otherwise to a new one. Works for automatic links too. Audited |
+| `GET /identity/persons/:id/history` | `identity.review` | Merge and unmerge events (append only) |
 
 ## 2. Source panel endpoints MADP calls (verified in source, not live)
 Defined once in `packages/connectors/src/http-connector.ts` (`ENDPOINTS`). The base URL host must equal the panel's

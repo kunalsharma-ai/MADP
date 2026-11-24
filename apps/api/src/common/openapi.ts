@@ -86,6 +86,18 @@ export function openApiDocument() {
           responses: ok('Updated mapping'),
         },
       },
+      '/identity/candidates': {
+        get: { security: secured, summary: 'Cross-panel match candidates (masked; audited)', responses: ok('Queue') },
+      },
+      '/identity/candidates/{id}/decision': {
+        post: { security: secured, summary: 'Approve (merge) or reject a match', responses: ok('Decision') },
+      },
+      '/identity/source-identities/{id}/unlink': {
+        post: { security: secured, summary: 'Unmerge one panel identity from its person', responses: ok('Result') },
+      },
+      '/identity/persons/{id}/history': {
+        get: { security: secured, summary: 'Merge and unmerge history of a person', responses: ok('Events') },
+      },
       '/panellists': {
         get: {
           security: secured,

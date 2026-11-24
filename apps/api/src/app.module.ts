@@ -20,6 +20,8 @@ import { AudienceController } from './audience/audience.controller.js';
 import { RegistryController } from './registry/registry.controller.js';
 import { PanellistsController } from './panellists/panellists.controller.js';
 import { DashboardController } from './dashboard/dashboard.controller.js';
+import { IdentityService } from './identity/identity.service.js';
+import { IdentityController } from './identity/identity.controller.js';
 import { HealthController } from './common/health.controller.js';
 import { MetaController } from './common/meta.controller.js';
 
@@ -39,6 +41,7 @@ export class AppModule {
         PanellistsController,
         DashboardController,
         AuditController,
+        IdentityController,
       ],
       providers: [
         { provide: API_ENV, useValue: env },
@@ -51,6 +54,7 @@ export class AppModule {
         IngestionService,
         SyncScheduler,
         AudienceService,
+        IdentityService,
         { provide: APP_GUARD, useClass: ThrottlerGuard },
         { provide: APP_GUARD, useClass: AuthGuard },
       ],

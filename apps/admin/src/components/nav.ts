@@ -24,6 +24,7 @@ export const NAV: NavGroup[] = [
     items: [
       { href: '/audience', label: 'Audience explorer', icon: 'Globe2', permission: 'audience.counts.read' },
       { href: '/panellists', label: 'Panellist directory', icon: 'Users', permission: 'panellists.read' },
+      { href: '/identity', label: 'Identity review', icon: 'UserRoundCheck', permission: 'identity.review' },
     ],
   },
   {
@@ -46,7 +47,6 @@ export const NAV: NavGroup[] = [
 ];
 
 export const PLANNED: { label: string; milestone: string }[] = [
-  { label: 'Identity resolution review', milestone: 'M3' },
   { label: 'Consent & preference center', milestone: 'M3' },
   { label: 'Privacy & deletion workflows', milestone: 'M3' },
   { label: 'Questionnaire builder', milestone: 'M3' },

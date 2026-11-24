@@ -109,3 +109,22 @@ export async function retryDeadLetters(panel: string) {
   revalidatePath('/connectors');
   return r;
 }
+
+export async function decideIdentityMatch(id: string, decision: 'approve' | 'reject', reason?: string) {
+  const r = await api<{ status: string; personId?: string; answersMoved?: number }>(
+    `/identity/candidates/${encodeURIComponent(id)}/decision`,
+    { method: 'POST', json: { decision, ...(reason ? { reason } : {}) } },
+  );
+  revalidatePath('/identity');
+  return r;
+}
+
+export async function unlinkIdentity(identityId: string, reason: string, personId?: string) {
+  const r = await api<{ personId: string; fromPersonId: string; answersMoved: number }>(
+    `/identity/source-identities/${encodeURIComponent(identityId)}/unlink`,
+    { method: 'POST', json: { reason } },
+  );
+  revalidatePath('/identity');
+  if (personId) revalidatePath(`/panellists/${personId}`);
+  return r;
+}
