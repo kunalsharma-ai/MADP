@@ -484,3 +484,218 @@ export const HelpUpdate = z.object(HelpFields).partial().strict();
 export type HelpUpdate = z.infer<typeof HelpUpdate>;
 export const HelpStatus = z.object({ status: z.enum(['draft', 'published', 'archived']) });
 export type HelpStatus = z.infer<typeof HelpStatus>;
+
+// ---- step 4: feature switches, rewards, engagement, teens, data requests -------------------------------------------
+/** Panel feature switches. `kill` turns every other switch of the brand off at once. */
+export const SwitchKey = z.enum([
+  'kill',
+  'redemptions',
+  'teen_redemptions',
+  'draw',
+  'email_welcome',
+  'email_new_user',
+  'email_new_survey',
+  'email_birthday',
+  'email_lifecycle',
+  'email_weekly',
+  'email_expiry',
+  'push',
+]);
+export type SwitchKey = z.infer<typeof SwitchKey>;
+export const SwitchSet = z.object({ on: z.boolean(), reason: Reason }).strict();
+export type SwitchSet = z.infer<typeof SwitchSet>;
+export const SwitchView = z.object({
+  key: z.string(),
+  group: z.enum(['kill', 'money', 'legal', 'email']),
+  label: z.string(),
+  default: z.boolean(),
+  effective: z.boolean(),
+  set: z.boolean().nullable(),
+  reason: z.string().nullable(),
+  changedBy: z.string().nullable(),
+  changedAt: z.string().nullable(),
+});
+export type SwitchView = z.infer<typeof SwitchView>;
+export const SwitchBoard = z.object({ killed: z.boolean(), kill: SwitchView, switches: z.array(SwitchView) });
+export type SwitchBoard = z.infer<typeof SwitchBoard>;
+
+export const RewardKind = z.enum(['giftcard', 'upi', 'paypal', 'charity', 'learning']);
+export const MemberType = z.enum(['consumer', 'professional', 'teen']);
+const CatalogueFields = {
+  kind: RewardKind,
+  title: z.string().trim().min(1).max(80),
+  subtitle: z.string().trim().max(120).optional(),
+  description: z.string().trim().max(1000).optional(),
+  image: z.string().trim().url().max(500).optional(),
+  points: z.number().int().min(1).max(10_000_000),
+  value: z.number().min(0).max(100_000).optional(),
+  audience: z.array(MemberType).max(3).optional(),
+  countries: z.array(z.string().trim().toLowerCase().min(2).max(40)).max(250).optional(),
+  availableUntil: z.string().datetime().nullable().optional(),
+  sortOrder: z.number().int().min(0).max(10_000).optional(),
+};
+export const CatalogueCreate = z
+  .object({
+    key: z
+      .string()
+      .trim()
+      .toLowerCase()
+      .regex(/^[a-z0-9-]{2,60}$/, 'letters, digits and dashes'),
+    ...CatalogueFields,
+  })
+  .strict();
+export type CatalogueCreate = z.infer<typeof CatalogueCreate>;
+export const CatalogueUpdate = z
+  .object({ ...CatalogueFields, active: z.boolean().optional(), reason: Reason })
+  .partial({ kind: true, title: true, points: true })
+  .strict();
+export type CatalogueUpdate = z.infer<typeof CatalogueUpdate>;
+
+export const RedemptionStatus = z.enum([
+  'requested',
+  'guardian_pending',
+  'approved',
+  'fulfilled',
+  'rejected',
+  'cancelled',
+]);
+export const RedemptionList = z.object({
+  status: z.union([RedemptionStatus, z.literal('open')]).optional(),
+  kind: RewardKind.optional(),
+  limit: z.coerce.number().int().min(1).max(200).optional(),
+});
+export type RedemptionList = z.infer<typeof RedemptionList>;
+export const RedemptionDecision = z
+  .object({
+    status: z.enum(['approved', 'fulfilled', 'rejected']),
+    reason: Reason,
+    /** Shown to the member. */
+    note: z.string().trim().max(300).optional(),
+    providerRef: z.string().trim().max(200).optional(),
+  })
+  .strict();
+export type RedemptionDecision = z.infer<typeof RedemptionDecision>;
+
+export const DrawCreate = z
+  .object({
+    month: z.string().regex(/^\d{4}-\d{2}$/, 'YYYY-MM'),
+    title: z.string().trim().min(1).max(120),
+    prize: z.string().trim().min(1).max(300),
+    ticketPoints: z.number().int().min(1).max(1_000_000),
+    maxTicketsPerMember: z.number().int().min(1).max(100).optional(),
+    winners: z.number().int().min(1).max(100).optional(),
+    closesAt: z.string().datetime(),
+    rulesUrl: z.string().trim().url().startsWith('https://').max(500),
+    countries: z.array(z.string().trim().toLowerCase().min(2).max(40)).min(1).max(250),
+  })
+  .strict();
+export type DrawCreate = z.infer<typeof DrawCreate>;
+export const DrawAction = z.object({ reason: Reason }).strict();
+export type DrawAction = z.infer<typeof DrawAction>;
+export const OfferCreate = z
+  .object({
+    title: z.string().trim().min(1).max(80),
+    description: z.string().trim().max(300).optional(),
+    multiplier: z.number().gt(1).max(5),
+    startsAt: z.string().datetime(),
+    endsAt: z.string().datetime(),
+    audience: z.array(MemberType).max(3).optional(),
+    reason: Reason,
+  })
+  .strict()
+  .refine((o) => new Date(o.endsAt) > new Date(o.startsAt), 'endsAt is after startsAt');
+export type OfferCreate = z.infer<typeof OfferCreate>;
+
+export const TaskKind = z.enum(['poll', 'design_vote', 'idea', 'challenge']);
+const TaskFields = {
+  kind: TaskKind,
+  title: z.string().trim().min(1).max(120),
+  question: z.string().trim().max(300).optional(),
+  description: z.string().trim().max(1000).optional(),
+  options: z
+    .array(
+      z.object({
+        key: z.string().trim().max(30).optional(),
+        label: z.string().trim().min(1).max(120),
+        image: z.string().trim().url().max(500).optional(),
+      }),
+    )
+    .max(8)
+    .optional(),
+  audience: z.array(MemberType).max(3).optional(),
+  day: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/)
+    .optional(),
+  month: z
+    .string()
+    .regex(/^\d{4}-\d{2}$/)
+    .optional(),
+  season: z.string().trim().max(40).optional(),
+  startsAt: z.string().datetime().optional(),
+  endsAt: z.string().datetime().optional(),
+  points: z.number().int().min(0).max(1000).optional(),
+  goal: z
+    .object({
+      metric: z.enum(['surveys', 'profiles', 'polls', 'active_days', 'tasks']),
+      target: z.number().int().min(1).max(1000),
+    })
+    .optional(),
+};
+export const TaskCreate = z.object(TaskFields).strict();
+export type TaskCreate = z.infer<typeof TaskCreate>;
+export const TaskUpdate = z
+  .object({ ...TaskFields, active: z.boolean().optional() })
+  .omit({ kind: true })
+  .partial()
+  .strict();
+export type TaskUpdate = z.infer<typeof TaskUpdate>;
+export const IdeaDecision = z.object({ status: z.enum(['approved', 'rejected']) }).strict();
+export type IdeaDecision = z.infer<typeof IdeaDecision>;
+const StoryFields = {
+  type: z.enum(['story', 'insight']),
+  title: z.string().trim().min(1).max(140),
+  summary: z.string().trim().max(400).optional(),
+  body: z.string().trim().max(8000).optional(),
+  image: z.string().trim().url().max(500).optional(),
+  /** Only with the client's written permission. */
+  brand: z.string().trim().max(80).optional(),
+  stats: z
+    .array(z.object({ label: z.string().trim().max(80), value: z.string().trim().max(40) }))
+    .max(6)
+    .optional(),
+  audience: z.array(MemberType).max(3).optional(),
+  industries: z.array(z.string().trim().max(60)).max(40).optional(),
+  sampleSize: z.number().int().min(0).optional(),
+  fileUrl: z.string().trim().url().max(500).optional(),
+};
+export const StoryCreate = z.object(StoryFields).strict();
+export type StoryCreate = z.infer<typeof StoryCreate>;
+export const StoryUpdate = z
+  .object({ ...StoryFields, active: z.boolean().optional(), published: z.boolean().optional() })
+  .omit({ type: true })
+  .partial()
+  .strict();
+export type StoryUpdate = z.infer<typeof StoryUpdate>;
+
+export const TeenList = z.object({ turning18: z.coerce.number().int().min(0).max(365).optional() });
+export type TeenList = z.infer<typeof TeenList>;
+export const TeenReason = z.object({ reason: Reason }).strict();
+export type TeenReason = z.infer<typeof TeenReason>;
+export const TeenGraduate = z
+  .object({ reason: Reason.optional(), dryRun: z.boolean().default(true) })
+  .strict();
+export type TeenGraduate = z.infer<typeof TeenGraduate>;
+
+export const DataRequestList = z.object({
+  status: z.enum(['open', 'all', 'requested', 'approved', 'rejected', 'done', 'cancelled']).optional(),
+});
+export type DataRequestList = z.infer<typeof DataRequestList>;
+export const DataRequestDecision = z
+  .object({
+    status: z.enum(['approved', 'rejected', 'done']),
+    reason: Reason,
+    note: z.string().trim().max(300).optional(),
+  })
+  .strict();
+export type DataRequestDecision = z.infer<typeof DataRequestDecision>;
