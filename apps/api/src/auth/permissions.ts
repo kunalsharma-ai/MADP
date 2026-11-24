@@ -27,6 +27,8 @@ export const ROLE_PERMISSIONS: Record<AdminRole, Permission[]> = {
     'loyalty.reconcile',
     'loyalty.approve',
     'service_clients.manage',
+    'consent.read',
+    'consent.manage',
   ],
   platform_admin: [
     'dashboard.read',
@@ -53,6 +55,7 @@ export const ROLE_PERMISSIONS: Record<AdminRole, Permission[]> = {
     'communications.read',
     'communications.manage',
     'loyalty.read',
+    'consent.read',
   ],
   privacy_officer: [
     'dashboard.read',
@@ -67,9 +70,19 @@ export const ROLE_PERMISSIONS: Record<AdminRole, Permission[]> = {
     'communications.approve',
     'loyalty.read',
     'loyalty.approve',
+    'consent.read',
+    'consent.manage',
   ],
   analyst: ['dashboard.read', 'audience.counts.read', 'questions.read'],
-  support: ['dashboard.read', 'panellists.read', 'panellists.pii.read', 'communications.read', 'loyalty.read'],
+  support: [
+    'dashboard.read',
+    'panellists.read',
+    'panellists.pii.read',
+    'communications.read',
+    'loyalty.read',
+    'consent.read',
+    'consent.manage',
+  ],
 };
 
 export const permissionsFor = (role: AdminRole): Permission[] => ROLE_PERMISSIONS[role];

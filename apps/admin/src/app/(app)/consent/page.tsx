@@ -1,0 +1,149 @@
+import type { Metadata } from 'next';
+import { PANELS, type DataMode, type PanelCode, type SessionUser } from '@madp/contracts';
+import { api } from '@/lib/api';
+import { Badge, Card, CardHeader, DataModeBadge, DemoBanner, EmptyState, PageHeader, PanelChip, Table, fmt, fmtDate } from '@/components/ui';
+import { PreferenceForm } from './consent-forms';
+
+export const metadata: Metadata = { title: 'Consent & preferences' };
+
+interface PanelConsent {
+  panel: PanelCode;
+  purposes: Record<string, Record<string, number>>;
+  contactable: { memberships: number; active: number; adults: number; termsAccepted: number; usableAddress: number; notOptedOut: number; reachable: number };
+  madpOptOuts: Record<string, number>;
+  gaps: string[];
+}
+interface ConsentEvent {
+  id: number;
+  personId: string;
+  panel: PanelCode;
+  purpose: string;
+  previousStatus: string | null;
+  status: string;
+  source: string | null;
+  at: string;
+}
+interface Preference {
+  id: string;
+  personId: string;
+  panel: PanelCode;
+  channel: string;
+  status: string;
+  source: string;
+  reason: string;
+  recordedAt: string;
+}
+
+const FUNNEL: [keyof PanelConsent['contactable'], string][] = [
+  ['memberships', 'Panel accounts'],
+  ['active', 'Active'],
+  ['adults', 'Adults'],
+  ['termsAccepted', 'Terms accepted'],
+  ['usableAddress', 'Usable e-mail'],
+  ['notOptedOut', 'Not opted out'],
+  ['reachable', 'Reachable (no bounce)'],
+];
+
+export default async function ConsentPage() {
+  const [me, s, events, prefs] = await Promise.all([
+    api<SessionUser>('/auth/me'),
+    api<{ dataMode: DataMode; note: string; panels: PanelConsent[] }>('/consent/summary'),
+    api<ConsentEvent[]>('/consent/events?limit=30'),
+    api<Preference[]>('/consent/preferences?limit=30'),
+  ]);
+  const canManage = me.permissions.includes('consent.manage');
+  return (
+    <>
+      <PageHeader
+        eyebrow="Governance"
+        title="Consent & preferences"
+        description="Consent as each panel reports it, kept with its full history as evidence, and the channel opt-outs members asked MADP for. Panels are never added together. MADP never grants consent."
+        actions={<DataModeBadge mode={s.dataMode} />}
+      />
+      <DemoBanner mode={s.dataMode} />
+      <p className="mb-4 rounded-lg bg-surface-2 px-3 py-2 text-[13px] text-fg-2">{s.note}</p>
+      <div className="grid gap-4 xl:grid-cols-3">
+        {s.panels.map((p) => (
+          <Card key={p.panel}>
+            <CardHeader title={PANELS[p.panel].name} hint="Who MADP may e-mail today, step by step" />
+            <ol className="space-y-1 px-5 py-4 text-[13px]">
+              {FUNNEL.map(([k, label]) => (
+                <li key={k} className="flex justify-between">
+                  <span className="text-fg-2">{label}</span>
+                  <span className="font-mono">{fmt(p.contactable[k])}</span>
+                </li>
+              ))}
+            </ol>
+            <div className="border-t border-border px-5 py-3 text-[12px] text-fg-2">
+              {Object.entries(p.purposes).map(([purpose, st]) => (
+                <div key={purpose}>
+                  <span className="font-mono">{purpose}</span>:{' '}
+                  {Object.entries(st)
+                    .map(([k, v]) => `${k} ${fmt(v)}`)
+                    .join(', ')}
+                </div>
+              ))}
+              <div className="mt-1">
+                MADP opt-outs:{' '}
+                {Object.entries(p.madpOptOuts)
+                  .map(([k, v]) => `${k} ${fmt(v)}`)
+                  .join(', ') || 'none'}
+              </div>
+            </div>
+            {p.gaps.length ? (
+              <ul className="border-t border-border px-5 py-3 text-[12px] text-warn">
+                {p.gaps.map((g) => (
+                  <li key={g}>{g}</li>
+                ))}
+              </ul>
+            ) : null}
+          </Card>
+        ))}
+      </div>
+      {canManage ? <PreferenceForm panels={s.panels.map((p) => p.panel)} /> : null}
+      <div className="mt-4 grid gap-4 xl:grid-cols-2">
+        <Card>
+          <CardHeader title="Recent consent changes" hint="Append-only history, written on every change the panel reports" />
+          {events.length === 0 ? (
+            <EmptyState title="No consent recorded yet" />
+          ) : (
+            <Table head={['When', 'Panel', 'Purpose', 'Change', 'Person']}>
+              {events.map((e) => (
+                <tr key={e.id}>
+                  <td className="px-5 py-2 text-fg-3">{fmtDate(e.at)}</td>
+                  <td className="px-5 py-2"><PanelChip panel={e.panel} /></td>
+                  <td className="px-5 py-2 font-mono text-[12px]">{e.purpose}</td>
+                  <td className="px-5 py-2">
+                    {e.previousStatus ? `${e.previousStatus} → ` : ''}
+                    <Badge tone={e.status === 'granted' ? 'teal' : 'warn'}>{e.status}</Badge>
+                  </td>
+                  <td className="px-5 py-2 font-mono text-[11px] text-fg-3">
+                    <a href={`/panellists/${e.personId}`}>{e.personId.slice(0, 8)}</a>
+                  </td>
+                </tr>
+              ))}
+            </Table>
+          )}
+        </Card>
+        <Card>
+          <CardHeader title="Channel opt-outs recorded in MADP" hint="Each line is kept; lifting an opt-out adds a new line" />
+          {prefs.length === 0 ? (
+            <EmptyState title="No opt-outs recorded" />
+          ) : (
+            <Table head={['When', 'Panel', 'Channel', 'Status', 'Source']}>
+              {prefs.map((r) => (
+                <tr key={r.id}>
+                  <td className="px-5 py-2 text-fg-3">{fmtDate(r.recordedAt)}</td>
+                  <td className="px-5 py-2"><PanelChip panel={r.panel} /></td>
+                  <td className="px-5 py-2">{r.channel}</td>
+                  <td className="px-5 py-2"><Badge tone={r.status === 'opted_out' ? 'warn' : 'teal'}>{r.status}</Badge></td>
+                  <td className="px-5 py-2 text-[12px] text-fg-2">{r.source.replace('_', ' ')}: {r.reason}</td>
+                </tr>
+              ))}
+            </Table>
+          )}
+        </Card>
+      </div>
+    </>
+  );
+}

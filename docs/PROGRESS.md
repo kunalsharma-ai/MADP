@@ -129,6 +129,18 @@ Staff accounts are now skipped (`isStaff`, kunalsharma-ai/turn2opinion#21, merge
 - Admin screens: Loyalty → Loyalty ledger, and reward wallets on the 360° profile.
 - Tests: `test/loyalty.test.ts` (6, all three panels), `src/loyalty/position.test.ts` (4), and connector mapping.
 
+### Consent and preference center (2026-11-24)
+- Consent comes from the panels. MADP shows it per panel and purpose, never added across panels, with a
+  contactability funnel: accounts, active, adults, terms accepted, usable e-mail, not opted out, reachable.
+- Every change to a consent record is appended to `consent_event` by a database trigger, whichever code path made
+  it, including deletions and identity merges. A re-read that only names a new import job is not a change. The
+  history cannot be edited or deleted.
+- Members can ask MADP to stop contacting them on a channel (e-mail, SMS, push, WhatsApp or all). Support and the
+  privacy officer record it with a reference and no personal data, and the contact gate, campaigns, automations
+  and Supply360 honour it. Lifting it only removes MADP's own opt-out, adds a new line, and never grants consent.
+- Gaps are shown per panel: no panel reports e-mail marketing consent yet.
+- Admin screen: Governance → Consent & preferences. Tests: `test/consent.test.ts` (4, all three panels).
+
 ### Supply360 service API (Milestone 6, 2026-11-24)
 - Supply360 calls MADP as a signed service client: HMAC over method, path and body, a 300 s clock window, nonces
   used once, scopes, allowed panels and a rate limit per client. Every refusal is audited with its reason.

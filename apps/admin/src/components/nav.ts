@@ -57,12 +57,14 @@ export const NAV: NavGroup[] = [
   },
   {
     label: 'Governance',
-    items: [{ href: '/audit', label: 'Security audit', icon: 'ShieldCheck', permission: 'audit.read' }],
+    items: [
+      { href: '/consent', label: 'Consent & preferences', icon: 'BadgeCheck', permission: 'consent.read' },
+      { href: '/audit', label: 'Security audit', icon: 'ShieldCheck', permission: 'audit.read' },
+    ],
   },
 ];
 
 export const PLANNED: { label: string; milestone: string }[] = [
-  { label: 'Consent & preference center', milestone: 'M3' },
   { label: 'Privacy & deletion workflows', milestone: 'M3' },
   { label: 'Questionnaire builder', milestone: 'M3' },
 ];
