@@ -14,6 +14,7 @@ export function Graduate({ id }: { id: string }) {
     rewardRequestsToCancel: number;
   } | null>(null);
   const [reason, setReason] = useState('');
+  const [segment, setSegment] = useState<'b2c' | 'b2b'>('b2c');
   if (!plan)
     return (
       <button
@@ -27,16 +28,27 @@ export function Graduate({ id }: { id: string }) {
           })
         }
       >
-        Move to adult account
+        Move now
       </button>
     );
   return (
     <div className="grid min-w-72 gap-1.5 text-[12px]">
       <p className="text-fg-2">
-        Age {plan.age}. Moves to Consumer (b2c); answers and points stay. Stops {plan.guardianLinksToStop}{' '}
-        guardian link(s) and cancels {plan.rewardRequestsToCancel} reward request(s) waiting for the guardian.
+        Age {plan.age}. Use this when the member has agreed to the adult terms another way (for example by
+        phone). Answers and points stay. The answers the parent gave and the guardian&apos;s details are
+        deleted. Stops {plan.guardianLinksToStop} guardian link(s) and cancels {plan.rewardRequestsToCancel}{' '}
+        reward request(s) waiting for the guardian.
       </p>
       <div className="flex gap-1.5">
+        <select
+          className={`${input} w-auto py-1 text-[12px]`}
+          value={segment}
+          onChange={(e) => setSegment(e.target.value as 'b2c' | 'b2b')}
+          aria-label="Adult segment"
+        >
+          <option value="b2c">Consumer</option>
+          <option value="b2b">Business Professional</option>
+        </select>
         <input
           className={`${input} py-1 text-[12px]`}
           value={reason}
@@ -48,7 +60,7 @@ export function Graduate({ id }: { id: string }) {
           disabled={pending || reason.trim().length < 5}
           onClick={() =>
             start(async () => {
-              const r = await reasonAction({ op: 'teen-graduate', id }, reason.trim());
+              const r = await reasonAction({ op: 'teen-graduate', id, segment }, reason.trim());
               if (!r.ok) return void toast.error(r.error);
               toast.success('Moved to an adult account');
               setPlan(null);

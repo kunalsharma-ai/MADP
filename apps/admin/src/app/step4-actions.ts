@@ -26,7 +26,9 @@ export type ReasonOp =
   | { op: 'draw'; id: string; action: 'run' | 'cancel' }
   | { op: 'offer-end'; id: string }
   | { op: 'teen-revoke'; id: string }
-  | { op: 'teen-graduate'; id: string }
+  | { op: 'teen-graduate'; id: string; segment?: 'b2c' | 'b2b' }
+  | { op: 'teen-close'; id: string }
+  | { op: 'teen-registration'; id: string; action: 'approve' | 'cancel' | 'renew' }
   | { op: 'data-request'; id: string; status: 'approved' | 'rejected' | 'done' };
 
 export async function reasonAction(o: ReasonOp, reason: string) {
@@ -59,8 +61,19 @@ export async function reasonAction(o: ReasonOp, reason: string) {
       );
     case 'teen-graduate':
       return run(
-        () => api(`/panel/teens/${e(o.id)}/graduate`, { method: 'POST', json: { dryRun: false, reason } }),
+        () =>
+          api(`/panel/teens/${e(o.id)}/graduate`, {
+            method: 'POST',
+            json: { dryRun: false, reason, segment: o.segment ?? 'b2c' },
+          }),
         '/teens',
+      );
+    case 'teen-close':
+      return run(() => api(`/panel/teens/${e(o.id)}/close`, { method: 'POST', json: { reason } }), '/teens');
+    case 'teen-registration':
+      return run(
+        () => api(`/panel/teens/registrations/${e(o.id)}/${o.action}`, { method: 'POST', json: { reason } }),
+        '/teens/registrations',
       );
     case 'data-request':
       return run(

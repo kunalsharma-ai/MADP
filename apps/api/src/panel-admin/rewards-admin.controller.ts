@@ -21,6 +21,8 @@ import {
   TeenGraduate,
   TeenList,
   TeenReason,
+  TeenPipelineQuery,
+  TeenRegistrationAction,
   type BrandSelection,
   type PanelCode,
   type SwitchBoard,
@@ -566,7 +568,58 @@ export class RewardsAdminController {
     const brand = b as PanelCode;
     const r = await this.panel.call<{ total: number; due: number }>(brand, p.id, 'GET', R.teens, q);
     await this.log(req, brand, 'teens.search', 'member', undefined, {
-      metadata: { turning18: q.turning18 ?? null, total: r.total },
+      metadata: { turning18: q.turning18 ?? null, stage: q.stage ?? null, total: r.total },
+    });
+    return r;
+  }
+
+  /** Registration pipeline: counts for the eleven statuses and the open registrations (guardians masked). */
+  @RequirePermissions('teen.read')
+  @Get('teens/registrations')
+  async teenPipeline(
+    @Query(new ZodPipe(TeenPipelineQuery)) q: TeenPipelineQuery,
+    @CurrentBrand() b: BrandSelection,
+    @CurrentPrincipal() p: Principal,
+    @Req() req: Request,
+  ) {
+    const brand = b as PanelCode;
+    const r = await this.panel.call<{ counts: Record<string, number>; items: unknown[] }>(
+      brand,
+      p.id,
+      'GET',
+      R.teenRegistrations,
+      q,
+    );
+    await this.log(req, brand, 'teens.registrations.search', 'teen_registration', undefined, {
+      metadata: { status: q.status ?? 'open', shown: r.items.length },
+    });
+    return r;
+  }
+
+  /** approve (manual review), cancel or renew (expired invitation), each with a reason. */
+  @RequirePermissions('teen.review')
+  @Post('teens/registrations/:id/:action')
+  async teenRegistrationAction(
+    @Param('id', new ZodPipe(Id)) id: string,
+    @Param('action', new ZodPipe(TeenRegistrationAction)) action: TeenRegistrationAction,
+    @Body(new ZodPipe(TeenReason)) body: TeenReason,
+    @CurrentBrand() b: BrandSelection,
+    @CurrentPrincipal() p: Principal,
+    @Req() req: Request,
+  ) {
+    const brand = b as PanelCode;
+    const r = await this.panel.call<{ reference: string; status: string }>(
+      brand,
+      p.id,
+      'POST',
+      R.teenRegistrationAction(id, action),
+      undefined,
+      body,
+    );
+    await this.log(req, brand, `teen.registration.${action}`, 'teen_registration', id, {
+      after: { status: r.status },
+      reason: body.reason,
+      metadata: { reference: r.reference },
     });
     return r;
   }
@@ -627,7 +680,7 @@ export class RewardsAdminController {
       'POST',
       R.teenGraduate(id),
       { dryRun: body.dryRun ? undefined : 0 },
-      { reason: body.reason },
+      { reason: body.reason, segment: body.segment },
     );
     if (!r.dryRun)
       await this.log(req, brand, 'teen.graduate', 'member', id, {
@@ -637,8 +690,40 @@ export class RewardsAdminController {
         metadata: {
           guardianLinksStopped: r.guardianLinksToStop,
           rewardRequestsCancelled: r.rewardRequestsToCancel,
+          parentAnswersDeleted: r.parentAnswersDeleted ?? null,
+          guardianDeleted: r.guardianDeleted ?? null,
         },
       });
+    return r;
+  }
+
+  /**
+   * Turned 18 and did not accept adult terms: close. Points lapse and a delete request opens on the panel. The spec
+   * gives this to the support team (Teen Safeguarding), so teen.review is enough.
+   */
+  @RequirePermissions('teen.review')
+  @Post('teens/:id/close')
+  async closeAdult(
+    @Param('id', new ZodPipe(Id)) id: string,
+    @Body(new ZodPipe(TeenReason)) body: TeenReason,
+    @CurrentBrand() b: BrandSelection,
+    @CurrentPrincipal() p: Principal,
+    @Req() req: Request,
+  ) {
+    const brand = b as PanelCode;
+    const r = await this.panel.call<{ closed: boolean; pointsLapsed: number; deleteRequestOpened: boolean }>(
+      brand,
+      p.id,
+      'POST',
+      R.teenClose(id),
+      undefined,
+      body,
+    );
+    await this.log(req, brand, 'teen.close', 'member', id, {
+      after: { memberStatus: 'closed' },
+      reason: body.reason,
+      metadata: r,
+    });
     return r;
   }
 
