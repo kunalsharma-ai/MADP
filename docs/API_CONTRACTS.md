@@ -47,6 +47,12 @@ MFA completed. The machine-readable document is served at `GET /api/v1/openapi.j
 | `GET`/`PUT /communications/policies/:panel` | `communications.read` / `communications.approve` | Frequency caps, quiet hours, fatigue bands |
 | `GET`/`POST /communications/campaigns` · `POST …/:id/decision` `{approve\|pause\|resume\|archive}` | `communications.read` · `communications.manage` · `communications.approve` | Campaigns need an approved version and a second person's approval |
 | `POST /communications/campaigns/:id/run` `{dryRun}` | `communications.manage` | Dry run only (`dryRun: false` is 403): per member, planned with a send time outside quiet hours, or suppressed with a reason. Covered by `apps/api/test/engagement.test.ts` |
+| `GET`/`POST /communications/calendar` · `POST …/:id/review` `{decision, note?}` | `communications.read` · `communications.manage` · `communications.approve` | Celebration dates per panel (`civic` or `religious_cultural`), reviewed by someone other than the author |
+| `GET`/`POST /communications/automations` · `GET …/:id` | `communications.read` · `communications.manage` | Automations with their versions and runs. Create takes `panel, name, trigger, config, steps` (see `packages/contracts/src/automation.ts`); 400 with `problems` when a template or calendar date does not fit |
+| `POST /communications/automations/:id/versions` · `POST /communications/automation-versions/:id/restore` | `communications.manage` | New draft version, or a rollback copy of an earlier one |
+| `POST /communications/automation-versions/:id/submit` · `…/review` `{decision, note?}` | `communications.manage` · `communications.approve` | Review needs approved templates (and calendar date) and someone other than the author. Approving makes the version current |
+| `POST /communications/automations/:id/decision` `{pause\|resume\|archive}` | `communications.approve` | |
+| `POST /communications/automations/:id/run` `{dryRun, asOf?}` | `communications.manage` | Dry run only (`dryRun: false` is 403), as of now or `asOf`: per member, the step due and planned send time, or the reason it stops. Covered by `apps/api/test/automations.test.ts` |
 | `GET /communications/timeline/:personId?panel&includeDryRuns&limit` | `communications.read` | Per-person timeline and a per-panel contact-load score with its factors. Audited |
 | `GET /webhooks/inbox?panel` | `connectors.read` | Which panels have webhooks on, received and open counts, last 100 events (type and times only) |
 

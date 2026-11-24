@@ -166,3 +166,39 @@ export async function campaignAction(id: string, action: 'approve' | 'pause' | '
   revalidatePath('/communications');
   return r;
 }
+
+export async function createCelebrationAction(panel: string, name: string, observance: string, onDate: string, countries: string[]) {
+  await api('/communications/calendar', { method: 'POST', json: { panel, name, observance, onDate, countries } });
+  revalidatePath('/communications/automations');
+}
+
+export async function reviewCelebrationAction(id: string, decision: 'approve' | 'reject') {
+  await api(`/communications/calendar/${encodeURIComponent(id)}/review`, { method: 'POST', json: { decision } });
+  revalidatePath('/communications/automations');
+}
+
+export async function createAutomationAction(body: Record<string, unknown>) {
+  await api('/communications/automations', { method: 'POST', json: body });
+  revalidatePath('/communications/automations');
+}
+
+export async function automationVersionAction(versionId: string, action: 'submit' | 'approve' | 'reject' | 'restore') {
+  const id = encodeURIComponent(versionId);
+  if (action === 'submit') await api(`/communications/automation-versions/${id}/submit`, { method: 'POST', json: {} });
+  else if (action === 'restore') await api(`/communications/automation-versions/${id}/restore`, { method: 'POST', json: {} });
+  else await api(`/communications/automation-versions/${id}/review`, { method: 'POST', json: { decision: action } });
+  revalidatePath('/communications/automations');
+}
+
+export async function automationAction(id: string, action: 'pause' | 'resume' | 'archive' | 'dry_run', asOf?: string) {
+  const aid = encodeURIComponent(id);
+  const r =
+    action === 'dry_run'
+      ? await api<{ planned: number; due: number }>(`/communications/automations/${aid}/run`, {
+          method: 'POST',
+          json: { dryRun: true, ...(asOf ? { asOf } : {}) },
+        })
+      : await api(`/communications/automations/${aid}/decision`, { method: 'POST', json: { decision: action } });
+  revalidatePath('/communications/automations');
+  return action === 'dry_run' ? `Dry run: ${(r as { planned: number }).planned} of ${(r as { due: number }).due} due would get it` : r;
+}

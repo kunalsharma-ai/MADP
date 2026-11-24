@@ -9,6 +9,7 @@ import {
   GitCompareArrows,
   UserRoundCheck,
   Mail,
+  Workflow,
   Globe2,
   LayoutDashboard,
   ListTree,
@@ -25,7 +26,7 @@ import type { SessionUser } from '@madp/contracts';
 import { NAV, PLANNED } from './nav';
 import { cn } from '@/lib/cn';
 
-const ICONS = { LayoutDashboard, Globe2, Users, ListTree, GitCompareArrows, PlugZap, ShieldCheck, UserRoundCheck, Mail } as const;
+const ICONS = { LayoutDashboard, Globe2, Users, ListTree, GitCompareArrows, PlugZap, ShieldCheck, UserRoundCheck, Mail, Workflow } as const;
 
 export function Shell({
   user,
@@ -43,9 +44,11 @@ export function Shell({
     ...g,
     items: g.items.filter((i) => user.permissions.includes(i.permission)),
   })).filter((g) => g.items.length);
+  // The longest matching link wins, so /communications/automations does not also light up /communications.
   const current = groups
     .flatMap((g) => g.items.map((i) => ({ ...i, group: g.label })))
-    .find((i) => (i.href === '/' ? path === '/' : path.startsWith(i.href)));
+    .filter((i) => (i.href === '/' ? path === '/' : path === i.href || path.startsWith(`${i.href}/`)))
+    .sort((a, b) => b.href.length - a.href.length)[0];
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -80,7 +83,7 @@ export function Shell({
                 <ul className="space-y-0.5">
                   {g.items.map((i) => {
                     const Icon = ICONS[i.icon as keyof typeof ICONS];
-                    const active = i.href === '/' ? path === '/' : path.startsWith(i.href);
+                    const active = current?.href === i.href;
                     return (
                       <li key={i.href}>
                         <Link

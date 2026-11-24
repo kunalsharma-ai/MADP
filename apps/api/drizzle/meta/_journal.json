@@ -43,6 +43,13 @@
       "when": 1795492845997,
       "tag": "0005_engagement",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1795493790435,
+      "tag": "0006_automations",
+      "breakpoints": true
     }
   ]
 }
