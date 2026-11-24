@@ -18,7 +18,7 @@ copy of the panel backend for all three panels (`T2O_LOCAL_E2E.md`); that is sti
 | 5. Options imported | 🟡 | 🟡 | 🟡 |
 | 6. Respondent identities imported | 🟡 synthetic people | 🟡 | 🟡 |
 | 7. Answers imported | 🟡 synthetic answers | 🟡 | 🟡 |
-| 8. Consent synchronised | 🟡 DEMO: guardian consent, terms and opt-ins from `User` fields, one current record per purpose | 🟡 DEMO, same backend `User` fields; consent stored as answers (`terms-consent`, `news-letter`) not yet read | 🟡 DEMO, same backend `User` fields; no health-data consent field exists at source |
+| 8. Consent synchronised | 🟡 DEMO: guardian consent, terms and opt-ins from `User` fields, one current record per purpose; marketing opt-in mapped, T2O repo and changes feed don't have the field yet | 🟡 DEMO, same backend `User` fields; marketing opt-in `User.marketingOptIn` (MFR#54) mapped as `email_marketing`; the `news-letter` answer is never consent | 🟡 DEMO, same backend `User` fields and marketing opt-in (MHO#13); no health-data consent field exists at source |
 | 9. Updates synchronised | 🟡 changes feed (turn2opinion#20) and `runSync`, local copy | 🟡 same, local copy | 🟡 same, local copy |
 | 10. Deletion propagated | 🟡 deletions feed, local copy | 🟡 | 🟡 |
 | 11. Webhook or polling verified | 🟡 polling scheduler on the local copy; signed webhook intake built and tested on DEMO, but the panel does not send webhooks yet | 🟡 same | 🟡 same |

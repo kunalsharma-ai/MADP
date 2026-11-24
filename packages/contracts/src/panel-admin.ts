@@ -16,6 +16,8 @@ export const MemberSearch = z.object({
   category: z.string().trim().max(40).optional(),
   segment: z.enum(['teen']).optional(),
   status: MemberStatus.optional(),
+  /** Marketing e-mail opt-in ("Send me news and offers"). `unset` means never asked, which counts as no. */
+  marketing: z.enum(['granted', 'withdrawn', 'unset']).optional(),
   country: z
     .string()
     .trim()

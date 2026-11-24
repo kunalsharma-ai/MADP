@@ -55,7 +55,7 @@ export const VerificationState = z.enum(['unverified', 'verified', 'rejected']);
  * addresses, signatures or guardian contact details.
  */
 export const SourceConsent = z.object({
-  purpose: z.enum(['guardian_consent', 'terms', 'push_notifications', 'video_sharing', 'gps_sharing']),
+  purpose: z.enum(['guardian_consent', 'terms', 'push_notifications', 'video_sharing', 'gps_sharing', 'email_marketing']),
   status: z.enum(['granted', 'denied', 'withdrawn', 'unknown']),
   capturedAt: z.string().datetime().nullable(),
   evidence: z.object({ field: z.string(), value: z.string().nullable(), version: z.string().nullable() }),

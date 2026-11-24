@@ -196,8 +196,8 @@ Staff accounts are now skipped (`isStaff`, kunalsharma-ai/turn2opinion#21, merge
 - Campaigns need an approved version and a second person's approval, and can be paused.
 - Dry runs decide, member by member, who would get the message and when (outside their local quiet hours), or why
   not: membership not active, minor, opted out, no consent, no usable e-mail, bounced, already sent, weekly or
-  monthly cap. Marketing messages need an e-mail marketing consent. No panel exports one yet, so every marketing
-  dry run holds everyone back; onboarding messages need the panel's terms.
+  monthly cap. Marketing messages need the e-mail marketing opt-in (see "Marketing e-mail opt-in" below); members
+  who never ticked it are held back. Onboarding messages need the panel's terms.
 - Per-person communication timeline with a transparent contact-load score per panel.
 - Nothing is sent: there is no provider yet, and sending needs the owner's approval.
 - Brand kits (sender, footer, logo, colours) are placeholders until each panel owner supplies them.
@@ -345,7 +345,8 @@ Staff accounts are now skipped (`isStaff`, kunalsharma-ai/turn2opinion#21, merge
 - Members can ask MADP to stop contacting them on a channel (e-mail, SMS, push, WhatsApp or all). Support and the
   privacy officer record it with a reference and no personal data, and the contact gate, campaigns, automations
   and Supply360 honour it. Lifting it only removes MADP's own opt-out, adds a new line, and never grants consent.
-- Gaps are shown per panel: no panel reports e-mail marketing consent yet.
+- Gaps are shown per panel. Since the marketing opt-in is read, no panel is missing e-mail marketing consent on DEMO
+  data.
 - Admin screen: Governance → Consent & preferences. Tests: `test/consent.test.ts` (4, all three panels).
 
 ### Supply360 service API (Milestone 6, 2026-11-24)
@@ -485,3 +486,22 @@ Screenshots are in `docs/screenshots/`.
 - Screens: Feature switches, Rewards, Engagement, Teen Panel (turning 18), Data requests.
 - Tests: `apps/api/test/panel-admin-step4.test.ts` (5) and MFR `tests/admin.step4.test.mjs` (6).
 - Nothing was switched on, sent or paid. Turning a switch on in production waits for Kunal.
+
+## Marketing e-mail opt-in read (24 Nov 2026)
+
+- Kunal's decision: only the explicit "Send me news and offers" box counts as `email_marketing` consent. The MFR
+  "news-letter" profile answer and a `marketing` id in `User.terms` never do.
+- Panel side: shared backend `User.marketingOptIn { granted, at, source, wording }` and `marketingOptInHistory`
+  (kunalsharma-ai/MFR#54), sign-up forms in kunalsharma-ai/MHO#13. Both merged, not deployed.
+- MADP (`mapConsents`): a tick is `granted`; unticked at sign-up is `denied`; switched off later (profile or admin) is
+  `withdrawn`; never asked means no record, which counts as no. Evidence keeps the wording and source
+  (`news-offers-v1@signup`), never more. Teens can't opt in at the panel.
+- Members screen: a Marketing column, a filter (opted in, declined or withdrawn, never asked) passed to
+  `/api/admin/v1/members?marketing=`, and the opt-in with its history on the member page.
+- DEMO data: adults get an opt-in record from a separate random stream (about 30% opted in, a third never asked), so
+  every other DEMO value is unchanged.
+- Read path per panel: MFR and MHO read the field from `GET /api/v1/user` (the field is on the record). The T2O
+  repository has no opt-in yet, and its changes feed (`MEMBER_FIELDS`) needs `marketingOptIn` added: asked of the
+  panel-repo work.
+- Tests: `packages/connectors/src/consents.test.ts` (4 new), and consent, engagement, automations and Supply360 now
+  check that only opted-in members are planned or eligible.

@@ -167,15 +167,21 @@ describe('campaign dry runs', () => {
       .set(as('data_steward'))
       .send({ dryRun: false })
       .expect(403);
-    // Marketing needs an e-mail marketing consent, which no panel exports yet: everyone eligible is held back.
+    // Marketing needs the e-mail marketing opt-in: members who never ticked it are held back.
     const r = await request(t.server)
       .post(`/api/v1/communications/campaigns/${c.body.id}/run`)
       .set(as('data_steward'))
       .send({})
       .expect(200);
-    expect(r.body).toMatchObject({ dryRun: true, planned: 0, basis: 'marketing', consentRequired: 'email_marketing' });
+    expect(r.body).toMatchObject({ dryRun: true, basis: 'marketing', consentRequired: 'email_marketing' });
     expect(r.body.reasons.no_consent).toBeGreaterThan(0);
-    expect(r.body.audience).toBe(r.body.suppressed);
+    expect(r.body.audience).toBe(r.body.suppressed + r.body.planned);
+    // Everyone planned ticked the opt-in.
+    const [notOptedIn] = await q<{ n: string }>(sql`
+      select count(*) as n from communication_event ce where ce.campaign_id = ${c.body.id} and ce.state = 'planned'
+        and not exists (select 1 from consent_record cr where cr.master_person_id = ce.master_person_id and cr.panel = ce.panel
+          and cr.purpose = 'email_marketing' and cr.status = 'granted')`);
+    expect(Number(notOptedIn!.n)).toBe(0);
     const [sent] = await q<{ n: string }>(sql`select count(*) as n from communication_event where not dry_run`);
     expect(Number(sent!.n)).toBe(0);
   });

@@ -61,6 +61,17 @@ export interface RawUser {
   updatedAt?: string;
   consent?: { canShareVideo?: boolean; canShareGPS?: boolean; canAcceptPushNotification?: boolean };
   terms?: string[];
+  /**
+   * Marketing e-mail opt-in, the "Send me news and offers" box (shared backend, MFR#54). Unset means never asked.
+   * The raw record has `wording`; the admin member view (/api/admin/v1/members) has `asked` instead.
+   */
+  marketingOptIn?: {
+    granted?: boolean | null;
+    at?: string | null;
+    source?: string | null;
+    wording?: string | null;
+    asked?: boolean;
+  } | null;
   parent?: {
     consent?: boolean | null;
     consentStatus?: string;
@@ -130,6 +141,22 @@ export function mapConsents(u: RawUser): SourceConsent[] {
     ['canShareVideo', 'video_sharing'],
     ['canShareGPS', 'gps_sharing'],
   ];
+  // Only the explicit opt-in counts as email_marketing (Kunal, 2026-11-24). Never the MFR "news-letter" profile
+  // answer, and never a `marketing` id in User.terms on its own. Unset or never asked means no record: MADP's
+  // consent view then reports it as missing, which already blocks marketing sends.
+  const m = u.marketingOptIn;
+  if (m && typeof m.granted === 'boolean' && m.asked !== false)
+    out.push({
+      purpose: 'email_marketing',
+      // An unticked box at sign-up is a "no"; turning it off later is a withdrawal.
+      status: m.granted ? 'granted' : m.source === 'signup' ? 'denied' : 'withdrawn',
+      capturedAt: iso(m.at),
+      evidence: {
+        field: 'marketingOptIn.granted',
+        value: String(m.granted),
+        version: [s(m.wording), s(m.source)].filter(Boolean).join('@') || null,
+      },
+    });
   for (const [field, purpose] of flags) {
     const v = u.consent?.[field];
     if (typeof v === 'boolean')

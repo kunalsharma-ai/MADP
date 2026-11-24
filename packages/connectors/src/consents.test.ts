@@ -99,3 +99,37 @@ describe('mapUser staff flag', () => {
     expect(mapUser('mho', { _id: 'u3', category: 'patient' }).isStaff).toBeUndefined();
   });
 });
+
+describe('mapConsents: marketing e-mail opt-in (MFR#54, all three panels)', () => {
+  const mk = (marketingOptIn: RawUser['marketingOptIn'], extra: Partial<RawUser> = {}) =>
+    mapConsents({ _id: 'a', category: 'b2c', ...extra, marketingOptIn }).filter((c) => c.purpose === 'email_marketing');
+
+  it('reads an explicit tick as granted, with time, wording and source', () => {
+    expect(mk({ granted: true, at: '2026-11-24T09:00:00Z', source: 'signup', wording: 'news-offers-v1' })).toEqual([
+      {
+        purpose: 'email_marketing',
+        status: 'granted',
+        capturedAt: '2026-11-24T09:00:00.000Z',
+        evidence: { field: 'marketingOptIn.granted', value: 'true', version: 'news-offers-v1@signup' },
+      },
+    ]);
+  });
+
+  it('an unticked box at sign-up is denied; switching it off later is withdrawn', () => {
+    expect(mk({ granted: false, source: 'signup' })[0]?.status).toBe('denied');
+    expect(mk({ granted: false, source: 'profile' })[0]?.status).toBe('withdrawn');
+    expect(mk({ granted: false, source: 'admin' })[0]?.status).toBe('withdrawn');
+  });
+
+  it('never asked means no record (counts as no), in both the raw and the admin view shape', () => {
+    expect(mk(undefined)).toEqual([]);
+    expect(mk(null)).toEqual([]);
+    expect(mk({})).toEqual([]);
+    expect(mk({ granted: false, at: null, source: null, asked: false })).toEqual([]);
+    expect(mk({ granted: true, at: '2026-11-24T09:00:00Z', source: 'profile', asked: true })[0]?.status).toBe('granted');
+  });
+
+  it('does not treat the news-letter answer or a "marketing" terms id as consent', () => {
+    expect(mk(undefined, { terms: ['tos-2025', 'marketing'] })).toEqual([]);
+  });
+});
