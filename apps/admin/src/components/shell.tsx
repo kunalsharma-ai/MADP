@@ -50,6 +50,7 @@ import type { SessionUser } from '@madp/contracts';
 import { NAV, PLANNED } from './nav';
 import { cn } from '@/lib/cn';
 import { setBrand } from '@/app/super-admin-actions';
+import { BrandLogo } from './brand-logo';
 
 const ICONS = {
   LayoutDashboard,
@@ -232,6 +233,9 @@ export function Shell({
           </nav>
           <label className="flex items-center gap-1.5 text-[12px] text-fg-3">
             <span className="hidden md:inline">Brand</span>
+            {brand === 't2o' || brand === 'mfr' || brand === 'mho' ? (
+              <BrandLogo panel={brand} size={28} />
+            ) : null}
             <select
               aria-label="Brand"
               value={brand}

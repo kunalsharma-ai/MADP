@@ -149,6 +149,58 @@ describe('super admin foundation: roles per brand, sessions, hash-chained audit,
     await request(t.server).get('/api/v1/auth/me').set(bearer(second.token)).expect(401);
   });
 
+  it("seeds each brand's support address, and only Super Admin can change it, with a reason", async () => {
+    const before = await request(t.server).get('/api/v1/brands').set(bearer(superToken)).expect(200);
+    expect(
+      before.body.brands.map((b: { panel: string; supportEmail: string }) => [b.panel, b.supportEmail]),
+    ).toEqual([
+      ['t2o', 'support@turn2opinion.com'],
+      ['mfr', 'support@myfrequentrewards.com'],
+      ['mho', 'support@myhealthopinions.com'],
+    ]);
+    await request(t.server)
+      .put('/api/v1/brands/mfr/settings')
+      .set(bearer(mfrAdmin))
+      .send({ supportEmail: 'help@myfrequentrewards.com', reason: 'not mine to change' })
+      .expect(403);
+    await request(t.server)
+      .put('/api/v1/brands/mfr/settings')
+      .set(bearer(superToken))
+      .send({ supportEmail: 'not-an-address', reason: 'typo check' })
+      .expect(400);
+    const r = await request(t.server)
+      .put('/api/v1/brands/mfr/settings')
+      .set(bearer(superToken))
+      .send({ supportEmail: 'Help@MyFrequentRewards.com', reason: 'Testing the sender change' })
+      .expect(200);
+    expect(r.body.supportEmail).toBe('help@myfrequentrewards.com');
+    await request(t.server)
+      .put('/api/v1/brands/mfr/settings')
+      .set(bearer(superToken))
+      .send({ supportEmail: 'support@myfrequentrewards.com', reason: 'Back to the real one' })
+      .expect(200);
+  });
+
+  it("seeds the legal footer, and keeps MHO's privacy link unset until it is confirmed", async () => {
+    const res = await request(t.server).get('/api/v1/brands').set(bearer(superToken)).expect(200);
+    for (const b of res.body.brands) {
+      expect(b.legalName).toBe('Frequent Research Fieldwork Solutions Private Limited');
+      expect(b.postalAddress).toContain('Delhi 110085');
+    }
+    expect(
+      res.body.brands.map((b: { panel: string; privacyUrl: string | null }) => [b.panel, b.privacyUrl]),
+    ).toEqual([
+      ['t2o', 'https://www.turn2opinion.com/privacy/'],
+      ['mfr', 'https://www.myfrequentrewards.com/privacy'],
+      ['mho', null],
+    ]);
+    await request(t.server)
+      .put('/api/v1/brands/mho/settings')
+      .set(bearer(superToken))
+      .send({ privacyUrl: 'http://www.myhealthopinions.com/privacy', reason: 'plain http is refused' })
+      .expect(400);
+  });
+
   it('keeps money settings for Super Admin and audits every change', async () => {
     await request(t.server)
       .put('/api/v1/brands/mfr/settings')

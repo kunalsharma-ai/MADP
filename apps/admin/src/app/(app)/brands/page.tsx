@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { api } from '@/lib/api';
 import { Card, CardHeader, PageHeader, PanelChip, fmt, fmtDate } from '@/components/ui';
+import { BrandLogo } from '@/components/brand-logo';
 import { BrandSettingsForm, type BrandRow } from './brand-form';
 
 export const metadata: Metadata = { title: 'Brands & settings' };
@@ -18,13 +19,34 @@ export default async function BrandsPage() {
         {brands.map((b) => (
           <Card key={b.panel}>
             <CardHeader
-              title={b.displayName}
+              title={
+                <span className="flex items-center gap-2.5">
+                  <BrandLogo panel={b.panel} size={36} />
+                  {b.displayName}
+                </span>
+              }
               hint={<span>Updated {fmtDate(b.updatedAt)}</span>}
               action={<PanelChip panel={b.panel} />}
             />
             <dl className="grid grid-cols-2 gap-x-4 gap-y-2 px-5 py-4 text-[13px]">
               <dt className="text-fg-3">Origins</dt>
-              <dd className="font-mono text-[12px]">{b.origins.join(', ')}</dd>
+              <dd className="min-w-0 break-all font-mono text-[12px]">{b.origins.join(', ')}</dd>
+              <dt className="text-fg-3">Support e-mail</dt>
+              <dd className="min-w-0 break-all font-mono text-[12px]">{b.supportEmail ?? 'Not set'}</dd>
+              <dt className="text-fg-3">Legal name</dt>
+              <dd>{b.legalName ?? 'Not set'}</dd>
+              <dt className="text-fg-3">Address</dt>
+              <dd>{b.postalAddress ?? 'Not set'}</dd>
+              <dt className="text-fg-3">Privacy policy</dt>
+              <dd className="min-w-0 break-all font-mono text-[12px]">
+                {b.privacyUrl ? (
+                  <a href={b.privacyUrl} target="_blank" rel="noreferrer" className="underline">
+                    {b.privacyUrl}
+                  </a>
+                ) : (
+                  <span className="font-sans text-[13px] text-warn">Not confirmed yet</span>
+                )}
+              </dd>
               <dt className="text-fg-3">Languages</dt>
               <dd>{b.languages.join(', ')}</dd>
               <dt className="text-fg-3">Points value</dt>
