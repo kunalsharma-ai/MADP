@@ -228,3 +228,15 @@ export async function loyaltyAction(panel: string, action: 'sync' | 'reconcile' 
     ? `Matches the panel${r.unmatched ? ` (${r.unmatched} rows of members MADP does not know)` : ''}`
     : `Differences: ${r.missing} missing, ${r.different} different, ${r.onlyInMadp} only in MADP`;
 }
+
+export async function createServiceClientAction(input: { name: string; scopes: string[]; panels: string[]; rateLimitPerMinute: number }) {
+  const r = await api<{ clientId: string; secret: string }>('/service-clients', { method: 'POST', json: input });
+  revalidatePath('/supply360');
+  return { clientId: r.clientId, secret: r.secret };
+}
+
+export async function revokeServiceClientAction(id: string) {
+  await api(`/service-clients/${encodeURIComponent(id)}/revoke`, { method: 'POST', json: {} });
+  revalidatePath('/supply360');
+  return 'Client revoked. Its requests are refused from now on.';
+}

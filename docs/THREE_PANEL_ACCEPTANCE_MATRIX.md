@@ -27,6 +27,7 @@ copy of the panel backend for all three panels (`T2O_LOCAL_E2E.md`); that is sti
 | 14. Counts reconciled | 🟡 reconciliation report with checks, DEMO only | 🟡 | 🟡 |
 | 15. Integration health visible | 🟡 Connectors page and `/integrations/health` | 🟡 | 🟡 |
 | 16. Automated contract tests passing | 🟡 stub of audited routes | 🟡 | 🟡 |
+| Supply360 service API (counts, match, reservations, invitation authorisation, events, consent) | 🟡 DEMO, `test/supply360.test.ts` | 🟡 DEMO | 🟡 DEMO; health criteria refused in match, health counts only with the health scope |
 
 ## Evidence
 - Integration tests: `apps/api/test/platform.test.ts` (19), `resilience.test.ts` (3, dead letters and reconciliation),
