@@ -129,6 +129,22 @@ Staff accounts are now skipped (`isStaff`, kunalsharma-ai/turn2opinion#21, merge
 - Admin screens: Loyalty → Loyalty ledger, and reward wallets on the 360° profile.
 - Tests: `test/loyalty.test.ts` (6, all three panels), `src/loyalty/position.test.ts` (4), and connector mapping.
 
+### Privacy requests and retention (2026-11-24)
+- Access, correction, deletion and restriction requests, each with a jurisdiction, a due date set by counsel
+  (30 days unless stated), an overdue flag, and an append-only trail.
+- Support logs a request. A privacy officer verifies the requester and carries it out, and never for a request
+  they logged themselves.
+- Deletion erases MADP's copy at once, using the same path as a panel deletion. It clears contact details,
+  answers, consents and survey history, and keeps reward ledger lines for liability. An erasure hold keeps the
+  member out of later imports and syncs. The request waits until the panel's own deletions feed confirms the
+  member is gone, then closes itself. MADP never deletes anything at a panel.
+- An access request gives a decrypted JSON export of everything MADP holds on the request's panels. It needs PII
+  and health permissions and is audited. Restriction opts the member out of every channel on those panels.
+  Correction is forwarded to the panel and closed once the panel has made it.
+- Retention schedule: audit, consent history and the reward ledger are kept as evidence. The audit periods are
+  marked [Confirm with counsel]. Only Supply360 idempotency answers and old dry-run messages can be purged.
+- Admin screen: Governance → Privacy requests. Tests: `test/privacy.test.ts` (6, all three panels).
+
 ### Consent and preference center (2026-11-24)
 - Consent comes from the panels. MADP shows it per panel and purpose, never added across panels, with a
   contactability funnel: accounts, active, adults, terms accepted, usable e-mail, not opted out, reachable.

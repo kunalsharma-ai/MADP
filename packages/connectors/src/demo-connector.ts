@@ -28,6 +28,8 @@ export class DemoConnector implements PanelConnector {
   /** Tests can replace or extend the DEMO wallet rows (for example, to reverse a credit). */
   rewardsOverride: SourceReward[] | null = null;
   responsesOverride: SourceResponse[] | null = null;
+  /** Tests only: deletions the panel reports. DEMO panels delete nobody by default. */
+  deletionsOverride: SourceDeletion[] | null = null;
 
   constructor(
     readonly panel: PanelCode,
@@ -131,7 +133,10 @@ export class DemoConnector implements PanelConnector {
   }
 
   async deletions(q: ChangeQuery): Promise<SourceChangePage<SourceDeletion>> {
-    return { items: [], cursor: q.cursor, more: false };
+    if (!this.deletionsOverride) return { items: [], cursor: q.cursor, more: false };
+    const start = q.cursor ? Number.parseInt(q.cursor, 10) : 0;
+    const items = this.deletionsOverride.slice(start, start + q.limit);
+    return { items, cursor: String(start + items.length), more: start + items.length < this.deletionsOverride.length };
   }
 
   async rewardChanges(q: ChangeQuery): Promise<SourceChangePage<SourceReward>> {

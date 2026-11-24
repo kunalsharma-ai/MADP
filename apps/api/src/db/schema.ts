@@ -8,6 +8,7 @@ import {
   jsonb,
   pgEnum,
   pgTable,
+  primaryKey,
   real,
   smallint,
   text,
@@ -909,4 +910,65 @@ export const contactPreferences = pgTable(
     recordedAt: timestamp('recorded_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [index('contact_preference_membership_idx').on(t.panelMembershipId, t.channel, t.recordedAt)],
+);
+
+// ---------------------------------------------------------------------------------------------------------------
+// Privacy requests (spec §11, screen 15): access, correction, deletion and restriction, with due dates and an
+// append-only trail. Panels own the member record, so MADP erases its own copy, holds the member out of later
+// syncs, and tracks the panel's own deletion until its deletions feed confirms it.
+
+export const privacyRequests = pgTable(
+  'privacy_request',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    dataMode: dataMode('data_mode').notNull(),
+    masterPersonId: uuid('master_person_id').notNull(),
+    /** access, correction, deletion, restriction. */
+    kind: text('kind').notNull(),
+    panels: text('panels').array().notNull(),
+    /** received, verified, completed, rejected. Deletion also passes awaiting_panel. */
+    status: text('status').notNull().default('received'),
+    /** Where it came from, e.g. a ticket number. No personal data. */
+    reference: text('reference').notNull(),
+    jurisdiction: text('jurisdiction'),
+    receivedAt: timestamp('received_at', { withTimezone: true }).notNull().defaultNow(),
+    dueAt: timestamp('due_at', { withTimezone: true }).notNull(),
+    createdBy: uuid('created_by').notNull(),
+    verifiedBy: uuid('verified_by'),
+    completedAt: timestamp('completed_at', { withTimezone: true }),
+    result: jsonb('result').notNull().default(sql`'{}'::jsonb`),
+  },
+  (t) => [index('privacy_request_status_idx').on(t.dataMode, t.status, t.dueAt), index('privacy_request_person_idx').on(t.masterPersonId)],
+);
+
+export const privacyRequestEvents = pgTable(
+  'privacy_request_event',
+  {
+    id: bigserial('id', { mode: 'number' }).primaryKey(),
+    requestId: uuid('request_id')
+      .notNull()
+      .references(() => privacyRequests.id),
+    action: text('action').notNull(),
+    actorId: uuid('actor_id'),
+    note: text('note').notNull().default(''),
+    metadata: jsonb('metadata').notNull().default(sql`'{}'::jsonb`),
+    at: timestamp('at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index('privacy_request_event_request_idx').on(t.requestId, t.at)],
+);
+
+/** Members erased in MADP on request: later syncs skip them until the panel has deleted them too. */
+export const erasureHolds = pgTable(
+  'erasure_hold',
+  {
+    dataMode: dataMode('data_mode').notNull(),
+    panel: panelCode('panel').notNull(),
+    sourceMemberId: text('source_member_id').notNull(),
+    requestId: uuid('request_id')
+      .notNull()
+      .references(() => privacyRequests.id),
+    createdAt: created(),
+    panelDeletedAt: timestamp('panel_deleted_at', { withTimezone: true }),
+  },
+  (t) => [primaryKey({ columns: [t.dataMode, t.panel, t.sourceMemberId] })],
 );

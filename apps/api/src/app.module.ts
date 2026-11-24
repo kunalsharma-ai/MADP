@@ -34,6 +34,8 @@ import { LoyaltyController } from './loyalty/loyalty.controller.js';
 import { Supply360Service } from './supply360/supply360.service.js';
 import { ConsentService } from './consent/consent.service.js';
 import { ConsentController } from './consent/consent.controller.js';
+import { PrivacyService } from './privacy/privacy.service.js';
+import { PrivacyController } from './privacy/privacy.controller.js';
 import { ServiceAuthGuard } from './supply360/service-auth.guard.js';
 import { ServiceClientsController, Supply360Controller } from './supply360/supply360.controller.js';
 import { HealthController } from './common/health.controller.js';
@@ -63,6 +65,7 @@ export class AppModule {
         Supply360Controller,
         ServiceClientsController,
         ConsentController,
+        PrivacyController,
       ],
       providers: [
         { provide: API_ENV, useValue: env },
@@ -84,6 +87,7 @@ export class AppModule {
         Supply360Service,
         ServiceAuthGuard,
         ConsentService,
+        PrivacyService,
         { provide: APP_GUARD, useClass: ThrottlerGuard },
         { provide: APP_GUARD, useClass: AuthGuard },
       ],
