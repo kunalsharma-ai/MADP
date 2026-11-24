@@ -37,6 +37,15 @@ Kunal's mailer packs for all three panels are in MADP, read-only.
 - Previews use the designers' sample data.
 - The T2O profile reminders need their Liquid logic rewritten as plain text, or sending left to the panel.
 - Nothing is sent. Sending needs a provider and Kunal's approval.
+## Admin app: nonce-based Content-Security-Policy (2026-11-24)
+- Every page view gets a fresh 128-bit nonce (`apps/admin/src/proxy.ts`). Scripts run only from the admin's own origin
+  with that nonce (`'strict-dynamic'` for Next.js chunks); `'unsafe-inline'` scripts are gone, and `'unsafe-eval'` is
+  only added in development. `base-uri 'none'`, `object-src 'none'`, `frame-ancestors 'none'` and
+  `upgrade-insecure-requests` in production. Styles keep `'unsafe-inline'` for React style attributes.
+- The root layout reads the request, so every page renders per request with its own nonce; the theme script carries
+  the nonce. Checked on a production build: ten screens load and hydrate with no CSP violation.
+- `src/lib/csp.test.ts` (3 tests).
+
 ## Production readiness (Milestone 6, 2026-11-24)
 
 Local and DEMO only. Nothing is deployed, and deploying needs Kunal's go-ahead.
@@ -452,7 +461,6 @@ Screenshots are in `docs/screenshots/`.
 ### Pending
 - Everything in M2–M6 (`docs/IMPLEMENTATION_PLAN.md`).
 - Consent population, deletion propagation, webhook ingress, merge and unmerge (M3).
-- Nonce-based CSP for the admin app (M2).
 
 ### Blocked (needs Kunal)
 - Live read-only access approval and a scoped integration credential for each panel.
