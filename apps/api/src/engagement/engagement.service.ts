@@ -22,6 +22,7 @@ import {
 } from '@madp/contracts';
 import { Database } from '../db/database.js';
 import {
+  automations,
   campaignRuns,
   campaigns,
   communicationEvents,
@@ -33,14 +34,13 @@ import { AuditService } from '../audit/audit.service.js';
 import { lintTemplate, render } from './render.js';
 import { nextSendTime } from './schedule.js';
 import { fatigueScore } from './fatigue.js';
+import { CONTACT_STATES, audienceFilter, contactColumns, gate } from './gate.js';
 
 interface Actor {
   id: string;
   ip: string | null;
 }
 
-/** Real delivery states that count towards frequency caps. Dry-run rows never count. */
-const CONTACT_STATES = ['queued', 'sent', 'delivered', 'opened', 'clicked'];
 
 const DEFAULT_POLICY = { maxPerWeek: 2, maxPerMonth: 6, quietStartHour: 21, quietEndHour: 8, bands: { high: 60, medium: 30 } };
 
@@ -283,12 +283,6 @@ export class EngagementService {
     const basis = KIND_BASIS[c.kind as CampaignKind];
     const consent = BASIS_CONSENT[basis];
     const audience = c.audience as { categories?: string[]; countries?: string[] };
-    const conds = [sql`pm.data_mode = ${c.dataMode}`, sql`pm.panel = ${c.panel}`];
-    if (audience.categories?.length)
-      conds.push(sql`exists (select 1 from category_membership cm where cm.master_person_id = pm.master_person_id
-        and cm.panel = pm.panel and cm.category::text = any(${`{${audience.categories.join(',')}}`}::text[]))`);
-    if (audience.countries?.length)
-      conds.push(sql`mp.country = any(${`{${audience.countries.join(',')}}`}::text[])`);
     const rows = await this.db.execute<{
       person: string;
       status: string;
@@ -303,25 +297,13 @@ export class EngagementService {
       bounced: boolean;
       already: boolean;
     }>(sql`
-      select pm.master_person_id as person, pm.status, si.email_enc is not null as has_email,
-        si.email_verification = 'rejected' as email_rejected, si.timezone,
-        exists (select 1 from category_membership cm where cm.master_person_id = pm.master_person_id and cm.panel = pm.panel and cm.is_minor) as minor,
-        (select cr.status::text from consent_record cr where cr.master_person_id = pm.master_person_id and cr.panel = pm.panel
-          and cr.purpose = ${consent ?? ''} limit 1) as consent,
-        (select count(*) from communication_event e where e.master_person_id = pm.master_person_id and e.panel = pm.panel
-          and not e.dry_run and e.state = any(${`{${CONTACT_STATES.join(',')}}`}::text[]) and e.occurred_at > ${new Date(now.getTime() - 7 * 86_400_000)}) as week,
-        (select count(*) from communication_event e where e.master_person_id = pm.master_person_id and e.panel = pm.panel
-          and not e.dry_run and e.state = any(${`{${CONTACT_STATES.join(',')}}`}::text[]) and e.occurred_at > ${new Date(now.getTime() - 30 * 86_400_000)}) as month,
-        exists (select 1 from communication_event e where e.master_person_id = pm.master_person_id and e.panel = pm.panel
-          and not e.dry_run and e.state = 'opted_out') as opted_out,
-        exists (select 1 from communication_event e where e.master_person_id = pm.master_person_id and e.panel = pm.panel
-          and not e.dry_run and e.state in ('bounced', 'complained')) as bounced,
+      select pm.master_person_id as person, si.timezone, ${contactColumns(consent, now)},
         exists (select 1 from communication_event e where e.master_person_id = pm.master_person_id and e.campaign_id = ${c.id}
           and not e.dry_run and e.state = any(${`{${CONTACT_STATES.join(',')}}`}::text[])) as already
       from panel_membership pm
       join source_identity si on si.id = pm.source_identity_id
       join master_person mp on mp.id = pm.master_person_id
-      where ${sql.join(conds, sql` and `)}`);
+      where ${audienceFilter(c.dataMode, c.panel, audience)}`);
     const [run] = await this.db
       .insert(campaignRuns)
       .values({ campaignId: c.id, dryRun: true, requestedBy: actor.id })
@@ -331,16 +313,7 @@ export class EngagementService {
     let planned = 0;
     let delayedByQuietHours = 0;
     for (const r of rows.rows) {
-      let reason: SuppressionReason | null = null;
-      if (r.status !== 'active') reason = 'membership_not_active';
-      else if (r.minor && basis !== 'service') reason = 'minor_excluded';
-      else if (r.opted_out && basis !== 'service') reason = 'opted_out';
-      else if (consent && r.consent !== 'granted') reason = 'no_consent';
-      else if (!r.has_email || r.email_rejected) reason = 'no_email';
-      else if (r.bounced) reason = 'bounced_or_complained';
-      else if (r.already) reason = 'already_sent';
-      else if (basis !== 'service' && Number(r.week) >= policy.maxPerWeek) reason = 'frequency_cap_week';
-      else if (basis !== 'service' && Number(r.month) >= policy.maxPerMonth) reason = 'frequency_cap_month';
+      const reason = gate(r, basis, consent, policy, r.already);
       const plannedFor = reason ? null : nextSendTime(now, r.timezone, policy.quietStartHour, policy.quietEndHour);
       if (reason) reasons[reason] = (reasons[reason] ?? 0) + 1;
       else {
@@ -392,9 +365,14 @@ export class EngagementService {
         campaignId: communicationEvents.campaignId,
         campaign: campaigns.name,
         kind: campaigns.kind,
+        automationId: communicationEvents.automationId,
+        automation: automations.name,
+        trigger: automations.trigger,
+        step: communicationEvents.step,
       })
       .from(communicationEvents)
       .leftJoin(campaigns, eq(campaigns.id, communicationEvents.campaignId))
+      .leftJoin(automations, eq(automations.id, communicationEvents.automationId))
       .where(
         and(
           eq(communicationEvents.masterPersonId, personId),

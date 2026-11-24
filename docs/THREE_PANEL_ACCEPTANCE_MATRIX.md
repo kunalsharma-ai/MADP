@@ -37,6 +37,6 @@ copy of the panel backend for all three panels (`T2O_LOCAL_E2E.md`); that is sti
 ## Journeys (spec §17)
 | Journey | Status |
 |---|---|
-| T2O: registration → membership → consumer/B2B schema → answers → canonical attributes → counts → profile sync → engagement | DEMO up to counts; sync and engagement not started |
-| MFR: … → separate MFR reward ledger → profile sync → engagement | DEMO up to counts; ledger is M5 |
-| MHO: … → consent-aware restricted health attributes → counts → profile sync → healthcare engagement | DEMO up to counts with health answers restricted; consent and engagement not started |
+| T2O: registration → membership → consumer/B2B schema → answers → canonical attributes → counts → profile sync → engagement | DEMO up to counts; sync on the local copy; engagement campaigns and lifecycle automations as dry runs on DEMO, nothing sent |
+| MFR: … → separate MFR reward ledger → profile sync → engagement | DEMO up to counts; sync on the local copy; engagement dry runs on DEMO; ledger is M5 |
+| MHO: … → consent-aware restricted health attributes → counts → profile sync → healthcare engagement | DEMO up to counts with health answers restricted; engagement dry runs on DEMO; no health-data consent at source |

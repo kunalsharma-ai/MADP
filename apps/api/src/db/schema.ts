@@ -2,6 +2,7 @@ import { sql } from 'drizzle-orm';
 import {
   bigserial,
   boolean,
+  date,
   index,
   integer,
   jsonb,
@@ -495,6 +496,10 @@ export const communicationEvents = pgTable(
     panel: panelCode('panel').notNull(),
     campaignId: uuid('campaign_id').references(() => campaigns.id),
     runId: uuid('run_id').references(() => campaignRuns.id),
+    automationId: uuid('automation_id').references(() => automations.id),
+    automationRunId: uuid('automation_run_id').references(() => automationRuns.id),
+    /** The automation step (its day) this line belongs to. */
+    step: integer('step'),
     channel: text('channel').notNull(),
     /** planned, suppressed, queued, sent, delivered, bounced, complained, failed, opened, clicked, opted_out. */
     state: text('state').notNull(),
@@ -506,6 +511,94 @@ export const communicationEvents = pgTable(
   (t) => [
     index('communication_event_person_idx').on(t.masterPersonId, t.occurredAt),
     index('communication_event_run_idx').on(t.runId),
+    index('communication_event_automation_idx').on(t.automationId, t.masterPersonId),
     index('communication_event_panel_state_idx').on(t.panel, t.state, t.occurredAt),
   ],
 );
+
+// Lifecycle automations and the celebration calendar (Milestone 4, part 2).
+
+/**
+ * A dated greeting for one panel, reviewed by a second person before any automation can use it. `civic` entries go
+ * to members in the listed countries; `religious_cultural` entries only to members who chose that greeting.
+ */
+export const celebrationDates = pgTable(
+  'celebration_date',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    panel: panelCode('panel').notNull(),
+    name: text('name').notNull(),
+    observance: text('observance').notNull(),
+    onDate: date('on_date').notNull(),
+    countries: text('countries').array().notNull(),
+    note: text('note'),
+    /** pending -> approved | rejected. */
+    status: text('status').notNull().default('pending'),
+    createdBy: uuid('created_by'),
+    reviewedBy: uuid('reviewed_by'),
+    reviewedAt: timestamp('reviewed_at', { withTimezone: true }),
+    reviewNote: text('review_note'),
+    createdAt: created(),
+  },
+  (t) => [index('celebration_date_panel_idx').on(t.panel, t.onDate)],
+);
+
+/** A lifecycle automation. Its rules live in versions; `currentVersionId` is the approved one that runs. */
+export const automations = pgTable(
+  'automation',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    dataMode: dataMode('data_mode').notNull(),
+    panel: panelCode('panel').notNull(),
+    name: text('name').notNull(),
+    trigger: text('trigger').notNull(),
+    /** draft (nothing approved yet) -> active <-> paused; any -> archived. */
+    status: text('status').notNull().default('draft'),
+    currentVersionId: uuid('current_version_id'),
+    createdBy: uuid('created_by'),
+    createdAt: created(),
+    updatedAt: updated(),
+  },
+  (t) => [index('automation_panel_idx').on(t.dataMode, t.panel, t.status)],
+);
+
+/** One version of an automation's rules. Approved versions never change; a change or a rollback is a new version. */
+export const automationVersions = pgTable(
+  'automation_version',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    automationId: uuid('automation_id')
+      .notNull()
+      .references(() => automations.id),
+    version: integer('version').notNull(),
+    config: jsonb('config').notNull(),
+    steps: jsonb('steps').notNull(),
+    /** draft -> in_review -> approved | rejected; approved -> superseded. */
+    status: text('status').notNull().default('draft'),
+    /** The version this one was restored from, for a rollback. */
+    restoredFrom: uuid('restored_from'),
+    createdBy: uuid('created_by'),
+    reviewedBy: uuid('reviewed_by'),
+    reviewedAt: timestamp('reviewed_at', { withTimezone: true }),
+    reviewNote: text('review_note'),
+    createdAt: created(),
+  },
+  (t) => [uniqueIndex('automation_version_key').on(t.automationId, t.version)],
+);
+
+export const automationRuns = pgTable('automation_run', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  automationId: uuid('automation_id')
+    .notNull()
+    .references(() => automations.id),
+  versionId: uuid('version_id')
+    .notNull()
+    .references(() => automationVersions.id),
+  dryRun: boolean('dry_run').notNull(),
+  asOf: timestamp('as_of', { withTimezone: true }).notNull(),
+  counts: jsonb('counts'),
+  error: text('error'),
+  requestedBy: uuid('requested_by'),
+  startedAt: timestamp('started_at', { withTimezone: true }).notNull().defaultNow(),
+  finishedAt: timestamp('finished_at', { withTimezone: true }),
+});

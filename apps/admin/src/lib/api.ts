@@ -30,7 +30,11 @@ export async function api<T>(path: string, init: RequestInit & { json?: unknown 
   });
   if (res.status === 401) redirect('/login');
   const body = await res.json().catch(() => ({}));
-  if (!res.ok) throw new ApiError(res.status, (body as { message?: string }).message ?? res.statusText);
+  if (!res.ok) {
+    const b = body as { message?: string; problems?: string[] };
+    const msg = b.message ?? res.statusText;
+    throw new ApiError(res.status, b.problems?.length ? `${msg}: ${b.problems.join('; ')}` : msg);
+  }
   return body as T;
 }
 

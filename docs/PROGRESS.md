@@ -79,7 +79,31 @@ Staff accounts are now skipped (`isStaff`, kunalsharma-ai/turn2opinion#21, merge
 - Nothing is sent: there is no provider yet, and sending needs the owner's approval.
 - Brand kits (sender, footer, logo, colours) are placeholders until each panel owner supplies them.
 - Tests: `test/engagement.test.ts` (4) and `src/engagement/engagement.test.ts` (6).
-- Next: birthday and festival calendar, lifecycle automations (inactive, incomplete profile, survey reminders).
+
+### Engagement studio, part 2: calendar and lifecycle automations (2026-11-24)
+- Celebration calendar per panel, reviewed by a second person. `civic` dates (a national day, the new year) go to
+  members in the listed countries. `religious_cultural` dates go only to members who chose that greeting, because
+  religion is never inferred from country. No panel records that choice yet, so those greetings reach nobody.
+- Automations with versioned rules: trigger, segment, conditions, contact gate, approved template per step, e-mail,
+  spacing and stop rule. A second person approves each version. A rollback restores an old version as a new draft
+  that goes through review. Automations can be paused, resumed and archived. Each run is kept with its counts, and
+  a failed run keeps its error and can simply be run again.
+- Triggers:
+  - Inactivity, with steps by days idle (for example 15, 30, 60 and 90). Activity means joining, a profile answer
+    changing, or a real open or click. The panels do not export logins or survey completions yet. A step is never
+    repeated, and the ladder starts over once the member is active again.
+  - Incomplete profile: below a completion share, or missing required questions. The run reports the most-missed
+    required questions. It stops once the profile is complete.
+  - Registration: steps by days since joining, each due only in its first week. Later steps can be limited to
+    members whose profile is still incomplete.
+  - Birthday, on the member's local date. 29 February birthdays are greeted on 28 February in other years.
+  - Calendar greeting, from an approved calendar date.
+- Every step passes the same contact gate as campaigns, plus spacing between messages from one automation.
+- Survey invitation reminders wait for Supply360, because MADP has no invitations of its own yet.
+- Frequency caps count queued, sent and delivered messages, and ignore events after the run's date. Opens and
+  clicks count as activity, not as extra contacts.
+- Admin screen: Engagement → Lifecycle automations, with the builder, versions, dry runs and the calendar.
+- Tests: `test/automations.test.ts` (9, on all three panels) and unit tests for dates and the gate.
 
 ### Next for T2O
 A T2O-only dry run against the live backend once the token is in the cloud environment, with counts shown to Kunal

@@ -63,3 +63,31 @@ describe('fatigue score', () => {
     );
   });
 });
+
+describe('calendar dates', () => {
+  it('uses the member’s local date, and greets 29 February birthdays on 28 February in other years', async () => {
+    const { isBirthday, localDate } = await import('./schedule.js');
+    const at = new Date('2027-03-01T20:00:00Z');
+    expect(localDate(at, 'UTC')).toBe('2027-03-01');
+    expect(localDate(at, 'Asia/Kolkata')).toBe('2027-03-02');
+    expect(localDate(at, 'Not/AZone')).toBe('2027-03-01');
+    expect(isBirthday('1990-03-02', localDate(at, 'Asia/Kolkata'))).toBe(true);
+    expect(isBirthday('1992-02-29', '2027-02-28')).toBe(true);
+    expect(isBirthday('1992-02-29', '2028-02-28')).toBe(false);
+    expect(isBirthday('1992-02-29', '2028-02-29')).toBe(true);
+  });
+});
+
+describe('contact gate', () => {
+  it('applies the rules in order and lets service messages skip the marketing ones', async () => {
+    const { gate } = await import('./gate.js');
+    const ok = { status: 'active', minor: false, opted_out: false, consent: 'granted', has_email: true, email_rejected: false, bounced: false, week: 0, month: 0 };
+    const policy = { maxPerWeek: 2, maxPerMonth: 6 };
+    expect(gate(ok, 'marketing', 'email_marketing', policy)).toBeNull();
+    expect(gate({ ...ok, minor: true, consent: null }, 'marketing', 'email_marketing', policy)).toBe('minor_excluded');
+    expect(gate({ ...ok, minor: true, week: 5 }, 'service', null, policy)).toBeNull();
+    expect(gate({ ...ok, week: 2 }, 'onboarding', 'terms', policy)).toBe('frequency_cap_week');
+    expect(gate(ok, 'onboarding', 'terms', policy, true)).toBe('already_sent');
+    expect(gate({ ...ok, status: 'deleted', opted_out: true }, 'marketing', 'email_marketing', policy)).toBe('membership_not_active');
+  });
+});
