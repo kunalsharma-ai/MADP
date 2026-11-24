@@ -127,7 +127,7 @@ describe('reports and exports', () => {
     const r = await get('super_admin', '/loyalty_liability/export?format=xlsx').buffer(true).parse(binary).expect(200);
     expect(r.headers['content-type']).toMatch(/spreadsheetml/);
     const wb = new ExcelJS.Workbook();
-    await wb.xlsx.load(r.body as Buffer);
+    await wb.xlsx.load(r.body as never); // exceljs types Buffer more narrowly than Node 22 does
     expect(wb.worksheets.map((w) => w.name)).toEqual(['Report (DEMO)', 'About']);
     const sheet = wb.getWorksheet('Report (DEMO)')!;
     expect(sheet.getRow(1).getCell(1).value).toBe('Data mode');
