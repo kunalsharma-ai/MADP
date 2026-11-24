@@ -680,14 +680,45 @@ export const StoryUpdate = z
   .strict();
 export type StoryUpdate = z.infer<typeof StoryUpdate>;
 
-export const TeenList = z.object({ turning18: z.coerce.number().int().min(0).max(365).optional() });
+export const TeenList = z.object({
+  turning18: z.coerce.number().int().min(0).max(365).optional(),
+  /** "Waiting to accept adult terms": turned 18, the move has started. */
+  stage: z.enum(['turning_adult']).optional(),
+});
 export type TeenList = z.infer<typeof TeenList>;
 export const TeenReason = z.object({ reason: Reason }).strict();
 export type TeenReason = z.infer<typeof TeenReason>;
+export const AdultSegment = z.enum(['b2c', 'b2b']);
+export type AdultSegment = z.infer<typeof AdultSegment>;
 export const TeenGraduate = z
-  .object({ reason: Reason.optional(), dryRun: z.boolean().default(true) })
+  .object({
+    reason: Reason.optional(),
+    dryRun: z.boolean().default(true),
+    segment: AdultSegment.default('b2c'),
+  })
   .strict();
 export type TeenGraduate = z.infer<typeof TeenGraduate>;
+
+/** The eleven server-enforced statuses of a Teen Panel registration (MFR teen/rules.js). */
+export const TEEN_REGISTRATION_STATUSES = [
+  'initial_registration',
+  'pending_guardian_approval',
+  'guardian_approved',
+  'pending_onboarding',
+  'pending_consent',
+  'manual_review',
+  'pending_password',
+  'active',
+  'rejected',
+  'expired',
+  'cancelled',
+] as const;
+export const TeenRegistrationStatus = z.enum(TEEN_REGISTRATION_STATUSES);
+export type TeenRegistrationStatus = z.infer<typeof TeenRegistrationStatus>;
+export const TeenPipelineQuery = z.object({ status: TeenRegistrationStatus.optional() });
+export type TeenPipelineQuery = z.infer<typeof TeenPipelineQuery>;
+export const TeenRegistrationAction = z.enum(['approve', 'cancel', 'renew']);
+export type TeenRegistrationAction = z.infer<typeof TeenRegistrationAction>;
 
 export const DataRequestList = z.object({
   status: z.enum(['open', 'all', 'requested', 'approved', 'rejected', 'done', 'cancelled']).optional(),

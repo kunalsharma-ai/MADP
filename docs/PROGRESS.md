@@ -505,3 +505,20 @@ Screenshots are in `docs/screenshots/`.
   panel-repo work.
 - Tests: `packages/connectors/src/consents.test.ts` (4 new), and consent, engagement, automations and Supply360 now
   check that only opted-in members are planned or eligible.
+
+## Super admin step 4b: Teen registration pipeline and turning 18 (24 Nov 2026)
+
+Panel side is kunalsharma-ai/MFR#55 (merged, not deployed).
+
+- **Teen registrations** (`/teens/registrations`) shows counts for all eleven statuses and the open registrations, with
+  guardian e-mails masked. Support can approve a manual review, cancel an open registration, or renew an expired guardian
+  invitation. Each needs a reason (`teen.review`) and is audited as `teen.registration.<action>`.
+- **Turning 18** (`/teens`) has three lists: turning 18 in 30 days, waiting to accept adult terms, and every teen.
+  - "Move now" asks for Consumer or Business Professional and needs `teen.review` and `segments.manage`.
+  - "Close account" needs `teen.review`.
+  - On the panel:
+    - The 30-day notice and the guardian's "consent ended" e-mail sit behind the new `email_turning18` switch, which is off.
+    - On the birthday the account pauses until the member accepts the adult terms on `/member/adult`. Parent-answered
+      answers and guardian details are deleted on the move.
+    - After 60 days the account closes. Points lapse and a delete request opens.
+- Tests: `panel-admin-step4.test.ts` has 6 passing, against the stand-in panel. On MFR, `admin.step4b.test.mjs` has 8 passing.

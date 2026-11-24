@@ -82,6 +82,13 @@ export const NAV: NavGroup[] = [
       },
       { href: '/teens', label: 'Teen Panel', icon: 'Sprout', permission: 'teen.read', brandScoped: true },
       {
+        href: '/teens/registrations',
+        label: 'Teen registrations',
+        icon: 'UserRoundCheck',
+        permission: 'teen.read',
+        brandScoped: true,
+      },
+      {
         href: '/data-requests',
         label: 'Data requests',
         icon: 'FileX2',
