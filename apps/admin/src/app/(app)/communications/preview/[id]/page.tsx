@@ -6,12 +6,12 @@ export const metadata: Metadata = { title: 'Template preview' };
 
 export default async function PreviewPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const p = await api<{ subject: string; html: string; text: string; brandWarning: string | null; problems: string[] }>(
+  const p = await api<{ subject: string; from: string | null; html: string; text: string; brandWarning: string | null; problems: string[] }>(
     `/communications/template-versions/${encodeURIComponent(id)}/preview`,
   );
   return (
     <>
-      <PageHeader eyebrow="Engagement studio" title={p.subject} description="Rendered with sample values only, never with a member's data." />
+      <PageHeader eyebrow="Engagement studio" title={p.subject} description={`From: ${p.from ?? 'sender not set in Brands & settings'}. Rendered with sample values only, never with a member's data.`} />
       {p.brandWarning ? <p className="mb-4 rounded-lg bg-surface-2 px-3 py-2 text-[13px] text-fg-2">{p.brandWarning}</p> : null}
       {p.problems.length ? (
         <ul className="mb-4 rounded-lg bg-danger-soft px-3 py-2 text-[13px] text-danger">

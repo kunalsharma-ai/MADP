@@ -9,6 +9,8 @@ import { and, asc, desc, eq, sql } from 'drizzle-orm';
 import {
   BASIS_CONSENT,
   BRAND_KITS,
+  brandKitGaps,
+  type BrandKit,
   KIND_BASIS,
   type CampaignCreate,
   type CampaignKind,
@@ -23,6 +25,7 @@ import {
 import { Database } from '../db/database.js';
 import {
   automations,
+  brandSettings,
   campaignRuns,
   campaigns,
   communicationEvents,
@@ -91,7 +94,7 @@ export class EngagementService {
       .from(messageTemplateVersions)
       .orderBy(desc(messageTemplateVersions.version));
     return {
-      brandKits: BRAND_KITS,
+      brandKits: await this.brandKits(),
       items: templates.map((t) => ({ ...t, versions: versions.filter((v) => v.templateId === t.id) })),
     };
   }
@@ -153,24 +156,52 @@ export class EngagementService {
     return { status: decision === 'approve' ? 'approved' : 'rejected' };
   }
 
-  /** Renders a version with sample values only; never with a member's data. */
+  /** Each panel's sender, legal footer, privacy link and logo, from Brands & settings. */
+  async brandKits(): Promise<Record<PanelCode, BrandKit>> {
+    const rows = await this.db.select().from(brandSettings);
+    const out = { ...BRAND_KITS };
+    for (const r of rows) {
+      const kit: BrandKit = {
+        displayName: r.displayName,
+        senderName: r.displayName,
+        senderAddress: r.supportEmail,
+        legalFooter: r.legalName && r.postalAddress ? `${r.legalName}, ${r.postalAddress}` : (r.legalName ?? null),
+        privacyUrl: r.privacyUrl,
+        logo: `/brands/${r.panel}.png`,
+        confirmed: false,
+      };
+      kit.confirmed = brandKitGaps(kit).length === 0;
+      out[r.panel as PanelCode] = kit;
+    }
+    return out;
+  }
+
+  /** Renders a version with sample values only; never with a member's data. The brand's logo and legal footer wrap it. */
   async preview(versionId: string) {
     const { v, t } = await this.version(versionId);
-    const brand = BRAND_KITS[t.panel];
+    const brand = (await this.brandKits())[t.panel as PanelCode];
     const sample = 'https://example.invalid';
+    const gaps = brandKitGaps(brand);
+    const body = render(v, {
+      firstName: 'Sample',
+      panelName: brand.displayName,
+      unsubscribeUrl: `${sample}/unsubscribe`,
+      preferencesUrl: `${sample}/preferences`,
+      profileUrl: `${sample}/profile`,
+    });
+    const esc = (x: string) => x.replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
+    const header = brand.logo ? `<div style="padding:16px 0"><img src="${esc(brand.logo)}" alt="${esc(brand.displayName)}" height="48"></div>` : '';
+    const footer = `<hr style="border:0;border-top:1px solid #e5e7eb;margin:24px 0 12px"><p style="font:12px/1.5 sans-serif;color:#6b7280">${
+      brand.legalFooter ? esc(brand.legalFooter) : '[legal footer not set in Brands &amp; settings]'
+    }${brand.privacyUrl ? ` · <a href="${esc(brand.privacyUrl)}">Privacy policy</a>` : ' · [privacy policy link not set]'}</p>`;
     return {
       brand,
-      brandWarning: brand.confirmed
-        ? null
-        : 'Sender, footer, logo and colours for this panel are not confirmed by the panel owner yet.',
+      from: brand.senderAddress ? `${brand.senderName} <${brand.senderAddress}>` : null,
+      brandWarning: gaps.length ? `Still not set in Brands & settings: ${gaps.join(', ')}.` : null,
       problems: lintTemplate(t.kind as CampaignKind, v),
-      ...render(v, {
-        firstName: 'Sample',
-        panelName: brand.displayName,
-        unsubscribeUrl: `${sample}/unsubscribe`,
-        preferencesUrl: `${sample}/preferences`,
-        profileUrl: `${sample}/profile`,
-      }),
+      ...body,
+      html: `${header}${body.html}${footer}`,
+      text: `${body.text}\n\n--\n${brand.legalFooter ?? '[legal footer not set]'}${brand.privacyUrl ? `\nPrivacy policy: ${brand.privacyUrl}` : ''}`,
     };
   }
 
