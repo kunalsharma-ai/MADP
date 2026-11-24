@@ -21,7 +21,7 @@ export function Card({ className, children }: { className?: string; children: Re
   );
 }
 
-export function CardHeader({ title, hint, action }: { title: string; hint?: ReactNode; action?: ReactNode }) {
+export function CardHeader({ title, hint, action }: { title: ReactNode; hint?: ReactNode; action?: ReactNode }) {
   return (
     <header className="flex items-start justify-between gap-4 border-b border-border px-5 py-3.5">
       <div>

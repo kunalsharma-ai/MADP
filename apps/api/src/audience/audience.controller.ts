@@ -1,5 +1,5 @@
 import { Body, Controller, Get, HttpCode, Post, Query } from '@nestjs/common';
-import { CountsRequest, DataMode, AUDIENCE_CATEGORIES, AUDIENCE_CATEGORY_LABELS } from '@madp/contracts';
+import { CountsRequest, DataMode, GeoRequest, AUDIENCE_CATEGORIES, AUDIENCE_CATEGORY_LABELS } from '@madp/contracts';
 import { AudienceService } from './audience.service.js';
 import { CurrentPrincipal, RequirePermissions } from '../auth/decorators.js';
 import type { Principal } from '../auth/auth.types.js';
@@ -37,6 +37,39 @@ export class AudienceController {
       });
     }
     return result;
+  }
+
+  /** Geography explorer (screens 2 and 3): country, state or province, city. */
+  @RequirePermissions('audience.counts.read')
+  @Post('geo')
+  @HttpCode(200)
+  async geo(@Body(new ZodPipe(GeoRequest)) body: GeoRequest, @CurrentPrincipal() p: Principal) {
+    const r = await this.audience.geo(body, undefined, p);
+    await this.auditSensitive(p, r.attributeFilters as { key: string; sensitivity: string }[], r.dataMode, r.uniquePeople, body.purpose, 'geo');
+    return r;
+  }
+
+  /** Panel and category overlap (screen 4). */
+  @RequirePermissions('audience.counts.read')
+  @Post('overlap')
+  @HttpCode(200)
+  async overlap(@Body(new ZodPipe(CountsRequest)) body: CountsRequest, @CurrentPrincipal() p: Principal) {
+    const r = await this.audience.overlap(body, undefined, p);
+    await this.auditSensitive(p, r.attributeFilters as { key: string; sensitivity: string }[], r.dataMode, r.uniquePeople, body.purpose, 'overlap');
+    return r;
+  }
+
+  private async auditSensitive(p: Principal, filters: { key: string; sensitivity: string }[], dataMode: string, uniquePeople: number, purpose: string | undefined, view: string) {
+    const sensitive = filters.filter((a) => a.sensitivity === 'special_category');
+    if (!sensitive.length) return;
+    await this.audit.record({
+      actorId: p.id,
+      actorType: 'admin',
+      action: 'audience.sensitive_filter_used',
+      targetType: 'attribute',
+      targetId: sensitive.map((a) => a.key).join(','),
+      metadata: { dataMode, uniquePeople, purpose: purpose ?? null, view },
+    });
   }
 
   /** Canonical attribute catalogue (Supply360 sees only an authorised subset later; M6). */

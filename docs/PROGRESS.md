@@ -218,6 +218,18 @@ Staff accounts are now skipped (`isStaff`, kunalsharma-ai/turn2opinion#21, merge
 - The "Still true?" review and the archive of inactive members belong to the super admin console's Members module.
 - Admin screen: Data → Profile freshness. Tests: `test/freshness.test.ts` (4, all three panels).
 
+### Geography explorer, world map and overlap (screens 2 to 4, 2026-11-24)
+- A world map (server-rendered SVG from Natural Earth via `world-atlas`, no client script) shades countries by
+  unique people; each country links to its drill-down. Country, then state or province, then city, each with
+  unique people and the T2O, MFR and MHO split, and the time zones members gave.
+- A person counts once, at the place chosen by source precedence; the panel columns count each panel's members.
+  Cells under `MIN_CELL_SIZE` are hidden (`SENSITIVE_MIN_CELL_SIZE` with a health filter, which also needs a purpose
+  and is audited, as with counts).
+- Overlap: people by the exact panels they hold, and a five-category matrix (the diagonal is everyone in the
+  category).
+- API: `POST /audience/geo` and `POST /audience/overlap` (`audience.counts.read`).
+- Admin screen: Audience → Geography & overlap. Tests: `test/geo.test.ts` (4, all three panels).
+
 ### AI insights and reviewable recommendations (screen 34, 2026-11-24)
 - Twelve fixed, documented rules run per panel over MADP's own counts: low reachability, profiles due for the
   6-month check, never profiled, low quality scores, shared e-mails, identity review backlog, pending mappings,

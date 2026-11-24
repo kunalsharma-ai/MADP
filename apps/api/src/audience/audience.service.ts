@@ -8,6 +8,9 @@ import {
   type CountsRequest,
   type CountsResponse,
   type DataMode,
+  type GeoRequest,
+  type GeoResponse,
+  type OverlapResponse,
 } from '@madp/contracts';
 import { API_ENV } from '../common/tokens.js';
 import { Database } from '../db/database.js';
@@ -206,6 +209,97 @@ export class AudienceService {
       freshestSourceSyncAt: iso(sync.rows[0]?.max),
       oldestSourceSyncAt: iso(sync.rows[0]?.min),
       ...(attr ? { attributeFilters: attr.resolved } : {}),
+    };
+  }
+
+  /** Narrowing filters shared by geo and overlap: the counts filters plus attribute matches and their cell size. */
+  private async scope(f: CountsRequest, mode: DataMode, minimumCellSize: number, caller?: CountsCaller) {
+    const attr = await this.resolveAttributes(mode, f.attributes ?? [], caller, f.purpose);
+    if (attr?.resolved.some((r) => r.sensitivity === 'special_category'))
+      minimumCellSize = Math.max(minimumCellSize, this.env.SENSITIVE_MIN_CELL_SIZE);
+    const hide = (v: number) => v > 0 && v < minimumCellSize;
+    return { ids: attr?.personIds ?? null, resolved: attr?.resolved ?? [], minimumCellSize, hide };
+  }
+
+  /** Country, then state or province, then city. Unique people per place, split by panel, small cells hidden. */
+  async geo(f: GeoRequest, mode: DataMode = this.defaultMode(), caller?: CountsCaller): Promise<GeoResponse & { attributeFilters: unknown[] }> {
+    const db = this.database.db;
+    const s = await this.scope(f, mode, this.env.MIN_CELL_SIZE, caller);
+    const level = f.state ? 'city' : f.country ? 'state' : 'country';
+    const place = (c: string) => sql.raw(`coalesce(nullif(mp.${c}, ''), 'unknown')`);
+    const col = place(level);
+    const narrow = [this.where(mode, { ...f, countries: f.country ? [f.country] : undefined }, s.ids)];
+    if (f.state) narrow.push(sql`coalesce(nullif(mp.state, ''), 'unknown') = ${f.state}`);
+    const base = sql`from panel_membership pm join master_person mp on mp.id = pm.master_person_id
+      join source_identity si on si.id = pm.source_identity_id where ${sql.join(narrow, sql` and `)}`;
+    const rows = (
+      await db.execute<{ key: string; people: string; t2o: string; mfr: string; mho: string }>(sql`
+        select ${col} as key, count(distinct pm.master_person_id) as people,
+          count(distinct pm.master_person_id) filter (where pm.panel = 't2o') as t2o,
+          count(distinct pm.master_person_id) filter (where pm.panel = 'mfr') as mfr,
+          count(distinct pm.master_person_id) filter (where pm.panel = 'mho') as mho
+        ${base} group by 1 order by 2 desc, 1`)
+    ).rows;
+    const [total] = (await db.execute<{ n: string }>(sql`select count(distinct pm.master_person_id) as n ${base}`)).rows;
+    const tz =
+      level === 'city'
+        ? []
+        : (
+            await db.execute<{ key: string; n: string }>(sql`
+            select coalesce(nullif(si.timezone, ''), 'unknown') as key, count(distinct pm.master_person_id) as n
+            ${base} group by 1 order by 2 desc, 1 limit 8`)
+          ).rows;
+    const v = (x: string) => (s.hide(Number(x)) ? null : Number(x));
+    return {
+      dataMode: mode,
+      level,
+      country: f.country ?? null,
+      state: f.state ?? null,
+      uniquePeople: Number(total?.n ?? 0),
+      rows: rows.map((r) => ({
+        key: r.key,
+        uniquePeople: v(r.people),
+        byPanel: { t2o: v(r.t2o), mfr: v(r.mfr), mho: v(r.mho) },
+        suppressed: s.hide(Number(r.people)),
+      })),
+      timezones: tz.map((t) => ({ key: t.key, people: v(t.n) })),
+      minimumCellSize: s.minimumCellSize,
+      computedAt: new Date().toISOString(),
+      attributeFilters: s.resolved,
+    };
+  }
+
+  /** Which panel combinations people hold, and how the five categories overlap. Never adds memberships. */
+  async overlap(f: CountsRequest, mode: DataMode = this.defaultMode(), caller?: CountsCaller): Promise<OverlapResponse & { attributeFilters: unknown[] }> {
+    const db = this.database.db;
+    const s = await this.scope(f, mode, this.env.MIN_CELL_SIZE, caller);
+    const w = this.where(mode, f, s.ids);
+    const base = sql`from panel_membership pm join master_person mp on mp.id = pm.master_person_id join source_identity si on si.id = pm.source_identity_id where ${w}`;
+    const combos = (
+      await db.execute<{ key: string; n: string }>(sql`
+        select key, count(*) as n from (
+          select string_agg(distinct pm.panel::text, '+' order by pm.panel::text) as key ${base} group by pm.master_person_id
+        ) x group by 1 order by 2 desc, 1`)
+    ).rows;
+    const matrix = (
+      await db.execute<{ a: string; b: string; n: string }>(sql`
+        with c as (
+          select distinct cm.master_person_id as id, cm.category::text as cat from category_membership cm
+          where cm.data_mode = ${mode} and exists (
+            select 1 from panel_membership pm join master_person mp on mp.id = pm.master_person_id join source_identity si on si.id = pm.source_identity_id
+            where pm.master_person_id = cm.master_person_id and pm.panel = cm.panel and ${w}))
+        select a.cat as a, b.cat as b, count(*) as n from c a join c b on a.id = b.id group by 1, 2 order by 1, 2`)
+    ).rows;
+    const [total] = (await db.execute<{ n: string }>(sql`select count(distinct pm.master_person_id) as n ${base}`)).rows;
+    const cell = (n: string) => ({ people: s.hide(Number(n)) ? null : Number(n), suppressed: s.hide(Number(n)) });
+    return {
+      dataMode: mode,
+      uniquePeople: Number(total?.n ?? 0),
+      panelCombinations: combos.map((c) => ({ panels: c.key.split('+'), ...cell(c.n) })),
+      categoryMatrix: matrix.map((m) => ({ a: m.a, b: m.b, ...cell(m.n) })),
+      minimumCellSize: s.minimumCellSize,
+      computedAt: new Date().toISOString(),
+      attributeFilters: s.resolved,
     };
   }
 }

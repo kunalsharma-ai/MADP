@@ -82,3 +82,49 @@ export const HEALTH_ACCESS_PURPOSE_LABELS: Record<HealthAccessPurpose, string> =
   privacy_request: 'Handling a privacy or deletion request',
   study_feasibility: 'Sizing a study (counts only)',
 };
+
+/**
+ * Geography explorer (screens 2 and 3): country, then state or province, then city. Unique people per place, with
+ * the panel split; small cells are suppressed. The place is the person's, chosen by source precedence.
+ */
+export const GeoRequest = CountsRequest.omit({ countries: true }).extend({
+  country: z
+    .string()
+    .regex(/^[a-zA-Z]{2}$/)
+    .transform((c) => c.toLowerCase())
+    .optional(),
+  state: z.string().trim().min(1).max(120).optional(),
+}).refine((g) => !g.state || g.country, { message: 'Pick a country before a state' });
+export type GeoRequest = z.infer<typeof GeoRequest>;
+
+export interface GeoRow {
+  key: string;
+  /** null when suppressed by the minimum cell size. */
+  uniquePeople: number | null;
+  byPanel: Record<string, number | null>;
+  suppressed: boolean;
+}
+export interface GeoResponse {
+  dataMode: DataMode;
+  level: 'country' | 'state' | 'city';
+  country: string | null;
+  state: string | null;
+  uniquePeople: number;
+  rows: GeoRow[];
+  /** Time zones members gave, most common first (country and state levels). */
+  timezones: { key: string; people: number | null }[];
+  minimumCellSize: number;
+  computedAt: string;
+}
+
+/** Five-category segmentation and overlap (screen 4): who is in which panels and which categories at once. */
+export interface OverlapResponse {
+  dataMode: DataMode;
+  uniquePeople: number;
+  /** e.g. "t2o", "mfr+t2o": people whose active memberships are exactly these panels. */
+  panelCombinations: { panels: string[]; people: number | null; suppressed: boolean }[];
+  /** People in both categories (the diagonal is people in the category). */
+  categoryMatrix: { a: string; b: string; people: number | null; suppressed: boolean }[];
+  minimumCellSize: number;
+  computedAt: string;
+}
