@@ -91,7 +91,7 @@ export default async function ExpertsPage({
                 <div className="grid gap-4 px-5 pb-5 text-[13px] sm:grid-cols-3">
                   <div>
                     <p className="text-[11px] uppercase tracking-wide text-fg-3">LinkedIn</p>
-                    {detail.linkedin ? (
+                    {detail.linkedin && /^https:\/\/([a-z]{2,3}\.)?linkedin\.com\//.test(detail.linkedin) ? (
                       <a
                         className="break-all text-accent hover:underline"
                         href={detail.linkedin}

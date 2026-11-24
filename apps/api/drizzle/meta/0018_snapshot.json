@@ -1,5 +1,5 @@
 {
-  "id": "a46b699f-a020-4072-afa2-42176de1bcfc",
+  "id": "6b3f3360-ff17-46cf-a5ad-199d2e12b748",
   "prevId": "276f344d-85f0-4327-8f4c-c54fb22bb726",
   "version": "7",
   "dialect": "postgresql",
@@ -303,6 +303,12 @@
           "primaryKey": false,
           "notNull": true,
           "default": false
+        },
+        "totp_last_step": {
+          "name": "totp_last_step",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
         },
         "is_active": {
           "name": "is_active",
@@ -3554,12 +3560,6 @@
           "primaryKey": false,
           "notNull": true,
           "default": "'email'"
-        },
-        "source": {
-          "name": "source",
-          "type": "jsonb",
-          "primaryKey": false,
-          "notNull": false
         },
         "created_by": {
           "name": "created_by",
