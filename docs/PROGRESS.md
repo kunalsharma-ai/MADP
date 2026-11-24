@@ -579,3 +579,28 @@ redemptions, quality, referrals, support and engagement. One block of rows per p
 country rows blank counts below `MIN_CELL_SIZE`; a panel whose admin API is not connected gets a note instead of rows.
 The panel returns aggregate counts only (no names or e-mails). Test: `panel-admin-step4.test.ts` (9 pass); MFR
 `tests/admin.reports.test.mjs` (2 pass).
+
+## Super admin step 6: T2O and MHO through the same console (24 Nov 2026)
+
+All three brands use the same signed `/api/admin/v1`, and the brand comes from `x-madp-origin`. Step 6 shows that T2O
+and MHO work on every console screen and that no brand ever sees or changes another brand's data.
+
+- **Panel leak test** (`tests/admin.crossbrand.test.mjs`, kunalsharma-ai/MFR#59, merged, not deployed). It seeds the
+  same DEMO data for T2O, MFR and MHO, with a marker in every field the console shows. Then it calls all 59 GET routes
+  as each brand and fails on any other brand's marker, database id or e-mail. It also checks that each brand sees its
+  own data on 21 lists. Another brand's id gets 404 on 12 detail reads and is refused on 45 write routes, and the
+  other brand's rows are checked unchanged. A switch turned off on one brand stays on for the others, and an origin
+  that isn't on the allow list gets 403.
+- **Two fixes the test found:**
+  - The `profile_completion` report listed every brand's profiles, because its query had no `origin`.
+  - `GET /members/:id/quality` answered 200 for another brand's member. It now returns 404.
+- **Console run.** A local panel backend held DEMO data for all three brands, and MADP had `T2O_ADMIN_API_BASE_URL`,
+  `MFR_ADMIN_API_BASE_URL` and `MHO_ADMIN_API_BASE_URL` pointed at it. Twenty panel screens and reports were opened as
+  each brand: 60 page loads, no errors, and no other brand's names, references or survey names. The previews are in
+  `/mnt/project-files/madp/preview-console/step6-three-brands/`.
+- **Still to watch.** Some older member-side code reads profiles without a brand filter: `controller/Profile.js`
+  `status()`, `engagement/lifecycle.js` `profileProgress()` and `routes/exportData.js`. This is fine while each brand
+  has its own database. It must be fixed before brands share one database.
+- **Deploy needs Kunal's go-ahead.** The secret and the three hostnames go into `MADP_ADMIN_API_SECRETS` and
+  `MADP_ADMIN_API_ORIGINS` on the panel, and the three base URLs go into MADP.
+
