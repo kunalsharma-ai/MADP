@@ -30,6 +30,20 @@ export const NAV: NavGroup[] = [
     ],
   },
   {
+    label: 'Panel',
+    items: [
+      { href: '/members', label: 'Members', icon: 'IdCard', permission: 'members.read', brandScoped: true },
+      {
+        href: '/question-bank',
+        label: 'Question bank',
+        icon: 'ListChecks',
+        permission: 'qb.read',
+        brandScoped: true,
+      },
+      { href: '/profiles', label: 'Profiles', icon: 'LayoutList', permission: 'qb.read', brandScoped: true },
+    ],
+  },
+  {
     label: 'Data',
     items: [
       { href: '/questions', label: 'Question registry', icon: 'ListTree', permission: 'questions.read' },
@@ -47,8 +61,18 @@ export const NAV: NavGroup[] = [
   {
     label: 'Engagement',
     items: [
-      { href: '/communications', label: 'Engagement studio', icon: 'Mail', permission: 'communications.read' },
-      { href: '/communications/automations', label: 'Lifecycle automations', icon: 'Workflow', permission: 'communications.read' },
+      {
+        href: '/communications',
+        label: 'Engagement studio',
+        icon: 'Mail',
+        permission: 'communications.read',
+      },
+      {
+        href: '/communications/automations',
+        label: 'Lifecycle automations',
+        icon: 'Workflow',
+        permission: 'communications.read',
+      },
     ],
   },
   {
@@ -57,16 +81,35 @@ export const NAV: NavGroup[] = [
   },
   {
     label: 'Supply360',
-    items: [{ href: '/supply360', label: 'Supply360 console', icon: 'Network', permission: 'service_clients.manage' }],
+    items: [
+      {
+        href: '/supply360',
+        label: 'Supply360 console',
+        icon: 'Network',
+        permission: 'service_clients.manage',
+      },
+    ],
   },
   {
     label: 'Governance',
     items: [
       { href: '/consent', label: 'Consent & preferences', icon: 'BadgeCheck', permission: 'consent.read' },
       { href: '/privacy', label: 'Privacy requests', icon: 'FileLock2', permission: 'privacy.read' },
-      { href: '/audit', label: 'Security audit', icon: 'ShieldCheck', permission: 'audit.read', brandScoped: true },
+      {
+        href: '/audit',
+        label: 'Security audit',
+        icon: 'ShieldCheck',
+        permission: 'audit.read',
+        brandScoped: true,
+      },
       { href: '/admins', label: 'Admins & roles', icon: 'UserCog', permission: 'admins.manage' },
-      { href: '/brands', label: 'Brands & settings', icon: 'Building2', permission: 'brands.manage', brandScoped: true },
+      {
+        href: '/brands',
+        label: 'Brands & settings',
+        icon: 'Building2',
+        permission: 'brands.manage',
+        brandScoped: true,
+      },
     ],
   },
 ];

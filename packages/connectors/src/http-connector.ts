@@ -377,3 +377,130 @@ export class PanelApiConnector implements PanelConnector {
     return this.changePage<RawResponse, SourceResponse>('responses', q, (r) => mapResponse(this.panel, r));
   }
 }
+
+// ---- Panel admin API (super admin console) ------------------------------------------------------------------------
+
+/**
+ * Routes of the panel backend's admin API, added by kunalsharma-ai/MFR#44 (Project/api/app/admin/routes.js). The
+ * shared backend image serves all three brands; the brand is the signed x-madp-origin header, never the Host header.
+ */
+export const PANEL_ADMIN_ROUTES = {
+  members: '/api/admin/v1/members',
+  member: (id: string) => `/api/admin/v1/members/${encodeURIComponent(id)}`,
+  memberLedger: (id: string) => `/api/admin/v1/members/${encodeURIComponent(id)}/ledger`,
+  memberStatus: (id: string) => `/api/admin/v1/members/${encodeURIComponent(id)}/status`,
+  memberSegment: (id: string) => `/api/admin/v1/members/${encodeURIComponent(id)}/segment`,
+  memberUnmask: (id: string) => `/api/admin/v1/members/${encodeURIComponent(id)}/unmask`,
+  archiveRun: '/api/admin/v1/members/archive-run',
+  restore: '/api/admin/v1/members/restore',
+  qbExport: '/api/admin/v1/qb/export',
+  qbImport: '/api/admin/v1/qb/import',
+  qbRulesCheck: '/api/admin/v1/qb/rules/check',
+  questions: '/api/admin/v1/questions',
+  question: (name: string) => `/api/admin/v1/questions/${encodeURIComponent(name)}`,
+  questionOptions: (name: string) => `/api/admin/v1/questions/${encodeURIComponent(name)}/options`,
+  profiles: '/api/admin/v1/profiles',
+  profileCompletion: '/api/admin/v1/profiles/completion',
+  profile: (id: string) => `/api/admin/v1/profiles/${encodeURIComponent(id)}`,
+} as const;
+
+export interface PanelAdminConfig {
+  baseUrl: string;
+  /** The brand's hostname, as stored in `origin` on every record of that brand. */
+  origin: string;
+  secret: string;
+  timeoutMs?: number;
+  fetchImpl?: typeof fetch;
+  now?: () => number;
+}
+
+/** Thrown for an answer from the panel admin API that is not success. `code` is the panel's error code. */
+export class PanelAdminError extends Error {
+  constructor(
+    message: string,
+    readonly httpStatus: number,
+    readonly code: string,
+  ) {
+    super(message);
+  }
+}
+
+/**
+ * HMAC-SHA256 over `${timestamp}\n${METHOD}\n${path+query}\n${origin}\n${actor}\n${sha256(body)}`, hex. The same
+ * canonical string as the panel side (admin/auth.js).
+ */
+export async function signPanelAdmin(
+  secret: string,
+  p: { timestamp: string; method: string; path: string; origin: string; actor: string; body: string },
+): Promise<string> {
+  const { createHash, createHmac } = await import('node:crypto');
+  const bodyHash = createHash('sha256').update(p.body).digest('hex');
+  const canonical = `${p.timestamp}\n${p.method.toUpperCase()}\n${p.path}\n${p.origin}\n${p.actor}\n${bodyHash}`;
+  return createHmac('sha256', secret).update(canonical).digest('hex');
+}
+
+export class PanelAdminClient {
+  constructor(
+    readonly panel: PanelCode,
+    private readonly cfg: PanelAdminConfig,
+  ) {}
+
+  async call<T>(
+    actor: string,
+    method: 'GET' | 'POST' | 'PUT',
+    path: string,
+    query?: Record<string, string | number | boolean | undefined>,
+    body?: unknown,
+  ): Promise<T> {
+    const params = new URLSearchParams();
+    for (const [k, v] of Object.entries(query ?? {}))
+      if (v !== undefined && v !== '') params.set(k, String(v));
+    const full = params.size ? `${path}?${params}` : path;
+    const raw = body === undefined ? '' : JSON.stringify(body);
+    const timestamp = String(Math.floor((this.cfg.now?.() ?? Date.now()) / 1000));
+    const signature = await signPanelAdmin(this.cfg.secret, {
+      timestamp,
+      method,
+      path: full,
+      origin: this.cfg.origin,
+      actor,
+      body: raw,
+    });
+    const doFetch = this.cfg.fetchImpl ?? fetch;
+    let res: Response;
+    try {
+      res = await doFetch(new URL(full, this.cfg.baseUrl), {
+        method,
+        body: raw || undefined,
+        signal: AbortSignal.timeout(this.cfg.timeoutMs ?? 30_000),
+        headers: {
+          accept: 'application/json',
+          ...(raw ? { 'content-type': 'application/json' } : {}),
+          'x-madp-timestamp': timestamp,
+          'x-madp-origin': this.cfg.origin,
+          'x-madp-actor': actor,
+          'x-madp-signature': signature,
+        },
+      });
+    } catch (e) {
+      throw new PanelAdminError(
+        `${this.panel} admin API unreachable: ${(e as Error).message}`,
+        502,
+        'unreachable',
+      );
+    }
+    let json: { status?: string; data?: T; code?: string; message?: string } = {};
+    try {
+      json = (await res.json()) as typeof json;
+    } catch {
+      /* not JSON */
+    }
+    if (!res.ok || json.status !== 'success')
+      throw new PanelAdminError(
+        json.message ?? `${this.panel} admin API answered ${res.status}`,
+        res.status,
+        json.code ?? 'panel_error',
+      );
+    return json.data as T;
+  }
+}

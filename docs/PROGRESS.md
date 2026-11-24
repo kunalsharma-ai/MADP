@@ -1,5 +1,46 @@
 # Progress
 
+## Super admin console, step 2: members, question bank and profiles (2026-11-24)
+
+Spec modules 1 to 4 for MFR. The panel side is in kunalsharma-ai/MFR#44 and #45 (merged, not deployed).
+
+### Completed and tested
+- Write path: the shared panel backend has a new `/api/admin/v1`. MADP signs every call with HMAC-SHA256 over the
+  time, method, path and query, brand hostname, admin id and body hash. The brand is the first origin in Brands &
+  settings. Without `PANEL_ADMIN_API_SECRET` and the brand's `*_ADMIN_API_BASE_URL`, the screens say the brand is not
+  connected. The routes are listed in `packages/connectors/src/http-connector.ts` (`PANEL_ADMIN_ROUTES`).
+- Members: search (masked, 50 a page, every filter the spec lists) and a member page with overview, ledger points,
+  counts and segment changes.
+  - Suspend, ban, reactivate, archive and restore, each with a reason. Suspended and banned members can't sign in.
+  - Segment change between adult segments, logged, with answers kept.
+  - Verification and allowed-field edits.
+  - Unmask needs `pii.view` and a reason. The audit entry names the fields, never the values.
+  - Six-month check: a dry run, then archive with a reason. Bulk restore.
+  - Teens are hidden from roles without `teen.read`, in the results and in the totals.
+- Question bank:
+  - Export in today's Profile / Question / Option shape.
+  - Import is a dry run first and shows adds, changes, unchanged rows, duplicates, per-segment counts, broken
+    references and teen refusals. Writing needs `qb.publish` and a clean file.
+  - Show-when rules checker.
+  - Question and option editor. Options that are removed are retired, not deleted, and can have a country list.
+  - Teen guardrails (tobacco, nicotine, alcohol, health, cosmetic, vehicle) are refused on the server.
+- Profiles: order, on/off, points (the member API now pays the profile's own points, default 50), minutes, and a
+  completion report with started, finished and the drop-off question.
+- Every write is audited with old and new values and the reason. Reads of members are audited.
+- Tests: MFR `npm run test:admin` (16 tests). MADP `test/panel-admin.test.ts` (8 tests) runs against a stand-in panel
+  that checks the signature. Full MADP integration run: 110 passed.
+- Previews from a local MFR backend with DEMO data: `/mnt/project-files/madp/preview-console/step2-members-question-bank/`.
+
+### Not yet
+- Question versions (draft, review, published) and translations.
+- Excel import and export.
+- Merge duplicates, reset password, resend welcome e-mail, log in as member.
+- T2O and MHO: the same backend serves them (step 6). Leak tests per brand come before they are switched on.
+- The 730 / 241 / 33 count check needs the real Profiles.json, Question.json and Option.json exports. They are not in
+  the project files. The teen bank in the MFR repo (237 questions in profiles, 241 keys) imports and round-trips clean.
+- Deploy: the shared secret goes into the panel backend (`MADP_ADMIN_API_SECRETS`, `MADP_ADMIN_API_ORIGINS`) and into
+  MADP. This needs Kunal's go-ahead.
+
 ## Super admin console, step 1: Foundation (2026-11-24)
 
 Kunal's super admin spec (24 Nov 2026) and the MADP master prompt are one plan; the console is built here. This step
