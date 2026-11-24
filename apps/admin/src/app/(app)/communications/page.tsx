@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import type { Metadata } from 'next';
 import { PANEL_CODES, PANELS, brandKitGaps, SUPPRESSION_REASONS, type BrandKit, type DataMode, type PanelCode } from '@madp/contracts';
-import { api } from '@/lib/api';
+import { api, currentBrand } from '@/lib/api';
 import { Badge, Card, CardHeader, DataModeBadge, DemoBanner, EmptyState, PageHeader, PanelChip, fmt, fmtDate } from '@/components/ui';
 import { CampaignButtons, NewCampaign, NewTemplate, NewVersion, VersionButtons } from './studio-forms';
 
@@ -58,7 +58,10 @@ const TONE: Record<string, 'teal' | 'warn' | 'danger' | 'neutral'> = {
 
 export default async function CommunicationsPage({ searchParams }: { searchParams: Promise<{ panel?: string }> }) {
   const sp = await searchParams;
-  const panel = (PANEL_CODES as readonly string[]).includes(sp.panel ?? '') ? (sp.panel as PanelCode) : undefined;
+  // The brand switcher narrows the studio to one panel, like every other screen; ?panel= still picks one under "All".
+  const brand = await currentBrand();
+  const picked = sp.panel ?? (brand && brand !== 'all' ? brand : undefined);
+  const panel = (PANEL_CODES as readonly string[]).includes(picked ?? '') ? (picked as PanelCode) : undefined;
   const qs = panel ? `?panel=${panel}` : '';
   const [tpl, camp] = await Promise.all([
     api<{ brandKits: Record<PanelCode, BrandKit>; items: Template[] }>(`/communications/templates${qs}`),
