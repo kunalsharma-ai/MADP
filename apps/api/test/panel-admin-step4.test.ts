@@ -96,6 +96,16 @@ function fakePanel() {
         value: body.value ?? null,
         board: {},
       });
+    if (p === `${V}/experts`)
+      return ok({
+        total: 1,
+        page: 1,
+        counts: { requested: 1, verified: 0, declined: 0 },
+        items: [{ id: RED, status: 'requested' }],
+      });
+    if (p === `${V}/experts/${RED}`) return ok({ id: RED, status: 'requested', member: { id: 'm1' } });
+    if (p === `${V}/experts/${RED}/decision`)
+      return ok({ id: RED, before: { status: 'requested' }, after: { status: body.decision }, member: 'm1' });
     const machine = (segment: string, m?: Record<string, unknown>) => ({
       segment,
       skin: { consumer: 'claw', professional: 'lift', teen: 'spiral' }[segment],
@@ -616,5 +626,54 @@ describe('super admin step 4 through the panel admin API', () => {
       .set(bearer(superToken, 'mfr'))
       .expect(200);
     expect(csv.text).toContain('Consumer');
+  });
+  it('expert verification: reads are audited, a decline needs a note for the member, the reason is the admin note', async () => {
+    const list = await request(t.server)
+      .get('/api/v1/panel/experts')
+      .set(bearer(superToken, 'mfr'))
+      .expect(200);
+    expect(list.body.total).toBe(1);
+    expect(panel.seen.at(-1)!.path).toBe('/api/admin/v1/experts?status=requested&page=1');
+    await request(t.server)
+      .get('/api/v1/panel/experts?status=nope')
+      .set(bearer(superToken, 'mfr'))
+      .expect(400);
+    await request(t.server).get('/api/v1/panel/experts').set(bearer(finance, 'mfr')).expect(403);
+    await request(t.server).get(`/api/v1/panel/experts/${RED}`).set(bearer(superToken, 'mfr')).expect(200);
+    expect((await audit('experts.queue.view')).length).toBe(1);
+    expect((await audit('expert.view')).length).toBe(1);
+    const n = panel.seen.length;
+    await request(t.server)
+      .post(`/api/v1/panel/experts/${RED}/decision`)
+      .set(bearer(superToken, 'mfr'))
+      .send({ decision: 'declined', reason: 'LinkedIn does not match' })
+      .expect(400);
+    await request(t.server)
+      .post(`/api/v1/panel/experts/${RED}/decision`)
+      .set(bearer(superToken, 'mfr'))
+      .send({ decision: 'verified', reason: 'x' })
+      .expect(400);
+    expect(panel.seen.length).toBe(n);
+    const ok = await request(t.server)
+      .post(`/api/v1/panel/experts/${RED}/decision`)
+      .set(bearer(superToken, 'mfr'))
+      .send({
+        decision: 'declined',
+        reason: 'LinkedIn does not match',
+        note: 'We could not match your LinkedIn profile.',
+      })
+      .expect(201);
+    expect(ok.body.after.status).toBe('declined');
+    expect(panel.seen.at(-1)!.body).toEqual({
+      decision: 'declined',
+      note: 'We could not match your LinkedIn profile.',
+      adminNote: 'LinkedIn does not match',
+    });
+    const [a] = await audit('expert.declined');
+    expect([a.reason, a.before.status, a.after.status]).toEqual([
+      'LinkedIn does not match',
+      'requested',
+      'declined',
+    ]);
   });
 });

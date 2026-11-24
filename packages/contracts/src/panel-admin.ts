@@ -389,6 +389,27 @@ export type QualityReview = z.infer<typeof QualityReview>;
 export const ReferralFraud = z.object({ minReferrals: z.coerce.number().int().min(2).max(1000).default(5) });
 export type ReferralFraud = z.infer<typeof ReferralFraud>;
 
+// Expert verification queue (Professionals ask to be shown as verified experts; the team checks by hand).
+export const ExpertStatus = z.enum(['requested', 'verified', 'declined']);
+export const ExpertList = z.object({
+  status: z.enum(['requested', 'verified', 'declined', 'all']).default('requested'),
+  page: z.coerce.number().int().min(1).max(10_000).default(1),
+});
+export type ExpertList = z.infer<typeof ExpertList>;
+/** reason goes to the audit log (and the panel's admin note); note is shown to the member and is needed to decline. */
+export const ExpertDecision = z
+  .object({
+    decision: z.enum(['verified', 'declined']),
+    reason: Reason,
+    note: z.string().trim().min(5).max(300).optional(),
+  })
+  .strict()
+  .refine((b) => b.decision === 'verified' || Boolean(b.note), {
+    message: 'Tell the member why it was declined',
+    path: ['note'],
+  });
+export type ExpertDecision = z.infer<typeof ExpertDecision>;
+
 // ---- step 3b: ticket desk, portal messages, help centre ------------------------------------------------------------
 export const TicketStatus = z.enum(['new', 'open', 'pending', 'resolved', 'closed']);
 export const TicketPriority = z.enum(['low', 'normal', 'high', 'urgent']);

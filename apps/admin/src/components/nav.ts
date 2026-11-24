@@ -79,6 +79,13 @@ export const NAV: NavGroup[] = [
         permission: 'quality.manage',
         brandScoped: true,
       },
+      {
+        href: '/experts',
+        label: 'Expert verification',
+        icon: 'BadgeCheck',
+        permission: 'quality.manage',
+        brandScoped: true,
+      },
       { href: '/rewards', label: 'Rewards', icon: 'Gift', permission: 'rewards.manage', brandScoped: true },
       {
         href: '/prize-machines',
