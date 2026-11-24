@@ -466,6 +466,12 @@ export const PANEL_ADMIN_ROUTES = {
   teen: (id: string) => `/api/admin/v1/teens/${encodeURIComponent(id)}`,
   teenRevokeLinks: (id: string) => `/api/admin/v1/teens/${encodeURIComponent(id)}/revoke-links`,
   teenGraduate: (id: string) => `/api/admin/v1/teens/${encodeURIComponent(id)}/graduate`,
+  // turning 18 not accepted within the time: close (MFR#55)
+  teenClose: (id: string) => `/api/admin/v1/teens/${encodeURIComponent(id)}/close`,
+  // registration pipeline: all eleven statuses; approve (manual review), cancel, renew (expired) (MFR#55)
+  teenRegistrations: '/api/admin/v1/teens/registrations',
+  teenRegistrationAction: (id: string, action: 'approve' | 'cancel' | 'renew') =>
+    `/api/admin/v1/teens/registrations/${encodeURIComponent(id)}/${action}`,
   dataRequests: '/api/admin/v1/data-requests',
   dataRequest: (id: string) => `/api/admin/v1/data-requests/${encodeURIComponent(id)}`,
   dataRequestDecision: (id: string) => `/api/admin/v1/data-requests/${encodeURIComponent(id)}/decision`,

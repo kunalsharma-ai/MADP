@@ -16,35 +16,62 @@ interface Teen {
   daysTo18: number | null;
   registration: { reference: string; status: string } | null;
   guardian: { relation: string; email: string; firstName: string } | null;
+  adultMove: {
+    stage: string | null;
+    since?: string | null;
+    deadline?: string | null;
+    notifiedAt?: string | null;
+  } | null;
 }
 
-export default async function TeensPage({ searchParams }: { searchParams: Promise<{ all?: string }> }) {
-  const all = (await searchParams).all === '1';
+type View = 'turning' | 'waiting' | 'all';
+const VIEWS: { key: View; label: string; query: string }[] = [
+  { key: 'turning', label: 'Turning 18 in 30 days', query: '?turning18=30' },
+  { key: 'waiting', label: 'Waiting to accept adult terms', query: '?stage=turning_adult' },
+  { key: 'all', label: 'Every teen', query: '' },
+];
+
+export default async function TeensPage({ searchParams }: { searchParams: Promise<{ view?: string }> }) {
+  const v = (await searchParams).view;
+  const view: View = v === 'waiting' || v === 'all' ? v : 'turning';
+  const all = view === 'all';
   return (
     <>
       <PageHeader
         eyebrow="Teen Panel"
-        title={all ? 'Teen members' : 'Turning 18'}
-        description="Teens whose 18th birthday is within 30 days, or has passed. A teen who has turned 18 moves to an adult Consumer account on an admin's decision: answers and points stay, guardian links stop, and reward requests waiting for the guardian are cancelled with the points returned. Guardian details are masked."
+        title="Turning 18"
+        description="Guardian consent ends at 18. Thirty days before, the teen and guardian get a notice (an e-mail switch, off until Kunal turns it on). On the birthday the account pauses until the member accepts adult terms in their own name. Answers and points stay, while the answers the parent gave and the guardian's details are deleted. Accounts not accepted within 60 days close: unspent points lapse and a delete request opens. Support can move a member now or close the account, each with a reason. Guardian details are masked."
         actions={
-          <a className="text-[13px] text-accent" href={all ? '/teens' : '/teens?all=1'}>
-            {all ? 'Show turning 18 only' : 'Show every teen'}
+          <a className="text-[13px] text-accent" href="/teens/registrations">
+            Registration pipeline
           </a>
         }
       />
+      <nav className="mb-4 flex flex-wrap gap-1.5" aria-label="Teen lists">
+        {VIEWS.map((x) => (
+          <a
+            key={x.key}
+            href={x.key === 'turning' ? '/teens' : `/teens?view=${x.key}`}
+            aria-current={x.key === view ? 'page' : undefined}
+            className={`rounded-full border px-3 py-1 text-[12.5px] ${x.key === view ? 'border-accent bg-accent-soft text-accent' : 'border-border text-fg-2'}`}
+          >
+            {x.label}
+          </a>
+        ))}
+      </nav>
       {await withPanel(async () => {
         const r = await api<{ total: number; due: number; items: Teen[] }>(
-          `/panel/teens${all ? '' : '?turning18=30'}`,
+          `/panel/teens${VIEWS.find((x) => x.key === view)!.query}`,
         );
         return (
           <div className="grid gap-4">
             <div className="grid gap-3 md:grid-cols-3">
-              <Stat label={all ? 'Teen members' : 'Turning 18 in 30 days'} value={fmt(r.total)} />
+              <Stat label={VIEWS.find((x) => x.key === view)!.label} value={fmt(r.total)} />
               <Stat
                 label="Already 18"
                 value={fmt(r.due)}
                 tone="accent"
-                hint="Ready to move to an adult account"
+                hint={all ? undefined : 'Paused until they accept the adult terms'}
               />
             </div>
             <Card>
@@ -52,7 +79,7 @@ export default async function TeensPage({ searchParams }: { searchParams: Promis
               {r.items.length === 0 ? (
                 <EmptyState title="No one to show" />
               ) : (
-                <Table head={['Teen', 'Age', '18th birthday', 'Registration', 'Guardian', '']}>
+                <Table head={['Teen', 'Age', '18th birthday', 'Adult terms', 'Registration', 'Guardian', '']}>
                   {r.items.map((t) => (
                     <tr key={t.id}>
                       <td className="px-5 py-2.5 font-medium">
@@ -69,6 +96,22 @@ export default async function TeensPage({ searchParams }: { searchParams: Promis
                         ) : null}
                       </td>
                       <td className="px-5 py-2.5 text-[12px]">
+                        {t.adultMove?.stage === 'turning_adult' ? (
+                          <>
+                            <Badge tone="warn">Waiting</Badge>
+                            <p className="text-[11px] text-fg-3">
+                              closes {fmtDate(t.adultMove.deadline ?? null)}
+                            </p>
+                          </>
+                        ) : t.adultMove?.stage ? (
+                          <Badge>{t.adultMove.stage}</Badge>
+                        ) : t.adultMove?.notifiedAt ? (
+                          <span className="text-fg-3">notice sent {fmtDate(t.adultMove.notifiedAt)}</span>
+                        ) : (
+                          '—'
+                        )}
+                      </td>
+                      <td className="px-5 py-2.5 text-[12px]">
                         {t.registration ? `${t.registration.reference} · ${t.registration.status}` : '—'}
                       </td>
                       <td className="px-5 py-2.5 text-[12px]">
@@ -77,6 +120,14 @@ export default async function TeensPage({ searchParams }: { searchParams: Promis
                       <td className="px-5 py-2.5">
                         <div className="flex flex-wrap gap-1">
                           {t.age !== null && t.age >= 18 ? <Graduate id={t.id} /> : null}
+                          {t.adultMove?.stage === 'turning_adult' ? (
+                            <ReasonAction
+                              op={{ op: 'teen-close', id: t.id }}
+                              label="Close account"
+                              done="Account closed; a delete request is open"
+                              danger
+                            />
+                          ) : null}
                           <ReasonAction
                             op={{ op: 'teen-revoke', id: t.id }}
                             label="Stop guardian links"

@@ -123,6 +123,22 @@ function fakePanel() {
         guardianLinksToStop: 1,
         rewardRequestsToCancel: 0,
       });
+    if (p === `${V}/teens/registrations`)
+      return ok({
+        counts: { manual_review: 1, expired: 1 },
+        items: [
+          { id: RED, reference: 'TR-DEMO-0001', status: 'manual_review', actions: ['approve', 'cancel'] },
+        ],
+        query: url.search,
+      });
+    if (p.startsWith(`${V}/teens/registrations/${RED}/`))
+      return ok({
+        id: RED,
+        reference: 'TR-DEMO-0001',
+        status: p.endsWith('/approve') ? 'pending_consent' : 'cancelled',
+      });
+    if (p === `${V}/teens/${TEEN}/close`)
+      return ok({ closed: true, pointsLapsed: 3000, deleteRequestOpened: true });
     if (p === `${V}/data-requests/${DR}/decision`)
       return ok({ before: 'requested', after: body.status, id: DR });
     return send(404, { status: 'error', code: 'not_found', message: 'Not found' });
@@ -310,6 +326,64 @@ describe('super admin step 4 through the panel admin API', () => {
     expect(panel.seen.at(-1)!.path).toContain('dryRun=0');
     const [a] = await audit('teen.graduate');
     expect([a.before, a.after]).toEqual([{ segment: 'b2c-minor' }, { segment: 'b2c' }]);
+  });
+
+  it('teen pipeline: safeguarding reads and decides with a reason; finance cannot; close is audited', async () => {
+    await request(t.server).get('/api/v1/panel/teens/registrations').set(bearer(finance, 'mfr')).expect(403);
+    const board = await request(t.server)
+      .get('/api/v1/panel/teens/registrations?status=manual_review')
+      .set(bearer(safeguard, 'mfr'))
+      .expect(200);
+    expect(board.body.counts.manual_review).toBe(1);
+    expect(panel.seen.at(-1)!.path).toContain('status=manual_review');
+    await request(t.server)
+      .get('/api/v1/panel/teens/registrations?status=nope')
+      .set(bearer(safeguard, 'mfr'))
+      .expect(400);
+    await request(t.server)
+      .post(`/api/v1/panel/teens/registrations/${RED}/approve`)
+      .set(bearer(safeguard, 'mfr'))
+      .send({})
+      .expect(400);
+    await request(t.server)
+      .post(`/api/v1/panel/teens/registrations/${RED}/delete`)
+      .set(bearer(safeguard, 'mfr'))
+      .send({ reason: 'Not an action' })
+      .expect(400);
+    const ok = await request(t.server)
+      .post(`/api/v1/panel/teens/registrations/${RED}/approve`)
+      .set(bearer(safeguard, 'mfr'))
+      .send({ reason: 'Spoke to the mother on the phone' })
+      .expect(201);
+    expect(ok.body.status).toBe('pending_consent');
+    const [a] = await audit('teen.registration.approve');
+    expect(a.after).toEqual({ status: 'pending_consent' });
+    await request(t.server)
+      .post(`/api/v1/panel/teens/registrations/${RED}/cancel`)
+      .set(bearer(finance, 'mfr'))
+      .send({ reason: 'Duplicate sign-up' })
+      .expect(403);
+
+    await request(t.server)
+      .post(`/api/v1/panel/teens/${TEEN}/close`)
+      .set(bearer(finance, 'mfr'))
+      .send({ reason: 'No reply after 60 days' })
+      .expect(403);
+    const c = await request(t.server)
+      .post(`/api/v1/panel/teens/${TEEN}/close`)
+      .set(bearer(safeguard, 'mfr'))
+      .send({ reason: 'No reply after three calls' })
+      .expect(201);
+    expect(c.body.pointsLapsed).toBe(3000);
+    expect((await audit('teen.close')).length).toBe(1);
+
+    // move now passes the chosen adult segment through
+    await request(t.server)
+      .post(`/api/v1/panel/teens/${TEEN}/graduate`)
+      .set(bearer(brandAdmin, 'mfr'))
+      .send({ segment: 'b2b' })
+      .expect(201);
+    expect(panel.seen.at(-1)!.body).toMatchObject({ segment: 'b2b' });
   });
 
   it('data requests: decided with a reason; MHO calls carry the MHO origin', async () => {
