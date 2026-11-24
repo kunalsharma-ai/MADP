@@ -19,12 +19,18 @@ const keyRing = z
   .default('')
   .transform((v, ctx) => {
     const out: Record<string, string> = {};
-    for (const part of v.split(',').map((s) => s.trim()).filter(Boolean)) {
+    for (const part of v
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean)) {
       const i = part.indexOf('=');
       const id = part.slice(0, i).trim();
       const key = part.slice(i + 1).trim();
       if (i < 1 || !/^k\d+$/.test(id) || id === 'k1' || !key32(key)) {
-        ctx.addIssue({ code: 'custom', message: 'entries must be k<n>=<32-byte base64 key>, and k1 is FIELD_ENCRYPTION_KEY' });
+        ctx.addIssue({
+          code: 'custom',
+          message: 'entries must be k<n>=<32-byte base64 key>, and k1 is FIELD_ENCRYPTION_KEY',
+        });
         return z.NEVER;
       }
       out[id] = key;
@@ -48,6 +54,9 @@ const secretList = z
  * API runtime configuration. Secrets come from the environment (populated by the secrets manager in
  * staging/production, by an uncommitted .env locally). Nothing secret has a default.
  */
+/** An empty value in .env means "not set". */
+const blankIsUnset = <T extends z.ZodTypeAny>(t: T) => z.preprocess((v) => (v === '' ? undefined : v), t);
+
 export const ApiEnv = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
   PORT: z.coerce.number().int().default(4000),
@@ -57,13 +66,14 @@ export const ApiEnv = z.object({
   /** HS256 signing secret for admin session tokens, >= 32 chars. */
   AUTH_JWT_SECRET: z.string().min(32),
   /** 32-byte key, base64. Encrypts PII fields (AES-256-GCM). Rotate via key id prefix (see SECURITY_PRIVACY.md). */
-  FIELD_ENCRYPTION_KEY: z
-    .string()
-    .refine(key32, 'must be 32 bytes, base64'),
+  FIELD_ENCRYPTION_KEY: z.string().refine(key32, 'must be 32 bytes, base64'),
   /** More field-encryption keys by id (rotation). The key `k1` is always FIELD_ENCRYPTION_KEY. */
   FIELD_ENCRYPTION_KEYS: keyRing,
   /** Key id new values are encrypted with. Old values stay readable while their key is listed. */
-  FIELD_ENCRYPTION_ACTIVE_KEY: z.string().regex(/^k\d+$/).default('k1'),
+  FIELD_ENCRYPTION_ACTIVE_KEY: z
+    .string()
+    .regex(/^k\d+$/)
+    .default('k1'),
   /** Separate key for keyed hashes used for matching (HMAC-SHA256), so hashes cannot be brute-forced without it. */
   PII_HASH_KEY: z.string().min(32),
   /** Require TOTP MFA for every admin login. Defaults on; tests and local demo may turn it off. */
@@ -87,6 +97,15 @@ export const ApiEnv = z.object({
   MFR_API_TOKEN: z.string().optional(),
   MHO_API_BASE_URL: z.string().url().optional(),
   MHO_API_TOKEN: z.string().optional(),
+  /**
+   * Super admin console: the panel backend's signed admin API (/api/admin/v1). One shared secret per environment; the
+   * panel side accepts a list for rotation. No secret or no base URL = the console's member and question bank screens
+   * say the brand is not connected. The brand's hostname comes from its brand settings (first origin).
+   */
+  PANEL_ADMIN_API_SECRET: blankIsUnset(z.string().min(32).optional()),
+  T2O_ADMIN_API_BASE_URL: blankIsUnset(z.string().url().optional()),
+  MFR_ADMIN_API_BASE_URL: blankIsUnset(z.string().url().optional()),
+  MHO_ADMIN_API_BASE_URL: blankIsUnset(z.string().url().optional()),
   /** Minimum cell size below which counts are suppressed in privacy-sensitive views. */
   MIN_CELL_SIZE: z.coerce.number().int().min(0).default(5),
   /** Minimum cell size for counts that use a special-category (health) filter. Never below MIN_CELL_SIZE. */
@@ -119,7 +138,9 @@ export function loadApiEnv(source: Record<string, string | undefined> = process.
   }
   const env = parsed.data;
   if (env.NODE_ENV === 'production' && !env.REQUIRE_MFA)
-    throw new Error('Invalid API configuration: REQUIRE_MFA cannot be false in production (two-factor is required for every admin)');
+    throw new Error(
+      'Invalid API configuration: REQUIRE_MFA cannot be false in production (two-factor is required for every admin)',
+    );
   if (env.FIELD_ENCRYPTION_ACTIVE_KEY !== 'k1' && !env.FIELD_ENCRYPTION_KEYS[env.FIELD_ENCRYPTION_ACTIVE_KEY])
     throw new Error(
       `Invalid API configuration: FIELD_ENCRYPTION_ACTIVE_KEY ${env.FIELD_ENCRYPTION_ACTIVE_KEY} is not in FIELD_ENCRYPTION_KEYS`,

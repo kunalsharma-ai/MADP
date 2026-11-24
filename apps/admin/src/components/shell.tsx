@@ -25,6 +25,9 @@ import {
   ShieldCheck,
   Sun,
   Users,
+  ListChecks,
+  LayoutList,
+  IdCard,
   UserCog,
   Building2,
 } from 'lucide-react';
@@ -33,8 +36,33 @@ import { NAV, PLANNED } from './nav';
 import { cn } from '@/lib/cn';
 import { setBrand } from '@/app/super-admin-actions';
 
-const ICONS = { LayoutDashboard, Globe2, Users, ListTree, GitCompareArrows, PlugZap, ShieldCheck, UserRoundCheck, Mail, Workflow, Coins, Network, BadgeCheck, FileLock2, UserCog, Building2 } as const;
-const BRAND_LABEL: Record<string, string> = { all: 'All brands', t2o: 'Turn2Opinion', mfr: 'MyFrequentRewards', mho: 'MyHealthOpinions' };
+const ICONS = {
+  LayoutDashboard,
+  Globe2,
+  Users,
+  ListChecks,
+  LayoutList,
+  IdCard,
+  ListTree,
+  GitCompareArrows,
+  PlugZap,
+  ShieldCheck,
+  UserRoundCheck,
+  Mail,
+  Workflow,
+  Coins,
+  Network,
+  BadgeCheck,
+  FileLock2,
+  UserCog,
+  Building2,
+} as const;
+const BRAND_LABEL: Record<string, string> = {
+  all: 'All brands',
+  t2o: 'Turn2Opinion',
+  mfr: 'MyFrequentRewards',
+  mho: 'MyHealthOpinions',
+};
 
 export function Shell({
   user,
@@ -59,7 +87,9 @@ export function Shell({
     items: g.items.filter(
       (i) =>
         user.permissions.includes(i.permission) ||
-        (i.brandScoped && brand !== 'all' && (user.brandPermissions[brand as 't2o'] ?? []).includes(i.permission)),
+        (i.brandScoped &&
+          brand !== 'all' &&
+          (user.brandPermissions[brand as 't2o'] ?? []).includes(i.permission)),
     ),
   })).filter((g) => g.items.length);
   // The longest matching link wins, so /communications/automations does not also light up /communications.
@@ -145,7 +175,10 @@ export function Shell({
             <p className="truncate text-[13px] text-white">{user.displayName}</p>
             <p className="truncate text-[11px] text-nav-text/60">
               {user.grants
-                .map((g) => `${g.role.replaceAll('_', ' ')}${g.brands ? ` (${g.brands.join(', ').toUpperCase()})` : ''}`)
+                .map(
+                  (g) =>
+                    `${g.role.replaceAll('_', ' ')}${g.brands ? ` (${g.brands.join(', ').toUpperCase()})` : ''}`,
+                )
                 .join(' · ')}
             </p>
           </div>
