@@ -16,6 +16,7 @@ export interface BrandRow {
   fourEyesPoints: number;
   profileReviewMonths: number;
   archiveAfterMonths: number;
+  supportEmail: string | null;
   updatedAt: string;
 }
 
@@ -47,6 +48,7 @@ export function BrandSettingsForm({ brand, canMoney }: { brand: BrandRow; canMon
               displayName: String(f.get('displayName')),
               origins: list(f.get('origins')),
               languages: list(f.get('languages')),
+              ...(f.get('supportEmail') ? { supportEmail: String(f.get('supportEmail')) } : {}),
               profileReviewMonths: num(f, 'profileReviewMonths'),
               archiveAfterMonths: num(f, 'archiveAfterMonths'),
               ...(canMoney
@@ -78,6 +80,10 @@ export function BrandSettingsForm({ brand, canMoney }: { brand: BrandRow; canMon
       <label>
         Languages
         <input name="languages" defaultValue={brand.languages.join(', ')} className={input} />
+      </label>
+      <label>
+        Support e-mail (sender and reply-to)
+        <input name="supportEmail" type="email" defaultValue={brand.supportEmail ?? ''} className={input} />
       </label>
       <div className="grid grid-cols-2 gap-3">
         <label>

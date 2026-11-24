@@ -368,7 +368,10 @@ export const adminRoles = pgTable('admin_role', {
   key: text('key').primaryKey(),
   name: text('name').notNull(),
   description: text('description').notNull().default(''),
-  permissions: text('permissions').array().notNull().default(sql`'{}'::text[]`),
+  permissions: text('permissions')
+    .array()
+    .notNull()
+    .default(sql`'{}'::text[]`),
   system: boolean('system').notNull().default(false),
   createdAt: created(),
   updatedAt: updated(),
@@ -388,7 +391,10 @@ export const adminRoleGrants = pgTable(
     brands: panelCode('brands').array(),
     createdAt: created(),
   },
-  (t) => [uniqueIndex('admin_role_grant_uq').on(t.adminId, t.roleKey), index('admin_role_grant_role_idx').on(t.roleKey)],
+  (t) => [
+    uniqueIndex('admin_role_grant_uq').on(t.adminId, t.roleKey),
+    index('admin_role_grant_role_idx').on(t.roleKey),
+  ],
 );
 
 /** Server-side admin sessions: a session ends after ADMIN_IDLE_MINUTES without a request, or on sign-out. */
@@ -416,7 +422,10 @@ export const brandSettings = pgTable('brand_setting', {
   panel: panelCode('panel').primaryKey(),
   displayName: text('display_name').notNull(),
   origins: text('origins').array().notNull(),
-  languages: text('languages').array().notNull().default(sql`'{en}'::text[]`),
+  languages: text('languages')
+    .array()
+    .notNull()
+    .default(sql`'{en}'::text[]`),
   currency: text('currency').notNull().default('USD'),
   /** Points worth 1 unit of `currency`. Spec: 1,000 points = 1 USD while testing. */
   pointsPerCurrencyUnit: integer('points_per_currency_unit').notNull().default(1000),
@@ -427,6 +436,8 @@ export const brandSettings = pgTable('brand_setting', {
   profileReviewMonths: smallint('profile_review_months').notNull().default(6),
   /** Months without activity before a member is archived. */
   archiveAfterMonths: smallint('archive_after_months').notNull().default(6),
+  /** The brand's support address: the From and Reply-To of member e-mails, shown in e-mail previews. */
+  supportEmail: text('support_email'),
   updatedBy: uuid('updated_by'),
   updatedAt: updated(),
 });
@@ -528,7 +539,9 @@ export const fatiguePolicies = pgTable('fatigue_policy', {
   quietStartHour: smallint('quiet_start_hour').notNull().default(21),
   quietEndHour: smallint('quiet_end_hour').notNull().default(8),
   /** Fatigue score bands: score >= value -> band. */
-  bands: jsonb('bands').notNull().default(sql`'{"high": 60, "medium": 30}'::jsonb`),
+  bands: jsonb('bands')
+    .notNull()
+    .default(sql`'{"high": 60, "medium": 30}'::jsonb`),
   updatedBy: uuid('updated_by'),
   updatedAt: updated(),
 });
@@ -827,7 +840,10 @@ export const serviceNonces = pgTable(
     nonce: text('nonce').notNull(),
     seenAt: timestamp('seen_at', { withTimezone: true }).notNull().defaultNow(),
   },
-  (t) => [uniqueIndex('service_nonce_key').on(t.clientId, t.nonce), index('service_nonce_seen_idx').on(t.seenAt)],
+  (t) => [
+    uniqueIndex('service_nonce_key').on(t.clientId, t.nonce),
+    index('service_nonce_seen_idx').on(t.seenAt),
+  ],
 );
 
 export const serviceIdempotency = pgTable(
@@ -946,7 +962,10 @@ export const participationEvents = pgTable(
     occurredAt: timestamp('occurred_at', { withTimezone: true }).notNull(),
     receivedAt: created(),
   },
-  (t) => [uniqueIndex('participation_event_key').on(t.clientId, t.eventId), index('participation_event_invitation_idx').on(t.invitationId)],
+  (t) => [
+    uniqueIndex('participation_event_key').on(t.clientId, t.eventId),
+    index('participation_event_invitation_idx').on(t.invitationId),
+  ],
 );
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -1022,9 +1041,14 @@ export const privacyRequests = pgTable(
     createdBy: uuid('created_by').notNull(),
     verifiedBy: uuid('verified_by'),
     completedAt: timestamp('completed_at', { withTimezone: true }),
-    result: jsonb('result').notNull().default(sql`'{}'::jsonb`),
+    result: jsonb('result')
+      .notNull()
+      .default(sql`'{}'::jsonb`),
   },
-  (t) => [index('privacy_request_status_idx').on(t.dataMode, t.status, t.dueAt), index('privacy_request_person_idx').on(t.masterPersonId)],
+  (t) => [
+    index('privacy_request_status_idx').on(t.dataMode, t.status, t.dueAt),
+    index('privacy_request_person_idx').on(t.masterPersonId),
+  ],
 );
 
 export const privacyRequestEvents = pgTable(
@@ -1037,7 +1061,9 @@ export const privacyRequestEvents = pgTable(
     action: text('action').notNull(),
     actorId: uuid('actor_id'),
     note: text('note').notNull().default(''),
-    metadata: jsonb('metadata').notNull().default(sql`'{}'::jsonb`),
+    metadata: jsonb('metadata')
+      .notNull()
+      .default(sql`'{}'::jsonb`),
     at: timestamp('at', { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [index('privacy_request_event_request_idx').on(t.requestId, t.at)],
@@ -1121,7 +1147,9 @@ export const insights = pgTable(
     decisionNote: text('decision_note'),
   },
   (t) => [
-    uniqueIndex('insight_open_uq').on(t.dataMode, t.panel, t.rule).where(sql`status = 'open'`),
+    uniqueIndex('insight_open_uq')
+      .on(t.dataMode, t.panel, t.rule)
+      .where(sql`status = 'open'`),
     index('insight_status_idx').on(t.dataMode, t.status, t.lastSeenAt),
   ],
 );

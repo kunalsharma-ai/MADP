@@ -44,6 +44,8 @@ export const BrandSettingsUpdate = z.object({
   fourEyesPoints: z.number().int().min(0).max(100_000_000).optional(),
   profileReviewMonths: z.number().int().min(1).max(36).optional(),
   archiveAfterMonths: z.number().int().min(1).max(60).optional(),
+  /** Sender and reply-to for member e-mails. Sending stays behind the e-mail switches. */
+  supportEmail: z.string().trim().toLowerCase().email().max(200).optional(),
   reason: z.string().trim().min(5).max(500),
 });
 export type BrandSettingsUpdate = z.infer<typeof BrandSettingsUpdate>;
