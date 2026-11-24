@@ -63,6 +63,30 @@ Act 2023, GDPR and UK GDPR) has to be confirmed by counsel. Nothing here is lega
 | Signed service auth for Supply360 (client credentials plus request signing), scoped per service client | M6 |
 | Dependency and container scanning, backups and restore drills, incident runbook | M6 |
 
+## 2a. Hardening against scanners, bots and brute force (24 Nov 2026)
+
+Kunal asked that no hacker or AI bot can break into the portal or the project. This section covers the MADP API.
+The console thread covers sign-in, MFA, sessions and lockout, the admin app, and the signed panel admin protocol.
+
+| Threat | Control | Tested in |
+|---|---|---|
+| Scanners mapping the API | `GET /openapi.json` answers 404 in production unless `OPENAPI_PUBLIC=true` | `test/hardening.test.ts` |
+| Clickjacking, script injection or caching of API answers | Every answer sends `Content-Security-Policy: default-src 'none'; frame-ancestors 'none'`, `Cache-Control: no-store`, `Referrer-Policy: no-referrer`, `X-Frame-Options: DENY`, two-year HSTS with preload, and a `Permissions-Policy` that turns device APIs off. `X-Powered-By` is removed | `test/hardening.test.ts`, `test/security.test.ts` |
+| Brute force or floods on the signed public routes (Supply360, webhooks) | An address with `ABUSE_MAX_FAILURES` (default 20) refused requests in 10 minutes gets 429 for 15 minutes. The 429 is answered before any database work. Only the refusal that starts the block is audited, so a flood can't fill the audit log | `test/hardening.test.ts` |
+| Replayed or forged service calls and webhooks | HMAC-SHA256 over timestamp, nonce, method, path and body hash. Signatures are compared in constant time. Timestamps must be within 5 minutes, and Supply360 nonces are used once | `test/supply360.test.ts`, `src/webhooks/signature.test.ts` |
+| General request floods | Global limit of `RATE_LIMIT_PER_MINUTE` (300) per address, a 100 kB JSON body limit, and stricter limits on sign-in | `test/security.test.ts` |
+| A panel API redirecting MADP's bearer token elsewhere | The connector refuses to follow redirects (`redirect: 'error'`) | `packages/connectors/src/connectors.test.ts` |
+| A plain-http admin origin in production | The API refuses to start in production unless `ADMIN_ORIGIN` is `https://` | `packages/config/src/index.test.ts` |
+| Spreadsheet formula injection in exports | CSV and XLSX cells that start with `=`, `+`, `-`, `@`, a tab or a carriage return are prefixed with `'` | `test/reports.test.ts` |
+| Leaked secrets in the repository | `secretlint` runs on every CI build (`pnpm security:check` locally). The full git history was checked on 24 Nov 2026 with no findings | CI |
+| Vulnerable dependencies | CI fails on any high or critical advisory in production dependencies (`pnpm audit --prod --audit-level high`). Dependabot opens weekly update PRs. The `uuid` advisory under `exceljs` is fixed with an override. One moderate advisory remains in `esbuild`, which only drizzle-kit uses as a development tool and which is not shipped | CI |
+
+**Still needed at deploy time (Kunal's go-ahead):**
+- A WAF or load-balancer rate limit in front of the API. The limits above are per API instance.
+- Bot protection on the admin sign-in page (the console thread's area).
+- GitHub's own secret scanning, push protection and CodeQL, switched on in the repository settings.
+- The API reachable only through the load balancer, and the databases on a private network.
+
 ## 3a. Key rotation
 1. Generate a key (`openssl rand -base64 32`) and add it as `FIELD_ENCRYPTION_KEYS=k2=<key>`. Keep
    `FIELD_ENCRYPTION_KEY` (that is `k1`).

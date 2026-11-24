@@ -16,6 +16,7 @@ each panel.
 | Dead letters, per panel | `GET /api/v1/dead-letters` | Any new dead letter |
 | Webhook failures, per panel | Webhook inbox (`webhook_inbox`, rows with an error after processing) | Any row still unprocessed or in error after 15 minutes |
 | Privacy deadlines | Privacy requests screen, AI insights rule `privacy_overdue` | Any request past `due_at`, or due within 3 days and not started |
+| Abuse blocks on signed public routes | Security audit screen, `service.rejected` or `webhook.rejected` with `addressBlocked: true` | Any block. Check the address, and whether a real client lost its secret or its clock drifted |
 | Login throttling and refusals | Security audit screen (`audit_event`), Supply360 refusals | A spike of `auth.login` with outcome `denied`, or `service.rejected` |
 | Error rate | Load-balancer or API logs (`x-request-id` on every response) | 5xx above 1% for 5 minutes |
 

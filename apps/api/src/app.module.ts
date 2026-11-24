@@ -51,6 +51,7 @@ import { ServiceClientsController, Supply360Controller } from './supply360/suppl
 import { AdminsController } from './admins/admins.controller.js';
 import { AdminsService } from './admins/admins.service.js';
 import { BrandsController } from './brands/brands.controller.js';
+import { AbuseService } from './common/abuse.service.js';
 import { PanelAdminService } from './panel-admin/panel-admin.service.js';
 import { MembersController } from './panel-admin/members.controller.js';
 import { QuestionBankController } from './panel-admin/question-bank.controller.js';
@@ -116,6 +117,7 @@ export class AppModule {
         AuthService,
         AdminsService,
         PanelAdminService,
+        AbuseService,
         QuestionnaireService,
         ConnectorRegistry,
         IngestionService,

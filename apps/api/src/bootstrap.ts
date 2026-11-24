@@ -15,7 +15,24 @@ export async function createApp(env: ApiEnv, opts: { logger?: boolean } = {}) {
     rawBody: true,
   });
   app.set('trust proxy', 1);
-  app.use(helmet());
+  // The API only serves JSON: no scripts, styles, frames or embedding, nothing cached, no referrer, no device APIs.
+  app.use(
+    helmet({
+      contentSecurityPolicy: {
+        useDefaults: false,
+        directives: { defaultSrc: ["'none'"], frameAncestors: ["'none'"], baseUri: ["'none'"], formAction: ["'none'"] },
+      },
+      strictTransportSecurity: { maxAge: 63_072_000, includeSubDomains: true, preload: true },
+      referrerPolicy: { policy: 'no-referrer' },
+      crossOriginResourcePolicy: { policy: 'same-site' },
+      xFrameOptions: { action: 'deny' },
+    }),
+  );
+  app.use((_req: Request, res: Response, next: NextFunction) => {
+    res.setHeader('cache-control', 'no-store');
+    res.setHeader('permissions-policy', 'camera=(), microphone=(), geolocation=(), payment=(), usb=(), interest-cohort=()');
+    next();
+  });
   // Request id for the audit trail: the caller's x-request-id when it looks safe, otherwise a new one.
   app.use((req: Request, res: Response, next: NextFunction) => {
     const given = String(req.headers['x-request-id'] ?? '');

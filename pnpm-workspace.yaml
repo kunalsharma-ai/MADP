@@ -9,3 +9,6 @@ allowBuilds:
   unrs-resolver: true
 minimumReleaseAgeExclude:
   - lucide-react@1.78.0
+overrides:
+  # GHSA-w5hq-g745-h8pq: exceljs pulls in an old uuid. 11.1.1 is the patched release that still ships CommonJS.
+  'uuid@<11.1.1': 11.1.1
