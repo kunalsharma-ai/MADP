@@ -13,7 +13,8 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "node --env-file-if-exists=../../.env dist/scripts/migrate.js",
     "db:seed:demo": "node --env-file-if-exists=../../.env dist/scripts/seed-demo.js",
-    "admin:create": "node --env-file-if-exists=../../.env dist/scripts/create-admin.js"
+    "admin:create": "node --env-file-if-exists=../../.env dist/scripts/create-admin.js",
+    "keys:rotate": "node --env-file-if-exists=../../.env dist/scripts/rotate-field-keys.js"
   },
   "dependencies": {
     "@madp/config": "workspace:*",

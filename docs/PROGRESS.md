@@ -52,6 +52,13 @@ Staff accounts are now skipped (`isStaff`, kunalsharma-ai/turn2opinion#21, merge
   deleted memberships ignored, verified e-mail first, latest source update, then first seen. `field_sources` records
   which account supplied each field. This replaces "first seen wins".
 - Tests: `apps/api/test/identity.test.ts` (5) and `src/identity/precedence.test.ts` (3), on DEMO data.
+### Signed webhooks and key rotation (2026-11-24)
+- `POST /webhooks/:panel` takes signed "something changed" events from a panel and starts a sync of that panel.
+  HMAC-SHA256, 5-minute replay window, event id idempotency, two secrets at once for rotation, and no personal data in
+  the payload. Off for a panel until its secret is set. No panel sends webhooks yet, so scheduled sync stays the main
+  path.
+- Field-encryption keys can be rotated: several keys by id, one active, and `keys:rotate` re-encrypts stored values.
+- Tests: `test/webhooks.test.ts` (7), `src/webhooks/signature.test.ts` (3), crypto and config unit tests.
 
 ### Next for T2O
 A T2O-only dry run against the live backend once the token is in the cloud environment, with counts shown to Kunal

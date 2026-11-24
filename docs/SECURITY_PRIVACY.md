@@ -28,6 +28,8 @@ Act 2023, GDPR and UK GDPR) has to be confirmed by counsel. Nothing here is lega
 | Rate limiting: 300 requests per minute globally, 10 per minute on login and MFA confirm | `app.module.ts`, `auth.controller.ts` | not automated |
 | Secrets come only from env; startup fails if a secret is missing or too short | `packages/config` | `requires a strong signing secret`, `requires MFA unless explicitly disabled` |
 | `.env` is git-ignored; only `.env.example` with placeholders is committed | `.gitignore` | not automated |
+| Field-key rotation: several keys by id, one active; `keys:rotate` re-encrypts every encrypted column in batches, can be stopped and re-run, and is audited. A value on a retired key fails loudly | `crypto/field-crypto.ts`, `crypto/key-rotation.service.ts` | `rotates: old values stay readable…`, `re-encrypts every value to the new key…` |
+| Signed webhooks: HMAC-SHA256 over timestamp, event id and raw body; 5-minute replay window; event id idempotency; several secrets for rotation; payload limited to type and time (no personal data), only its hash is stored; rejections audited | `webhooks/` | `test/webhooks.test.ts`, `src/webhooks/signature.test.ts` |
 
 ## 2. Sensitive data (MHO)
 - Every MHO answer is `special_category` unless its question is on a short demographic allow-list
@@ -47,12 +49,23 @@ Act 2023, GDPR and UK GDPR) has to be confirmed by counsel. Nothing here is lega
 |---|---|
 | Consent population from each panel's `User` fields (done, DEMO); answer-based consent (MFR); consent check API | M3 |
 | Deletion propagation (source event → MADP → downstream), with deletion receipts | M3 |
-| Reversible merge and unmerge with review | M3 |
-| Key rotation job (re-encrypt `k1` → `k2`) and a KMS-backed key | M3 |
+| KMS-backed keys, and rotation of `PII_HASH_KEY` (needs every e-mail re-hashed) | M3 |
 | Access reviews and break-glass procedure | M3 |
 | Outbound messaging policy, suppression, quiet hours, provider credentials kept in a vault | M4 |
 | Signed service auth for Supply360 (client credentials plus request signing), scoped per service client | M6 |
 | Dependency and container scanning, backups and restore drills, incident runbook | M6 |
+
+## 3a. Key rotation
+1. Generate a key (`openssl rand -base64 32`) and add it as `FIELD_ENCRYPTION_KEYS=k2=<key>`. Keep
+   `FIELD_ENCRYPTION_KEY` (that is `k1`).
+2. Set `FIELD_ENCRYPTION_ACTIVE_KEY=k2` and restart every API instance. New values are encrypted with `k2`; `k1`
+   values stay readable.
+3. Run `pnpm --filter @madp/api keys:rotate`. `--status` shows how many values each key still holds.
+4. When `remaining` is 0, no stored value uses `k1` any more. `FIELD_ENCRYPTION_KEY` is still required at start-up,
+   but it no longer protects any data, so the old key material can be destroyed and replaced with a fresh value.
+
+Webhook secrets rotate the same way: list the new secret next to the old one, switch the panel to the new one, then
+drop the old one.
 
 ## 4. Live-access approval process (nothing has been accessed)
 MADP will not read real personal data until **all** of these are true for a panel:

@@ -3,29 +3,45 @@ import { Inject, Injectable } from '@nestjs/common';
 import type { ApiEnv } from '@madp/config';
 import { API_ENV } from '../common/tokens.js';
 
-const KEY_ID = 'k1';
-
 /**
  * Field-level encryption for PII (AES-256-GCM, random 96-bit IV) and keyed hashing for matching.
- * Ciphertext format: `<keyId>.<iv>.<tag>.<data>` (base64url), so keys can be rotated by adding a new id.
+ * Ciphertext format: `<keyId>.<iv>.<tag>.<data>` (base64url). Rotation: add the new key to FIELD_ENCRYPTION_KEYS,
+ * make it FIELD_ENCRYPTION_ACTIVE_KEY, run `rotate-field-keys` to re-encrypt, then retire the old key.
  */
 @Injectable()
 export class FieldCrypto {
-  private readonly key: Buffer;
+  private readonly keys: Map<string, Buffer>;
+  readonly activeKeyId: string;
   private readonly hashKey: string;
 
   constructor(@Inject(API_ENV) env: ApiEnv) {
-    this.key = Buffer.from(env.FIELD_ENCRYPTION_KEY, 'base64');
+    this.keys = new Map([
+      ['k1', Buffer.from(env.FIELD_ENCRYPTION_KEY, 'base64')],
+      ...Object.entries(env.FIELD_ENCRYPTION_KEYS ?? {}).map(([id, k]) => [id, Buffer.from(k, 'base64')] as const),
+    ]);
+    this.activeKeyId = env.FIELD_ENCRYPTION_ACTIVE_KEY ?? 'k1';
+    if (!this.keys.has(this.activeKeyId)) throw new Error(`Unknown active field key ${this.activeKeyId}`);
     this.hashKey = env.PII_HASH_KEY;
+  }
+
+  /** Key id a ciphertext was made with, or null for an empty value. */
+  keyIdOf(token: string | null | undefined): string | null {
+    return token ? (token.split('.')[0] ?? null) : null;
+  }
+
+  /** Re-encrypts with the active key when the value uses another key; returns the same token otherwise. */
+  reencrypt(token: string | null | undefined): string | null {
+    if (!token) return null;
+    return this.keyIdOf(token) === this.activeKeyId ? token : this.encrypt(this.decrypt(token));
   }
 
   encrypt(plain: string | null | undefined): string | null {
     if (plain === null || plain === undefined || plain === '') return null;
     const iv = randomBytes(12);
-    const c = createCipheriv('aes-256-gcm', this.key, iv);
+    const c = createCipheriv('aes-256-gcm', this.keys.get(this.activeKeyId)!, iv);
     const data = Buffer.concat([c.update(plain, 'utf8'), c.final()]);
     return [
-      KEY_ID,
+      this.activeKeyId,
       iv.toString('base64url'),
       c.getAuthTag().toString('base64url'),
       data.toString('base64url'),
@@ -35,8 +51,10 @@ export class FieldCrypto {
   decrypt(token: string | null | undefined): string | null {
     if (!token) return null;
     const [kid, iv, tag, data] = token.split('.');
-    if (kid !== KEY_ID || !iv || !tag || data === undefined) throw new Error('Unknown ciphertext format');
-    const d = createDecipheriv('aes-256-gcm', this.key, Buffer.from(iv, 'base64url'));
+    const key = kid ? this.keys.get(kid) : undefined;
+    if (!key || !iv || !tag || data === undefined)
+      throw new Error(key ? 'Unknown ciphertext format' : `No field key ${kid} is configured`);
+    const d = createDecipheriv('aes-256-gcm', key, Buffer.from(iv, 'base64url'));
     d.setAuthTag(Buffer.from(tag, 'base64url'));
     return Buffer.concat([d.update(Buffer.from(data, 'base64url')), d.final()]).toString('utf8');
   }
