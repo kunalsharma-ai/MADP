@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import type { Metadata } from 'next';
 import { PANEL_CODES, PANELS, brandKitGaps, SUPPRESSION_REASONS, type BrandKit, type DataMode, type PanelCode } from '@madp/contracts';
 import { api } from '@/lib/api';
@@ -20,6 +21,7 @@ interface Template {
   key: string;
   name: string;
   kind: string;
+  source: { pack: string; template: string } | null;
   versions: Version[];
 }
 interface Run {
@@ -113,6 +115,11 @@ export default async function CommunicationsPage({ searchParams }: { searchParam
                     <span className="font-medium">{t.name}</span>
                     <span className="font-mono text-[11px] text-fg-3">{t.key}</span>
                     <Badge>{t.kind.replace('_', ' ')}</Badge>
+                    {t.source ? (
+                      <Link href={`/communications/mailers/${t.source.pack}/${t.source.template}`} className="text-[12px] text-accent underline">
+                        From the mailer library
+                      </Link>
+                    ) : null}
                   </div>
                   <ul className="mt-2 space-y-1.5">
                     {t.versions.map((v) => (

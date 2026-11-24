@@ -1,8 +1,9 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { KIND_BASIS, MERGE_FIELD_SOURCE_LABELS, type AudienceCategory, type MailerTemplate, type MergeFieldSource, type PanelCode } from '@madp/contracts';
+import { KIND_BASIS, MERGE_FIELD_SOURCE_LABELS, type SessionUser, type AudienceCategory, type MailerTemplate, type MergeFieldSource, type PanelCode } from '@madp/contracts';
 import { api } from '@/lib/api';
 import { Badge, Card, CardHeader, CategoryChip, PageHeader, PanelChip, Table } from '@/components/ui';
+import { ToStudio } from './to-studio';
 
 export const metadata: Metadata = { title: 'Mailer' };
 
@@ -12,13 +13,19 @@ type Detail = {
   fields: { field: string; source: MergeFieldSource | null; label: string; madpField: string | null; personal: boolean }[];
   liquid: string;
   text: string;
+  studio: { code: string; message: string }[];
 };
 
 export default async function MailerPage({ params }: { params: Promise<{ pack: string; id: string }> }) {
   const { pack, id } = await params;
   const path = `/communications/mailers/${encodeURIComponent(pack)}/${encodeURIComponent(id)}`;
-  const [d, p] = await Promise.all([api<Detail>(path), api<{ subject: string; preheader: string | null; html: string }>(`${path}/preview`)]);
+  const [d, p, me] = await Promise.all([
+    api<Detail>(path),
+    api<{ subject: string; preheader: string | null; html: string }>(`${path}/preview`),
+    api<SessionUser>('/auth/me'),
+  ]);
   const t = d.template;
+  const canManage = (me.brandPermissions[d.pack.panel] ?? []).includes('communications.manage');
   return (
     <>
       <PageHeader
@@ -84,6 +91,28 @@ export default async function MailerPage({ params }: { params: Promise<{ pack: s
               </div>
             </dl>
           </Card>
+          {t.campaignKind ? (
+            <Card>
+              <CardHeader
+                title="Use in a MADP campaign"
+                hint="Makes a draft studio template from this mailer. It goes through the studio's review like any other version, and nothing is sent."
+              />
+              {d.studio.length ? (
+                <ul className="grid gap-1.5 px-5 py-3 text-[13px]">
+                  {d.studio.map((b) => (
+                    <li key={b.message} className="flex gap-2">
+                      <Badge tone="warn">Stays a panel email</Badge>
+                      <span>{b.message}</span>
+                    </li>
+                  ))}
+                </ul>
+              ) : canManage ? (
+                <ToStudio pack={d.pack.id} id={t.id} panel={d.pack.panel} subjects={t.subjects} />
+              ) : (
+                <p className="px-5 py-3 text-[13px] text-fg-2">Ready to use. Making the template needs the communications manage permission for this brand.</p>
+              )}
+            </Card>
+          ) : null}
           <Card>
             <CardHeader title="Merge fields" hint="Where each value comes from when the email is sent" />
             <Table head={['Field', 'Comes from']}>

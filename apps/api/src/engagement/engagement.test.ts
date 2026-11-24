@@ -19,9 +19,9 @@ describe('templates', () => {
     expect(lintTemplate('service', bare)).toEqual([]);
   });
   it('refuses unknown placeholders, scripts and inline handlers', () => {
-    const bad = { ...ok, bodyHtml: `${ok.bodyHtml}{{email}}<script>x</script><img onerror="x">` };
+    const bad = { ...ok, bodyHtml: `${ok.bodyHtml}{{password}}<script>x</script><img onerror="x">` };
     expect(lintTemplate('newsletter', bad)).toEqual([
-      'Unknown placeholder {{email}}',
+      'Unknown placeholder {{password}}',
       'Script tags are not allowed in e-mail',
       'Inline event handlers are not allowed in e-mail',
     ]);

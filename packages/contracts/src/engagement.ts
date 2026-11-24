@@ -40,13 +40,18 @@ export const BASIS_CONSENT: Record<'marketing' | 'onboarding' | 'service', strin
   service: null,
 };
 
-/** Values a template may use. Everything is HTML-escaped when rendered. */
+/**
+ * Values a template may use, as `{{name}}` or `{{ name | default: "fallback" }}` (the fallback is used when the value
+ * is empty). Everything is HTML-escaped when rendered.
+ */
 export const TEMPLATE_PLACEHOLDERS = [
   'firstName',
+  'email',
   'panelName',
   'unsubscribeUrl',
   'preferencesUrl',
   'profileUrl',
+  'accountUrl',
 ] as const;
 export type TemplatePlaceholder = (typeof TEMPLATE_PLACEHOLDERS)[number];
 
