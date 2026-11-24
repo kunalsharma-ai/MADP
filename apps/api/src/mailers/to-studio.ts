@@ -81,3 +81,79 @@ export function ensureFooterLinks(html: string, text: string): { html: string; t
   }
   return { html, text, added };
 }
+
+const TAG = /\{%-?\s*([\s\S]*?)\s*-?%\}/g;
+const COND = /^([a-z_][\w.]*)\s*(<|<=|>|>=|==|!=)\s*(-?\d+)$/i;
+
+/**
+ * Works out a mailer's Liquid logic ahead of time when every value it tests is fixed by the mailer's audience (for
+ * example "no profile completed yet" means the completed count is 0). Only numeric `assign` with a default, `if`,
+ * `elsif`, `else` and `endif` with comparisons joined by `and` or `or` are understood. Anything else returns null, so
+ * the mailer stays refused rather than being sent with the wrong branch. Output tags (`{{ … }}`) are left for
+ * `liquidToStudio`.
+ */
+export function flattenLiquid(liquid: string, fixed: Record<string, number>): string | null {
+  const vars: Record<string, number> = { ...fixed };
+  const value = (name: string) => (name in vars ? vars[name] : undefined);
+  const test = (cond: string): boolean | null => {
+    const parts = cond.split(/\s+(and|or)\s+/);
+    let result: boolean | null = null;
+    let op = 'and';
+    for (const part of parts) {
+      if (part === 'and' || part === 'or') {
+        op = part;
+        continue;
+      }
+      const m = COND.exec(part.trim());
+      const v = m ? value(m[1]!) : undefined;
+      if (!m || v === undefined) return null;
+      const n = Number(m[3]);
+      const ok = { '<': v < n, '<=': v <= n, '>': v > n, '>=': v >= n, '==': v === n, '!=': v !== n }[m[2]!]!;
+      result = result === null ? ok : op === 'and' ? result && ok : result || ok;
+    }
+    return result;
+  };
+  // Each open `if` remembers whether its enclosing block is shown, whether a branch was taken, and whether the current
+  // branch is shown.
+  const stack: { outer: boolean; taken: boolean; on: boolean }[] = [];
+  const shown = () => (stack.length ? stack[stack.length - 1]!.on : true);
+  let out = '';
+  let last = 0;
+  const body = liquid.replace(COMMENT, '');
+  for (const m of body.matchAll(TAG)) {
+    if (shown()) out += body.slice(last, m.index);
+    last = m.index! + m[0].length;
+    const tag = m[1]!.trim();
+    const [word] = tag.split(/\s+/, 1);
+    const rest = tag.slice(word!.length).trim();
+    if (word === 'assign') {
+      const a = /^([a-z_]\w*)\s*=\s*([a-z_][\w.]*)(?:\s*\|\s*default:\s*(-?\d+))?$/i.exec(rest);
+      if (!a) return null;
+      if (!shown()) continue;
+      const v = value(a[2]!) ?? (a[3] !== undefined ? Number(a[3]) : undefined);
+      if (v === undefined) return null;
+      vars[a[1]!] = v;
+    } else if (word === 'if') {
+      const outer = shown();
+      const t = outer ? test(rest) : false;
+      if (t === null) return null;
+      stack.push({ outer, taken: t, on: outer && t });
+    } else if (word === 'elsif') {
+      const s = stack[stack.length - 1];
+      if (!s) return null;
+      const t = s.outer && !s.taken ? test(rest) : false;
+      if (t === null) return null;
+      s.on = s.outer && !s.taken && t;
+      s.taken ||= t;
+    } else if (word === 'else') {
+      const s = stack[stack.length - 1];
+      if (!s) return null;
+      s.on = s.outer && !s.taken;
+      s.taken = true;
+    } else if (word === 'endif') {
+      if (!stack.pop()) return null;
+    } else return null;
+  }
+  if (stack.length) return null;
+  return out + body.slice(last);
+}

@@ -3,7 +3,7 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { MERGE_FIELDS, type MailerPack, type MailerTemplate, type PanelCode, type StudioTemplateSource } from '@madp/contracts';
-import { ensureFooterLinks, liquidToStudio, summarise, type StudioBlock } from './to-studio.js';
+import { ensureFooterLinks, flattenLiquid, liquidToStudio, summarise, type StudioBlock } from './to-studio.js';
 
 /** apps/api/mailers, from both src/mailers (tests) and dist/mailers (build). */
 const DIR = fileURLToPath(new URL('../../mailers/', import.meta.url));
@@ -12,6 +12,16 @@ interface Catalogue {
   importedAt: string;
   packs: MailerPack[];
 }
+
+/**
+ * Mailers whose Liquid logic tests only values that their audience fixes. The pack's trigger says who gets them, so
+ * the logic can be worked out once and the result becomes a plain studio template. T2O's "no profiles" reminder goes
+ * only to members with no completed profile, so the completed count is 0. The partial-profiles reminder depends on
+ * the member's own count and stays refused.
+ */
+const FIXED_BY_AUDIENCE: Record<string, { who: string; values: Record<string, number> }> = {
+  't2o/case3-noprofiles': { who: 'members with no completed profile', values: { 'profile.completed_count': 0 } },
+};
 
 /** Read-only library of the panels' mailer packs (see ops/mailers/import-mailers.mjs). It never sends anything. */
 @Injectable()
@@ -50,11 +60,13 @@ export class MailersService {
 
   private convert(pack: MailerPack, template: MailerTemplate, subjectIndex: number) {
     const read = (ext: string) => readFileSync(join(DIR, pack.id, `${template.id}.${ext}`), 'utf8');
-    const subject = liquidToStudio(template.subjects[subjectIndex] ?? template.subjects[0] ?? template.name);
-    const html = liquidToStudio(read('liquid'));
-    const text = liquidToStudio(read('txt'));
+    const audience = FIXED_BY_AUDIENCE[`${pack.id}/${template.id}`];
+    const part = (liquid: string) => liquidToStudio((audience && flattenLiquid(liquid, audience.values)) ?? liquid);
+    const subject = part(template.subjects[subjectIndex] ?? template.subjects[0] ?? template.name);
+    const html = part(read('liquid'));
+    const text = part(read('txt'));
     const blocks = summarise([...subject.blocks, ...html.blocks, ...text.blocks]);
-    return { blocks, subject: subject.out, html: html.out, text: text.out };
+    return { blocks, subject: subject.out, html: html.out, text: text.out, audience: audience?.who ?? null };
   }
 
   /**
@@ -73,10 +85,15 @@ export class MailersService {
       panel: pack.panel,
       kind: template.campaignKind!,
       key: `${pack.id}-${template.id}`.slice(0, 63),
-      name: `${template.name} · ${pack.title}`.slice(0, 120),
+      name: `${template.name} · ${pack.title}${c.audience ? ` · only ${c.audience}` : ''}`.slice(0, 120),
       source,
       version: { language: 'en', subject: c.subject, bodyHtml: footer.html, bodyText: footer.text },
-      added: footer.added,
+      added: [
+        ...(c.audience
+          ? [`The pack's Liquid logic was worked out for its audience (${c.audience}). Send it only to them.`]
+          : []),
+        ...footer.added,
+      ],
     };
   }
 

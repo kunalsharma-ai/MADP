@@ -35,7 +35,10 @@ Kunal's mailer packs for all three panels are in MADP, read-only.
 
 ### Not yet
 - Previews use the designers' sample data.
-- The T2O profile reminders need their Liquid logic rewritten as plain text, or sending left to the panel.
+- T2O's "no profiles" reminder now becomes a studio template too: its Liquid logic only tests the completed-profile
+  count, which its audience fixes at 0, so MADP works the logic out once (the result matches the designers' own render
+  word for word) and the template is named and flagged for that audience. T2O's "partial profiles" reminder depends on
+  each member's count, so it stays refused; sending it is left to the panel.
 - Nothing is sent. Sending needs a provider and Kunal's approval.
 ## End-to-end check and go-live list (2026-11-24)
 
