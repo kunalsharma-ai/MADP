@@ -11,6 +11,39 @@ const panelList = z
   )
   .pipe(z.array(z.enum(['t2o', 'mfr', 'mho'])));
 
+const key32 = (v: string) => Buffer.from(v, 'base64').length === 32;
+
+/** "k2=<base64>,k3=<base64>": extra field-encryption keys by id, for rotation. */
+const keyRing = z
+  .string()
+  .default('')
+  .transform((v, ctx) => {
+    const out: Record<string, string> = {};
+    for (const part of v.split(',').map((s) => s.trim()).filter(Boolean)) {
+      const i = part.indexOf('=');
+      const id = part.slice(0, i).trim();
+      const key = part.slice(i + 1).trim();
+      if (i < 1 || !/^k\d+$/.test(id) || id === 'k1' || !key32(key)) {
+        ctx.addIssue({ code: 'custom', message: 'entries must be k<n>=<32-byte base64 key>, and k1 is FIELD_ENCRYPTION_KEY' });
+        return z.NEVER;
+      }
+      out[id] = key;
+    }
+    return out;
+  });
+
+/** Comma-separated webhook signing secrets for one panel. Several at once let a secret be rotated without downtime. */
+const secretList = z
+  .string()
+  .default('')
+  .transform((v) =>
+    v
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean),
+  )
+  .pipe(z.array(z.string().min(32, 'each webhook secret must be at least 32 characters')));
+
 /**
  * API runtime configuration. Secrets come from the environment (populated by the secrets manager in
  * staging/production, by an uncommitted .env locally). Nothing secret has a default.
@@ -26,7 +59,11 @@ export const ApiEnv = z.object({
   /** 32-byte key, base64. Encrypts PII fields (AES-256-GCM). Rotate via key id prefix (see SECURITY_PRIVACY.md). */
   FIELD_ENCRYPTION_KEY: z
     .string()
-    .refine((v) => Buffer.from(v, 'base64').length === 32, 'must be 32 bytes, base64'),
+    .refine(key32, 'must be 32 bytes, base64'),
+  /** More field-encryption keys by id (rotation). The key `k1` is always FIELD_ENCRYPTION_KEY. */
+  FIELD_ENCRYPTION_KEYS: keyRing,
+  /** Key id new values are encrypted with. Old values stay readable while their key is listed. */
+  FIELD_ENCRYPTION_ACTIVE_KEY: z.string().regex(/^k\d+$/).default('k1'),
   /** Separate key for keyed hashes used for matching (HMAC-SHA256), so hashes cannot be brute-forced without it. */
   PII_HASH_KEY: z.string().min(32),
   /** Require TOTP MFA for every admin login. Defaults on; tests and local demo may turn it off. */
@@ -58,6 +95,15 @@ export const ApiEnv = z.object({
   SYNC_INTERVAL_MINUTES: z.coerce.number().int().min(0).max(1440).default(0),
   /** Most feed pages one sync run reads per feed; the next run continues from the saved cursor. */
   SYNC_MAX_PAGES: z.coerce.number().int().positive().default(100),
+  /**
+   * Signed webhook intake (POST /webhooks/:panel). No secret = the panel's webhook route answers 404, and MADP
+   * relies on the scheduled sync alone.
+   */
+  WEBHOOK_SECRETS_T2O: secretList,
+  WEBHOOK_SECRETS_MFR: secretList,
+  WEBHOOK_SECRETS_MHO: secretList,
+  /** Largest clock difference accepted on a webhook timestamp, in seconds (replay protection). */
+  WEBHOOK_TOLERANCE_SECONDS: z.coerce.number().int().min(30).max(3600).default(300),
 });
 export type ApiEnv = z.infer<typeof ApiEnv>;
 
@@ -67,5 +113,10 @@ export function loadApiEnv(source: Record<string, string | undefined> = process.
     const issues = parsed.error.issues.map((i) => `${i.path.join('.')}: ${i.message}`).join('; ');
     throw new Error(`Invalid API configuration: ${issues}`);
   }
-  return parsed.data;
+  const env = parsed.data;
+  if (env.FIELD_ENCRYPTION_ACTIVE_KEY !== 'k1' && !env.FIELD_ENCRYPTION_KEYS[env.FIELD_ENCRYPTION_ACTIVE_KEY])
+    throw new Error(
+      `Invalid API configuration: FIELD_ENCRYPTION_ACTIVE_KEY ${env.FIELD_ENCRYPTION_ACTIVE_KEY} is not in FIELD_ENCRYPTION_KEYS`,
+    );
+  return env;
 }

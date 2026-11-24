@@ -39,6 +39,8 @@ MFA completed. The machine-readable document is served at `GET /api/v1/openapi.j
 | `POST /identity/candidates/:id/decision` `{decision: approve\|reject, reason?}` | `identity.review` | Approve merges the account into the candidate person (409 if already decided, or if that person already has a live membership on the same panel). Audited |
 | `POST /identity/source-identities/:id/unlink` `{reason}` | `identity.review` | Unmerges one panel account: back to its previous person if that is still empty, otherwise to a new one. Works for automatic links too. Audited |
 | `GET /identity/persons/:id/history` | `identity.review` | Merge and unmerge events (append only) |
+| `POST /webhooks/:panel` (signed, see `packages/contracts/src/webhooks.ts`) | public, HMAC signature | 202 `accepted` or `duplicate`; starts a sync of that panel. 401 on a bad signature or a stale timestamp, 400 if the body has anything but `type` and `occurredAt`, 404 when the panel has no webhook secret. Covered by `apps/api/test/webhooks.test.ts` |
+| `GET /webhooks/inbox?panel` | `connectors.read` | Which panels have webhooks on, received and open counts, last 100 events (type and times only) |
 
 ## 2. Source panel endpoints MADP calls (verified in source, not live)
 Defined once in `packages/connectors/src/http-connector.ts` (`ENDPOINTS`). The base URL host must equal the panel's

@@ -21,7 +21,7 @@ copy of the panel backend for all three panels (`T2O_LOCAL_E2E.md`); that is sti
 | 8. Consent synchronised | 🟡 DEMO: guardian consent, terms and opt-ins from `User` fields, one current record per purpose | 🟡 DEMO, same backend `User` fields; consent stored as answers (`terms-consent`, `news-letter`) not yet read | 🟡 DEMO, same backend `User` fields; no health-data consent field exists at source |
 | 9. Updates synchronised | 🟡 changes feed (turn2opinion#20) and `runSync`, local copy | 🟡 same, local copy | 🟡 same, local copy |
 | 10. Deletion propagated | 🟡 deletions feed, local copy | 🟡 | 🟡 |
-| 11. Webhook or polling verified | 🟡 polling scheduler, local copy; webhooks not started | 🟡 | 🟡 |
+| 11. Webhook or polling verified | 🟡 polling scheduler on the local copy; signed webhook intake built and tested on DEMO, but the panel does not send webhooks yet | 🟡 same | 🟡 same |
 | 12. Source provenance preserved | 🟡 source member id, question version, import job | 🟡 | 🟡 |
 | 13. Mappings reviewed | 🔶 review queue and value maps work; no live mapping reviewed yet | 🔶 | 🔶 |
 | 14. Counts reconciled | 🟡 reconciliation report with checks, DEMO only | 🟡 | 🟡 |

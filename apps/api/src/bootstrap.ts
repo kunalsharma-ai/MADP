@@ -8,6 +8,8 @@ import { AppModule } from './app.module.js';
 export async function createApp(env: ApiEnv, opts: { logger?: boolean } = {}) {
   const app = await NestFactory.create<NestExpressApplication>(AppModule.forRoot(env), {
     logger: opts.logger === false ? false : ['log', 'warn', 'error'],
+    // Webhook signatures are checked against the exact bytes received.
+    rawBody: true,
   });
   app.set('trust proxy', 1);
   app.use(helmet());

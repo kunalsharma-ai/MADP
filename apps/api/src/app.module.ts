@@ -22,6 +22,9 @@ import { PanellistsController } from './panellists/panellists.controller.js';
 import { DashboardController } from './dashboard/dashboard.controller.js';
 import { IdentityService } from './identity/identity.service.js';
 import { IdentityController } from './identity/identity.controller.js';
+import { KeyRotationService } from './crypto/key-rotation.service.js';
+import { WebhookService } from './webhooks/webhook.service.js';
+import { WebhookController } from './webhooks/webhook.controller.js';
 import { HealthController } from './common/health.controller.js';
 import { MetaController } from './common/meta.controller.js';
 
@@ -42,6 +45,7 @@ export class AppModule {
         DashboardController,
         AuditController,
         IdentityController,
+        WebhookController,
       ],
       providers: [
         { provide: API_ENV, useValue: env },
@@ -55,6 +59,8 @@ export class AppModule {
         SyncScheduler,
         AudienceService,
         IdentityService,
+        KeyRotationService,
+        WebhookService,
         { provide: APP_GUARD, useClass: ThrottlerGuard },
         { provide: APP_GUARD, useClass: AuthGuard },
       ],

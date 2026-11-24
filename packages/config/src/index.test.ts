@@ -26,4 +26,17 @@ describe('loadApiEnv', () => {
   it('requires a strong signing secret', () => {
     expect(() => loadApiEnv({ ...base, AUTH_JWT_SECRET: 'short' })).toThrow(/AUTH_JWT_SECRET/);
   });
+  it('reads extra field keys for rotation and checks the active one exists', () => {
+    const k2 = Buffer.alloc(32, 2).toString('base64');
+    const env = loadApiEnv({ ...base, FIELD_ENCRYPTION_KEYS: `k2=${k2}`, FIELD_ENCRYPTION_ACTIVE_KEY: 'k2' });
+    expect(env.FIELD_ENCRYPTION_KEYS).toEqual({ k2 });
+    expect(() => loadApiEnv({ ...base, FIELD_ENCRYPTION_ACTIVE_KEY: 'k3' })).toThrow(/not in FIELD_ENCRYPTION_KEYS/);
+    expect(() => loadApiEnv({ ...base, FIELD_ENCRYPTION_KEYS: 'k1=abc' })).toThrow(/FIELD_ENCRYPTION_KEYS/);
+  });
+  it('accepts several webhook secrets per panel and rejects short ones', () => {
+    const env = loadApiEnv({ ...base, WEBHOOK_SECRETS_MHO: `${'a'.repeat(32)}, ${'b'.repeat(40)}` });
+    expect(env.WEBHOOK_SECRETS_MHO).toHaveLength(2);
+    expect(env.WEBHOOK_SECRETS_T2O).toEqual([]);
+    expect(() => loadApiEnv({ ...base, WEBHOOK_SECRETS_T2O: 'short' })).toThrow(/WEBHOOK_SECRETS_T2O/);
+  });
 });
