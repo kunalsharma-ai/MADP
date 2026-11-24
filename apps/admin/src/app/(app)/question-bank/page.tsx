@@ -4,6 +4,7 @@ import { api } from '@/lib/api';
 import { withPanel } from '@/lib/panel';
 import { Badge, Card, CardHeader, EmptyState, PageHeader, Table, btn, fmt, input } from '@/components/ui';
 import { BankImport } from './bank-import';
+import { VersionActions, type Version } from './versions';
 
 export const metadata: Metadata = { title: 'Question bank' };
 
@@ -27,6 +28,7 @@ interface Rules {
 const TABS = [
   ['questions', 'Questions'],
   ['rules', 'Show-when rules'],
+  ['versions', 'Versions'],
   ['import', 'Import and export'],
 ] as const;
 
@@ -89,6 +91,10 @@ export default async function QuestionBankPage({
           );
         }
         if (tab === 'import') return <BankImport />;
+        if (tab === 'versions') {
+          const list = await api<Version[]>('/panel/qb/versions');
+          return <VersionActions versions={list} />;
+        }
         const qs = new URLSearchParams();
         for (const k of ['q', 'category', 'page']) if (sp[k]) qs.set(k, sp[k]!);
         const data = await api<{ items: Q[]; total: number; page: number; pageSize: number }>(

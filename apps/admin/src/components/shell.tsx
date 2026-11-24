@@ -32,6 +32,8 @@ import {
   IdCard,
   UserCog,
   Building2,
+  ClipboardList,
+  Gauge,
 } from 'lucide-react';
 import type { SessionUser } from '@madp/contracts';
 import { NAV, PLANNED } from './nav';
@@ -60,6 +62,8 @@ const ICONS = {
   ScanSearch,
   UserCog,
   Building2,
+  ClipboardList,
+  Gauge,
 } as const;
 const BRAND_LABEL: Record<string, string> = {
   all: 'All brands',

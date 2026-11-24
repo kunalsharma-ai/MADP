@@ -2,7 +2,11 @@ import { Body, Controller, Get, Header, Param, Post, Put, Query, Req } from '@ne
 import { z } from 'zod';
 import {
   BankFile,
+  MissingTranslations,
   OptionsSet,
+  TranslationSet,
+  VersionAction,
+  VersionCreate,
   ProfileUpdate,
   QuestionCreate,
   QuestionUpdate,
@@ -28,6 +32,7 @@ const ListQuery = z.object({
   category: z.string().trim().max(40).optional(),
   page: z.coerce.number().int().min(1).max(10_000).default(1),
 });
+const VersionNumber = z.coerce.number().int().min(1).max(1_000_000);
 const ImportQuery = z.object({ dryRun: z.enum(['0', '1']).default('1') });
 type Change = { before: Record<string, unknown> | null; after: Record<string, unknown> };
 
@@ -145,6 +150,104 @@ export class QuestionBankController {
       metadata: { added: r.added, retired: r.retired },
     });
     return r;
+  }
+
+  // ---- versions: draft -> review -> published by a second admin (four eyes is enforced by the panel) ---------------
+  @RequirePermissions('qb.read')
+  @Get('qb/versions')
+  versions(@CurrentBrand() b: BrandSelection, @CurrentPrincipal() p: Principal) {
+    return this.panel.call(b as PanelCode, p.id, 'GET', R.qbVersions);
+  }
+
+  @RequirePermissions('qb.read')
+  @Get('qb/versions/:number')
+  version(
+    @Param('number', new ZodPipe(VersionNumber)) n: number,
+    @CurrentBrand() b: BrandSelection,
+    @CurrentPrincipal() p: Principal,
+  ) {
+    return this.panel.call(b as PanelCode, p.id, 'GET', R.qbVersion(n));
+  }
+
+  @RequirePermissions('qb.edit')
+  @Post('qb/versions')
+  async createVersion(
+    @Body(new ZodPipe(VersionCreate)) body: VersionCreate,
+    @CurrentBrand() b: BrandSelection,
+    @CurrentPrincipal() p: Principal,
+    @Req() req: Request,
+  ) {
+    const brand = b as PanelCode;
+    const r = await this.panel.call<{ number: number; counts?: unknown; diff?: unknown }>(
+      brand,
+      p.id,
+      'POST',
+      R.qbVersions,
+      undefined,
+      body,
+    );
+    await this.log(req, brand, 'qb.version.create', 'qb_version', String(r.number), {
+      after: { status: 'draft' },
+      metadata: { counts: r.counts, diff: r.diff, note: body.note ?? null },
+    });
+    return r;
+  }
+
+  /** review needs qb.edit; publish and discard need qb.publish. The admin who drafted or reviewed can't publish. */
+  @RequirePermissions('qb.edit')
+  @Post('qb/versions/:number/:action')
+  async moveVersion(
+    @Param('number', new ZodPipe(VersionNumber)) n: number,
+    @Param('action', new ZodPipe(VersionAction)) action: VersionAction,
+    @CurrentBrand() b: BrandSelection,
+    @CurrentPrincipal() p: Principal,
+    @Req() req: Request,
+  ) {
+    const brand = b as PanelCode;
+    if (action !== 'review' && !(p.brandPermissions[brand] ?? []).includes('qb.publish'))
+      PanelAdminService.forbidden();
+    const r = await this.panel.call<Change>(brand, p.id, 'POST', R.qbVersionAction(n, action));
+    await this.log(req, brand, `qb.version.${action}`, 'qb_version', String(n), {
+      before: r.before,
+      after: r.after,
+    });
+    return r;
+  }
+
+  @RequirePermissions('qb.edit')
+  @Put('questions/:name/translations')
+  async translate(
+    @Param('name', new ZodPipe(QuestionName)) name: string,
+    @Body(new ZodPipe(TranslationSet)) body: TranslationSet,
+    @CurrentBrand() b: BrandSelection,
+    @CurrentPrincipal() p: Principal,
+    @Req() req: Request,
+  ) {
+    const brand = b as PanelCode;
+    const r = await this.panel.call<Change>(
+      brand,
+      p.id,
+      'PUT',
+      R.questionTranslations(name),
+      undefined,
+      body,
+    );
+    await this.log(req, brand, 'qb.translation.set', 'question', name, {
+      before: r.before,
+      after: r.after,
+      metadata: { lang: body.lang },
+    });
+    return r;
+  }
+
+  @RequirePermissions('qb.read')
+  @Get('qb/translations/missing')
+  missing(
+    @Query(new ZodPipe(MissingTranslations)) q: MissingTranslations,
+    @CurrentBrand() b: BrandSelection,
+    @CurrentPrincipal() p: Principal,
+  ) {
+    return this.panel.call(b as PanelCode, p.id, 'GET', R.missingTranslations, q);
   }
 
   @RequirePermissions('qb.read')

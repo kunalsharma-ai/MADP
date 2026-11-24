@@ -95,3 +95,131 @@ export async function importAction(file: unknown, write: boolean) {
 export async function profileSaveAction(profile: string, patch: Record<string, unknown>) {
   return run(() => api(`/panel/profiles/${id(profile)}`, { method: 'PUT', json: patch }), '/profiles');
 }
+
+// ---- step 3a: segments, audiences, surveys, points, quality; question bank versions -----------------------------
+export async function segmentSaveAction(name: string, patch: Record<string, unknown>, reason: string) {
+  return run(
+    () => api(`/panel/segments/${id(name)}`, { method: 'PUT', json: { ...patch, reason } }),
+    '/segments',
+  );
+}
+export async function audienceCountAction(filter: Record<string, unknown>) {
+  return run(() =>
+    api<{ count: number; bySegment: Record<string, number> }>('/panel/audiences/count', {
+      method: 'POST',
+      json: { filter },
+    }),
+  );
+}
+export async function audienceSaveAction(name: string, description: string, filter: Record<string, unknown>) {
+  return run(
+    () =>
+      api<{ id: string; count: number }>('/panel/audiences', {
+        method: 'POST',
+        json: { name, description, filter },
+      }),
+    '/segments',
+  );
+}
+export async function surveyCreateAction(survey: Record<string, unknown>) {
+  return run(() => api<{ id: string }>('/panel/surveys', { method: 'POST', json: survey }), '/surveys');
+}
+export async function surveyUpdateAction(survey: string, patch: Record<string, unknown>) {
+  return run(() => api(`/panel/surveys/${id(survey)}`, { method: 'PUT', json: patch }), `/surveys/${survey}`);
+}
+export async function surveyStatusAction(survey: string, status: string, reason?: string) {
+  return run(
+    () =>
+      api(`/panel/surveys/${id(survey)}/status`, {
+        method: 'POST',
+        json: { status, ...(reason ? { reason } : {}) },
+      }),
+    `/surveys/${survey}`,
+  );
+}
+export async function surveyInviteAction(
+  survey: string,
+  dryRun: boolean,
+  audienceId?: string,
+  reason?: string,
+) {
+  return run(
+    () =>
+      api<{ dryRun: boolean; wouldInvite?: number; invited?: number; emailSent: boolean }>(
+        `/panel/surveys/${id(survey)}/invite`,
+        {
+          method: 'POST',
+          json: { dryRun, ...(audienceId ? { audienceId } : {}), ...(reason ? { reason } : {}) },
+        },
+      ),
+    dryRun ? undefined : `/surveys/${survey}`,
+  );
+}
+export async function surveyFeasibilityAction(survey: string, audienceId?: string) {
+  return run(() =>
+    api<{ eligible: number; alreadyInvited: number; wouldInvite: number }>(
+      `/panel/surveys/${id(survey)}/feasibility`,
+      {
+        method: 'POST',
+        json: audienceId ? { audienceId } : {},
+      },
+    ),
+  );
+}
+export async function reconcileAction(survey: string, approve: string[], reject: string[], reason: string) {
+  return run(
+    () =>
+      api<{ approved: number; rejected: number; skipped: number }>(`/panel/surveys/${id(survey)}/reconcile`, {
+        method: 'POST',
+        json: { approve, reject, reason },
+      }),
+    `/surveys/${survey}`,
+  );
+}
+export async function pointsAdjustAction(member: string, points: number, reasonCode: string, note: string) {
+  return run(
+    () =>
+      api<{
+        adjustment: { status: string };
+        before: { available: number };
+        after: { available: number };
+        fourEyesAt: number;
+      }>(`/panel/members/${id(member)}/points`, { method: 'POST', json: { points, reasonCode, note } }),
+    `/members/${member}`,
+  );
+}
+export async function pointsDecideAction(adjustment: string, decision: 'approve' | 'reject', note?: string) {
+  return run(
+    () =>
+      api(`/panel/points/approvals/${id(adjustment)}`, {
+        method: 'POST',
+        json: { decision, ...(note ? { note } : {}) },
+      }),
+    '/points',
+  );
+}
+export async function holdReleaseAction(hold: string, reason: string) {
+  return run(
+    () => api(`/panel/points/holds/${id(hold)}/release`, { method: 'POST', json: { reason } }),
+    '/points',
+  );
+}
+export async function qualityChangeAction(member: string, rule: string, delta: number, note: string) {
+  return run(
+    () =>
+      api<{ before: { score: number }; after: { score: number } }>(`/panel/members/${id(member)}/quality`, {
+        method: 'POST',
+        json: { rule, delta, note },
+      }),
+    `/members/${member}`,
+  );
+}
+export async function versionCreateAction(note: string) {
+  return run(
+    () => api<{ number: number }>('/panel/qb/versions', { method: 'POST', json: note ? { note } : {} }),
+    '/question-bank',
+  );
+}
+export async function versionMoveAction(n: number, action: 'review' | 'publish' | 'discard') {
+  return run(() => api(`/panel/qb/versions/${n}/${action}`, { method: 'POST' }), '/question-bank');
+}
