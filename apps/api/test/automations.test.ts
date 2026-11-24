@@ -78,7 +78,7 @@ const run = async (id: string, asOf: Date) => {
   return r.body;
 };
 
-/** An active adult member of the panel with an e-mail, and their person id. */
+/** An active adult member of the panel with an e-mail, who never answered the marketing opt-in, and their person id. */
 async function adult(panel: string) {
   const [m] = await q<{ person: string; joined_at: Date; dob: string; tz: string; country: string }>(sql`
     select pm.master_person_id as person, pm.joined_at, si.date_of_birth_enc as dob, si.timezone as tz, mp.country
@@ -88,6 +88,7 @@ async function adult(panel: string) {
       and si.date_of_birth_enc is not null
       and not exists (select 1 from category_membership cm where cm.master_person_id = pm.master_person_id and cm.panel = pm.panel and cm.is_minor)
       and exists (select 1 from consent_record cr where cr.master_person_id = pm.master_person_id and cr.panel = pm.panel and cr.purpose = 'terms' and cr.status = 'granted')
+      and not exists (select 1 from consent_record cr where cr.master_person_id = pm.master_person_id and cr.panel = pm.panel and cr.purpose = 'email_marketing')
     order by pm.joined_at limit 1`);
   return { ...m!, dob: t.app.get(FieldCrypto).decrypt(m!.dob)! };
 }
@@ -177,15 +178,18 @@ describe('automations', () => {
     expect(first.qualifyingActivity).toEqual(['joined', 'profile_answer_updated', 'survey_response', 'message_opened_or_clicked']);
     expect(first.due).toBeGreaterThan(0);
     expect(Object.keys(first.byStep)).toEqual(['90']);
-    // No panel exports an e-mail marketing consent, so a marketing message reaches nobody.
-    expect(first.planned).toBe(0);
+    // A marketing message reaches only members who ticked the opt-in: the rest are held back.
+    const [optedIn] = await q<{ n: string }>(sql`
+      select count(*) as n from consent_record where panel = 't2o' and purpose = 'email_marketing' and status = 'granted'`);
+    expect(first.planned).toBeGreaterThan(0);
+    expect(first.planned).toBeLessThanOrEqual(Number(optedIn!.n));
     expect(first.reasons.no_consent).toBeGreaterThan(0);
     expect(first.consentsRequired).toEqual(['email_marketing']);
 
     const m = await adult('t2o');
     await grantMarketing('t2o', m.person);
     const second = await run(id, later);
-    expect(second.planned).toBe(1);
+    expect(second.planned).toBe(first.planned + 1);
     const [ev] = await q<{ state: string; step: number; dry_run: boolean }>(sql`
       select state, step, dry_run from communication_event where automation_run_id = ${second.runId} and master_person_id = ${m.person}`);
     expect(ev).toMatchObject({ state: 'planned', step: 90, dry_run: true });
@@ -195,7 +199,8 @@ describe('automations', () => {
     await q(sql`insert into communication_event (data_mode, master_person_id, panel, automation_id, step, channel, state, dry_run, occurred_at)
       values ('demo', ${m.person}, 't2o', ${id}, 90, 'email', 'sent', false, ${sentAt})`);
     const third = await run(id, later);
-    expect(third.planned).toBe(0);
+    // Only this member's step is skipped; the other opted-in members are still planned.
+    expect(third.planned).toBe(first.planned);
     const [again] = await q<{ reason: string }>(sql`
       select reason from communication_event where automation_run_id = ${third.runId} and master_person_id = ${m.person}`);
     expect(again!.reason).toBe('already_sent');
@@ -272,6 +277,7 @@ describe('automations', () => {
 
   it('festival: civic entries by country, religious or cultural ones only by choice', async () => {
     const m = await adult('t2o');
+    await grantMarketing('t2o', m.person);
     const today = new Date(Date.now() + 10 * DAY);
     const onDate = today.toISOString().slice(0, 10);
     const asOf = new Date(`${onDate}T12:00:00Z`);
@@ -300,7 +306,7 @@ describe('automations', () => {
     }
     expect(results.civic!.due).toBeGreaterThan(0);
     expect(results.civic!.reasons.no_greeting_preference).toBeUndefined();
-    // The t2o member granted marketing consent above is planned for the civic greeting only.
+    // The t2o member granted marketing consent here is planned for the civic greeting only.
     expect((results.civic as unknown as { planned: number }).planned).toBeGreaterThanOrEqual(1);
     expect((results.religious_cultural as unknown as { planned: number }).planned).toBe(0);
     expect(results.religious_cultural!.reasons.no_greeting_preference).toBe(results.religious_cultural!.due);

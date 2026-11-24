@@ -62,7 +62,7 @@ const GUARDIAN_OUTCOMES = [
   ['withdrawn', 'withdrawn'],
 ] as const;
 
-function demoConsents(r: () => number, sourceCategory: string, created: Date): SourceConsent[] {
+function demoConsents(r: () => number, rm: () => number, sourceCategory: string, created: Date): SourceConsent[] {
   const out: SourceConsent[] = [
     {
       purpose: 'terms',
@@ -78,6 +78,22 @@ function demoConsents(r: () => number, sourceCategory: string, created: Date): S
       status,
       capturedAt: status === 'unknown' ? null : new Date(created.getTime() + 2 * 86_400_000).toISOString(),
       evidence: { field: 'parent.consentStatus', value, version: 'demo-guardian-v1' },
+    });
+  }
+  // Marketing e-mail opt-in ("Send me news and offers"): about a third never asked (no record), and teens never opt
+  // in. Only this record counts as email_marketing; the "news-letter" profile answer never does.
+  const m = rm();
+  if (!sourceCategory.includes('minor') && m < 0.66) {
+    const status: SourceConsent['status'] = m < 0.3 ? 'granted' : m < 0.55 ? 'denied' : 'withdrawn';
+    out.push({
+      purpose: 'email_marketing',
+      status,
+      capturedAt: new Date(created.getTime() + (status === 'withdrawn' ? 40 : 0) * 86_400_000).toISOString(),
+      evidence: {
+        field: 'marketingOptIn.granted',
+        value: String(status === 'granted'),
+        version: `news-offers-v1@${status === 'withdrawn' ? 'profile' : 'signup'}`,
+      },
     });
   }
   const push = r() < 0.6;
@@ -97,6 +113,8 @@ export function generateDemoPopulation({
   now = new Date('2026-11-01T00:00:00Z'),
 }: DemoOptions): DemoPopulation {
   const r = rng(seed);
+  // A separate stream for the marketing opt-in, so adding it left every other DEMO value unchanged.
+  const rm = rng(seed + 1);
   const respondents: SourceRespondent[] = [];
   const answers: SourceAnswer[] = [];
   const panels: PanelCode[] = ['t2o', 'mfr', 'mho'];
@@ -172,7 +190,7 @@ export function generateDemoPopulation({
         isActive: r() > 0.07,
         sourceCreatedAt: created.toISOString(),
         sourceUpdatedAt: new Date(created.getTime() + Math.floor(r() * 60) * 86_400_000).toISOString(),
-        consents: demoConsents(r, sourceCategory, created),
+        consents: demoConsents(r, rm, sourceCategory, created),
       });
 
       // Answer like a real member: the basic questionnaire plus a few other sections (all sections when the

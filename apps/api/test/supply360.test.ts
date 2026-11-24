@@ -262,8 +262,17 @@ describe('reservations, invitations, participation and consent', () => {
     expect(r.body.results.find((x: { ref: string }) => x.ref === refs[0])).toMatchObject({ eligible: false });
     expect(r.body.results.filter((x: { eligible: boolean }) => x.eligible)).toHaveLength(5);
     const mk = await call(main, 'POST', '/consent/check', { refs, purpose: 'email_marketing' }).expect(200);
-    // No panel records e-mail marketing consent yet, so nobody is eligible for it.
-    expect(mk.body.results.every((x: { eligible: boolean }) => !x.eligible)).toBe(true);
+    // Only members who ticked the marketing opt-in are eligible for it, and the answer says nothing more.
+    const stored = await q<{ ref: string; status: string | null }>(sql`
+      select sr.ref, cr.status from service_reference sr
+      join panel_membership pm on pm.id = sr.panel_membership_id
+      left join consent_record cr on cr.master_person_id = pm.master_person_id and cr.panel = pm.panel and cr.purpose = 'email_marketing'
+      where sr.ref = any(${`{${refs.join(',')}}`}::text[])`);
+    const byRef = new Map(stored.map((x) => [x.ref, x.status ?? 'unknown']));
+    for (const x of mk.body.results as { ref: string; consent: string; eligible: boolean }[]) {
+      expect(x.consent).toBe(byRef.get(x.ref));
+      if (x.consent !== 'granted') expect(x.eligible).toBe(false);
+    }
   });
 
   it('releases a reservation once, which frees its members for other projects', async () => {

@@ -40,8 +40,10 @@ describe('consent state', () => {
       expect(c.termsAccepted).toBeGreaterThanOrEqual(c.usableAddress);
       expect(c.usableAddress).toBeGreaterThanOrEqual(c.reachable);
       expect(c.reachable, p.panel).toBeGreaterThan(0);
-      // No panel reports e-mail marketing consent, and the screen says so.
-      expect(p.gaps.some((g) => g.includes('email marketing')), p.panel).toBe(true);
+      // Every panel reports the marketing opt-in (granted, denied and withdrawn), so it is not named as a gap.
+      expect(p.purposes.email_marketing?.granted, p.panel).toBeGreaterThan(0);
+      expect(p.purposes.email_marketing?.withdrawn, p.panel).toBeGreaterThan(0);
+      expect(p.gaps.some((g) => g.includes('email marketing')), p.panel).toBe(false);
     }
     await request(t.server).get('/api/v1/consent/summary').set(as('analyst')).expect(403);
     await request(t.server).get('/api/v1/consent/summary?panel=mho').set(as('data_steward')).expect(200);
