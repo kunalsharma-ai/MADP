@@ -6,7 +6,8 @@ contract tests are recorded as evidence of readiness, not as a pass.
 Legend: ✅ passed with live evidence · 🟡 implemented and tested on DEMO or stub only · 🔶 partly implemented ·
 ⛔ blocked on access or approval · ❌ not started.
 
-**As of 2026-11-23 (Milestone 2, part 1), no column has passed for any panel.**
+**As of 2026-11-24, no column has passed for any panel.** Columns 3 to 14 have also run end to end against a local
+copy of the panel backend for all three panels (`T2O_LOCAL_E2E.md`); that is still not live evidence.
 
 | Column | T2O | MFR | MHO |
 |---|---|---|---|
@@ -18,9 +19,9 @@ Legend: ✅ passed with live evidence · 🟡 implemented and tested on DEMO or 
 | 6. Respondent identities imported | 🟡 synthetic people | 🟡 | 🟡 |
 | 7. Answers imported | 🟡 synthetic answers | 🟡 | 🟡 |
 | 8. Consent synchronised | 🟡 DEMO: guardian consent, terms and opt-ins from `User` fields, one current record per purpose | 🟡 DEMO, same backend `User` fields; consent stored as answers (`terms-consent`, `news-letter`) not yet read | 🟡 DEMO, same backend `User` fields; no health-data consent field exists at source |
-| 9. Updates synchronised | 🔶 re-import is idempotent; no updated-since source | 🔶 | 🔶 |
-| 10. Deletion propagated | ❌ no source event (G-05) | ❌ | ❌ |
-| 11. Webhook or polling verified | ❌ | ❌ | ❌ |
+| 9. Updates synchronised | 🟡 changes feed (turn2opinion#20) and `runSync`, local copy | 🟡 same, local copy | 🟡 same, local copy |
+| 10. Deletion propagated | 🟡 deletions feed, local copy | 🟡 | 🟡 |
+| 11. Webhook or polling verified | 🟡 polling scheduler, local copy; webhooks not started | 🟡 | 🟡 |
 | 12. Source provenance preserved | 🟡 source member id, question version, import job | 🟡 | 🟡 |
 | 13. Mappings reviewed | 🔶 review queue and value maps work; no live mapping reviewed yet | 🔶 | 🔶 |
 | 14. Counts reconciled | 🟡 reconciliation report with checks, DEMO only | 🟡 | 🟡 |

@@ -85,6 +85,8 @@ export const SourceRespondent = z.object({
   isActive: z.boolean(),
   /** The panel soft-deleted the member (`isDeleted`). Only the changes feed reports it; treated as a deletion. */
   isDeleted: z.boolean().optional(),
+  /** An admin or integration account on the panel (T2O `isStaff`, turn2opinion#21). Never imported as a member. */
+  isStaff: z.boolean().optional(),
   sourceCreatedAt: z.string().datetime().nullable(),
   sourceUpdatedAt: z.string().datetime().nullable(),
   consents: z.array(SourceConsent).default([]),

@@ -5,7 +5,7 @@ export async function call(method, path, body, token) {
   const r = await fetch(BASE + path, {
     method,
     headers: {
-      host: 't2o.localhost',
+      host: new URL(BASE).host,
       'content-type': 'application/json',
       ...(token ? { authorization: `Bearer ${token}` } : {}),
     },

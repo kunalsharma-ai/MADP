@@ -36,6 +36,11 @@ idempotent. Details are in `docs/T2O_LOCAL_E2E.md`. This is not live evidence.
 - Tested: `apps/api/test/sync.test.ts` for all three panels, and end to end on the local T2O copy
   (`docs/T2O_LOCAL_E2E.md`). Go-live steps: `docs/T2O_GO_LIVE.md`.
 
+### MFR and MHO end to end on local copies (2026-11-24)
+The same backend copy served MFR and MHO as two more tenants. Import, consent, categories (including MHO teen
+patients), MHO special-category answers, re-import and three sync runs all pass for both (`docs/T2O_LOCAL_E2E.md`).
+Staff accounts are now skipped (`isStaff`, kunalsharma-ai/turn2opinion#21, merged, not deployed). Not live evidence.
+
 ### Next for T2O
 A T2O-only dry run against the live backend once the token is in the cloud environment, with counts shown to Kunal
 before any write.

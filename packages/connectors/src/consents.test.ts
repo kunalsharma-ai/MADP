@@ -92,3 +92,10 @@ describe('mapQuestionnaire', () => {
     expect(q.pages).toEqual([['Shopping', 'shop1', 'shop2']]);
   });
 });
+
+describe('mapUser staff flag', () => {
+  it('passes isStaff through only when the panel sets it', () => {
+    expect(mapUser('mho', { _id: 'u2', category: 'patient', isStaff: true }).isStaff).toBe(true);
+    expect(mapUser('mho', { _id: 'u3', category: 'patient' }).isStaff).toBeUndefined();
+  });
+});

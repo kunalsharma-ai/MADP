@@ -53,6 +53,8 @@ export interface RawUser {
   isActive?: boolean;
   /** Only the changes feed returns it (T2O GET /api/v1/changes/members). */
   isDeleted?: boolean;
+  /** Admin or integration account (GET /api/v1/user and the changes feed, turn2opinion#21). */
+  isStaff?: boolean;
   createdAt?: string;
   updatedAt?: string;
   consent?: { canShareVideo?: boolean; canShareGPS?: boolean; canAcceptPushNotification?: boolean };
@@ -209,6 +211,7 @@ export function mapUser(panel: PanelCode, u: RawUser): SourceRespondent {
     qualityScore: typeof u.qualityScore === 'number' ? u.qualityScore : null,
     isActive: u.isActive !== false && u.isDeleted !== true,
     ...(u.isDeleted === undefined ? {} : { isDeleted: u.isDeleted === true }),
+    ...(u.isStaff ? { isStaff: true } : {}),
     sourceCreatedAt: iso(u.createdAt),
     sourceUpdatedAt: iso(u.updatedAt),
     consents: mapConsents(u),

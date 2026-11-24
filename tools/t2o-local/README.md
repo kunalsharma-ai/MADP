@@ -80,3 +80,25 @@ T2O_LOCAL_TOKENS=$H/tokens.json T2O_LOCAL_DISPOSABLE=<member id to delete>,<memb
 ```
 
 Only use ids of test accounts on the local copy.
+
+## MFR and MHO (same backend, two more tenants)
+
+Add `mfr.localhost mho.localhost` to the `/etc/hosts` line. For each panel, seed its bank and set up its member
+types, then make the accounts:
+
+```bash
+MONGODB_DRIVER=... node $H/seed-bank.mjs <madp>/packages/testing/src/fixtures/mho.source-sample.json \
+  mongodb://localhost:27017/t2o_local mho.localhost
+node scripts/golive-setup.js ...                          # in the backend copy, for mho.localhost (see T2O_GO_LIVE.md)
+PANEL=mho TEST_PW=$(cat test-password.txt) node $H/panel-accounts.mjs   # writes tokens-mho.json and expect-mho.json
+
+cd <madp>/apps/api
+T2O_LOCAL_PANEL=mho T2O_LOCAL_BASE_URL=http://mho.localhost \
+T2O_LOCAL_TOKEN=$(node -p "require('$H/tokens-mho.json').integration.token") \
+T2O_LOCAL_EXPECT=$H/expect-mho.json T2O_LOCAL_REPORT=$H/report-mho.json T2O_LOCAL_TOKENS=$H/tokens-mho.json \
+T2O_LOCAL_DISPOSABLE=<teen_pending id>,<caregiver id> pnpm exec vitest run --project integration t2o-local
+```
+
+Use `PANEL=mfr` the same way (disposable: teen_pending and professional). The sign-up limit is 10 per hour per IP
+across all tenants; restart the backend to reset it. The test deletes one account, so make fresh accounts before
+running it again.
