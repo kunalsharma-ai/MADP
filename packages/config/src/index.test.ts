@@ -41,4 +41,12 @@ describe('loadApiEnv', () => {
     expect(env.WEBHOOK_SECRETS_T2O).toEqual([]);
     expect(() => loadApiEnv({ ...base, WEBHOOK_SECRETS_T2O: 'short' })).toThrow(/WEBHOOK_SECRETS_T2O/);
   });
+  it('production needs an https admin origin, and hides the route map unless told otherwise', () => {
+    const prod = { ...base, NODE_ENV: 'production' };
+    expect(() => loadApiEnv({ ...prod, ADMIN_ORIGIN: 'http://admin.example.invalid' })).toThrow(/ADMIN_ORIGIN/);
+    const ok = loadApiEnv({ ...prod, ADMIN_ORIGIN: 'https://admin.example.invalid' });
+    expect(ok.OPENAPI_PUBLIC).toBeUndefined();
+    expect(loadApiEnv({ ...base, OPENAPI_PUBLIC: 'true' }).OPENAPI_PUBLIC).toBe(true);
+    expect(loadApiEnv(base).ABUSE_MAX_FAILURES).toBe(20);
+  });
 });

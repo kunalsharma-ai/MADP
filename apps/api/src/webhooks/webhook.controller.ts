@@ -20,6 +20,7 @@ import { z } from 'zod';
 import { Public, RequirePermissions } from '../auth/decorators.js';
 import { API_ENV } from '../common/tokens.js';
 import { ZodPipe } from '../common/zod.pipe.js';
+import { AbuseService } from '../common/abuse.service.js';
 import { AuditService } from '../audit/audit.service.js';
 import { verifyWebhook } from './signature.js';
 import { WebhookService } from './webhook.service.js';
@@ -31,25 +32,30 @@ export class WebhookController {
     @Inject(API_ENV) private readonly env: ApiEnv,
     private readonly webhooks: WebhookService,
     private readonly audit: AuditService,
+    private readonly abuse: AbuseService,
   ) {}
 
   @Public()
   @Post('webhooks/:panel')
   @HttpCode(202)
   async receive(@Param('panel', new ZodPipe(PanelCode)) panel: PanelCode, @Req() req: RawBodyRequest<Request>) {
+    // A blocked address is turned away before any work.
+    this.abuse.check('webhook', req.ip);
     const secrets = this.webhooks.secretsFor(panel);
     // No secret means webhooks are off for this panel: answer as if the route did not exist.
     if (!secrets.length) throw new NotFoundException();
     const eventId = String(req.header('x-madp-event-id') ?? '');
     const raw = req.rawBody ?? Buffer.alloc(0);
     const reject = async (reason: string) => {
+      const a = this.abuse.fail('webhook', req.ip);
+      if (!a.audit) return new UnauthorizedException('Webhook rejected');
       await this.audit.record({
         actorId: null,
         actorType: 'system',
         action: 'webhook.rejected',
         targetType: 'panel',
         targetId: panel,
-        metadata: { reason, bytes: raw.length },
+        metadata: { reason, bytes: raw.length, ...(a.blocked ? { addressBlocked: true } : {}) },
         ip: req.ip ?? null,
       });
       return new UnauthorizedException('Webhook rejected');

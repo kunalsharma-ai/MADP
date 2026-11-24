@@ -17,6 +17,7 @@ import type { Request } from 'express';
 import { Database } from '../db/database.js';
 import { serviceClients, serviceNonces } from '../db/schema.js';
 import { FieldCrypto } from '../crypto/field-crypto.js';
+import { AbuseService } from '../common/abuse.service.js';
 import { AuditService } from '../audit/audit.service.js';
 import { SERVICE_TOLERANCE_SECONDS, verifyServiceSignature } from './signature.js';
 
@@ -55,13 +56,20 @@ export class ServiceAuthGuard implements CanActivate {
     private readonly database: Database,
     private readonly crypto: FieldCrypto,
     private readonly audit: AuditService,
+    private readonly abuse: AbuseService,
   ) {}
 
   async canActivate(ctx: ExecutionContext): Promise<boolean> {
     const req = ctx.switchToHttp().getRequest<Request>();
     const db = this.database.db;
     const clientId = String(req.headers['x-madp-client'] ?? '');
+    // A blocked address is turned away before any database work.
+    this.abuse.check('service', req.ip);
     const refuse = async (reason: string, client: string | null) => {
+      // Scope and rate-limit refusals come from a signed, known client: they don't count as abuse.
+      const counts = !reason.startsWith('missing_scope') && reason !== 'rate_limited';
+      const a = counts ? this.abuse.fail('service', req.ip) : { audit: true, blocked: false };
+      if (!a.audit) return;
       await this.audit.record({
         actorId: client,
         actorType: 'service',
@@ -69,7 +77,7 @@ export class ServiceAuthGuard implements CanActivate {
         outcome: 'denied',
         targetType: 'route',
         targetId: `${req.method} ${req.route?.path ?? req.path}`,
-        metadata: { reason, clientId: clientId.slice(0, 80) || null },
+        metadata: { reason, clientId: clientId.slice(0, 80) || null, ...(a.blocked ? { addressBlocked: true } : {}) },
         ip: req.ip ?? null,
       });
     };

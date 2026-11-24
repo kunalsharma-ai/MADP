@@ -129,6 +129,19 @@ export const ApiEnv = z.object({
   WEBHOOK_SECRETS_MHO: secretList,
   /** Largest clock difference accepted on a webhook timestamp, in seconds (replay protection). */
   WEBHOOK_TOLERANCE_SECONDS: z.coerce.number().int().min(30).max(3600).default(300),
+  /**
+   * Serve GET /openapi.json without signing in. On by default outside production; in production the route map is
+   * hidden from scanners unless this is set to true.
+   */
+  OPENAPI_PUBLIC: z
+    .enum(['true', 'false'])
+    .optional()
+    .transform((v) => (v === undefined ? undefined : v === 'true')),
+  /**
+   * Abuse block for the signed public routes (Supply360 and webhooks): after this many refused requests from one
+   * address in 10 minutes, that address gets 429 for 15 minutes without any database work.
+   */
+  ABUSE_MAX_FAILURES: z.coerce.number().int().min(3).max(10_000).default(20),
 });
 export type ApiEnv = z.infer<typeof ApiEnv>;
 
@@ -143,6 +156,8 @@ export function loadApiEnv(source: Record<string, string | undefined> = process.
     throw new Error(
       'Invalid API configuration: REQUIRE_MFA cannot be false in production (two-factor is required for every admin)',
     );
+  if (env.NODE_ENV === 'production' && !/^https:\/\//.test(env.ADMIN_ORIGIN))
+    throw new Error('Invalid API configuration: ADMIN_ORIGIN must be an https:// address in production');
   if (env.FIELD_ENCRYPTION_ACTIVE_KEY !== 'k1' && !env.FIELD_ENCRYPTION_KEYS[env.FIELD_ENCRYPTION_ACTIVE_KEY])
     throw new Error(
       `Invalid API configuration: FIELD_ENCRYPTION_ACTIVE_KEY ${env.FIELD_ENCRYPTION_ACTIVE_KEY} is not in FIELD_ENCRYPTION_KEYS`,
