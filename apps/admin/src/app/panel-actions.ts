@@ -92,6 +92,17 @@ export async function importAction(file: unknown, write: boolean) {
     write ? '/question-bank' : undefined,
   );
 }
+/** The same import from an Excel workbook, sent as base64; MADP reads it and the panel gets the same JSON. */
+export async function importXlsxAction(base64: string, write: boolean) {
+  return run(
+    () =>
+      api<Record<string, unknown>>(`/panel/qb/import/xlsx?dryRun=${write ? 0 : 1}`, {
+        method: 'POST',
+        json: { file: base64 },
+      }),
+    write ? '/question-bank' : undefined,
+  );
+}
 export async function profileSaveAction(profile: string, patch: Record<string, unknown>) {
   return run(() => api(`/panel/profiles/${id(profile)}`, { method: 'PUT', json: patch }), '/profiles');
 }
