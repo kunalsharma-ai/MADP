@@ -188,3 +188,8 @@ All routes are `@BrandScoped({ allowAll: true })`: the `x-madp-brand` header lim
 - `POST /insights/refresh?panel=` (`insights.review`): `{ raised, updated, resolved }`, audited as `insights.refreshed`.
 - `POST /insights/:id/decision` `InsightDecision` (`insights.review`): accepted or dismissed with a note; 409 unless open.
 
+## 11. Geography and overlap (implemented on DEMO data, 2026-11-24)
+- `POST /audience/geo` `GeoRequest` (the counts filters without `countries`, plus `country` and `state`; `audience.counts.read`): `GeoResponse` with `level` (country, state or city), `rows` of unique people and per-panel members, `timezones`, and `minimumCellSize`. 400 for a state without a country.
+- `POST /audience/overlap` `CountsRequest` (`audience.counts.read`): `OverlapResponse` with `panelCombinations` (exact sets of panels) and `categoryMatrix`.
+- Health attribute filters need `health.sensitive.read` and a `purpose`, raise the minimum cell size, and are audited as `audience.sensitive_filter_used`.
+

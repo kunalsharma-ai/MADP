@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { PANELS, type PanelCode, type ReportResult } from '@madp/contracts';
 import { api } from '@/lib/api';
+import { Country } from '@/components/country';
 import { Card, CardHeader, DataModeBadge, DemoBanner, EmptyState, PageHeader, PanelChip, Table, btn, fmt, fmtDate, input } from '@/components/ui';
 import { cn } from '@/lib/cn';
 
@@ -22,6 +23,7 @@ const DAY = /^\d{4}-\d{2}-\d{2}$/;
 
 function cell(v: string | number | null, type: string, key: string) {
   if (key === 'panel' && typeof v === 'string' && v in PANELS) return <PanelChip panel={v as PanelCode} />;
+  if (key === 'country' && typeof v === 'string') return <Country code={v} />;
   if (v === null) return <span className="text-fg-3" title="Suppressed: too few people">&lt; min</span>;
   if (type === 'money' && typeof v === 'number') return v.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   if (type === 'number' && typeof v === 'number') return fmt(v);

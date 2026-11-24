@@ -11,6 +11,7 @@ import {
   type PanelCode,
 } from '@madp/contracts';
 import { api, ApiError } from '@/lib/api';
+import { Country } from '@/components/country';
 import type { Attribute } from '@/lib/types';
 import {
   Badge,
@@ -228,12 +229,12 @@ export default async function AudiencePage({ searchParams }: { searchParams: SP 
         <Card>
           <CardHeader
             title="Countries"
-            hint="Drill into states and cities arrives with the country explorer (M2)"
+            hint="Drill into states and cities on Geography & overlap"
           />
           <ul className="max-h-80 divide-y divide-border overflow-y-auto text-[13px]">
             {c.byCountry.map((x) => (
               <li key={x.key} className="flex justify-between px-5 py-2.5">
-                <span className="font-mono text-xs">{x.key.toUpperCase()}</span>
+                <Country code={x.key} />
                 <Cell v={x.value} s={x.suppressed} />
               </li>
             ))}
