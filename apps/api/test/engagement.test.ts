@@ -85,9 +85,9 @@ describe('templates', () => {
     const bad = await request(t.server)
       .post(`/api/v1/communications/templates/${tpl.body.id}/versions`)
       .set(as('data_steward'))
-      .send({ subject: 'Hi', bodyHtml: '<p>Hi {{email}}</p>', bodyText: 'Hi' })
+      .send({ subject: 'Hi', bodyHtml: '<p>Hi {{password}}</p>', bodyText: 'Hi' })
       .expect(201);
-    expect(bad.body.problems).toContain('Unknown placeholder {{email}}');
+    expect(bad.body.problems).toContain('Unknown placeholder {{password}}');
     expect(bad.body.problems).toContain('The HTML part needs {{unsubscribeUrl}}');
     const refused = await request(t.server)
       .post(`/api/v1/communications/template-versions/${bad.body.id}/submit`)

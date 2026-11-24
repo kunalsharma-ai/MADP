@@ -1,6 +1,8 @@
 import { KIND_BASIS, TEMPLATE_PLACEHOLDERS, type CampaignKind, type TemplatePlaceholder } from '@madp/contracts';
 
-const TOKEN = /\{\{\s*([a-zA-Z]+)\s*\}\}/g;
+/** `{{name}}` or `{{ name | default: "fallback" }}`. */
+const TOKEN = /\{\{\s*([a-zA-Z]+)\s*(?:\|\s*default:\s*"([^"{}]*)"\s*)?\}\}/g;
+const ANY_TAG = /\{\{[\s\S]*?\}\}|\{%[\s\S]*?%\}/g;
 
 export function escapeHtml(v: string): string {
   return v.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!);
@@ -20,6 +22,9 @@ export function lintTemplate(kind: CampaignKind, v: { subject: string; bodyHtml:
   const known = new Set<string>(TEMPLATE_PLACEHOLDERS);
   for (const p of placeholdersIn(`${v.subject}\n${v.bodyHtml}\n${v.bodyText}`))
     if (!known.has(p)) problems.push(`Unknown placeholder {{${p}}}`);
+  // Anything else in braces (Liquid logic, filters, dotted names) would go out as literal text.
+  for (const tag of new Set(`${v.subject}\n${v.bodyHtml}\n${v.bodyText}`.replace(TOKEN, '').match(ANY_TAG) ?? []))
+    problems.push(`Not a studio placeholder: ${tag.length > 60 ? `${tag.slice(0, 57)}...` : tag}`);
   if (KIND_BASIS[kind] !== 'service')
     for (const need of ['unsubscribeUrl', 'preferencesUrl'] as const) {
       if (!placeholdersIn(v.bodyHtml).includes(need)) problems.push(`The HTML part needs {{${need}}}`);
@@ -35,7 +40,7 @@ export function render(
   values: Partial<Record<TemplatePlaceholder, string>>,
 ) {
   const fill = (text: string, esc: (s: string) => string) =>
-    text.replace(TOKEN, (_, k: string) => esc(values[k as TemplatePlaceholder] ?? ''));
+    text.replace(TOKEN, (_, k: string, fallback?: string) => esc(values[k as TemplatePlaceholder] || fallback || ''));
   return {
     subject: fill(v.subject, (s) => s),
     html: fill(v.bodyHtml, escapeHtml),
