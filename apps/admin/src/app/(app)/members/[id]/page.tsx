@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { api, ApiError } from '@/lib/api';
 import { withPanel } from '@/lib/panel';
 import { Badge, Card, CardHeader, EmptyState, PageHeader, Table, fmt, fmtDate } from '@/components/ui';
-import { STATUS_TONE, type MemberRow } from '../shared';
+import { STATUS_TONE, marketingLabel, type MemberRow } from '../shared';
 import { MemberActions } from './member-actions';
 import { PointsQuality } from './points-quality';
 
@@ -37,6 +37,8 @@ interface Detail extends MemberRow {
     ledgerEntries: number;
   };
   segmentChanges: { from: string; to: string; reason: string; at: string }[];
+  /** Newest first, at most 20 (panel admin member detail). */
+  marketingOptInHistory?: { granted: boolean; at: string; source: string; wording: string; by: string }[];
   canUnmask: boolean;
 }
 interface Ledger {
@@ -94,6 +96,18 @@ export default async function MemberPage({ params }: { params: Promise<{ id: str
               {row('Last activity', fmtDate(m.lastActivityAt))}
               {row('Profile checked', fmtDate(m.profileCheckedAt))}
               {row('Terms', m.terms.join(', ') || '—')}
+              {row(
+                'Marketing e-mails',
+                `${marketingLabel(m.marketingOptIn).text}${m.marketingOptIn?.asked ? ` (${m.marketingOptIn.source ?? '?'}, ${fmtDate(m.marketingOptIn.at)})` : ''}`,
+              )}
+              {m.marketingOptInHistory?.length
+                ? row(
+                    'Opt-in history',
+                    m.marketingOptInHistory
+                      .map((h) => `${h.granted ? 'yes' : 'no'} via ${h.source}, ${fmtDate(h.at)} (${h.wording})`)
+                      .join(' · '),
+                  )
+                : null}
               {m.statusReason
                 ? row('Status reason', `${m.statusReason} (${fmtDate(m.statusChangedAt)})`)
                 : null}

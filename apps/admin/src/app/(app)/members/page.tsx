@@ -5,7 +5,7 @@ import { Country } from '@/components/country';
 import { withPanel } from '@/lib/panel';
 import { Badge, Card, CardHeader, EmptyState, PageHeader, Table, btn, fmt, input } from '@/components/ui';
 import { ArchiveCheck } from './archive-check';
-import { STATUS_TONE, type MemberRow } from './shared';
+import { STATUS_TONE, marketingLabel, type MemberRow } from './shared';
 
 export const metadata: Metadata = { title: 'Members' };
 
@@ -14,6 +14,7 @@ const FILTERS = [
   'q',
   'status',
   'segment',
+  'marketing',
   'category',
   'country',
   'from',
@@ -88,6 +89,15 @@ export default async function MembersPage({
                   </select>
                 </label>
                 <label>
+                  Marketing e-mails
+                  <select name="marketing" defaultValue={sp.marketing ?? ''} className={input}>
+                    <option value="">Any</option>
+                    <option value="granted">Opted in</option>
+                    <option value="withdrawn">Declined or withdrawn</option>
+                    <option value="unset">Never asked</option>
+                  </select>
+                </label>
+                <label>
                   Country
                   <input
                     name="country"
@@ -157,6 +167,7 @@ export default async function MembersPage({
                     'Born',
                     'Quality',
                     'Status',
+                    'Marketing',
                     'Signed up',
                     'Last activity',
                   ]}
@@ -179,6 +190,9 @@ export default async function MembersPage({
                       <td className="num px-5 py-2.5">{m.qualityScore}</td>
                       <td className="px-5 py-2.5">
                         <Badge tone={STATUS_TONE[m.status]}>{m.status}</Badge>
+                      </td>
+                      <td className="px-5 py-2.5">
+                        <Badge tone={marketingLabel(m.marketingOptIn).tone}>{marketingLabel(m.marketingOptIn).text}</Badge>
                       </td>
                       <td className="px-5 py-2.5">{day(m.signedUpAt)}</td>
                       <td className="px-5 py-2.5">{day(m.lastActivityAt)}</td>
