@@ -1159,3 +1159,45 @@ export const insights = pgTable(
     index('insight_status_idx').on(t.dataMode, t.status, t.lastSeenAt),
   ],
 );
+
+/**
+ * Questionnaire builder drafts (spec screens 11 and 12): a change to one panel profile's pages and show logic, held
+ * in MADP until a second admin approves it, then written to the panel through its admin API. `base` is the profile
+ * as it was when the draft started, so the reviewer sees what changes and apply can refuse a profile that moved on.
+ * No member data: questions, options and pages only.
+ */
+export const questionnaireDrafts = pgTable(
+  'questionnaire_draft',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    dataMode: dataMode('data_mode').notNull(),
+    panel: panelCode('panel').notNull(),
+    category: text('category').notNull(),
+    slug: text('slug').notNull(),
+    profileId: text('profile_id').notNull(),
+    note: text('note'),
+    base: jsonb('base').notNull(),
+    spec: jsonb('spec').notNull(),
+    /** draft -> review -> approved | rejected; approved -> applied. draft or review -> discarded. */
+    status: text('status').notNull().default('draft'),
+    createdBy: uuid('created_by').notNull(),
+    submittedBy: uuid('submitted_by'),
+    submittedAt: timestamp('submitted_at', { withTimezone: true }),
+    reviewedBy: uuid('reviewed_by'),
+    reviewedAt: timestamp('reviewed_at', { withTimezone: true }),
+    reviewNote: text('review_note'),
+    appliedBy: uuid('applied_by'),
+    appliedAt: timestamp('applied_at', { withTimezone: true }),
+    /** What apply wrote, step by step, and the panel version it opened. */
+    applyResult: jsonb('apply_result'),
+    createdAt: created(),
+    updatedAt: updated(),
+  },
+  (t) => [
+    index('questionnaire_draft_panel_idx').on(t.dataMode, t.panel, t.status),
+    // One open draft per profile, so two admins don't overwrite each other's work.
+    uniqueIndex('questionnaire_draft_open_uq')
+      .on(t.dataMode, t.panel, t.category, t.slug)
+      .where(sql`status in ('draft', 'review', 'approved')`),
+  ],
+);

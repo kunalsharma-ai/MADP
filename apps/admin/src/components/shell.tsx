@@ -185,6 +185,7 @@ export function Shell({
                 </ul>
               </div>
             ))}
+            {PLANNED.length ? (
             <div>
               <p className="px-2 pb-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-nav-text/45">
                 Coming next
@@ -201,6 +202,7 @@ export function Shell({
                 ))}
               </ul>
             </div>
+            ) : null}
           </nav>
           <div className="border-t border-white/5 px-4 py-3">
             <p className="truncate text-[13px] text-white">{user.displayName}</p>

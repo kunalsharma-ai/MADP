@@ -54,6 +54,8 @@ import { BrandsController } from './brands/brands.controller.js';
 import { PanelAdminService } from './panel-admin/panel-admin.service.js';
 import { MembersController } from './panel-admin/members.controller.js';
 import { QuestionBankController } from './panel-admin/question-bank.controller.js';
+import { QuestionnaireController } from './panel-admin/questionnaire.controller.js';
+import { QuestionnaireService } from './panel-admin/questionnaire.service.js';
 import {
   PointsQualityController,
   SegmentsController,
@@ -84,6 +86,7 @@ export class AppModule {
         BrandsController,
         MembersController,
         QuestionBankController,
+        QuestionnaireController,
         SegmentsController,
         SurveysController,
         PointsQualityController,
@@ -113,6 +116,7 @@ export class AppModule {
         AuthService,
         AdminsService,
         PanelAdminService,
+        QuestionnaireService,
         ConnectorRegistry,
         IngestionService,
         SyncScheduler,
