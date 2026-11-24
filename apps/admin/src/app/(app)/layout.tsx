@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation';
 import type { SessionUser } from '@madp/contracts';
-import { api, ApiError } from '@/lib/api';
+import { api, ApiError, currentBrand } from '@/lib/api';
 import { Shell } from '@/components/shell';
 import { signOut } from '../actions';
 
@@ -14,9 +14,11 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     if (e instanceof ApiError && e.status === 403) redirect('/mfa');
     throw e;
   }
-  if (user.permissions.length === 0) redirect('/mfa');
+  if (user.brands.length === 0) redirect('/mfa');
+  const allowAll = user.permissions.includes('dashboard.read');
+  const brand = (await currentBrand()) ?? user.brands[0]!;
   return (
-    <Shell user={user} signOut={signOut}>
+    <Shell user={user} signOut={signOut} brand={brand} allowAll={allowAll}>
       {children}
     </Shell>
   );

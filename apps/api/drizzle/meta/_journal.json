@@ -78,6 +78,13 @@
       "when": 1795507215749,
       "tag": "0010_privacy_requests",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1795508536261,
+      "tag": "0011_super_admin_foundation",
+      "breakpoints": true
     }
   ]
 }

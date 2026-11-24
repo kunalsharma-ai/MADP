@@ -31,14 +31,6 @@ export const audienceCategory = pgEnum('audience_category', [
   'patient',
   'caregiver',
 ]);
-export const adminRole = pgEnum('admin_role', [
-  'super_admin',
-  'platform_admin',
-  'data_steward',
-  'privacy_officer',
-  'analyst',
-  'support',
-]);
 export const reviewStatus = pgEnum('review_status', ['pending', 'approved', 'rejected', 'needs_info']);
 export const jobStatus = pgEnum('job_status', ['queued', 'running', 'succeeded', 'failed', 'cancelled']);
 export const consentStatus = pgEnum('consent_status', ['granted', 'denied', 'withdrawn', 'unknown']);
@@ -358,7 +350,6 @@ export const adminUsers = pgTable('admin_user', {
   email: text('email').notNull().unique(),
   displayName: text('display_name').notNull(),
   passwordHash: text('password_hash').notNull(),
-  role: adminRole('role').notNull(),
   totpSecretEnc: text('totp_secret_enc'),
   mfaEnabled: boolean('mfa_enabled').notNull().default(false),
   isActive: boolean('is_active').notNull().default(true),
@@ -369,7 +360,82 @@ export const adminUsers = pgTable('admin_user', {
   updatedAt: updated(),
 });
 
-/** Append-only. A trigger in the migration rejects UPDATE and DELETE. Never stores raw PII in metadata. */
+/**
+ * Roles are data, not code: a role is a name and a list of permission strings, so new roles are made in the console.
+ * Built-in roles (`system`) are seeded by migration and cannot be deleted; super_admin cannot be edited.
+ */
+export const adminRoles = pgTable('admin_role', {
+  key: text('key').primaryKey(),
+  name: text('name').notNull(),
+  description: text('description').notNull().default(''),
+  permissions: text('permissions').array().notNull().default(sql`'{}'::text[]`),
+  system: boolean('system').notNull().default(false),
+  createdAt: created(),
+  updatedAt: updated(),
+});
+
+/** A role held by an admin on some brands. `brands` null = every brand. Admin accounts never live in panel data. */
+export const adminRoleGrants = pgTable(
+  'admin_role_grant',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    adminId: uuid('admin_id')
+      .notNull()
+      .references(() => adminUsers.id, { onDelete: 'cascade' }),
+    roleKey: text('role_key')
+      .notNull()
+      .references(() => adminRoles.key),
+    brands: panelCode('brands').array(),
+    createdAt: created(),
+  },
+  (t) => [uniqueIndex('admin_role_grant_uq').on(t.adminId, t.roleKey), index('admin_role_grant_role_idx').on(t.roleKey)],
+);
+
+/** Server-side admin sessions: a session ends after ADMIN_IDLE_MINUTES without a request, or on sign-out. */
+export const adminSessions = pgTable(
+  'admin_session',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    adminId: uuid('admin_id')
+      .notNull()
+      .references(() => adminUsers.id, { onDelete: 'cascade' }),
+    createdAt: created(),
+    lastSeenAt: timestamp('last_seen_at', { withTimezone: true }).notNull().defaultNow(),
+    revokedAt: timestamp('revoked_at', { withTimezone: true }),
+    ip: text('ip'),
+    userAgent: text('user_agent'),
+  },
+  (t) => [index('admin_session_admin_idx').on(t.adminId)],
+);
+
+/**
+ * Per-brand settings. The brand key is the panel code here and the `origin` hostname in the shared panel database;
+ * `origins` lists the hostnames that belong to the brand. Money values are settings, not code.
+ */
+export const brandSettings = pgTable('brand_setting', {
+  panel: panelCode('panel').primaryKey(),
+  displayName: text('display_name').notNull(),
+  origins: text('origins').array().notNull(),
+  languages: text('languages').array().notNull().default(sql`'{en}'::text[]`),
+  currency: text('currency').notNull().default('USD'),
+  /** Points worth 1 unit of `currency`. Spec: 1,000 points = 1 USD while testing. */
+  pointsPerCurrencyUnit: integer('points_per_currency_unit').notNull().default(1000),
+  minRedemptionPoints: integer('min_redemption_points').notNull().default(15000),
+  /** Money actions above this need a second admin (four eyes). Spec: 50 USD = 50,000 points. */
+  fourEyesPoints: integer('four_eyes_points').notNull().default(50000),
+  /** Six-month data check: months between "Still true?" reviews. */
+  profileReviewMonths: smallint('profile_review_months').notNull().default(6),
+  /** Months without activity before a member is archived. */
+  archiveAfterMonths: smallint('archive_after_months').notNull().default(6),
+  updatedBy: uuid('updated_by'),
+  updatedAt: updated(),
+});
+
+/**
+ * Append-only and hash-chained. Triggers in the migrations reject UPDATE, DELETE and TRUNCATE, and on INSERT set
+ * `prev_hash` to the previous entry's hash and `hash` to sha256 over this entry (see madp_audit_hash), so a changed
+ * or missing entry breaks GET /audit/verify. Never stores raw PII: before/after values are masked.
+ */
 export const auditEvents = pgTable(
   'audit_event',
   {
@@ -377,6 +443,10 @@ export const auditEvents = pgTable(
     at: timestamp('at', { withTimezone: true }).notNull().defaultNow(),
     actorId: uuid('actor_id'),
     actorType: text('actor_type').notNull(),
+    /** Roles the actor held at the time, comma-separated. */
+    actorRole: text('actor_role'),
+    /** Brand the action was taken in; null for cross-brand or platform actions. */
+    panel: panelCode('panel'),
     action: text('action').notNull(),
     targetType: text('target_type'),
     targetId: text('target_id'),
@@ -384,9 +454,25 @@ export const auditEvents = pgTable(
     metadata: jsonb('metadata')
       .notNull()
       .default(sql`'{}'::jsonb`),
+    before: jsonb('before'),
+    after: jsonb('after'),
+    reason: text('reason'),
     ip: text('ip'),
+    userAgent: text('user_agent'),
+    requestId: text('request_id'),
+    prevHash: text('prev_hash'),
+    // Set by the insert trigger; the client value is always replaced.
+    hash: text('hash')
+      .notNull()
+      .$defaultFn(() => ''),
   },
-  (t) => [index('audit_event_at_idx').on(t.at), index('audit_event_actor_idx').on(t.actorId)],
+  (t) => [
+    index('audit_event_at_idx').on(t.at),
+    index('audit_event_actor_idx').on(t.actorId),
+    index('audit_event_action_idx').on(t.action),
+    index('audit_event_panel_idx').on(t.panel),
+    index('audit_event_target_idx').on(t.targetType, t.targetId),
+  ],
 );
 
 // ---------------------------------------------------------------------------------------------------------------

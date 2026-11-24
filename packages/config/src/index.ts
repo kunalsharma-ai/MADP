@@ -72,6 +72,8 @@ export const ApiEnv = z.object({
     .default('true')
     .transform((v) => v === 'true'),
   AUTH_TOKEN_TTL_MINUTES: z.coerce.number().int().positive().default(60),
+  /** An admin session ends after this many minutes without a request (super admin spec: 30). */
+  ADMIN_IDLE_MINUTES: z.coerce.number().int().min(5).max(240).default(30),
   /** Allowed browser origin for the admin app. */
   ADMIN_ORIGIN: z.string().url().default('http://localhost:3000'),
   /**
@@ -116,6 +118,8 @@ export function loadApiEnv(source: Record<string, string | undefined> = process.
     throw new Error(`Invalid API configuration: ${issues}`);
   }
   const env = parsed.data;
+  if (env.NODE_ENV === 'production' && !env.REQUIRE_MFA)
+    throw new Error('Invalid API configuration: REQUIRE_MFA cannot be false in production (two-factor is required for every admin)');
   if (env.FIELD_ENCRYPTION_ACTIVE_KEY !== 'k1' && !env.FIELD_ENCRYPTION_KEYS[env.FIELD_ENCRYPTION_ACTIVE_KEY])
     throw new Error(
       `Invalid API configuration: FIELD_ENCRYPTION_ACTIVE_KEY ${env.FIELD_ENCRYPTION_ACTIVE_KEY} is not in FIELD_ENCRYPTION_KEYS`,

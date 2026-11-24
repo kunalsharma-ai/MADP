@@ -38,6 +38,9 @@ import { PrivacyService } from './privacy/privacy.service.js';
 import { PrivacyController } from './privacy/privacy.controller.js';
 import { ServiceAuthGuard } from './supply360/service-auth.guard.js';
 import { ServiceClientsController, Supply360Controller } from './supply360/supply360.controller.js';
+import { AdminsController } from './admins/admins.controller.js';
+import { AdminsService } from './admins/admins.service.js';
+import { BrandsController } from './brands/brands.controller.js';
 import { HealthController } from './common/health.controller.js';
 import { MetaController } from './common/meta.controller.js';
 
@@ -57,6 +60,8 @@ export class AppModule {
         PanellistsController,
         DashboardController,
         AuditController,
+        AdminsController,
+        BrandsController,
         IdentityController,
         WebhookController,
         EngagementController,
@@ -74,6 +79,7 @@ export class AppModule {
         FieldCrypto,
         AuditService,
         AuthService,
+        AdminsService,
         ConnectorRegistry,
         IngestionService,
         SyncScheduler,
