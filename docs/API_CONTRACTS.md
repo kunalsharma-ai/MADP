@@ -163,3 +163,6 @@ not clicked, which wait until MADP sends invitations.
 | `GET /privacy/retention` · `POST /privacy/retention/{key}/purge` | `privacy.read` · `privacy.execute` | Schedule with rows due; evidence rules refuse a purge |
 
 `privacy.read`: super admin, privacy officer, support. `privacy.request`: the same. `privacy.execute`: super admin, privacy officer.
+
+## 7. Profile freshness (implemented on DEMO data, 2026-11-24)
+`GET /profiles/freshness?panel=&staleDays=180` (`audience.counts.read`): per panel `activeMemberships`, `questionBank`, `membersWithAnswers`, `neverProfiled`, `dueForCheck`, `completeness` bands, `leastAnswered` (10), `attributes` (approved mappings only), `hiddenSensitiveQuestions` and `lastSync`. Health questions and attributes need `health.sensitive.read`.

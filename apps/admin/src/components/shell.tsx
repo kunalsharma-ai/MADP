@@ -14,6 +14,7 @@ import {
   Network,
   BadgeCheck,
   FileLock2,
+  Hourglass,
   Globe2,
   LayoutDashboard,
   ListTree,
@@ -30,7 +31,7 @@ import type { SessionUser } from '@madp/contracts';
 import { NAV, PLANNED } from './nav';
 import { cn } from '@/lib/cn';
 
-const ICONS = { LayoutDashboard, Globe2, Users, ListTree, GitCompareArrows, PlugZap, ShieldCheck, UserRoundCheck, Mail, Workflow, Coins, Network, BadgeCheck, FileLock2 } as const;
+const ICONS = { LayoutDashboard, Globe2, Users, ListTree, GitCompareArrows, PlugZap, ShieldCheck, UserRoundCheck, Mail, Workflow, Coins, Network, BadgeCheck, FileLock2, Hourglass } as const;
 
 export function Shell({
   user,

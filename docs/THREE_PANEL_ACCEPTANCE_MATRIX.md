@@ -28,6 +28,7 @@ copy of the panel backend for all three panels (`T2O_LOCAL_E2E.md`); that is sti
 | 15. Integration health visible | 🟡 Connectors page and `/integrations/health` | 🟡 | 🟡 |
 | 16. Automated contract tests passing | 🟡 stub of audited routes | 🟡 | 🟡 |
 | Consent and preference center (history, contactability, channel opt-outs) | 🟡 DEMO, `test/consent.test.ts` | 🟡 DEMO | 🟡 DEMO |
+| Profile freshness and missing attributes (6-month check) | 🟡 DEMO, `test/freshness.test.ts` | 🟡 DEMO | 🟡 DEMO; health questions hidden without health access |
 | Privacy requests (access, correction, deletion with erasure hold, restriction) and retention | 🟡 DEMO, `test/privacy.test.ts`; panel deletion confirmed through the deletions feed | 🟡 DEMO | 🟡 DEMO |
 | Supply360 service API (counts, match, reservations, invitation authorisation, events, consent) | 🟡 DEMO, `test/supply360.test.ts` | 🟡 DEMO | 🟡 DEMO; health criteria refused in match, health counts only with the health scope |
 

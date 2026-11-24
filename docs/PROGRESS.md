@@ -129,6 +129,17 @@ Staff accounts are now skipped (`isStaff`, kunalsharma-ai/turn2opinion#21, merge
 - Admin screens: Loyalty → Loyalty ledger, and reward wallets on the 360° profile.
 - Tests: `test/loyalty.test.ts` (6, all three panels), `src/loyalty/position.test.ts` (4), and connector mapping.
 
+### Profile freshness and missing attributes (2026-11-24)
+- Per panel, never added across panels: active accounts, members with any answer, never profiled, and members
+  due for their 6-month check. Kunal's rule says data is rechecked every 6 months, so the window defaults to 180
+  days and can be changed per view. Also shows bands for the share of the question bank answered, the 10
+  least-answered questions with their stale answers, and coverage of each canonical attribute through approved
+  mappings only.
+- Counts only. Health questions and attributes are left out without `health.sensitive.read`, and the screen
+  says how many were left out.
+- The "Still true?" review and the archive of inactive members belong to the super admin console's Members module.
+- Admin screen: Data → Profile freshness. Tests: `test/freshness.test.ts` (4, all three panels).
+
 ### Privacy requests and retention (2026-11-24)
 - Access, correction, deletion and restriction requests, each with a jurisdiction, a due date set by counsel
   (30 days unless stated), an overdue flag, and an append-only trail.
