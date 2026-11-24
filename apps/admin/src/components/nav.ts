@@ -53,6 +53,8 @@ export const NAV: NavGroup[] = [
         icon: 'GitCompareArrows',
         permission: 'mappings.review',
       },
+      { href: '/freshness', label: 'Profile freshness', icon: 'Hourglass', permission: 'audience.counts.read' },
+      { href: '/verification', label: 'Verification & quality', icon: 'ScanSearch', permission: 'verification.read' },
       { href: '/connectors', label: 'Connectors & sync', icon: 'PlugZap', permission: 'connectors.read' },
     ],
   },

@@ -14,6 +14,8 @@ import {
   Network,
   BadgeCheck,
   FileLock2,
+  Hourglass,
+  ScanSearch,
   Globe2,
   LayoutDashboard,
   ListTree,
@@ -54,6 +56,8 @@ const ICONS = {
   Network,
   BadgeCheck,
   FileLock2,
+  Hourglass,
+  ScanSearch,
   UserCog,
   Building2,
 } as const;

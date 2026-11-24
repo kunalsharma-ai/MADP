@@ -163,3 +163,15 @@ not clicked, which wait until MADP sends invitations.
 | `GET /privacy/retention` · `POST /privacy/retention/{key}/purge` | `privacy.read` · `privacy.execute` | Schedule with rows due; evidence rules refuse a purge |
 
 `privacy.read`: super admin, privacy officer, support. `privacy.request`: the same. `privacy.execute`: super admin, privacy officer.
+
+## 7. Profile freshness (implemented on DEMO data, 2026-11-24)
+`GET /profiles/freshness?panel=&staleDays=180` (`audience.counts.read`): per panel `activeMemberships`, `questionBank`, `membersWithAnswers`, `neverProfiled`, `dueForCheck`, `completeness` bands, `leastAnswered` (10), `attributes` (approved mappings only), `hiddenSensitiveQuestions` and `lastSync`. Health questions and attributes need `health.sensitive.read`.
+
+## 8. Verification and data quality (implemented on DEMO data, 2026-11-24)
+All routes are `@BrandScoped({ allowAll: true })`: the `x-madp-brand` header limits them to one panel.
+- `GET /verification/summary?panel=` (`verification.read`): `checks` (key, label, why) and per panel `members`, `sourceReported` (email, phone, qualityScore bands), `checks` counts, `evidence` per claim (pending, verified, expired, rejected, revoked) and `identityReviewOpen`.
+- `GET /verification/checks?panel=&check=&limit=50` (`verification.read` + `panellists.read`): person ids, masked panel ids, quality score, e-mail state, country (time zone for the time-zone checks). No personal data.
+- `GET /verification/evidence?panel=&status=&personId=` (`verification.read`).
+- `POST /verification/evidence` `EvidenceCreate` (`verification.review`): 404 when the person is not a member of that panel.
+- `POST /verification/evidence/:id/decision` `EvidenceDecision` (`verification.review`): 403 for the admin who recorded it, 409 unless pending.
+- `POST /verification/evidence/:id/revoke` `EvidenceRevoke` (`verification.review`): verified evidence only.

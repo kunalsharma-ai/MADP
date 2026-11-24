@@ -58,6 +58,10 @@ export const Permission = z.enum([
   'privacy.request',
   /** Verify, carry out or reject a privacy request (never one you logged yourself). */
   'privacy.execute',
+  /** Verification and data quality center (screen 8): counts, checks and evidence. */
+  'verification.read',
+  /** Record independent verification evidence, and decide evidence someone else recorded. */
+  'verification.review',
   'connectors.read',
   'connectors.run',
   'imports.run',

@@ -1,5 +1,5 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
-import { and, desc, eq, isNull, lte, sql } from 'drizzle-orm';
+import { and, desc, eq, isNull, sql } from 'drizzle-orm';
 import type { ApiEnv } from '@madp/config';
 import type { PanelCode, WebhookEventType } from '@madp/contracts';
 import { API_ENV } from '../common/tokens.js';
@@ -83,17 +83,21 @@ export class WebhookService {
     } while (this.again.has(panel));
   }
 
-  private async dbNow(): Promise<Date> {
-    const r = await this.database.db.execute<{ t: string | Date }>(sql`select clock_timestamp() as t`);
-    return new Date(r.rows[0]!.t);
+  /**
+   * Kept as Postgres text: a JS Date drops the microseconds, so an event stored in the same millisecond as the run
+   * started would fall after the cut-off and never be marked.
+   */
+  private async dbNow(): Promise<string> {
+    const r = await this.database.db.execute<{ t: string }>(sql`select clock_timestamp()::text as t`);
+    return r.rows[0]!.t;
   }
 
   /** Events received before the run started are covered by it. */
-  private async mark(panel: PanelCode, before: Date, error: string | null) {
+  private async mark(panel: PanelCode, before: string, error: string | null) {
     await this.database.db
       .update(webhookInbox)
       .set(error ? { error } : { processedAt: new Date(), error: null })
-      .where(and(eq(webhookInbox.panel, panel), isNull(webhookInbox.processedAt), lte(webhookInbox.receivedAt, before)));
+      .where(and(eq(webhookInbox.panel, panel), isNull(webhookInbox.processedAt), sql`${webhookInbox.receivedAt} <= ${before}::timestamptz`));
   }
 
   async inbox(panel?: PanelCode) {

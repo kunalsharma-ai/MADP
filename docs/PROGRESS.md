@@ -207,6 +207,35 @@ Staff accounts are now skipped (`isStaff`, kunalsharma-ai/turn2opinion#21, merge
 - Admin screens: Loyalty → Loyalty ledger, and reward wallets on the 360° profile.
 - Tests: `test/loyalty.test.ts` (6, all three panels), `src/loyalty/position.test.ts` (4), and connector mapping.
 
+### Profile freshness and missing attributes (2026-11-24)
+- Per panel, never added across panels: active accounts, members with any answer, never profiled, and members
+  due for their 6-month check. Kunal's rule says data is rechecked every 6 months, so the window defaults to 180
+  days and can be changed per view. Also shows bands for the share of the question bank answered, the 10
+  least-answered questions with their stale answers, and coverage of each canonical attribute through approved
+  mappings only.
+- Counts only. Health questions and attributes are left out without `health.sensitive.read`, and the screen
+  says how many were left out.
+- The "Still true?" review and the archive of inactive members belong to the super admin console's Members module.
+- Admin screen: Data → Profile freshness. Tests: `test/freshness.test.ts` (4, all three panels).
+
+### Verification and data quality center (screen 8, 2026-11-24)
+- Per panel, never added across panels: e-mail and phone verification and quality-score bands exactly as each
+  panel reported them (labelled source-reported), open identity matches, and ten MADP checks on active members:
+  no country, no birth year, age outside 13 to 120, no or unknown time zone, no e-mail, e-mail rejected by the
+  panel, an e-mail shared by two or more members of the same panel, quality below the starting score of 100, and
+  no quality score. Thresholds come from the T2O and MFR audits.
+- A drill-down lists who fails a check with person ids and masked panel ids only (needs `panellists.read`).
+- Independent verification evidence (identity, age, HCP licence, employment): one admin records the check with a
+  method, a reference with no personal data and an optional expiry; a different admin verifies or rejects it;
+  verified evidence can be revoked, and expired evidence is counted apart. Every step is audited. Evidence is tied
+  to the panel membership, so identity merges carry it, and a privacy deletion erases it. Access exports include it.
+- Works in the brand picked in the brand switcher (`@BrandScoped`), or every brand side by side.
+- New permissions `verification.read` (super admin, brand admin, panel manager, data steward, privacy officer) and
+  `verification.review` (the same without panel manager). Migration 0012.
+- The console's Quality module (panel-side quality actions) is separate and writes to the panels; this center
+  only reads MADP's copy and records MADP's own evidence.
+- Admin screen: Data → Verification & quality. Tests: `test/verification.test.ts` (5, all three panels).
+
 ### Privacy requests and retention (2026-11-24)
 - Access, correction, deletion and restriction requests, each with a jurisdiction, a due date set by counsel
   (30 days unless stated), an overdue flag, and an append-only trail.
