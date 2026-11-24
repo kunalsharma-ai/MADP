@@ -5,6 +5,8 @@ import {
   ApprovalList,
   AudienceCount,
   AudienceSave,
+  ExpertDecision,
+  ExpertList,
   HoldCreate,
   HoldRelease,
   InviteRun,
@@ -560,6 +562,68 @@ export class PointsQualityController {
       after: r.after,
       reason: body.note,
       metadata: { rule: body.rule, delta: body.delta, survey: body.survey ?? null },
+    });
+    return r;
+  }
+
+  // ---- expert verification queue (Professionals) ------------------------------------------------------------------
+  /** The queue shows LinkedIn links and job titles, so every read is audited. The work e-mail stays masked. */
+  @RequirePermissions('members.read', 'quality.manage')
+  @Get('experts')
+  async experts(
+    @Query(new ZodPipe(ExpertList)) q: ExpertList,
+    @CurrentBrand() b: BrandSelection,
+    @CurrentPrincipal() p: Principal,
+    @Req() req: Request,
+  ) {
+    const brand = b as PanelCode;
+    const r = await this.panel.call<{ total: number; page: number }>(brand, p.id, 'GET', R.experts, q);
+    await this.log(req, brand, 'experts.queue.view', 'expert_verification', undefined, {
+      metadata: { status: q.status, page: r.page, total: r.total },
+    });
+    return r;
+  }
+
+  @RequirePermissions('members.read', 'quality.manage')
+  @Get('experts/:id')
+  async expert(
+    @Param('id', new ZodPipe(Id)) id: string,
+    @CurrentBrand() b: BrandSelection,
+    @CurrentPrincipal() p: Principal,
+    @Req() req: Request,
+  ) {
+    const brand = b as PanelCode;
+    const r = await this.panel.call<{ member?: { id?: string } }>(brand, p.id, 'GET', R.expert(id));
+    await this.log(req, brand, 'expert.view', 'expert_verification', id, {
+      metadata: { member: r.member?.id ?? null },
+    });
+    return r;
+  }
+
+  @RequirePermissions('quality.manage')
+  @Post('experts/:id/decision')
+  async decideExpert(
+    @Param('id', new ZodPipe(Id)) id: string,
+    @Body(new ZodPipe(ExpertDecision)) body: ExpertDecision,
+    @CurrentBrand() b: BrandSelection,
+    @CurrentPrincipal() p: Principal,
+    @Req() req: Request,
+  ) {
+    const brand = b as PanelCode;
+    const r = await this.panel.call<{
+      before: { status: string };
+      after: { status: string };
+      member: string;
+    }>(brand, p.id, 'POST', R.expertDecision(id), undefined, {
+      decision: body.decision,
+      note: body.note,
+      adminNote: body.reason,
+    });
+    await this.log(req, brand, `expert.${body.decision}`, 'expert_verification', id, {
+      before: r.before,
+      after: r.after,
+      reason: body.reason,
+      metadata: { member: r.member, noteToMember: body.note ?? null },
     });
     return r;
   }

@@ -606,3 +606,20 @@ and MHO work on every console screen and that no brand ever sees or changes anot
 - **Deploy needs Kunal's go-ahead.** The secret and the three hostnames go into `MADP_ADMIN_API_SECRETS` and
   `MADP_ADMIN_API_ORIGINS` on the panel, and the three base URLs go into MADP.
 
+
+## Expert verification queue (24 Nov 2026)
+
+Professionals can ask to be shown as a verified expert, giving a LinkedIn link and/or a work e-mail. The new
+**Expert verification** screen (Panel nav, `quality.manage`) lists the waiting requests oldest first, with tabs for
+verified, declined and all. Each request opens with what the check needs: the LinkedIn link, the work e-mail (masked,
+domain in full), the job title, completed surveys, quality score, and how many people at the same domain are already
+verified.
+
+- **Deciding.** Verify, or decline with a note the member sees. Both need a reason, which goes to the audit log and is
+  kept as the panel's admin note. Only a waiting request can be decided, and only Professionals can be verified.
+- **Audit and e-mail.** Every read is audited (`experts.queue.view`, `expert.view`), and so is every decision
+  (`expert.verified`, `expert.declined`). Nothing is e-mailed.
+- **Panel side.** `GET/POST /api/admin/v1/experts…` in kunalsharma-ai/MFR#61, merged, not deployed. That PR also counts
+  MHO's `healthcare professional` category as Professional; it was treated as Consumer before.
+- **Tests.** MFR `tests/admin.experts.test.mjs` (3) and the cross-brand test, and MADP `panel-admin-step4.test.ts` (10).
+- **Previews.** `/mnt/project-files/madp/preview-console/expert-verification/`.
