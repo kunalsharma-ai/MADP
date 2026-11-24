@@ -28,6 +28,14 @@ MADP imported a consumer, a business professional and two teens from a running c
 (test accounts made through T2O's own sign-up and guardian flows). The import was reconciled and the re-import was
 idempotent. Details are in `docs/T2O_LOCAL_E2E.md`. This is not live evidence.
 
+### Automatic sync (2026-11-23)
+- T2O changed-since feeds (members, answers, deletions) built as kunalsharma-ai/turn2opinion#20 (draft, not deployed).
+- MADP `runSync`: reads only what changed, per-feed cursors, deletions remove contact details, answers and consents,
+  answers that arrive before their member wait for it. Scheduler off by default (`SYNC_INTERVAL_MINUTES`).
+- Connectors screen: sync health and "Sync changes now". Directory: membership, teen and guardian-consent filters.
+- Tested: `apps/api/test/sync.test.ts` for all three panels, and end to end on the local T2O copy
+  (`docs/T2O_LOCAL_E2E.md`). Go-live steps: `docs/T2O_GO_LIVE.md`.
+
 ### Next for T2O
 A T2O-only dry run against the live backend once the token is in the cloud environment, with counts shown to Kunal
 before any write.

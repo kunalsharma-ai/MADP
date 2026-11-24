@@ -1,19 +1,26 @@
 import type {
   CapabilityFinding,
+  ChangeQuery,
   ConnectorHealth,
   PanelCode,
   SourceAnswer,
+  SourceChangePage,
+  SourceDeletion,
   SourcePage,
   SourceRespondent,
 } from '@madp/contracts';
 import { AUDITED_CAPABILITIES } from './capabilities.js';
 import {
+  mapAnswerChange,
   mapAnswerMap,
   mapOption,
+  mapTombstone,
   mapQuestion,
   mapQuestionnaire,
   mapUser,
+  type RawAnswerChange,
   type RawOption,
+  type RawTombstone,
   type RawProfile,
   type RawQuestion,
   type RawUser,
@@ -54,6 +61,11 @@ export interface EndpointMap {
   answers:
     | { method: 'GET'; path: (memberId: string) => string }
     | { method: 'POST'; path: (memberId: string) => string };
+  /**
+   * Changed-since feeds (admin only). Added to the T2O backend by kunalsharma-ai/turn2opinion#20; a backend
+   * without that change answers 404, and MADP reports automatic sync as not available for the panel.
+   */
+  changes?: { members: string; answers: string; deletions: string };
 }
 
 /**
@@ -69,6 +81,12 @@ const T2O_BACKEND_ENDPOINTS: EndpointMap = {
   // POST /user/:user/profile-data also exists on this backend but is marked "under development" and returns
   // raw Answer documents, so the profile route is used.
   answers: { method: 'GET', path: (id) => `/api/v1/user/${encodeURIComponent(id)}/profile` },
+  // routes/api/Changes.js (turn2opinion#20): ?cursor=&since=&limit= -> {items, cursor, more}
+  changes: {
+    members: '/api/v1/changes/members',
+    answers: '/api/v1/changes/answers',
+    deletions: '/api/v1/changes/deletions',
+  },
 };
 
 export const ENDPOINTS: Record<PanelCode, EndpointMap> = {
@@ -182,12 +200,18 @@ export class PanelApiConnector implements PanelConnector {
         );
       }
       if (res.status === 401 || res.status === 403)
-        throw new ConnectorError(`Source refused access (${res.status})`, this.panel, 'not_authorised');
+        throw new ConnectorError(
+          `Source refused access (${res.status})`,
+          this.panel,
+          'not_authorised',
+          res.status,
+        );
       if (!json || json.status !== 'success') {
         throw new ConnectorError(
           `Source error ${res.status}: ${json?.message ?? 'invalid envelope'}`,
           this.panel,
           json ? 'source_error' : 'invalid_payload',
+          res.status,
         );
       }
       return json.data as T;
@@ -286,5 +310,53 @@ export class PanelApiConnector implements PanelConnector {
       out.push(...mapAnswerMap(this.panel, id, data ?? {}, qs));
     }
     return out;
+  }
+
+  /** One page of a changes feed. A 404 means the panel does not serve the feed (yet): kind 'not_supported'. */
+  private async changePage<R, T>(
+    feed: 'members' | 'answers' | 'deletions',
+    q: ChangeQuery,
+    map: (raw: R) => T | null,
+  ): Promise<SourceChangePage<T>> {
+    const path = this.endpoints.changes?.[feed];
+    if (!path)
+      throw new ConnectorError(`No ${feed} changes feed for ${this.panel}`, this.panel, 'not_supported');
+    const params = new URLSearchParams({ limit: String(q.limit) });
+    if (q.cursor) params.set('cursor', q.cursor);
+    else if (q.since) params.set('since', q.since);
+    let data: { items?: R[]; cursor?: string | null; more?: boolean };
+    try {
+      data = await this.call('GET', `${path}?${params}`);
+    } catch (e) {
+      if (e instanceof ConnectorError && e.httpStatus === 404)
+        throw new ConnectorError(
+          `${this.panel} does not serve ${path} yet (404)`,
+          this.panel,
+          'not_supported',
+          404,
+        );
+      throw e;
+    }
+    if (!data || !Array.isArray(data.items))
+      throw new ConnectorError(`Invalid ${feed} changes page`, this.panel, 'invalid_payload');
+    return {
+      items: data.items.map(map).filter((x): x is T => x !== null),
+      cursor: data.cursor ?? q.cursor ?? null,
+      more: data.more === true,
+    };
+  }
+
+  memberChanges(q: ChangeQuery): Promise<SourceChangePage<SourceRespondent>> {
+    return this.changePage<RawUser, SourceRespondent>('members', q, (u) => mapUser(this.panel, u));
+  }
+
+  answerChanges(q: ChangeQuery): Promise<SourceChangePage<SourceAnswer>> {
+    return this.changePage<RawAnswerChange, SourceAnswer>('answers', q, (a) =>
+      mapAnswerChange(this.panel, a),
+    );
+  }
+
+  deletions(q: ChangeQuery): Promise<SourceChangePage<SourceDeletion>> {
+    return this.changePage<RawTombstone, SourceDeletion>('deletions', q, (t) => mapTombstone(this.panel, t));
   }
 }

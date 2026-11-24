@@ -6,6 +6,7 @@ import type {
   SourceRespondent,
   SourceAnswer,
   SourceConsent,
+  SourceDeletion,
 } from '@madp/contracts';
 
 /** Shapes returned by the shared Express/Mongoose panel backend (`{status, message, data}` envelope). */
@@ -50,6 +51,8 @@ export interface RawUser {
   isVerified?: { email?: string; phone?: string };
   qualityScore?: number;
   isActive?: boolean;
+  /** Only the changes feed returns it (T2O GET /api/v1/changes/members). */
+  isDeleted?: boolean;
   createdAt?: string;
   updatedAt?: string;
   consent?: { canShareVideo?: boolean; canShareGPS?: boolean; canAcceptPushNotification?: boolean };
@@ -204,7 +207,8 @@ export function mapUser(panel: PanelCode, u: RawUser): SourceRespondent {
     emailVerification: ver(u.isVerified?.email),
     phoneVerification: ver(u.isVerified?.phone),
     qualityScore: typeof u.qualityScore === 'number' ? u.qualityScore : null,
-    isActive: u.isActive !== false,
+    isActive: u.isActive !== false && u.isDeleted !== true,
+    ...(u.isDeleted === undefined ? {} : { isDeleted: u.isDeleted === true }),
     sourceCreatedAt: iso(u.createdAt),
     sourceUpdatedAt: iso(u.updatedAt),
     consents: mapConsents(u),
@@ -227,4 +231,34 @@ export function mapAnswerMap(
       values: ([] as unknown[]).concat(v ?? []).map(String),
       sourceUpdatedAt: null,
     }));
+}
+
+/** Changes feed shapes (T2O GET /api/v1/changes/answers and /deletions). */
+export interface RawAnswerChange {
+  _id: string;
+  user: string;
+  question: string;
+  answer?: unknown;
+  updatedAt?: string;
+}
+export interface RawTombstone {
+  _id: string;
+  kind: string;
+  user: string;
+  at?: string;
+}
+
+export function mapAnswerChange(panel: PanelCode, a: RawAnswerChange): SourceAnswer {
+  return {
+    panel,
+    sourceMemberId: String(a.user),
+    sourceQuestionId: String(a.question),
+    values: ([] as unknown[]).concat(a.answer ?? []).map(String),
+    sourceUpdatedAt: iso(a.updatedAt),
+  };
+}
+
+export function mapTombstone(panel: PanelCode, t: RawTombstone): SourceDeletion | null {
+  if (t.kind !== 'member' && t.kind !== 'answers') return null;
+  return { panel, sourceMemberId: String(t.user), kind: t.kind, at: iso(t.at) };
 }

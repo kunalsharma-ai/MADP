@@ -1,4 +1,15 @@
-import { Body, Controller, Get, HttpCode, NotFoundException, Param, Post, Query, Req } from '@nestjs/common';
+import {
+  Body,
+  ConflictException,
+  Controller,
+  Get,
+  HttpCode,
+  NotFoundException,
+  Param,
+  Post,
+  Query,
+  Req,
+} from '@nestjs/common';
 import { and, count, desc, eq } from 'drizzle-orm';
 import { z } from 'zod';
 import { PANELS, PanelCode } from '@madp/contracts';
@@ -16,9 +27,10 @@ import {
   syncCheckpoints,
 } from '../db/schema.js';
 import { Mongo } from '../mongo/mongo.js';
-import type { ImportCounts } from '../ingestion/ingestion.service.js';
+import { MEMBER_NOT_SYNCED, type ImportCounts } from '../ingestion/ingestion.service.js';
 import { ConnectorRegistry } from './connector-registry.js';
 import { IngestionService } from '../ingestion/ingestion.service.js';
+import { SyncScheduler } from '../ingestion/sync-scheduler.js';
 import { AuditService } from '../audit/audit.service.js';
 
 @Controller()
@@ -29,6 +41,7 @@ export class ConnectorsController {
     private readonly database: Database,
     private readonly audit: AuditService,
     private readonly mongo: Mongo,
+    private readonly scheduler: SyncScheduler,
   ) {}
 
   /** Proposed Supply360-facing health endpoint (spec section 12): no panel data, only status. */
@@ -99,6 +112,103 @@ export class ConnectorsController {
       ip: req.ip ?? null,
     });
     return this.ingestion.runImport(panel, { dryRun: body.dryRun, requestedBy: p.id });
+  }
+
+  /**
+   * One automatic-sync run now: reads only what changed since the last run (changed members with consent,
+   * changed answers, deletions). Answers 409 while another import or sync of the panel is running.
+   */
+  @RequirePermissions('imports.run')
+  @Post('connectors/:panel/sync')
+  @HttpCode(200)
+  async runSync(
+    @Param('panel', new ZodPipe(PanelCode)) panel: PanelCode,
+    @CurrentPrincipal() p: Principal,
+    @Req() req: Request,
+  ) {
+    await this.audit.record({
+      actorId: p.id,
+      actorType: 'admin',
+      action: 'sync.requested',
+      targetType: 'panel',
+      targetId: panel,
+      metadata: { dataMode: this.registry.get(panel).dataMode },
+      ip: req.ip ?? null,
+    });
+    let res;
+    try {
+      res = await this.scheduler.runLocked(panel, p.id);
+    } catch (e) {
+      if (/already running/.test((e as Error).message)) throw new ConflictException((e as Error).message);
+      throw e;
+    }
+    if (!res) throw new ConflictException(`A sync of ${panel} is already running`);
+    return res;
+  }
+
+  /** Automatic sync status per panel: schedule, feed checkpoints, last run and parked answers. Counts only. */
+  @RequirePermissions('connectors.read')
+  @Get('sync-status')
+  async syncStatus() {
+    const db = this.database.db;
+    const scheduled = new Set(this.scheduler.panels());
+    return {
+      intervalMinutes: this.scheduler.intervalMinutes,
+      panels: await Promise.all(
+        this.registry.all().map(async (slot) => {
+          const [lastRun, lastOk, streams, [parked]] = await Promise.all([
+            db.query.importJobs.findFirst({
+              where: and(eq(importJobs.panel, slot.panel), eq(importJobs.kind, 'sync')),
+              orderBy: [desc(importJobs.createdAt)],
+            }),
+            db.query.importJobs.findFirst({
+              where: and(
+                eq(importJobs.panel, slot.panel),
+                eq(importJobs.kind, 'sync'),
+                eq(importJobs.status, 'succeeded'),
+              ),
+              orderBy: [desc(importJobs.createdAt)],
+            }),
+            db
+              .select({ stream: syncCheckpoints.stream, lastSuccessAt: syncCheckpoints.lastSuccessAt })
+              .from(syncCheckpoints)
+              .where(and(eq(syncCheckpoints.panel, slot.panel), eq(syncCheckpoints.dataMode, slot.dataMode))),
+            db
+              .select({ n: count() })
+              .from(deadLetters)
+              .where(
+                and(
+                  eq(deadLetters.panel, slot.panel),
+                  eq(deadLetters.status, 'open'),
+                  eq(deadLetters.errorKind, MEMBER_NOT_SYNCED),
+                ),
+              ),
+          ]);
+          const supported = slot.connector
+            .capabilities()
+            .find((c) => c.capability === 'answers.updatedSince');
+          return {
+            panel: slot.panel,
+            dataMode: slot.dataMode,
+            scheduled: scheduled.has(slot.panel),
+            feedFinding: supported ?? null,
+            lastRun: lastRun
+              ? {
+                  id: lastRun.id,
+                  status: lastRun.status,
+                  startedAt: lastRun.startedAt,
+                  finishedAt: lastRun.finishedAt,
+                  error: lastRun.error,
+                  counts: lastRun.counts,
+                }
+              : null,
+            lastSucceededAt: lastOk?.finishedAt ?? null,
+            streams: streams.filter((s) => s.stream.startsWith('changes.')),
+            parkedAnswerBatches: parked!.n,
+          };
+        }),
+      ),
+    };
   }
 
   @RequirePermissions('connectors.read')

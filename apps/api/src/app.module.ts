@@ -14,6 +14,7 @@ import { AuthGuard } from './auth/auth.guard.js';
 import { ConnectorRegistry } from './connectors/connector-registry.js';
 import { ConnectorsController } from './connectors/connectors.controller.js';
 import { IngestionService } from './ingestion/ingestion.service.js';
+import { SyncScheduler } from './ingestion/sync-scheduler.js';
 import { AudienceService } from './audience/audience.service.js';
 import { AudienceController } from './audience/audience.controller.js';
 import { RegistryController } from './registry/registry.controller.js';
@@ -48,6 +49,7 @@ export class AppModule {
         AuthService,
         ConnectorRegistry,
         IngestionService,
+        SyncScheduler,
         AudienceService,
         { provide: APP_GUARD, useClass: ThrottlerGuard },
         { provide: APP_GUARD, useClass: AuthGuard },

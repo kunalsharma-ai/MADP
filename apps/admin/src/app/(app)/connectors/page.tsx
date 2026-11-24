@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { api } from '@/lib/api';
-import type { ConnectorRow, ImportJob } from '@/lib/types';
+import type { ConnectorRow, ImportJob, SyncStatus } from '@/lib/types';
 import {
   Badge,
   Card,
@@ -13,18 +13,20 @@ import {
   fmt,
   fmtDate,
 } from '@/components/ui';
-import { ImportButtons, RetryDeadLettersButton } from './import-buttons';
+import { ImportButtons, RetryDeadLettersButton, SyncNowButton } from './import-buttons';
 
 export const metadata: Metadata = { title: 'Connectors & sync' };
 
 const statusTone = { verified: 'teal', partial: 'warn', missing: 'danger', unknown: 'neutral' } as const;
 
 export default async function ConnectorsPage() {
-  const [rows, jobs, dead] = await Promise.all([
+  const [rows, jobs, dead, sync] = await Promise.all([
     api<ConnectorRow[]>('/connectors'),
     api<ImportJob[]>('/imports'),
     api<{ panel: string; memberCount: number }[]>('/dead-letters?status=open'),
+    api<SyncStatus>('/sync-status'),
   ]);
+  const syncByPanel = new Map(sync.panels.map((p) => [p.panel, p]));
   const deadByPanel = new Map<string, { batches: number; members: number }>();
   for (const d of dead) {
     const cur = deadByPanel.get(d.panel) ?? { batches: 0, members: 0 };
@@ -105,6 +107,65 @@ export default async function ConnectorsPage() {
                   <RetryDeadLettersButton panel={c.panel} />
                 </div>
               ) : null}
+              {(() => {
+                const st = syncByPanel.get(c.panel);
+                if (!st) return null;
+                const run = st.lastRun;
+                const n = (run?.counts ?? {}) as Record<string, number>;
+                return (
+                  <div className="space-y-2 rounded-md border border-border px-3 py-2.5">
+                    <div className="flex items-center justify-between">
+                      <span className="font-medium">Automatic sync</span>
+                      <Badge tone={st.scheduled ? 'teal' : 'neutral'}>
+                        {st.scheduled ? `every ${sync.intervalMinutes} min` : 'on request'}
+                      </Badge>
+                    </div>
+                    <p className="text-xs text-fg-3">
+                      {st.scheduled
+                        ? 'Reads only what changed since the last run: members and consent, answers, deletions.'
+                        : st.dataMode === 'live'
+                          ? 'Set SYNC_INTERVAL_MINUTES to run it on a schedule.'
+                          : 'Runs on a schedule only for live panels. On DEMO data it runs when asked.'}
+                    </p>
+                    <div className="flex items-center justify-between">
+                      <span className="text-fg-3">Last sync</span>
+                      <span>
+                        {run ? (
+                          <Badge
+                            tone={
+                              run.status === 'succeeded'
+                                ? 'teal'
+                                : run.status === 'failed'
+                                  ? 'danger'
+                                  : 'warn'
+                            }
+                          >
+                            {run.status === 'cancelled' ? 'feed not available' : run.status}
+                          </Badge>
+                        ) : (
+                          'never'
+                        )}{' '}
+                        {run ? fmtDate(run.finishedAt ?? run.startedAt) : null}
+                      </span>
+                    </div>
+                    {run?.status === 'succeeded' ? (
+                      <p className="text-xs text-fg-2">
+                        {fmt(n.respondentsSeen ?? 0)} members, {fmt(n.answersChanged ?? 0)} answers changed,{' '}
+                        {fmt(n.membersRemoved ?? 0)} removed
+                        {n.capped ? ' (more to read; the next run continues)' : ''}
+                      </p>
+                    ) : run?.error ? (
+                      <p className="text-xs text-warn">{run.error}</p>
+                    ) : null}
+                    {st.parkedAnswerBatches ? (
+                      <p className="rounded-md bg-surface-2 px-2 py-1 text-xs text-fg-2">
+                        {fmt(st.parkedAnswerBatches)} answer batch(es) waiting for their member to arrive
+                      </p>
+                    ) : null}
+                    <SyncNowButton panel={c.panel} />
+                  </div>
+                );
+              })()}
               <ImportButtons panel={c.panel} />
             </div>
             <details className="border-t border-border px-5 py-3 text-[12px]">
@@ -162,6 +223,7 @@ export default async function ConnectorsPage() {
                   <DataModeBadge mode={j.dataMode} /> {j.dryRun ? <Badge>dry run</Badge> : null}
                 </td>
                 <td className="px-5 py-2.5">
+                  {j.kind === 'sync' ? <Badge>sync</Badge> : null}{' '}
                   <Badge
                     tone={j.status === 'succeeded' ? 'teal' : j.status === 'failed' ? 'danger' : 'neutral'}
                   >
@@ -180,12 +242,14 @@ export default async function ConnectorsPage() {
                 <td className="num px-5 py-2.5">{fmt(n.questionVersionsCreated)}</td>
                 <td className="num px-5 py-2.5">{fmt(n.deadLetteredMembers ?? 0)}</td>
                 <td className="px-5 py-2.5 whitespace-nowrap">
-                  <Link
-                    className="text-accent underline-offset-2 hover:underline"
-                    href={`/connectors/imports/${j.id}`}
-                  >
-                    Reconciliation
-                  </Link>
+                  {j.kind === 'sync' ? null : (
+                    <Link
+                      className="text-accent underline-offset-2 hover:underline"
+                      href={`/connectors/imports/${j.id}`}
+                    >
+                      Reconciliation
+                    </Link>
+                  )}
                 </td>
               </tr>
             );

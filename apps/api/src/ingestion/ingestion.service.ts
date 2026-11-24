@@ -1,14 +1,16 @@
 import { createHash } from 'node:crypto';
 import { Injectable, Logger } from '@nestjs/common';
-import { and, eq, inArray, ne, sql } from 'drizzle-orm';
+import { and, desc, eq, inArray, ne, sql } from 'drizzle-orm';
 import type {
+  ChangeQuery,
   DataMode,
   PanelCode,
+  SourceChangePage,
   SourceQuestion,
   SourceQuestionnaire,
   SourceRespondent,
 } from '@madp/contracts';
-import { ConnectorError } from '@madp/connectors';
+import { ConnectorError, type PanelConnector } from '@madp/connectors';
 import { ConnectorRegistry } from '../connectors/connector-registry.js';
 import { Database, type Db } from '../db/database.js';
 import {
@@ -75,6 +77,42 @@ export interface ImportCounts {
 
 /** Transient source failures go to the dead-letter queue; refused access or bad payloads fail the job. */
 const DEAD_LETTER_KINDS = new Set(['source_error', 'timeout']);
+
+/** What one automatic sync run did. Counts only, no personal data. */
+export interface SyncCounts extends ImportCounts {
+  /** Where each feed started, for the run report: 'cursor', 'since <ISO>' or 'beginning'. */
+  startedFrom: Record<SyncFeed, string>;
+  /** Pages read per feed. */
+  feedPages: Record<SyncFeed, number>;
+  /** True when a feed still had pages after SYNC_MAX_PAGES; the next run continues. */
+  capped: boolean;
+  membersRemoved: number;
+  answerResets: number;
+  /** Deletions for members MADP never held (nothing to remove). */
+  deletionsUnknown: number;
+  /** Answers whose member was not in MADP yet; parked and read again once the member arrives. */
+  answersParked: number;
+  parkedResolved: number;
+  questionsRefreshed: boolean;
+}
+
+export type SyncFeed = 'members' | 'answers' | 'deletions';
+const SYNC_STREAM: Record<SyncFeed, string> = {
+  members: 'changes.members',
+  answers: 'changes.answers',
+  deletions: 'changes.deletions',
+};
+const FEED_LIMIT: Record<SyncFeed, number> = { members: 500, answers: 1000, deletions: 1000 };
+/** Overlap with the last full import, so a change made while it ran is read again rather than missed. */
+const SINCE_OVERLAP_MS = 10 * 60_000;
+/** Dead-letter kind for answers that arrived before their member. */
+export const MEMBER_NOT_SYNCED = 'member_not_synced';
+
+export interface SyncOptions {
+  requestedBy?: string | null;
+  /** Most pages per feed in this run (default 100). */
+  maxPages?: number;
+}
 
 export interface ImportOptions {
   dryRun?: boolean;
@@ -253,6 +291,472 @@ export class IngestionService {
   }
 
   /**
+   * Automatic sync for one panel from its changed-since feeds: changed members (with consent), then changed
+   * answers, then deletions. Each feed resumes from its own checkpoint, so a run reads only what changed since the
+   * last one; a feed's first run starts where the last full import started (minus an overlap), or from the
+   * beginning if there was none. Never runs at the same time as an import of the same panel.
+   */
+  async runSync(panel: PanelCode, opts: SyncOptions = {}) {
+    const { connector, dataMode } = this.registry.get(panel);
+    if (!connector.memberChanges || !connector.answerChanges || !connector.deletions)
+      return {
+        jobId: null,
+        dataMode,
+        status: 'not_supported' as const,
+        error: `${panel} connector has no changes feed`,
+      };
+    if (this.running.has(panel)) throw new Error(`An import or sync for ${panel} is already running`);
+    this.running.add(panel);
+    const db = this.database.db;
+    const maxPages = opts.maxPages ?? 100;
+    const [job] = await db
+      .insert(importJobs)
+      .values({
+        panel,
+        dataMode,
+        kind: 'sync',
+        dryRun: false,
+        status: 'running',
+        requestedBy: opts.requestedBy ?? null,
+        startedAt: new Date(),
+      })
+      .returning();
+    const jobId = job!.id;
+    const counts: SyncCounts = {
+      questionnaires: 0,
+      questions: 0,
+      questionVersionsCreated: 0,
+      mappingsQueued: 0,
+      respondentsSeen: 0,
+      identitiesCreated: 0,
+      identitiesUpdated: 0,
+      personsCreated: 0,
+      autoLinked: 0,
+      matchCandidates: 0,
+      unknownCategories: {},
+      answersSeen: 0,
+      answersChanged: 0,
+      pages: 0,
+      resumedFromCursor: null,
+      deadLettered: 0,
+      deadLetteredMembers: 0,
+      consentsSynced: 0,
+      startedFrom: { members: 'beginning', answers: 'beginning', deletions: 'beginning' },
+      feedPages: { members: 0, answers: 0, deletions: 0 },
+      capped: false,
+      membersRemoved: 0,
+      answerResets: 0,
+      deletionsUnknown: 0,
+      answersParked: 0,
+      parkedResolved: 0,
+      questionsRefreshed: false,
+    };
+    try {
+      let versions = await this.latestVersions(panel, dataMode);
+      if (versions.size === 0) {
+        // No question registry yet (no import has run): build it first, as a full import would.
+        const questionnaires = await connector.listQuestionnaires();
+        const questions = await connector.listQuestions();
+        counts.questionnaires = questionnaires.length;
+        counts.questions = questions.length;
+        versions = await this.syncQuestions(panel, dataMode, jobId, questionnaires, questions, counts, false);
+        counts.questionsRefreshed = true;
+      }
+      const since = await this.syncStart(panel, dataMode);
+
+      await this.readFeed(
+        panel,
+        dataMode,
+        jobId,
+        'members',
+        since,
+        maxPages,
+        counts,
+        (q) => connector.memberChanges!(q),
+        async (items) => {
+          counts.respondentsSeen += items.length;
+          await this.ingestRespondents(panel, dataMode, jobId, items, counts);
+          for (const r of items.filter((x) => x.isDeleted)) {
+            if (await this.removeMember(panel, dataMode, jobId, r.sourceMemberId, 'soft_deleted'))
+              counts.membersRemoved++;
+          }
+        },
+      );
+      counts.parkedResolved += await this.retryParked(panel, dataMode, connector, versions);
+
+      await this.readFeed(
+        panel,
+        dataMode,
+        jobId,
+        'answers',
+        since,
+        maxPages,
+        counts,
+        (q) => connector.answerChanges!(q),
+        async (items) => {
+          counts.answersSeen += items.length;
+          const personByMember = await this.personsFor(
+            panel,
+            dataMode,
+            items.map((a) => a.sourceMemberId),
+          );
+          const unknown = [...new Set(items.map((a) => a.sourceMemberId))].filter(
+            (m) => !personByMember.has(m),
+          );
+          if (unknown.length) {
+            await db.insert(deadLetters).values({
+              dataMode,
+              panel,
+              importJobId: jobId,
+              stream: 'answers',
+              sourceMemberIds: unknown,
+              errorKind: MEMBER_NOT_SYNCED,
+              error: 'Answers arrived before their member; read again once the member is synced',
+            });
+            counts.answersParked += items.filter((a) => !personByMember.has(a.sourceMemberId)).length;
+          }
+          counts.answersChanged += await this.ingestAnswers(
+            panel,
+            dataMode,
+            jobId,
+            items,
+            personByMember,
+            versions,
+          );
+        },
+      );
+
+      await this.readFeed(
+        panel,
+        dataMode,
+        jobId,
+        'deletions',
+        since,
+        maxPages,
+        counts,
+        (q) => connector.deletions!(q),
+        async (items) => {
+          for (const d of items) {
+            if (d.kind === 'member') {
+              const done = await this.removeMember(panel, dataMode, jobId, d.sourceMemberId, 'deleted');
+              if (done) counts.membersRemoved++;
+              else counts.deletionsUnknown++;
+            } else {
+              counts.answerResets++;
+              counts.answersChanged += await this.resetAnswers(panel, dataMode, d.sourceMemberId);
+            }
+          }
+        },
+      );
+
+      const changed =
+        counts.identitiesCreated + counts.identitiesUpdated + counts.answersChanged + counts.membersRemoved;
+      if (changed > 0)
+        await db
+          .insert(outbox)
+          .values({ topic: 'audience.counts.invalidated', payload: { panel, dataMode, syncJobId: jobId } });
+      await db
+        .update(importJobs)
+        .set({ status: 'succeeded', counts, finishedAt: new Date() })
+        .where(eq(importJobs.id, jobId));
+      await this.audit.record({
+        actorId: opts.requestedBy ?? null,
+        actorType: opts.requestedBy ? 'admin' : 'system',
+        action: 'sync.completed',
+        targetType: 'import_job',
+        targetId: jobId,
+        metadata: {
+          panel,
+          dataMode,
+          members: counts.respondentsSeen,
+          answersChanged: counts.answersChanged,
+          membersRemoved: counts.membersRemoved,
+        },
+      });
+      return { jobId, dataMode, status: 'succeeded' as const, counts };
+    } catch (e) {
+      const message = (e as Error).message;
+      const notSupported = e instanceof ConnectorError && e.kind === 'not_supported';
+      this.log[notSupported ? 'warn' : 'error'](`Sync ${jobId} for ${panel}: ${message}`);
+      await db
+        .update(importJobs)
+        .set({
+          status: notSupported ? 'cancelled' : 'failed',
+          counts,
+          error: message,
+          finishedAt: new Date(),
+        })
+        .where(eq(importJobs.id, jobId));
+      await this.audit.record({
+        actorId: opts.requestedBy ?? null,
+        actorType: 'system',
+        action: 'sync.failed',
+        outcome: 'failure',
+        targetType: 'import_job',
+        targetId: jobId,
+        metadata: { panel, notSupported },
+      });
+      return {
+        jobId,
+        dataMode,
+        status: notSupported ? ('not_supported' as const) : ('failed' as const),
+        counts,
+        error: message,
+      };
+    } finally {
+      this.running.delete(panel);
+    }
+  }
+
+  /** Reads one feed page by page from its checkpoint, saving the cursor after each page is stored. */
+  private async readFeed<T>(
+    panel: PanelCode,
+    dataMode: DataMode,
+    jobId: string,
+    feed: SyncFeed,
+    since: string | null,
+    maxPages: number,
+    counts: SyncCounts,
+    read: (q: ChangeQuery) => Promise<SourceChangePage<T>>,
+    store: (items: T[]) => Promise<void>,
+  ) {
+    const stream = SYNC_STREAM[feed];
+    const cp = await this.database.db.query.syncCheckpoints.findFirst({
+      where: and(
+        eq(syncCheckpoints.dataMode, dataMode),
+        eq(syncCheckpoints.panel, panel),
+        eq(syncCheckpoints.stream, stream),
+      ),
+    });
+    let cursor = cp?.cursor ?? null;
+    counts.startedFrom[feed] = cursor ? 'cursor' : since ? `since ${since}` : 'beginning';
+    for (let page = 0; ; page++) {
+      if (page >= maxPages) {
+        counts.capped = true;
+        break;
+      }
+      const res = await read({ cursor, since: cursor ? null : since, limit: FEED_LIMIT[feed] });
+      counts.pages++;
+      counts.feedPages[feed]++;
+      if (res.items.length) await store(res.items);
+      cursor = res.cursor;
+      await this.saveStreamCheckpoint(dataMode, panel, stream, cursor, jobId, !res.more);
+      if (!res.more) break;
+    }
+  }
+
+  /** Where feeds without a checkpoint start: the last successful full import's start, minus an overlap. */
+  private async syncStart(panel: PanelCode, dataMode: DataMode): Promise<string | null> {
+    const last = await this.database.db.query.importJobs.findFirst({
+      where: and(
+        eq(importJobs.panel, panel),
+        eq(importJobs.dataMode, dataMode),
+        eq(importJobs.kind, 'backfill'),
+        eq(importJobs.dryRun, false),
+        eq(importJobs.status, 'succeeded'),
+      ),
+      orderBy: [desc(importJobs.startedAt)],
+    });
+    return last?.startedAt ? new Date(last.startedAt.getTime() - SINCE_OVERLAP_MS).toISOString() : null;
+  }
+
+  private async latestVersions(panel: PanelCode, dataMode: DataMode) {
+    const latest = await this.mongo.questionVersions
+      .aggregate<{ _id: string; version: number }>([
+        { $match: { panel, dataMode } },
+        { $group: { _id: '$sourceQuestionId', version: { $max: '$version' } } },
+      ])
+      .toArray();
+    return new Map(latest.map((v) => [v._id, v.version]));
+  }
+
+  private async personsFor(panel: PanelCode, dataMode: DataMode, memberIds: string[]) {
+    const ids = [...new Set(memberIds)];
+    if (!ids.length) return new Map<string, string>();
+    // Deactivated members still count; members the panel deleted do not (nothing is stored for them again).
+    const rows = await this.database.db
+      .select({ member: sourceIdentities.sourceMemberId, person: sourceIdentities.masterPersonId })
+      .from(sourceIdentities)
+      .innerJoin(panelMemberships, eq(panelMemberships.sourceIdentityId, sourceIdentities.id))
+      .where(
+        and(
+          eq(sourceIdentities.dataMode, dataMode),
+          eq(sourceIdentities.panel, panel),
+          ne(panelMemberships.status, 'deleted'),
+          inArray(sourceIdentities.sourceMemberId, ids),
+        ),
+      );
+    return new Map(rows.map((r) => [r.member, r.person]));
+  }
+
+  /**
+   * Parked answers (dead letters of kind member_not_synced) whose members have now arrived: read those members'
+   * current answers and resolve the entry. Members still missing stay parked.
+   */
+  private async retryParked(
+    panel: PanelCode,
+    dataMode: DataMode,
+    connector: PanelConnector,
+    versions: Map<string, number>,
+  ) {
+    const db = this.database.db;
+    const open = await db.query.deadLetters.findMany({
+      where: and(
+        eq(deadLetters.dataMode, dataMode),
+        eq(deadLetters.panel, panel),
+        eq(deadLetters.status, 'open'),
+        eq(deadLetters.errorKind, MEMBER_NOT_SYNCED),
+      ),
+    });
+    const questionIds = [...versions.keys()].filter((id) => !DIRECT_IDENTIFIER_QUESTIONS.has(id));
+    let resolved = 0;
+    for (const entry of open) {
+      const persons = await this.personsFor(panel, dataMode, entry.sourceMemberIds);
+      const known = entry.sourceMemberIds.filter((m) => persons.has(m));
+      if (!known.length) continue;
+      const answers = await connector.listAnswers(known, questionIds);
+      await this.ingestAnswers(panel, dataMode, entry.importJobId ?? entry.id, answers, persons, versions);
+      const rest = entry.sourceMemberIds.filter((m) => !persons.has(m));
+      await db
+        .update(deadLetters)
+        .set(
+          rest.length
+            ? { sourceMemberIds: rest, attempts: entry.attempts + 1, lastAttemptAt: new Date() }
+            : {
+                status: 'resolved',
+                resolvedAt: new Date(),
+                lastAttemptAt: new Date(),
+                attempts: entry.attempts + 1,
+              },
+        )
+        .where(eq(deadLetters.id, entry.id));
+      if (!rest.length) resolved++;
+    }
+    return resolved;
+  }
+
+  /**
+   * The panel removed a member: MADP keeps only the pseudonymous source id. The encrypted contact details and
+   * e-mail hash are cleared, the panel membership is marked deleted (so audiences leave the member out), this
+   * panel's consents are withdrawn, and this panel's answers and answer history are removed. Other panels'
+   * data for the same person is not touched. Returns false when MADP never held the member.
+   */
+  private async removeMember(
+    panel: PanelCode,
+    dataMode: DataMode,
+    jobId: string,
+    sourceMemberId: string,
+    reason: 'deleted' | 'soft_deleted',
+  ): Promise<boolean> {
+    const db = this.database.db;
+    const identity = await db.query.sourceIdentities.findFirst({
+      where: and(
+        eq(sourceIdentities.dataMode, dataMode),
+        eq(sourceIdentities.panel, panel),
+        eq(sourceIdentities.sourceMemberId, sourceMemberId),
+      ),
+    });
+    if (!identity) return false;
+    await db.transaction(async (tx) => {
+      await tx
+        .update(sourceIdentities)
+        .set({
+          sourceActive: false,
+          emailHash: null,
+          emailEnc: null,
+          emailMasked: null,
+          phoneEnc: null,
+          firstNameEnc: null,
+          lastNameEnc: null,
+          dateOfBirthEnc: null,
+          lastImportJobId: jobId,
+          updatedAt: new Date(),
+        })
+        .where(eq(sourceIdentities.id, identity.id));
+      await tx
+        .update(panelMemberships)
+        .set({ status: 'deleted', updatedAt: new Date() })
+        .where(eq(panelMemberships.sourceIdentityId, identity.id));
+      await tx
+        .update(consentRecords)
+        .set({
+          status: 'withdrawn',
+          channel: 'panel_sync',
+          capturedAt: new Date(),
+          evidence: {
+            source: 'panel_deletion',
+            field: 'member',
+            value: reason,
+            version: null,
+            importJobId: jobId,
+          },
+        })
+        .where(
+          and(
+            eq(consentRecords.dataMode, dataMode),
+            eq(consentRecords.masterPersonId, identity.masterPersonId),
+            eq(consentRecords.panel, panel),
+          ),
+        );
+    });
+    const key = { panel, dataMode, sourceMemberId };
+    await this.mongo.profileAnswers.deleteMany(key);
+    await this.mongo.answerHistory.deleteMany(key);
+    await this.audit.record({
+      actorId: null,
+      actorType: 'system',
+      action: 'panel_member.removed',
+      targetType: 'master_person',
+      targetId: identity.masterPersonId,
+      metadata: { panel, dataMode, reason, syncJobId: jobId },
+    });
+    return true;
+  }
+
+  /** The panel removed all of a member's answers (T2O refresh): the current ones move to history. */
+  private async resetAnswers(panel: PanelCode, dataMode: DataMode, sourceMemberId: string) {
+    const key = { panel, dataMode, sourceMemberId };
+    const current = await this.mongo.profileAnswers.find(key).toArray();
+    if (!current.length) return 0;
+    const now = new Date();
+    await this.mongo.answerHistory.insertMany(
+      current.map(({ _id, ...rest }) => ({ ...rest, supersededAt: now })),
+      { ordered: false },
+    );
+    await this.mongo.profileAnswers.deleteMany(key);
+    return current.length;
+  }
+
+  private async saveStreamCheckpoint(
+    dataMode: DataMode,
+    panel: PanelCode,
+    stream: string,
+    cursor: string | null,
+    jobId: string,
+    caughtUp: boolean,
+  ) {
+    await this.database.db
+      .insert(syncCheckpoints)
+      .values({
+        dataMode,
+        panel,
+        stream,
+        cursor,
+        lastJobId: jobId,
+        lastSuccessAt: caughtUp ? new Date() : null,
+      })
+      .onConflictDoUpdate({
+        target: [syncCheckpoints.dataMode, syncCheckpoints.panel, syncCheckpoints.stream],
+        set: {
+          cursor,
+          lastJobId: jobId,
+          updatedAt: new Date(),
+          ...(caughtUp ? { lastSuccessAt: new Date() } : {}),
+        },
+      });
+  }
+
+  /**
    * Re-reads answers for open dead-letter entries of one panel. Entries that succeed are resolved; failures
    * stay open with the attempt count raised. Uses the current question versions from the registry.
    */
@@ -291,6 +795,15 @@ export class IngestionService {
             ),
           );
         const personByMember = new Map(identities.map((i) => [i.member, i.person]));
+        if (entry.errorKind === MEMBER_NOT_SYNCED && personByMember.size === 0) {
+          // Parked answers whose members have not arrived yet: resolving would lose them.
+          await db
+            .update(deadLetters)
+            .set({ attempts: entry.attempts + 1, lastAttemptAt: new Date() })
+            .where(eq(deadLetters.id, entry.id));
+          stillOpen++;
+          continue;
+        }
         answersChanged += await this.ingestAnswers(
           panel,
           dataMode,

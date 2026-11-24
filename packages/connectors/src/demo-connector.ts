@@ -1,4 +1,13 @@
-import type { ConnectorHealth, PanelCode, SourceAnswer, SourcePage, SourceRespondent } from '@madp/contracts';
+import type {
+  ChangeQuery,
+  ConnectorHealth,
+  PanelCode,
+  SourceAnswer,
+  SourceChangePage,
+  SourceDeletion,
+  SourcePage,
+  SourceRespondent,
+} from '@madp/contracts';
 import { generateDemoPopulation, loadSourceSample, type DemoPopulation } from '@madp/testing';
 import { AUDITED_CAPABILITIES } from './capabilities.js';
 import { mapOption, mapQuestion, mapQuestionnaire } from './mapping.js';
@@ -78,5 +87,37 @@ export class DemoConnector implements PanelConnector {
     return this.pop.answers.filter(
       (a) => a.panel === this.panel && ids.has(a.sourceMemberId) && qs.has(a.sourceQuestionId),
     );
+  }
+
+  /** DEMO changes feeds: the fixed population in a stable order; the cursor is a position in it. */
+  private feedPage<T extends { sourceUpdatedAt: string | null }>(
+    all: T[],
+    q: ChangeQuery,
+  ): SourceChangePage<T> {
+    const since = !q.cursor && q.since ? Date.parse(q.since) : null;
+    const list =
+      since === null ? all : all.filter((x) => x.sourceUpdatedAt && Date.parse(x.sourceUpdatedAt) >= since);
+    const start = q.cursor ? Number.parseInt(q.cursor, 10) : 0;
+    const items = list.slice(start, start + q.limit);
+    const next = start + items.length;
+    return { items, cursor: String(next), more: next < list.length };
+  }
+
+  async memberChanges(q: ChangeQuery) {
+    return this.feedPage(
+      this.pop.respondents.filter((r) => r.panel === this.panel),
+      q,
+    );
+  }
+
+  async answerChanges(q: ChangeQuery) {
+    return this.feedPage(
+      this.pop.answers.filter((a) => a.panel === this.panel),
+      q,
+    );
+  }
+
+  async deletions(q: ChangeQuery): Promise<SourceChangePage<SourceDeletion>> {
+    return { items: [], cursor: q.cursor, more: false };
   }
 }

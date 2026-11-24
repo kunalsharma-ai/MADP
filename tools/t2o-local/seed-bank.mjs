@@ -15,6 +15,12 @@ const base = {
   createdAt: new Date(),
   updatedAt: new Date(),
 };
+// Question types as the panel's admin creates them (select, multiselect, text, phone, date), using the same rule as
+// frontend-1's own demo bank (src/member/data/demoQuestions.js). The member area only asks these types.
+const MULTI = /all that apply|select all|check all|choose all|multiple/i;
+const PHONE = /^(phone|alternate-phone|phone1|add-whatsapp|add-phone\d*)$/;
+const typeOf = (q, hasOpts) =>
+  /^verify-/.test(q.name) ? 'verify' : hasOpts ? (MULTI.test(q.label ?? '') ? 'multiselect' : 'select') : PHONE.test(q.name) ? 'phone' : q.name === 'dob' ? 'date' : 'text';
 const optCount = new Map();
 for (const o of f.options) optCount.set(o.question, (optCount.get(o.question) ?? 0) + 1);
 await db.collection('Question').insertMany(
@@ -24,7 +30,7 @@ await db.collection('Question').insertMany(
     label: q.label,
     parent: q.parent ?? undefined,
     category: [].concat(q.category),
-    type: optCount.get(q.name) ? 'select-single' : 'open end single line',
+    type: typeOf(q, optCount.get(q.name) > 0),
     isRequired: false,
   })),
 );

@@ -20,6 +20,12 @@ const ListQuery = z.object({
   search: z.string().max(200).optional(),
   /** Keyset cursor: last person id of the previous page. */
   after: z.string().uuid().optional(),
+  /** Panel membership status: active, inactive (deactivated on the panel) or deleted (removed by the panel). */
+  membership: z.enum(['active', 'inactive', 'deleted']).optional(),
+  /** Teens only (members flagged as minors). */
+  minor: z.enum(['true']).optional(),
+  /** Guardian consent status (teens): granted, unknown (not decided yet), denied or withdrawn. */
+  guardian: z.enum(['granted', 'unknown', 'denied', 'withdrawn']).optional(),
   limit: z.coerce.number().int().min(1).max(100).default(25),
 });
 
@@ -44,6 +50,19 @@ export class PanellistsController {
       conds.push(
         sql`exists (select 1 from panel_membership x where x.master_person_id = mp.id and x.panel = ${q.panel})`,
       );
+    const panelCond = q.panel ? sql` and x.panel = ${q.panel}` : sql``;
+    if (q.membership)
+      conds.push(
+        sql`exists (select 1 from panel_membership x where x.master_person_id = mp.id and x.status = ${q.membership}${panelCond})`,
+      );
+    if (q.minor)
+      conds.push(
+        sql`exists (select 1 from category_membership x where x.master_person_id = mp.id and x.is_minor${panelCond})`,
+      );
+    if (q.guardian)
+      conds.push(
+        sql`exists (select 1 from consent_record x where x.master_person_id = mp.id and x.purpose = 'guardian_consent' and x.status = ${q.guardian}${panelCond})`,
+      );
     if (q.category)
       conds.push(
         sql`exists (select 1 from category_membership x where x.master_person_id = mp.id and x.category = ${q.category})`,
@@ -66,12 +85,18 @@ export class PanellistsController {
       categories: string[];
       email_masked: string | null;
       verified: boolean;
+      memberships: { panel: string; status: string }[] | null;
+      minor: boolean;
+      guardian: string | null;
     }>(sql`
       select mp.id, mp.country, mp.state, mp.city, mp.birth_year, mp.gender, mp.created_at,
         (select array_agg(distinct pm.panel::text) from panel_membership pm where pm.master_person_id = mp.id) as panels,
         (select array_agg(distinct cm.category::text) from category_membership cm where cm.master_person_id = mp.id) as categories,
         (select si.email_masked from source_identity si where si.master_person_id = mp.id order by si.created_at limit 1) as email_masked,
-        exists (select 1 from source_identity si where si.master_person_id = mp.id and si.email_verification = 'verified') as verified
+        exists (select 1 from source_identity si where si.master_person_id = mp.id and si.email_verification = 'verified') as verified,
+        (select json_agg(json_build_object('panel', pm.panel, 'status', pm.status) order by pm.panel) from panel_membership pm where pm.master_person_id = mp.id) as memberships,
+        exists (select 1 from category_membership cm where cm.master_person_id = mp.id and cm.is_minor) as minor,
+        (select cr.status::text from consent_record cr where cr.master_person_id = mp.id and cr.purpose = 'guardian_consent' order by cr.created_at desc limit 1) as guardian
       from master_person mp
       where ${sql.join(conds, sql` and `)}
       order by mp.id
@@ -90,6 +115,9 @@ export class PanellistsController {
         categories: r.categories ?? [],
         emailMasked: r.email_masked,
         emailVerified: r.verified,
+        memberships: r.memberships ?? [],
+        minor: r.minor,
+        guardianConsent: r.guardian,
         createdAt: r.created_at,
       })),
       nextCursor: rows.rows.length > q.limit ? (items.at(-1)?.id ?? null) : null,

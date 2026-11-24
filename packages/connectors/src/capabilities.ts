@@ -38,7 +38,7 @@ const T2O_BACKEND: CapabilityFinding[] = [
     capability: 'respondents.updatedSince',
     status: 'partial',
     evidence:
-      'timestamps:true on every model; only reachable via the raw filter body (not a supported contract)',
+      'timestamps:true on every model. GET /api/v1/changes/members (admin, cursor-paged, incl. deactivated/soft-deleted) is proposed in turn2opinion#20, not deployed',
   },
   {
     capability: 'answers.read',
@@ -47,8 +47,9 @@ const T2O_BACKEND: CapabilityFinding[] = [
   },
   {
     capability: 'answers.updatedSince',
-    status: 'missing',
-    evidence: 'No endpoint filters Answer by updatedAt',
+    status: 'partial',
+    evidence:
+      'GET /api/v1/changes/answers (admin, cursor-paged) is proposed in turn2opinion#20, not deployed',
   },
   {
     capability: 'consent.read',
@@ -58,8 +59,9 @@ const T2O_BACKEND: CapabilityFinding[] = [
   },
   {
     capability: 'deletions.read',
-    status: 'missing',
-    evidence: 'DELETE /api/v1/user/:id hard-deletes; no tombstone or event',
+    status: 'partial',
+    evidence:
+      'DELETE /api/v1/user/:id hard-deletes. turn2opinion#20 (not deployed) writes a Tombstone and serves GET /api/v1/changes/deletions',
   },
   {
     capability: 'rewards.read',
