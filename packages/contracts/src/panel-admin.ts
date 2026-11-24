@@ -501,25 +501,159 @@ export const SwitchKey = z.enum([
   'email_lifecycle',
   'email_weekly',
   'email_expiry',
+  'email_turning18',
   'push',
+  // step 4c (MFR#56)
+  'points_hold',
+  'points_expiry',
+  'weekend_multiplier',
+  'bonuses',
+  'prize_machines',
+  'whatsapp',
 ]);
 export type SwitchKey = z.infer<typeof SwitchKey>;
-export const SwitchSet = z.object({ on: z.boolean(), reason: Reason }).strict();
+/** Segments a switch or prize machine can be narrowed to (the panel's member types). */
+export const SwitchSegment = z.enum(['consumer', 'professional', 'teen']);
+export type SwitchSegment = z.infer<typeof SwitchSegment>;
+/** A country as the panel stores it: lower-case name or code, e.g. "india" or "us". */
+export const SwitchCountry = z
+  .string()
+  .trim()
+  .toLowerCase()
+  .regex(/^[a-z][a-z .'-]{1,59}$/, 'a country name or code');
+/** Which members a switch row covers. Neither = the whole brand. */
+export const SwitchScope = z
+  .object({ segment: SwitchSegment.optional(), country: SwitchCountry.optional() })
+  .strict();
+export type SwitchScope = z.infer<typeof SwitchScope>;
+/**
+ * Set a switch for the whole brand or narrowed to a segment and/or country. `on: null` removes a narrower row so the
+ * wider one applies again. `value` is the switch's number (hold days, weekend multiplier); the panel checks its range.
+ */
+export const SwitchSet = z
+  .object({
+    on: z.boolean().nullable(),
+    reason: Reason,
+    segment: SwitchSegment.optional(),
+    country: SwitchCountry.optional(),
+    value: z.number().min(0).max(1000).optional(),
+  })
+  .strict()
+  .refine((v) => v.on !== null || v.segment || v.country, {
+    message: 'Only a segment or country setting can be removed',
+    path: ['on'],
+  });
 export type SwitchSet = z.infer<typeof SwitchSet>;
+export const SwitchOverride = z.object({
+  segment: SwitchSegment.nullable(),
+  country: z.string().nullable(),
+  on: z.boolean(),
+  value: z.number().nullable(),
+  reason: z.string().nullable(),
+  changedBy: z.string().nullable(),
+  changedAt: z.string().nullable(),
+  since: z.string().nullable(),
+});
+export type SwitchOverride = z.infer<typeof SwitchOverride>;
 export const SwitchView = z.object({
   key: z.string(),
   group: z.enum(['kill', 'money', 'legal', 'email']),
   label: z.string(),
+  /** What members notice when it is on. */
+  effect: z.string().optional(),
   default: z.boolean(),
   effective: z.boolean(),
+  /** Which row decided `effective` for the scope asked about. */
+  from: z.enum(['kill', 'segment+country', 'segment', 'country', 'brand', 'default', 'unknown']).optional(),
   set: z.boolean().nullable(),
   reason: z.string().nullable(),
   changedBy: z.string().nullable(),
   changedAt: z.string().nullable(),
+  valued: z
+    .object({
+      unit: z.string(),
+      min: z.number(),
+      max: z.number(),
+      step: z.number(),
+      default: z.number().nullable(),
+    })
+    .nullable()
+    .optional(),
+  setValue: z.number().nullable().optional(),
+  value: z.number().nullable().optional(),
+  overrides: z.array(SwitchOverride).optional(),
 });
 export type SwitchView = z.infer<typeof SwitchView>;
-export const SwitchBoard = z.object({ killed: z.boolean(), kill: SwitchView, switches: z.array(SwitchView) });
+export const SwitchBoard = z.object({
+  killed: z.boolean(),
+  scope: z.object({ segment: z.string().nullable(), country: z.string().nullable() }).optional(),
+  segments: z.array(z.string()).optional(),
+  kill: SwitchView,
+  switches: z.array(SwitchView),
+});
 export type SwitchBoard = z.infer<typeof SwitchBoard>;
+
+// ---- prize machines (MFR#56): one per segment, behind the prize_machines legal switch ---------------------------
+export const PRIZE_SKINS = { consumer: 'claw', professional: 'lift', teen: 'spiral' } as const;
+export const PrizeKind = z.enum(['points', 'badge', 'nothing']);
+export type PrizeKind = z.infer<typeof PrizeKind>;
+export const PrizeInput = z
+  .object({
+    key: z.string().trim().max(40).optional(),
+    label: z.string().trim().min(2).max(80),
+    kind: PrizeKind,
+    points: z.number().int().min(0).max(10_000).optional(),
+    weight: z.number().min(0).max(100_000),
+  })
+  .strict();
+export type PrizeInput = z.infer<typeof PrizeInput>;
+export const PrizeMachineSave = z
+  .object({
+    title: z.string().trim().min(2).max(80),
+    status: z.enum(['draft', 'live', 'paused']),
+    dailyPlays: z.number().int().min(1).max(10),
+    countries: z.array(SwitchCountry).max(60),
+    prizes: z.array(PrizeInput).min(1).max(12),
+    reason: Reason,
+  })
+  .strict()
+  .refine((m) => m.prizes.every((p) => p.kind !== 'points' || (p.points ?? 0) >= 1), {
+    message: 'A points prize needs points',
+    path: ['prizes'],
+  })
+  .refine((m) => m.status !== 'live' || m.countries.length > 0, {
+    message: 'A live machine needs at least one country',
+    path: ['countries'],
+  });
+export type PrizeMachineSave = z.infer<typeof PrizeMachineSave>;
+export const PrizeMachineView = z.object({
+  segment: SwitchSegment,
+  skin: z.string(),
+  exists: z.boolean(),
+  id: z.string().nullable(),
+  title: z.string().nullable(),
+  status: z.enum(['draft', 'live', 'paused']),
+  dailyPlays: z.number(),
+  countries: z.array(z.string()),
+  prizes: z.array(
+    z.object({
+      key: z.string(),
+      label: z.string(),
+      kind: PrizeKind,
+      points: z.number(),
+      weight: z.number(),
+      chance: z.number(),
+    }),
+  ),
+  pointsPerPlay: z.number(),
+  reason: z.string().nullable(),
+  changedBy: z.string().nullable(),
+  changedAt: z.string().nullable(),
+  plays: z.object({ last30Days: z.number(), pointsLast30Days: z.number() }),
+});
+export type PrizeMachineView = z.infer<typeof PrizeMachineView>;
+export const PrizeMachineList = z.object({ switchOn: z.boolean(), machines: z.array(PrizeMachineView) });
+export type PrizeMachineList = z.infer<typeof PrizeMachineList>;
 
 export const RewardKind = z.enum(['giftcard', 'upi', 'paypal', 'charity', 'learning']);
 export const MemberType = z.enum(['consumer', 'professional', 'teen']);

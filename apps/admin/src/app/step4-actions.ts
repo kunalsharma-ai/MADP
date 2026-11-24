@@ -21,7 +21,15 @@ const e = encodeURIComponent;
 
 /** One reasoned change, picked by `op`. */
 export type ReasonOp =
-  | { op: 'switch'; key: string; on: boolean }
+  | {
+      op: 'switch';
+      key: string;
+      /** null removes a segment/country row so the wider setting applies again */
+      on: boolean | null;
+      segment?: string;
+      country?: string;
+      value?: number;
+    }
   | { op: 'redemption'; id: string; status: 'approved' | 'fulfilled' | 'rejected' }
   | { op: 'draw'; id: string; action: 'run' | 'cancel' }
   | { op: 'offer-end'; id: string }
@@ -35,7 +43,17 @@ export async function reasonAction(o: ReasonOp, reason: string) {
   switch (o.op) {
     case 'switch':
       return run(
-        () => api(`/panel/switches/${e(o.key)}`, { method: 'PUT', json: { on: o.on, reason } }),
+        () =>
+          api(`/panel/switches/${e(o.key)}`, {
+            method: 'PUT',
+            json: {
+              on: o.on,
+              reason,
+              ...(o.segment ? { segment: o.segment } : {}),
+              ...(o.country ? { country: o.country } : {}),
+              ...(o.value !== undefined ? { value: o.value } : {}),
+            },
+          }),
         '/switches',
       );
     case 'redemption':
@@ -122,5 +140,13 @@ export async function ideaAction(entry: string, status: 'approved' | 'rejected')
   return run(
     () => api(`/panel/engagement/ideas/${e(entry)}`, { method: 'POST', json: { status } }),
     '/engagement',
+  );
+}
+
+/** Create or replace a segment's prize machine (MFR#56). */
+export async function prizeMachineSaveAction(segment: string, body: Record<string, unknown>) {
+  return run(
+    () => api(`/panel/prize-machines/${e(segment)}`, { method: 'PUT', json: body }),
+    '/prize-machines',
   );
 }

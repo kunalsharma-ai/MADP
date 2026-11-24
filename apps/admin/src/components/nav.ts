@@ -81,6 +81,13 @@ export const NAV: NavGroup[] = [
       },
       { href: '/rewards', label: 'Rewards', icon: 'Gift', permission: 'rewards.manage', brandScoped: true },
       {
+        href: '/prize-machines',
+        label: 'Prize machines',
+        icon: 'Dices',
+        permission: 'rewards.manage',
+        brandScoped: true,
+      },
+      {
         href: '/engagement',
         label: 'Engagement',
         icon: 'Flame',

@@ -1,4 +1,15 @@
-import { Body, Controller, ForbiddenException, Get, Param, Post, Put, Query, Req } from '@nestjs/common';
+import {
+  BadRequestException,
+  Body,
+  Controller,
+  ForbiddenException,
+  Get,
+  Param,
+  Post,
+  Put,
+  Query,
+  Req,
+} from '@nestjs/common';
 import { z } from 'zod';
 import { eq } from 'drizzle-orm';
 import {
@@ -14,7 +25,10 @@ import {
   RedemptionList,
   StoryCreate,
   StoryUpdate,
+  PrizeMachineSave,
   SwitchKey,
+  SwitchScope,
+  SwitchSegment,
   SwitchSet,
   TaskCreate,
   TaskUpdate,
@@ -25,6 +39,8 @@ import {
   TeenRegistrationAction,
   type BrandSelection,
   type PanelCode,
+  type PrizeMachineList,
+  type PrizeMachineView,
   type SwitchBoard,
 } from '@madp/contracts';
 import { PANEL_ADMIN_ROUTES as R } from '@madp/connectors';
@@ -101,9 +117,14 @@ export class RewardsAdminController {
   // ---- switches ---------------------------------------------------------------------------------------------------
   @RequirePermissions('switches.read')
   @Get('switches')
-  async switches(@CurrentBrand() b: BrandSelection, @CurrentPrincipal() p: Principal) {
+  async switches(
+    @Query(new ZodPipe(SwitchScope)) scope: SwitchScope,
+    @CurrentBrand() b: BrandSelection,
+    @CurrentPrincipal() p: Principal,
+  ) {
     const brand = b as PanelCode;
-    const board = await this.panel.call<SwitchBoard>(brand, p.id, 'GET', R.switches);
+    // with a scope, `effective` and `value` are what a member in that segment and country gets
+    const board = await this.panel.call<SwitchBoard>(brand, p.id, 'GET', R.switches, scope);
     return { ...board, canFlip: hasOn(p, brand, ['switches.flip']) && isSuperAdminOn(p, brand) };
   }
 
@@ -127,19 +148,32 @@ export class RewardsAdminController {
         ['role:super_admin'],
         'Only Super Admin can change switches',
       );
-    const r = await this.panel.call<{ key: string; before: boolean | null; on: boolean; board: SwitchBoard }>(
+    if (key === 'kill' && (body.segment || body.country))
+      throw new BadRequestException('The kill switch is for the whole brand');
+    const r = await this.panel.call<{
+      key: string;
+      segment: string | null;
+      country: string | null;
+      before: { on: boolean; value: number | null } | boolean | null;
+      on: boolean | null;
+      value: number | null;
+      board: SwitchBoard;
+    }>(brand, p.id, 'PUT', R.switch(key), undefined, body);
+    const scope = { segment: body.segment ?? null, country: body.country ?? null };
+    const before =
+      r.before !== null && typeof r.before === 'object' ? r.before : { on: r.before, value: null };
+    await this.log(
+      req,
       brand,
-      p.id,
-      'PUT',
-      R.switch(key),
-      undefined,
-      body,
+      key === 'kill' ? 'switch.kill' : body.on === null ? 'switch.scope.remove' : 'switch.flip',
+      'switch',
+      key,
+      {
+        before: { ...before, ...scope },
+        after: { on: r.on, value: r.value ?? null, ...scope },
+        reason: body.reason,
+      },
     );
-    await this.log(req, brand, key === 'kill' ? 'switch.kill' : 'switch.flip', 'switch', key, {
-      before: { on: r.before },
-      after: { on: r.on },
-      reason: body.reason,
-    });
     return r;
   }
 
@@ -411,6 +445,72 @@ export class RewardsAdminController {
     const brand = b as PanelCode;
     const r = await this.panel.call(brand, p.id, 'POST', R.offerEnd(id));
     await this.log(req, brand, 'offer.end', 'offer', id, { reason: body.reason });
+    return r;
+  }
+
+  // ---- prize machines (MFR#56) -----------------------------------------------------------------------------------
+  /** One machine per segment. What members see also needs the prize_machines legal switch (Super Admin). */
+  @RequirePermissions('rewards.manage')
+  @Get('prize-machines')
+  async prizeMachines(@CurrentBrand() b: BrandSelection, @CurrentPrincipal() p: Principal) {
+    const brand = b as PanelCode;
+    const r = await this.panel.call<PrizeMachineList>(brand, p.id, 'GET', R.prizeMachines);
+    return { ...r, canFlip: hasOn(p, brand, ['switches.flip']) && isSuperAdminOn(p, brand) };
+  }
+
+  @RequirePermissions('rewards.manage')
+  @Put('prize-machines/:segment')
+  async savePrizeMachine(
+    @Param('segment', new ZodPipe(SwitchSegment)) segment: SwitchSegment,
+    @Body(new ZodPipe(PrizeMachineSave)) body: PrizeMachineSave,
+    @CurrentBrand() b: BrandSelection,
+    @CurrentPrincipal() p: Principal,
+    @Req() req: Request,
+  ) {
+    const brand = b as PanelCode;
+    // the panel refuses these too; checked here so the console says it before a round trip
+    if (segment === 'teen' && body.prizes.some((x) => x.kind === 'points'))
+      throw new BadRequestException('Teen prizes are never points or money');
+    const r = await this.panel.call<{ before: PrizeMachineView | null; machine: PrizeMachineView }>(
+      brand,
+      p.id,
+      'PUT',
+      R.prizeMachine(segment),
+      undefined,
+      body,
+    );
+    const pick = (m: PrizeMachineView | null) =>
+      m && {
+        title: m.title,
+        status: m.status,
+        dailyPlays: m.dailyPlays,
+        countries: m.countries,
+        prizes: m.prizes.map((x) => ({ label: x.label, kind: x.kind, points: x.points, weight: x.weight })),
+      };
+    await this.log(req, brand, 'prize_machine.save', 'prize_machine', segment, {
+      before: pick(r.before),
+      after: pick(r.machine),
+      reason: body.reason,
+    });
+    return r;
+  }
+
+  /** Recent plays: member ids only, no names. Audited as a read of member activity. */
+  @RequirePermissions('rewards.manage')
+  @Get('prize-machines/:segment/plays')
+  async prizeMachinePlays(
+    @Param('segment', new ZodPipe(SwitchSegment)) segment: SwitchSegment,
+    @CurrentBrand() b: BrandSelection,
+    @CurrentPrincipal() p: Principal,
+    @Req() req: Request,
+  ) {
+    const brand = b as PanelCode;
+    const r = await this.panel.call<{ items: unknown[] }>(brand, p.id, 'GET', R.prizeMachinePlays(segment), {
+      limit: 50,
+    });
+    await this.log(req, brand, 'prize_machine.plays.view', 'prize_machine', segment, {
+      metadata: { shown: r.items.length },
+    });
     return r;
   }
 

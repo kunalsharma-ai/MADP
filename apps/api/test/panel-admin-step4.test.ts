@@ -80,9 +80,46 @@ function fakePanel() {
       changedAt: null,
     });
     if (p === `${V}/switches`)
-      return ok({ killed: false, kill: sw('kill', false), switches: [sw('redemptions', false)] });
+      return ok({
+        killed: false,
+        kill: sw('kill', false),
+        switches: [sw('redemptions', false)],
+        query: url.search,
+      });
     if (p.startsWith(`${V}/switches/`))
-      return ok({ key: p.split('/').pop(), before: null, on: body.on, board: {} });
+      return ok({
+        key: p.split('/').pop(),
+        segment: body.segment ?? null,
+        country: body.country ?? null,
+        before: body.segment ? { on: true, value: null } : null,
+        on: body.on,
+        value: body.value ?? null,
+        board: {},
+      });
+    const machine = (segment: string, m?: Record<string, unknown>) => ({
+      segment,
+      skin: { consumer: 'claw', professional: 'lift', teen: 'spiral' }[segment],
+      exists: Boolean(m),
+      id: m ? RED : null,
+      title: (m?.title as string) ?? null,
+      status: (m?.status as string) ?? 'draft',
+      dailyPlays: (m?.dailyPlays as number) ?? 1,
+      countries: (m?.countries as string[]) ?? [],
+      prizes: ((m?.prizes as { label: string; kind: string; points?: number; weight: number }[]) ?? []).map(
+        (x, i) => ({ key: `p${i}`, points: 0, chance: 0, ...x }),
+      ),
+      pointsPerPlay: 0,
+      reason: null,
+      changedBy: null,
+      changedAt: null,
+      plays: { last30Days: 0, pointsLast30Days: 0 },
+    });
+    if (p === `${V}/prize-machines`)
+      return ok({ switchOn: false, machines: ['consumer', 'professional', 'teen'].map((s) => machine(s)) });
+    if (p.startsWith(`${V}/prize-machines/`) && p.endsWith('/plays'))
+      return ok({ items: [{ id: RED, member: ADULT, day: '2026-11-24', prize: { label: '50 points' } }] });
+    if (p.startsWith(`${V}/prize-machines/`) && req.method === 'PUT')
+      return ok({ before: null, machine: machine(p.split('/').pop()!, body) });
     const red = (id: string, points: number, teen: boolean, history: { status: string; by: string }[]) => ({
       id,
       reference: `R-${id.slice(0, 4)}`,
@@ -219,7 +256,7 @@ describe('super admin step 4 through the panel admin API', () => {
     expect(panel.seen.at(-1)!.origin).toBeTruthy();
     const [a] = await audit('switch.flip');
     expect(a.reason).toBe('Payout route agreed');
-    expect(a.after).toEqual({ on: true });
+    expect(a.after).toEqual({ on: true, value: null, segment: null, country: null });
     await request(t.server)
       .put('/api/v1/panel/switches/kill')
       .set(bearer(superToken, 'mfr'))
@@ -401,5 +438,116 @@ describe('super admin step 4 through the panel admin API', () => {
     await request(t.server).get('/api/v1/panel/switches').set(bearer(superToken, 'mho')).expect(200);
     const mfrOrigin = panel.seen.find((s) => s.path.endsWith('/switches/redemptions'))!.origin;
     expect(panel.seen.at(-1)!.origin).not.toBe(mfrOrigin);
+  });
+  it('switches per segment and country, with numbers; the kill switch is whole-brand only', async () => {
+    const b = await request(t.server)
+      .get('/api/v1/panel/switches?segment=teen&country=india')
+      .set(bearer(brandAdmin, 'mfr'))
+      .expect(200);
+    expect(b.body.query).toBe('?segment=teen&country=india');
+    await request(t.server)
+      .get('/api/v1/panel/switches?segment=alien')
+      .set(bearer(brandAdmin, 'mfr'))
+      .expect(400);
+    await request(t.server)
+      .put('/api/v1/panel/switches/points_hold')
+      .set(bearer(brandAdmin, 'mfr'))
+      .send({ on: true, value: 7, segment: 'consumer', reason: 'Fraud review window' })
+      .expect(403);
+    const r = await request(t.server)
+      .put('/api/v1/panel/switches/points_hold')
+      .set(bearer(superToken, 'mfr'))
+      .send({ on: true, value: 7, segment: 'consumer', country: 'India', reason: 'Fraud review window' })
+      .expect(200);
+    expect(panel.seen.at(-1)!.body).toEqual({
+      on: true,
+      value: 7,
+      segment: 'consumer',
+      country: 'india',
+      reason: 'Fraud review window',
+    });
+    expect(r.body.value).toBe(7);
+    const [a] = await audit('switch.flip');
+    expect(a.after).toEqual({ on: true, value: 7, segment: 'consumer', country: 'india' });
+    expect(a.before).toEqual({ on: true, value: null, segment: 'consumer', country: 'india' });
+    await request(t.server)
+      .put('/api/v1/panel/switches/points_hold')
+      .set(bearer(superToken, 'mfr'))
+      .send({ on: null, reason: 'Back to the brand rule' })
+      .expect(400);
+    await request(t.server)
+      .put('/api/v1/panel/switches/points_hold')
+      .set(bearer(superToken, 'mfr'))
+      .send({ on: null, segment: 'consumer', country: 'india', reason: 'Back to the brand rule' })
+      .expect(200);
+    expect((await audit('switch.scope.remove')).length).toBe(1);
+    await request(t.server)
+      .put('/api/v1/panel/switches/kill')
+      .set(bearer(superToken, 'mfr'))
+      .send({ on: true, segment: 'teen', reason: 'Only teens' })
+      .expect(400);
+    await request(t.server)
+      .put('/api/v1/panel/switches/prize_machines')
+      .set(bearer(superToken, 'mfr'))
+      .send({ on: true, country: '<b>', reason: 'Legal cleared' })
+      .expect(400);
+  });
+
+  it('prize machines: rewards.manage edits them with a reason; teen prizes are never points; plays are audited', async () => {
+    const l = await request(t.server)
+      .get('/api/v1/panel/prize-machines')
+      .set(bearer(finance, 'mfr'))
+      .expect(200);
+    expect(l.body.machines.map((m: { skin: string }) => m.skin)).toEqual(['claw', 'lift', 'spiral']);
+    expect(l.body.canFlip).toBe(false);
+    await request(t.server).get('/api/v1/panel/prize-machines').set(bearer(safeguard, 'mfr')).expect(403);
+    const good = {
+      title: 'Daily claw',
+      status: 'live',
+      dailyPlays: 2,
+      countries: ['india'],
+      prizes: [
+        { label: '50 points', kind: 'points', points: 50, weight: 1 },
+        { label: 'Try again', kind: 'nothing', weight: 3 },
+      ],
+      reason: 'First machine, India only',
+    };
+    await request(t.server)
+      .put('/api/v1/panel/prize-machines/consumer')
+      .set(bearer(finance, 'mfr'))
+      .send({ ...good, reason: undefined })
+      .expect(400);
+    await request(t.server)
+      .put('/api/v1/panel/prize-machines/consumer')
+      .set(bearer(finance, 'mfr'))
+      .send({ ...good, countries: [] })
+      .expect(400);
+    await request(t.server)
+      .put('/api/v1/panel/prize-machines/alien')
+      .set(bearer(finance, 'mfr'))
+      .send(good)
+      .expect(400);
+    const n = panel.seen.length;
+    await request(t.server)
+      .put('/api/v1/panel/prize-machines/teen')
+      .set(bearer(finance, 'mfr'))
+      .send(good)
+      .expect(400);
+    expect(panel.seen.length).toBe(n);
+    const r = await request(t.server)
+      .put('/api/v1/panel/prize-machines/consumer')
+      .set(bearer(finance, 'mfr'))
+      .send(good)
+      .expect(200);
+    expect(r.body.machine.skin).toBe('claw');
+    const [a] = await audit('prize_machine.save');
+    expect(a.reason).toBe('First machine, India only');
+    expect(a.after.prizes).toHaveLength(2);
+    const plays = await request(t.server)
+      .get('/api/v1/panel/prize-machines/consumer/plays')
+      .set(bearer(finance, 'mfr'))
+      .expect(200);
+    expect(plays.body.items).toHaveLength(1);
+    expect((await audit('prize_machine.plays.view')).length).toBe(1);
   });
 });

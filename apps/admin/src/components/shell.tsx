@@ -8,6 +8,7 @@ import { useTheme } from 'next-themes';
 import {
   GitCompareArrows,
   UserRoundCheck,
+  Dices,
   Mail,
   Workflow,
   Coins,
@@ -63,6 +64,7 @@ const ICONS = {
   GitCompareArrows,
   PlugZap,
   ShieldCheck,
+  Dices,
   UserRoundCheck,
   Mail,
   Workflow,
