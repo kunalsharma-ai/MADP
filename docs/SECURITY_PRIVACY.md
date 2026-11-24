@@ -24,7 +24,7 @@ Act 2023, GDPR and UK GDPR) has to be confirmed by counsel. Nothing here is lega
 | DEMO and LIVE separation on every row | `data_mode` column | `counts unique people separately from panel and category memberships` |
 | LIVE connectors locked until explicitly approved per panel | `connector-registry.ts` | `all connectors start in DEMO mode because live access is not approved`; config `defaults to no live source access` |
 | Connector refuses a base URL whose host differs from the tenant host | `http-connector.ts` | `refuses a base URL whose host is not the tenant host` |
-| Helmet security headers on the API; X-Frame-Options DENY, nosniff, referrer and permissions policy on the admin app (a nonce-based CSP is planned for M2) | `bootstrap.ts`, `next.config.ts` | not automated |
+| Helmet security headers on the API; X-Frame-Options DENY, nosniff, referrer and permissions policy on the admin app, and a per-request nonce Content-Security-Policy (scripts only with the nonce, no inline or eval in production) | `bootstrap.ts`, `next.config.ts`, `apps/admin/src/proxy.ts` | `apps/admin/src/lib/csp.test.ts` |
 | Rate limiting: 300 requests per minute globally, 10 per minute on login and MFA confirm | `app.module.ts`, `auth.controller.ts` | not automated |
 | Secrets come only from env; startup fails if a secret is missing or too short | `packages/config` | `requires a strong signing secret`, `requires MFA unless explicitly disabled` |
 | `.env` is git-ignored; only `.env.example` with placeholders is committed | `.gitignore` | not automated |

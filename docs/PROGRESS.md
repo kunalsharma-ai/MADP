@@ -54,6 +54,14 @@ admin API with the admin's own id as the actor.
   reach a site: links are plain https or e-mail addresses.
 - Until a page is published, the sites show their built-in text.
 - `test/content-admin.test.ts` (7 tests) covers all three brands against a stand-in that keeps the panel's rules.
+## Admin app: nonce-based Content-Security-Policy (2026-11-24)
+- Every page view gets a fresh 128-bit nonce (`apps/admin/src/proxy.ts`). Scripts run only from the admin's own origin
+  with that nonce (`'strict-dynamic'` for Next.js chunks); `'unsafe-inline'` scripts are gone, and `'unsafe-eval'` is
+  only added in development. `base-uri 'none'`, `object-src 'none'`, `frame-ancestors 'none'` and
+  `upgrade-insecure-requests` in production. Styles keep `'unsafe-inline'` for React style attributes.
+- The root layout reads the request, so every page renders per request with its own nonce; the theme script carries
+  the nonce. Checked on a production build: ten screens load and hydrate with no CSP violation.
+- `src/lib/csp.test.ts` (3 tests).
 
 ## Production readiness (Milestone 6, 2026-11-24)
 
@@ -470,7 +478,6 @@ Screenshots are in `docs/screenshots/`.
 ### Pending
 - Everything in M2–M6 (`docs/IMPLEMENTATION_PLAN.md`).
 - Consent population, deletion propagation, webhook ingress, merge and unmerge (M3).
-- Nonce-based CSP for the admin app (M2).
 
 ### Blocked (needs Kunal)
 - Live read-only access approval and a scoped integration credential for each panel.
