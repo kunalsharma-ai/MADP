@@ -1,7 +1,7 @@
 import request from 'supertest';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { lintTemplate, render } from '../src/engagement/render.js';
-import { ensureFooterLinks, liquidToStudio } from '../src/mailers/to-studio.js';
+import { ensureFooterLinks, flattenLiquid, liquidToStudio } from '../src/mailers/to-studio.js';
 import { startTestApp } from './helpers.js';
 
 /**
@@ -39,6 +39,17 @@ describe('converting Liquid', () => {
     expect(problems).toContain('Not a studio placeholder: {% if a %}');
   });
 
+  it('works out Liquid logic only when the audience fixes every value it tests', () => {
+    const src = '{% assign n = profile.completed_count | default: 0 %}{% if n >= 1 and n < 5 %}few{% elsif n >= 5 %}many{% else %}none{% endif %} {{ member.first_name }}';
+    expect(flattenLiquid(src, { 'profile.completed_count': 0 })).toBe('none {{ member.first_name }}');
+    expect(flattenLiquid(src, { 'profile.completed_count': 3 })).toBe('few {{ member.first_name }}');
+    expect(flattenLiquid('{% if a %}x{% else %}y{% endif %}', {})).toBeNull();
+    expect(flattenLiquid('{% if n > 1 %}x{% endif %}', {})).toBeNull();
+    expect(flattenLiquid('{% for x in list %}{% endfor %}', {})).toBeNull();
+    expect(flattenLiquid('{% if n > 1 %}x', { n: 2 })).toBeNull();
+    expect(flattenLiquid('{% if n > 1 %}{% if m == 0 %}a{% else %}b{% endif %}{% endif %}', { n: 0 })).toBe('');
+  });
+
   it('adds footer links only where they are missing', () => {
     const done = ensureFooterLinks('<a href="{{preferencesUrl}}"></a><a href="{{unsubscribeUrl}}"></a>', '{{preferencesUrl}} {{unsubscribeUrl}}');
     expect(done.added).toEqual([]);
@@ -52,6 +63,7 @@ describe('converting Liquid', () => {
 describe('mailer to studio template', () => {
   const CASES = [
     ['t2o', 't2o', 'birthday', 'birthday'],
+    ['t2o', 't2o', 'case3-noprofiles', 'profile_recovery'],
     ['mfr', 'mfr-system', 'birthday', 'birthday'],
     ['mfr', 'mfr-lifecycle', 'case4-partial', 'profile_recovery'],
     ['mho', 'mho-patient', 'birthday', 'birthday'],
@@ -74,6 +86,11 @@ describe('mailer to studio template', () => {
     // The pack's own frame is kept; images point at the admin's copies.
     expect(p.body.html).toContain(`/mailers/${pack}/`);
     expect(p.body.html).not.toContain('[legal footer not set');
+    if (id === 'case3-noprofiles') {
+      expect(r.body.template.name).toContain('only members with no completed profile');
+      expect(r.body.added[0]).toContain('Send it only to them');
+      expect(r.body.version.bodyHtml).not.toMatch(/\{%/);
+    }
   });
 
   it('a second import adds a version to the same template, and the studio review still applies', async () => {
