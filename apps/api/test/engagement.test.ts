@@ -136,7 +136,15 @@ describe('templates', () => {
       .expect(200);
     expect(p.body.subject).toBe('News from Turn2Opinion');
     expect(p.body.html).toContain('https://example.invalid/unsubscribe');
-    expect(p.body.brandWarning).toMatch(/not confirmed/);
+    // Sender, logo and legal footer come from Brands & settings.
+    expect(p.body.from).toBe('Turn2Opinion <support@turn2opinion.com>');
+    expect(p.body.html).toContain('/brands/t2o.png');
+    expect(p.body.html).toContain('Frequent Research Fieldwork Solutions Private Limited');
+    expect(p.body.html).toContain('https://www.turn2opinion.com/privacy/');
+    expect(p.body.brandWarning).toBeNull();
+    const kits = (await request(t.server).get('/api/v1/communications/templates').set(as('privacy_officer')).expect(200)).body.brandKits;
+    expect(kits.mho.privacyUrl).toBeNull();
+    expect(kits.mho.confirmed).toBe(false);
   });
 });
 

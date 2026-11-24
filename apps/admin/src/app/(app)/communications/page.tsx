@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { PANEL_CODES, PANELS, SUPPRESSION_REASONS, type BrandKit, type DataMode, type PanelCode } from '@madp/contracts';
+import { PANEL_CODES, PANELS, brandKitGaps, SUPPRESSION_REASONS, type BrandKit, type DataMode, type PanelCode } from '@madp/contracts';
 import { api } from '@/lib/api';
 import { Badge, Card, CardHeader, DataModeBadge, DemoBanner, EmptyState, PageHeader, PanelChip, fmt, fmtDate } from '@/components/ui';
 import { CampaignButtons, NewCampaign, NewTemplate, NewVersion, VersionButtons } from './studio-forms';
@@ -90,11 +90,13 @@ export default async function CommunicationsPage({ searchParams }: { searchParam
         </select>
         <button className="rounded-lg border border-border bg-surface px-3 py-2 text-sm">Show</button>
       </form>
-      {PANEL_CODES.some((p) => !tpl.brandKits[p].confirmed) ? (
+      {PANEL_CODES.some((p) => brandKitGaps(tpl.brandKits[p]).length) ? (
         <p className="mb-4 rounded-lg bg-surface-2 px-3 py-2 text-[13px] text-fg-2">
-          Sender, footer, logo and colours are not confirmed for{' '}
-          {PANEL_CODES.filter((p) => !tpl.brandKits[p].confirmed).map((p) => PANELS[p].shortName).join(', ')}. Previews show
-          placeholders until each panel owner supplies them.
+          Still to set in Brands &amp; settings:{' '}
+          {PANEL_CODES.filter((p) => brandKitGaps(tpl.brandKits[p]).length)
+            .map((p) => `${PANELS[p].shortName} (${brandKitGaps(tpl.brandKits[p]).join(', ')})`)
+            .join('; ')}
+          . Previews show a placeholder until then. Nothing is sent from this screen.
         </p>
       ) : null}
       <div className="grid gap-4 xl:grid-cols-2">

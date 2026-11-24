@@ -65,17 +65,31 @@ export type SuppressionReason = (typeof SUPPRESSION_REASONS)[number];
 
 export interface BrandKit {
   displayName: string;
-  /** Sender, footer, logo and colours must come from the panel owner; until then they are null and flagged. */
+  /** Sender, footer and privacy link come from Brands & settings (brand_setting). Anything not given yet is null. */
   senderName: string | null;
   senderAddress: string | null;
   legalFooter: string | null;
+  privacyUrl: string | null;
+  /** Served by the admin app (apps/admin/public/brands). */
+  logo: string | null;
+  /** True when the sender, legal footer, privacy link and logo are all set. */
   confirmed: boolean;
 }
+/** Fallback before Brands & settings is read: display names only, nothing confirmed. */
 export const BRAND_KITS: Record<PanelCode, BrandKit> = {
-  t2o: { displayName: 'Turn2Opinion', senderName: null, senderAddress: null, legalFooter: null, confirmed: false },
-  mfr: { displayName: 'MyFrequentRewards', senderName: null, senderAddress: null, legalFooter: null, confirmed: false },
-  mho: { displayName: 'MyHealthOpinions', senderName: null, senderAddress: null, legalFooter: null, confirmed: false },
+  t2o: { displayName: 'Turn2Opinion', senderName: null, senderAddress: null, legalFooter: null, privacyUrl: null, logo: null, confirmed: false },
+  mfr: { displayName: 'MyFrequentRewards', senderName: null, senderAddress: null, legalFooter: null, privacyUrl: null, logo: null, confirmed: false },
+  mho: { displayName: 'MyHealthOpinions', senderName: null, senderAddress: null, legalFooter: null, privacyUrl: null, logo: null, confirmed: false },
 };
+/** What a brand kit still lacks, in words for the screens. */
+export function brandKitGaps(k: BrandKit): string[] {
+  const gaps: string[] = [];
+  if (!k.senderAddress) gaps.push('sender address');
+  if (!k.legalFooter) gaps.push('legal footer');
+  if (!k.privacyUrl) gaps.push('privacy policy link');
+  if (!k.logo) gaps.push('logo');
+  return gaps;
+}
 
 const slug = z.string().regex(/^[a-z0-9][a-z0-9-]{1,62}$/, 'lower-case letters, digits and dashes');
 
