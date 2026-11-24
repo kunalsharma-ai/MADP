@@ -1058,3 +1058,37 @@ export const erasureHolds = pgTable(
   },
   (t) => [primaryKey({ columns: [t.dataMode, t.panel, t.sourceMemberId] })],
 );
+
+/**
+ * Independent verification of a member's claim (screen 8): one admin records the check, another decides it. Holds no
+ * personal data; `reference` points to where the proof is kept. Erased with the membership on a privacy deletion.
+ */
+export const verificationEvidence = pgTable(
+  'verification_evidence',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    dataMode: dataMode('data_mode').notNull(),
+    /** The person comes from the membership, so identity merges and unmerges carry the evidence with them. */
+    panelMembershipId: uuid('panel_membership_id')
+      .notNull()
+      .references(() => panelMemberships.id),
+    panel: panelCode('panel').notNull(),
+    /** identity, age, hcp_licence, employment. */
+    claim: text('claim').notNull(),
+    method: text('method').notNull(),
+    reference: text('reference').notNull(),
+    /** pending, verified, rejected, revoked. */
+    status: text('status').notNull().default('pending'),
+    expiresOn: date('expires_on'),
+    recordedBy: uuid('recorded_by').notNull(),
+    decidedBy: uuid('decided_by'),
+    decidedAt: timestamp('decided_at', { withTimezone: true }),
+    decisionNote: text('decision_note'),
+    createdAt: created(),
+    updatedAt: updated(),
+  },
+  (t) => [
+    index('verification_evidence_status_idx').on(t.dataMode, t.panel, t.status),
+    index('verification_evidence_membership_idx').on(t.panelMembershipId),
+  ],
+);

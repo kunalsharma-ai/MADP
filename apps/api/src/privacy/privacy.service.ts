@@ -281,6 +281,10 @@ export class PrivacyService implements OnModuleInit {
         where master_person_id = ${personId} and data_mode = ${mode} and panel = any(${list}::panel_code[]) order by at`),
       contactPreferences: await q(sql`select cp.panel, cp.channel, cp.status, cp.recorded_at as "recordedAt" from contact_preference cp
         join panel_membership pm on pm.id = cp.panel_membership_id where pm.master_person_id = ${personId} and cp.panel = any(${list}::panel_code[])`),
+      verificationEvidence: await q(sql`select ve.panel, ve.claim, ve.method, ve.status, ve.expires_on as "expiresOn",
+        ve.created_at as "recordedAt", ve.decided_at as "decidedAt" from verification_evidence ve
+        join panel_membership pm on pm.id = ve.panel_membership_id
+        where pm.master_person_id = ${personId} and ve.data_mode = ${mode} and ve.panel = any(${list}::panel_code[])`),
       answers,
       communications: await q(sql`select panel, channel, state, occurred_at as "occurredAt" from communication_event
         where master_person_id = ${personId} and data_mode = ${mode} and not dry_run and panel = any(${list}::panel_code[]) order by occurred_at`),

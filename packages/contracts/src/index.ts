@@ -12,3 +12,4 @@ export * from './consent.js';
 export * from './privacy.js';
 export * from './freshness.js';
 export * from './supply360.js';
+export * from './verification.js';

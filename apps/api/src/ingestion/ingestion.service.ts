@@ -26,6 +26,7 @@ import {
   sourceIdentities,
   sourceQuestionMappings,
   syncCheckpoints,
+  verificationEvidence,
 } from '../db/schema.js';
 import type { AnyBulkWriteOperation, WithId } from 'mongodb';
 import {
@@ -705,6 +706,15 @@ export class IngestionService {
           updatedAt: new Date(),
         })
         .where(eq(sourceIdentities.id, identity.id));
+      // Verification evidence is about this membership only, so it goes with it.
+      await tx
+        .delete(verificationEvidence)
+        .where(
+          inArray(
+            verificationEvidence.panelMembershipId,
+            tx.select({ id: panelMemberships.id }).from(panelMemberships).where(eq(panelMemberships.sourceIdentityId, identity.id)),
+          ),
+        );
       await tx
         .update(panelMemberships)
         .set({ status: 'deleted', updatedAt: new Date() })
