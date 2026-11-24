@@ -30,21 +30,21 @@ export default async function BrandsPage() {
             />
             <dl className="grid grid-cols-2 gap-x-4 gap-y-2 px-5 py-4 text-[13px]">
               <dt className="text-fg-3">Origins</dt>
-              <dd className="font-mono text-[12px]">{b.origins.join(', ')}</dd>
+              <dd className="min-w-0 break-all font-mono text-[12px]">{b.origins.join(', ')}</dd>
               <dt className="text-fg-3">Support e-mail</dt>
-              <dd className="font-mono text-[12px]">{b.supportEmail ?? 'Not set'}</dd>
+              <dd className="min-w-0 break-all font-mono text-[12px]">{b.supportEmail ?? 'Not set'}</dd>
               <dt className="text-fg-3">Legal name</dt>
               <dd>{b.legalName ?? 'Not set'}</dd>
               <dt className="text-fg-3">Address</dt>
               <dd>{b.postalAddress ?? 'Not set'}</dd>
               <dt className="text-fg-3">Privacy policy</dt>
-              <dd className="font-mono text-[12px]">
+              <dd className="min-w-0 break-all font-mono text-[12px]">
                 {b.privacyUrl ? (
                   <a href={b.privacyUrl} target="_blank" rel="noreferrer" className="underline">
                     {b.privacyUrl}
                   </a>
                 ) : (
-                  <span className="text-warn">Not confirmed yet</span>
+                  <span className="font-sans text-[13px] text-warn">Not confirmed yet</span>
                 )}
               </dd>
               <dt className="text-fg-3">Languages</dt>
