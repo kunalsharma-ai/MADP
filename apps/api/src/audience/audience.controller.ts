@@ -33,7 +33,7 @@ export class AudienceController {
         action: 'audience.sensitive_filter_used',
         targetType: 'attribute',
         targetId: sensitive.map((a) => a.key).join(','),
-        metadata: { dataMode: result.dataMode, uniquePeople: result.uniquePeople },
+        metadata: { dataMode: result.dataMode, uniquePeople: result.uniquePeople, purpose: body.purpose ?? null },
       });
     }
     return result;

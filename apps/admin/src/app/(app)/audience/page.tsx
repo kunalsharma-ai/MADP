@@ -2,6 +2,8 @@ import type { Metadata } from 'next';
 import {
   AUDIENCE_CATEGORIES,
   AUDIENCE_CATEGORY_LABELS,
+  HEALTH_ACCESS_PURPOSE_LABELS,
+  HealthAccessPurpose,
   PANEL_CODES,
   PANELS,
   type AudienceCategory,
@@ -46,13 +48,16 @@ export default async function AudiencePage({ searchParams }: { searchParams: SP 
     .filter(Boolean)
     .slice(0, 50);
   const attributes = attrKey && attrValues.length ? [{ key: attrKey, values: attrValues }] : [];
+  const purpose = (HealthAccessPurpose.options as readonly string[]).includes(String(sp.purpose ?? ''))
+    ? (sp.purpose as string)
+    : undefined;
   const { attributes: catalogue } = await api<{ attributes: Attribute[] }>('/audience/attributes');
   let c: CountsResponse;
   let filterError: string | null = null;
   try {
     c = await api<CountsResponse>('/audience/counts', {
       method: 'POST',
-      json: { panels, categories, countries, verifiedEmailOnly: verified, attributes },
+      json: { panels, categories, countries, verifiedEmailOnly: verified, attributes, ...(purpose ? { purpose } : {}) },
     });
   } catch (e) {
     // A special-category filter without health.sensitive.read is refused; show why and count without it.
@@ -162,6 +167,19 @@ export default async function AudiencePage({ searchParams }: { searchParams: SP 
             aria-label="Attribute values"
             className="rounded-lg border border-border bg-surface px-3 py-1.5 text-sm"
           />
+          <select
+            name="purpose"
+            defaultValue={purpose ?? ''}
+            aria-label="Purpose for a special-category filter"
+            className="rounded-lg border border-border bg-surface px-3 py-1.5 text-sm sm:col-span-2"
+          >
+            <option value="">Purpose (needed for special-category filters)</option>
+            {HealthAccessPurpose.options.map((k) => (
+              <option key={k} value={k}>
+                {HEALTH_ACCESS_PURPOSE_LABELS[k]}
+              </option>
+            ))}
+          </select>
         </fieldset>
       </form>
       {filterError ? (

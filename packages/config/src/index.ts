@@ -87,6 +87,8 @@ export const ApiEnv = z.object({
   MHO_API_TOKEN: z.string().optional(),
   /** Minimum cell size below which counts are suppressed in privacy-sensitive views. */
   MIN_CELL_SIZE: z.coerce.number().int().min(0).default(5),
+  /** Minimum cell size for counts that use a special-category (health) filter. Never below MIN_CELL_SIZE. */
+  SENSITIVE_MIN_CELL_SIZE: z.coerce.number().int().min(0).default(10),
   DEMO_POPULATION_SIZE: z.coerce.number().int().positive().default(1500),
   /**
    * Automatic sync: minutes between changed-since reads of each live panel (T2O GET /api/v1/changes/*).

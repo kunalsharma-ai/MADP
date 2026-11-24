@@ -22,6 +22,8 @@ export const CountsRequest = z.object({
   verifiedEmailOnly: z.boolean().optional(),
   /** AND across filters, OR within one filter's values. Special-category attributes need health.sensitive.read. */
   attributes: z.array(AttributeFilter).max(10).optional(),
+  /** Required when any attribute filter is special-category. */
+  purpose: z.lazy(() => HealthAccessPurpose).optional(),
 });
 export type CountsRequest = z.infer<typeof CountsRequest>;
 
@@ -62,3 +64,21 @@ export const CountsResponse = z.object({
     .optional(),
 });
 export type CountsResponse = z.infer<typeof CountsResponse>;
+
+/**
+ * Why someone needs to see health or other special-category data. Viewing MHO health answers, or counting with a
+ * special-category filter, needs `health.sensitive.read` *and* one of these purposes, which is kept in the audit log.
+ */
+export const HealthAccessPurpose = z.enum([
+  'participant_support',
+  'data_quality_review',
+  'privacy_request',
+  'study_feasibility',
+]);
+export type HealthAccessPurpose = z.infer<typeof HealthAccessPurpose>;
+export const HEALTH_ACCESS_PURPOSE_LABELS: Record<HealthAccessPurpose, string> = {
+  participant_support: 'Helping this participant with a support request',
+  data_quality_review: 'Checking data quality',
+  privacy_request: 'Handling a privacy or deletion request',
+  study_feasibility: 'Sizing a study (counts only)',
+};

@@ -41,6 +41,14 @@ Act 2023, GDPR and UK GDPR) has to be confirmed by counsel. Nothing here is lega
 - Guardian consent is synced as a status only (`consent_record`, purpose `guardian_consent`). The guardian's name,
   e-mail, phone, IP address, onboarding answers and the full consent record stay on the panel; the evidence column
   holds only the source field, its status value, the consent version and the import job.
+- **Purpose before access.** `health.sensitive.read` alone no longer shows health answers. The viewer also states a
+  purpose (`participant_support`, `data_quality_review`, `privacy_request`, `study_feasibility`), and the audit
+  event records it. The same applies to counts that use a special-category filter (`purpose` in the request).
+- **Minors.** A minor's health answers from a panel stay hidden, even with the permission and a purpose, until that
+  panel's guardian consent is `granted`.
+- **Larger minimum cell.** Counts narrowed by a special-category filter suppress cells below
+  `SENSITIVE_MIN_CELL_SIZE` (default 10) instead of `MIN_CELL_SIZE` (default 5).
+- Tests: `apps/api/test/mho-controls.test.ts`, `attributes.test.ts`, `platform.test.ts`.
 - Health answers will never be sent to Supply360 (spec §5). The planned Supply360 contract exposes only
   privacy-thresholded counts and eligibility flags.
 

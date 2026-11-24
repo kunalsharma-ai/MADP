@@ -111,9 +111,12 @@ describe('attribute-level audience filters', () => {
 
   it('special-category filters need health.sensitive.read, and their use is audited', async () => {
     await counts(steward, { attributes: [{ key: 'demographics.religion', values: ['x'] }] }).expect(403);
+    await counts(privacy, { attributes: [{ key: 'demographics.religion', values: ['x'] }] }).expect(403);
     const ok = await counts(privacy, {
       attributes: [{ key: 'demographics.religion', values: ['x'] }],
+      purpose: 'study_feasibility',
     }).expect(200);
+    expect(ok.body.minimumCellSize).toBe(10);
     expect(ok.body.attributeFilters[0].sensitivity).toBe('special_category');
     const audit = await request(t.server).get('/api/v1/audit').set(as(privacy)).expect(200);
     const rows = (audit.body.items ?? audit.body) as { action: string; targetId: string }[];
