@@ -76,6 +76,23 @@ describe('verification and data quality', () => {
     expect(low.body.items.find((i: { personId: string }) => i.personId === mho!.person).qualityScore).toBe(40);
   });
 
+  it('counts each check in the summary exactly as the drill-down finds it, per panel', async () => {
+    // An e-mail shared across two panels is not a duplicate in either.
+    const [mfr] = await members('mfr', 1);
+    const [mho] = await members('mho', 1);
+    const before = (await get('data_steward', '/summary').expect(200)).body as Summary;
+    await q(sql`update source_identity set email_hash = (select email_hash from source_identity where id = ${mfr!.identity}) where id = ${mho!.identity}`);
+    const s = (await get('data_steward', '/summary').expect(200)).body as Summary;
+    for (const p of ['mfr', 'mho'] as const)
+      expect(panelOf(s, p).checks.shared_email_in_panel).toBe(panelOf(before, p).checks.shared_email_in_panel);
+    for (const p of s.panels)
+      for (const [check, n] of Object.entries(p.checks)) {
+        const d = await get('data_steward', `/checks?panel=${p.panel}&check=${check}&limit=200`).expect(200);
+        expect(d.body.items.length, `${p.panel} ${check}`).toBe(n);
+      }
+    expect(s.panels.flatMap((p) => Object.values(p.checks)).some((n) => n > 0)).toBe(true);
+  });
+
   it('checks permissions and the selected brand', async () => {
     await get('read_only_analyst', '/summary').expect(403);
     await get('panel_manager', '/summary').expect(200);
