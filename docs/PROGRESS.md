@@ -41,8 +41,8 @@ Local and DEMO only. Nothing is deployed, and deploying needs Kunal's go-ahead.
   privacy deadlines, and security incidents.
 
 ### Not yet
-- The consent and verification summaries are slow at 5,000 people (consent p50 0.9 s). Cache or precompute them
-  before going live.
+- The verification summary takes about 0.4 s at 5,000 people. The consent summary was fixed: p50 went from 0.9 s to
+  0.13 s under load.
 - No production environment, monitoring or alerting is set up. That waits for Kunal's deploy decision.
 
 ## Super admin console, step 2: members, question bank and profiles (2026-11-24)
