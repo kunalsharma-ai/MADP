@@ -39,8 +39,20 @@ export class ReportsController {
   @RequirePermissions('reports.read')
   @BrandScoped({ allowAll: true })
   @Get(':key')
-  run(@Param('key') k: string, @Query(new ZodPipe(ReportParams)) q: ReportParams, @CurrentPrincipal() p: Principal, @CurrentBrand() brand: BrandSelection) {
-    return this.reports.run(this.audience.defaultMode(), key(k), VerificationService.panelsFor(brand, q.panel), q, this.held(p, brand));
+  run(
+    @Param('key') k: string,
+    @Query(new ZodPipe(ReportParams)) q: ReportParams,
+    @CurrentPrincipal() p: Principal,
+    @CurrentBrand() brand: BrandSelection,
+  ) {
+    return this.reports.run(
+      this.audience.defaultMode(),
+      key(k),
+      VerificationService.panelsFor(brand, q.panel),
+      q,
+      this.held(p, brand),
+      p.id,
+    );
   }
 
   @RequirePermissions('reports.read', 'export.read')
@@ -57,15 +69,30 @@ export class ReportsController {
   ) {
     const rk = key(k);
     const held = this.held(p, brand);
-    if (this.reports.def(rk).pii && !held.includes('export.pii')) throw new ForbiddenException('This export holds personal data and needs export.pii');
-    const r = await this.reports.run(this.audience.defaultMode(), rk, VerificationService.panelsFor(brand, q.panel), q, held);
+    if (this.reports.def(rk).pii && !held.includes('export.pii'))
+      throw new ForbiddenException('This export holds personal data and needs export.pii');
+    const r = await this.reports.run(
+      this.audience.defaultMode(),
+      rk,
+      VerificationService.panelsFor(brand, q.panel),
+      q,
+      held,
+      p.id,
+    );
     await this.audit.record({
       ...AuditService.fromRequest(req),
       panel: brand === 'all' ? null : brand,
       action: 'report.exported',
       targetType: 'report',
       targetId: rk,
-      metadata: { format: e.format, rows: r.rows.length, panel: q.panel ?? null, brand, period: r.period, dataMode: r.dataMode },
+      metadata: {
+        format: e.format,
+        rows: r.rows.length,
+        panel: q.panel ?? null,
+        brand,
+        period: r.period,
+        dataMode: r.dataMode,
+      },
     });
     const name = `madp-${rk}-${brand}${r.dataMode === 'demo' ? '-DEMO' : ''}-${r.generatedAt.slice(0, 10)}.${e.format}`;
     res.setHeader('content-disposition', `attachment; filename="${name}"`);

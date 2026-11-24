@@ -16,6 +16,18 @@ export const REPORT_KEYS = [
   'communication_delivery',
   'privacy_sla',
   'sync_health',
+  // super admin spec step 5: read from each panel's admin API (MFR#58), aggregate counts only
+  'panel_health',
+  'signup_funnel',
+  'teen_pipeline',
+  'profile_completion',
+  'survey_performance',
+  'points_by_segment',
+  'redemptions',
+  'quality',
+  'referrals',
+  'support',
+  'engagement',
 ] as const;
 export const ReportKey = z.enum(REPORT_KEYS);
 export type ReportKey = z.infer<typeof ReportKey>;
