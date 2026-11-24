@@ -41,6 +41,12 @@ export const NAV: NavGroup[] = [
     ],
   },
   {
+    label: 'Engagement',
+    items: [
+      { href: '/communications', label: 'Engagement studio', icon: 'Mail', permission: 'communications.read' },
+    ],
+  },
+  {
     label: 'Governance',
     items: [{ href: '/audit', label: 'Security audit', icon: 'ShieldCheck', permission: 'audit.read' }],
   },
@@ -50,7 +56,6 @@ export const PLANNED: { label: string; milestone: string }[] = [
   { label: 'Consent & preference center', milestone: 'M3' },
   { label: 'Privacy & deletion workflows', milestone: 'M3' },
   { label: 'Questionnaire builder', milestone: 'M3' },
-  { label: 'Communication studio', milestone: 'M4' },
   { label: 'Lifecycle automations', milestone: 'M4' },
   { label: 'Loyalty & rewards ledger', milestone: 'M5' },
   { label: 'Supply360 console', milestone: 'M6' },

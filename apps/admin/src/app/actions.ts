@@ -128,3 +128,41 @@ export async function unlinkIdentity(identityId: string, reason: string, personI
   if (personId) revalidatePath(`/panellists/${personId}`);
   return r;
 }
+
+// --- Engagement studio ----------------------------------------------------------------------------------------
+
+export async function createTemplateAction(panel: string, key: string, name: string, kind: string) {
+  await api('/communications/templates', { method: 'POST', json: { panel, key, name, kind } });
+  revalidatePath('/communications');
+}
+
+export async function addTemplateVersion(templateId: string, subject: string, bodyHtml: string, bodyText: string) {
+  const r = await api<{ id: string; problems: string[] }>(
+    `/communications/templates/${encodeURIComponent(templateId)}/versions`,
+    { method: 'POST', json: { subject, bodyHtml, bodyText } },
+  );
+  revalidatePath('/communications');
+  return r;
+}
+
+export async function versionAction(versionId: string, action: 'submit' | 'approve' | 'reject') {
+  const id = encodeURIComponent(versionId);
+  if (action === 'submit') await api(`/communications/template-versions/${id}/submit`, { method: 'POST', json: {} });
+  else await api(`/communications/template-versions/${id}/review`, { method: 'POST', json: { decision: action } });
+  revalidatePath('/communications');
+}
+
+export async function createCampaignAction(name: string, templateVersionId: string) {
+  await api('/communications/campaigns', { method: 'POST', json: { name, templateVersionId } });
+  revalidatePath('/communications');
+}
+
+export async function campaignAction(id: string, action: 'approve' | 'pause' | 'resume' | 'archive' | 'dry_run') {
+  const cid = encodeURIComponent(id);
+  const r =
+    action === 'dry_run'
+      ? await api<Record<string, unknown>>(`/communications/campaigns/${cid}/run`, { method: 'POST', json: { dryRun: true } })
+      : await api<Record<string, unknown>>(`/communications/campaigns/${cid}/decision`, { method: 'POST', json: { decision: action } });
+  revalidatePath('/communications');
+  return r;
+}

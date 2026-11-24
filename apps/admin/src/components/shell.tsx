@@ -8,6 +8,7 @@ import { useTheme } from 'next-themes';
 import {
   GitCompareArrows,
   UserRoundCheck,
+  Mail,
   Globe2,
   LayoutDashboard,
   ListTree,
@@ -24,7 +25,7 @@ import type { SessionUser } from '@madp/contracts';
 import { NAV, PLANNED } from './nav';
 import { cn } from '@/lib/cn';
 
-const ICONS = { LayoutDashboard, Globe2, Users, ListTree, GitCompareArrows, PlugZap, ShieldCheck, UserRoundCheck } as const;
+const ICONS = { LayoutDashboard, Globe2, Users, ListTree, GitCompareArrows, PlugZap, ShieldCheck, UserRoundCheck, Mail } as const;
 
 export function Shell({
   user,

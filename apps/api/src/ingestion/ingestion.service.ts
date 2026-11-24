@@ -681,6 +681,7 @@ export class IngestionService {
           city: null,
           gender: null,
           birthYear: null,
+          timezone: null,
           lastImportJobId: jobId,
           updatedAt: new Date(),
         })
@@ -1024,6 +1025,7 @@ export class IngestionService {
       city: r.city ?? null,
       gender: r.gender ?? null,
       birthYear: r.dateOfBirth ? Number.parseInt(r.dateOfBirth.slice(0, 4), 10) || null : null,
+      timezone: r.timezone ?? null,
       sourceActive: r.isActive,
       sourceCreatedAt: r.sourceCreatedAt ? new Date(r.sourceCreatedAt) : null,
       sourceUpdatedAt: r.sourceUpdatedAt ? new Date(r.sourceUpdatedAt) : null,
