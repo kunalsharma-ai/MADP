@@ -22,6 +22,8 @@ describe('loadApiEnv', () => {
   it('requires MFA unless explicitly disabled', () => {
     expect(loadApiEnv(base).REQUIRE_MFA).toBe(true);
     expect(loadApiEnv({ ...base, REQUIRE_MFA: 'false' }).REQUIRE_MFA).toBe(false);
+    expect(() => loadApiEnv({ ...base, NODE_ENV: 'production', REQUIRE_MFA: 'false' })).toThrow(/REQUIRE_MFA/);
+    expect(loadApiEnv(base).ADMIN_IDLE_MINUTES).toBe(30);
   });
   it('requires a strong signing secret', () => {
     expect(() => loadApiEnv({ ...base, AUTH_JWT_SECRET: 'short' })).toThrow(/AUTH_JWT_SECRET/);

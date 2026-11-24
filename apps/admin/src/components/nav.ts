@@ -5,6 +5,8 @@ export interface NavItem {
   label: string;
   icon: string;
   permission: Permission;
+  /** Works in the brand picked in the switcher; shown when the admin holds the permission on that brand. */
+  brandScoped?: boolean;
 }
 export interface NavGroup {
   label: string;
@@ -61,7 +63,9 @@ export const NAV: NavGroup[] = [
     items: [
       { href: '/consent', label: 'Consent & preferences', icon: 'BadgeCheck', permission: 'consent.read' },
       { href: '/privacy', label: 'Privacy requests', icon: 'FileLock2', permission: 'privacy.read' },
-      { href: '/audit', label: 'Security audit', icon: 'ShieldCheck', permission: 'audit.read' },
+      { href: '/audit', label: 'Security audit', icon: 'ShieldCheck', permission: 'audit.read', brandScoped: true },
+      { href: '/admins', label: 'Admins & roles', icon: 'UserCog', permission: 'admins.manage' },
+      { href: '/brands', label: 'Brands & settings', icon: 'Building2', permission: 'brands.manage', brandScoped: true },
     ],
   },
 ];

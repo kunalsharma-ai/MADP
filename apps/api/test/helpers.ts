@@ -56,9 +56,10 @@ export async function startTestApp(overrides: Partial<Record<string, string>> = 
   async function adminToken(
     role: Parameters<AuthService['createAdmin']>[3],
     email = `${role}@example.invalid`,
+    brands: ('t2o' | 'mfr' | 'mho')[] | null = null,
   ) {
     const password = 'correct horse battery staple';
-    await auth.createAdmin(email, role, password, role);
+    await auth.createAdminWithGrants(email, role, password, [{ role, brands }]);
     const login = await request(server).post('/api/v1/auth/login').send({ email, password }).expect(200);
     if (!login.body.mfaSetupRequired) return { token: login.body.token as string, totp: null };
     const setup = await request(server)

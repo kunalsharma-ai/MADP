@@ -1,16 +1,16 @@
 import { ForbiddenException, Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import argon2 from 'argon2';
-import { eq, sql } from 'drizzle-orm';
+import { and, eq, isNull, sql } from 'drizzle-orm';
 import { SignJWT, jwtVerify } from 'jose';
 import * as OTPAuth from 'otpauth';
 import type { ApiEnv } from '@madp/config';
-import type { AdminRole, LoginRequest, SessionUser } from '@madp/contracts';
+import { Permission, type AdminRole, type LoginRequest, type RoleGrant, type SessionUser } from '@madp/contracts';
 import { API_ENV } from '../common/tokens.js';
 import { Database } from '../db/database.js';
-import { adminUsers } from '../db/schema.js';
+import { adminRoleGrants, adminRoles, adminSessions, adminUsers } from '../db/schema.js';
 import { FieldCrypto } from '../crypto/field-crypto.js';
 import { AuditService } from '../audit/audit.service.js';
-import { permissionsFor } from './permissions.js';
+import { computeAccess, type Access } from './access.js';
 import type { Principal } from './auth.types.js';
 
 const MAX_FAILED = 5;
@@ -35,22 +35,43 @@ export class AuthService {
     return argon2.hash(password, { type: argon2.argon2id });
   }
 
-  async createAdmin(email: string, displayName: string, password: string, role: AdminRole) {
-    const [row] = await this.database.db
-      .insert(adminUsers)
-      .values({
-        email: email.toLowerCase(),
-        displayName,
-        passwordHash: await AuthService.hashPassword(password),
-        role,
-      })
-      .returning({ id: adminUsers.id });
-    return row!.id;
+  /** Creates an admin holding `role` on every brand (scripts and tests). The console uses AdminsService. */
+  async createAdmin(email: string, displayName: string, password: string, role: AdminRole | string) {
+    return this.createAdminWithGrants(email, displayName, password, [{ role, brands: null }]);
+  }
+
+  async createAdminWithGrants(email: string, displayName: string, password: string, grants: RoleGrant[]) {
+    const passwordHash = await AuthService.hashPassword(password);
+    return this.database.db.transaction(async (tx) => {
+      const [row] = await tx
+        .insert(adminUsers)
+        .values({ email: email.toLowerCase(), displayName, passwordHash })
+        .returning({ id: adminUsers.id });
+      await tx
+        .insert(adminRoleGrants)
+        .values(grants.map((g) => ({ adminId: row!.id, roleKey: g.role, brands: g.brands })));
+      return row!.id;
+    });
+  }
+
+  /** Role grants and what they allow, read fresh so role and grant changes apply on the next request. */
+  async accessOf(adminId: string): Promise<{ grants: RoleGrant[]; roles: string[] } & Access> {
+    const rows = await this.database.db
+      .select({ role: adminRoleGrants.roleKey, brands: adminRoleGrants.brands, permissions: adminRoles.permissions })
+      .from(adminRoleGrants)
+      .innerJoin(adminRoles, eq(adminRoles.key, adminRoleGrants.roleKey))
+      .where(eq(adminRoleGrants.adminId, adminId))
+      .orderBy(adminRoleGrants.createdAt);
+    const grants: RoleGrant[] = rows.map((r) => ({ role: r.role, brands: r.brands?.length ? r.brands : null }));
+    const known = new Set<string>(Permission.options);
+    const map = new Map(rows.map((r) => [r.role, r.permissions.filter((p): p is Permission => known.has(p))]));
+    return { grants, roles: grants.map((g) => g.role), ...computeAccess(grants, map) };
   }
 
   async login(
     req: LoginRequest,
     ip: string | null,
+    userAgent: string | null = null,
   ): Promise<{ token: string; user: SessionUser; mfaSetupRequired: boolean }> {
     const email = req.email.toLowerCase();
     const user = await this.database.db.query.adminUsers.findFirst({ where: eq(adminUsers.email, email) });
@@ -74,6 +95,7 @@ export class AuthService {
         outcome: 'denied',
         metadata: { reason },
         ip,
+        userAgent,
       });
       throw new UnauthorizedException('Invalid credentials');
     };
@@ -89,21 +111,58 @@ export class AuthService {
       .update(adminUsers)
       .set({ failedAttempts: 0, lockedUntil: null, lastLoginAt: new Date() })
       .where(eq(adminUsers.id, user.id));
+    const [session] = await this.database.db
+      .insert(adminSessions)
+      .values({ adminId: user.id, ip, userAgent: userAgent?.slice(0, 300) ?? null })
+      .returning({ id: adminSessions.id });
+    const access = await this.accessOf(user.id);
     await this.audit.record({
       actorId: user.id,
       actorType: 'admin',
+      actorRole: access.roles.join(','),
       action: 'auth.login',
       metadata: { mfaSetupRequired },
       ip,
+      userAgent,
     });
-    const principal: Principal = {
+    const principal = this.toPrincipal(user, access, mfaSetupRequired ? 'mfa_setup' : 'full', session!.id);
+    return { token: await this.sign(principal), user: this.toSessionUser(user, principal), mfaSetupRequired };
+  }
+
+  async logout(p: Principal, ip: string | null) {
+    await this.database.db
+      .update(adminSessions)
+      .set({ revokedAt: new Date() })
+      .where(and(eq(adminSessions.id, p.sessionId), isNull(adminSessions.revokedAt)));
+    await this.audit.record({ actorId: p.id, actorType: 'admin', actorRole: p.roles.join(','), action: 'auth.logout', ip });
+  }
+
+  /** Ends every session of an admin (deactivation, password or role change by a Super Admin). */
+  async revokeSessions(adminId: string) {
+    await this.database.db
+      .update(adminSessions)
+      .set({ revokedAt: new Date() })
+      .where(and(eq(adminSessions.adminId, adminId), isNull(adminSessions.revokedAt)));
+  }
+
+  private toPrincipal(
+    user: typeof adminUsers.$inferSelect,
+    access: Awaited<ReturnType<AuthService['accessOf']>>,
+    scope: Principal['scope'],
+    sessionId: string,
+  ): Principal {
+    const full = scope === 'full';
+    return {
       id: user.id,
       email: user.email,
-      role: user.role,
-      permissions: mfaSetupRequired ? [] : permissionsFor(user.role),
-      scope: mfaSetupRequired ? 'mfa_setup' : 'full',
+      roles: access.roles,
+      grants: access.grants,
+      permissions: full ? access.permissions : [],
+      brandPermissions: full ? access.brandPermissions : {},
+      brands: full ? access.brands : [],
+      scope,
+      sessionId,
     };
-    return { token: await this.sign(principal), user: this.toSessionUser(user, principal), mfaSetupRequired };
   }
 
   private toSessionUser(user: typeof adminUsers.$inferSelect, p: Principal): SessionUser {
@@ -111,14 +170,17 @@ export class AuthService {
       id: user.id,
       email: user.email,
       displayName: user.displayName,
-      role: user.role,
+      role: p.roles[0] ?? 'none',
+      grants: p.grants,
       permissions: p.permissions,
+      brandPermissions: p.brandPermissions,
+      brands: p.brands,
       mfaEnabled: user.mfaEnabled,
     };
   }
 
   async sign(p: Principal): Promise<string> {
-    return new SignJWT({ email: p.email, role: p.role, scope: p.scope })
+    return new SignJWT({ email: p.email, scope: p.scope, sid: p.sessionId })
       .setProtectedHeader({ alg: 'HS256' })
       .setSubject(p.id)
       .setIssuer(ISSUER)
@@ -127,7 +189,10 @@ export class AuthService {
       .sign(this.secret);
   }
 
-  /** Verifies the token and re-reads the user, so deactivation and role changes apply immediately. */
+  /**
+   * Verifies the token, the server-side session (30 minutes idle by default) and re-reads the user and their grants,
+   * so sign-out, deactivation and role changes apply immediately.
+   */
   async verify(token: string): Promise<Principal> {
     let payload;
     try {
@@ -135,6 +200,18 @@ export class AuthService {
     } catch {
       throw new UnauthorizedException('Invalid or expired session');
     }
+    const sid = typeof payload.sid === 'string' ? payload.sid : '';
+    if (!/^[0-9a-f-]{36}$/i.test(sid)) throw new UnauthorizedException('Invalid or expired session');
+    const session = await this.database.db.query.adminSessions.findFirst({ where: eq(adminSessions.id, sid) });
+    const idleMs = this.env.ADMIN_IDLE_MINUTES * 60_000;
+    if (!session || session.adminId !== payload.sub || session.revokedAt)
+      throw new UnauthorizedException('Session ended');
+    if (Date.now() - session.lastSeenAt.getTime() > idleMs) {
+      await this.database.db.update(adminSessions).set({ revokedAt: new Date() }).where(eq(adminSessions.id, sid));
+      throw new UnauthorizedException('Session ended after inactivity');
+    }
+    if (Date.now() - session.lastSeenAt.getTime() > 30_000)
+      await this.database.db.update(adminSessions).set({ lastSeenAt: new Date() }).where(eq(adminSessions.id, sid));
     const user = await this.database.db.query.adminUsers.findFirst({
       where: eq(adminUsers.id, String(payload.sub)),
     });
@@ -142,13 +219,7 @@ export class AuthService {
     const scope = payload.scope === 'mfa_setup' && !user.mfaEnabled ? 'mfa_setup' : 'full';
     if (scope === 'full' && this.env.REQUIRE_MFA && !user.mfaEnabled)
       throw new UnauthorizedException('MFA enrolment required');
-    return {
-      id: user.id,
-      email: user.email,
-      role: user.role,
-      permissions: scope === 'full' ? permissionsFor(user.role) : [],
-      scope,
-    };
+    return this.toPrincipal(user, await this.accessOf(user.id), scope, sid);
   }
 
   async me(p: Principal): Promise<SessionUser> {
@@ -182,7 +253,7 @@ export class AuthService {
       throw new UnauthorizedException('Invalid code');
     await this.database.db.update(adminUsers).set({ mfaEnabled: true }).where(eq(adminUsers.id, p.id));
     await this.audit.record({ actorId: p.id, actorType: 'admin', action: 'auth.mfa.enabled', ip });
-    const full: Principal = { ...p, scope: 'full', permissions: permissionsFor(user.role) };
+    const full = this.toPrincipal({ ...user, mfaEnabled: true }, await this.accessOf(user.id), 'full', p.sessionId);
     return { token: await this.sign(full), user: this.toSessionUser({ ...user, mfaEnabled: true }, full) };
   }
 

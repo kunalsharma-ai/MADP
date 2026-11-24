@@ -199,4 +199,11 @@ export interface AuditRow {
   targetId: string | null;
   outcome: string;
   metadata: Record<string, unknown>;
+  actorRole: string | null;
+  panel: 't2o' | 'mfr' | 'mho' | null;
+  before: unknown;
+  after: unknown;
+  reason: string | null;
+  requestId: string | null;
+  hash: string;
 }

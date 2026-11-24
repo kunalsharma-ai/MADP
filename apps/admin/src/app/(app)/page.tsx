@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { AUDIENCE_CATEGORY_LABELS, PANELS, type AudienceCategory, type PanelCode } from '@madp/contracts';
+import { AUDIENCE_CATEGORY_LABELS, PANELS, type AudienceCategory, type PanelCode, type SessionUser } from '@madp/contracts';
 import { api } from '@/lib/api';
 import type { DashboardSummary } from '@/lib/types';
 import {
@@ -20,6 +20,21 @@ import { RegistrationsChart } from '@/components/charts';
 export const metadata: Metadata = { title: 'Executive dashboard' };
 
 export default async function Dashboard() {
+  const me = await api<SessionUser>('/auth/me');
+  // The executive dashboard spans every brand. Admins limited to some brands start on their brand's screens instead.
+  if (!me.permissions.includes('dashboard.read')) {
+    return (
+      <>
+        <PageHeader eyebrow="Overview" title={`Welcome, ${me.displayName}`} />
+        <Card>
+          <div className="px-5 py-4 text-sm text-fg-2">
+            You work in {me.brands.map((b) => PANELS[b].name).join(', ')}. The menu on the left shows the screens your roles
+            allow for the brand picked at the top. The cross-brand executive dashboard needs access to every brand.
+          </div>
+        </Card>
+      </>
+    );
+  }
   const d = await api<DashboardSummary>('/dashboard/summary');
   const c = d.counts;
   const overlap = c.panelMemberships - c.uniquePeople;

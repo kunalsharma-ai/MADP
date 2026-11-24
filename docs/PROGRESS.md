@@ -1,5 +1,42 @@
 # Progress
 
+## Super admin console, step 1: Foundation (2026-11-24)
+
+Kunal's super admin spec (24 Nov 2026) and the MADP master prompt are one plan; the console is built here. This step
+covers the spec's Foundation. Everything runs on DEMO data; no panel was contacted.
+
+### Completed and tested
+- Roles are data: `admin_role` rows hold a name and permission strings, so new roles are made in the console without
+  code. The spec's roles (Super Admin, Brand Admin, Panel Manager, Question Bank Editor, Rewards and Finance, Support
+  Agent, Teen Safeguarding, Read Only Analyst) and the earlier MADP roles are seeded by migration 0011.
+- Roles are granted per brand (`admin_role_grant`). Cross-brand screens need the permission on every brand, so an MFR
+  Brand Admin sees no T2O or MHO rows there. Brand screens take the brand from the switcher (`x-madp-brand`), never
+  from the hostname, and the server refuses brands that were not granted. You can only grant what you hold, and the
+  last Super Admin on every brand cannot be removed.
+- Two-factor is required for every admin (it can no longer be turned off in production). Server-side sessions end
+  after 30 idle minutes (`ADMIN_IDLE_MINUTES`) and on sign-out.
+- The audit log is hash-chained. Each entry stores the previous entry's hash and a SHA-256 over all its own columns,
+  computed in the database on insert. `GET /audit/verify` recomputes the chain, and a changed or deleted entry breaks
+  it. Entries now hold brand, actor role, old and new values (personal data masked), reason and request id.
+  Filters and CSV export (`GET /audit/export`, logged).
+- Brand settings per brand: origin hostnames, languages, currency, points value (1,000 = 1 USD), minimum redemption
+  (15,000), four-eyes amount (50,000 points), six-month re-check and archive months. The money values are Super Admin
+  only and every change needs a reason.
+- Screens: brand switcher in the header, Admins & roles, Brands & settings, and Security audit (filters, chain check,
+  CSV export).
+- Panel backend: the six member-route holes from the spec are closed in kunalsharma-ai/MFR#42.
+
+### Test results (2026-11-24)
+| Suite | Result |
+|---|---|
+| `pnpm build`, `pnpm typecheck` | pass |
+| `pnpm test` (unit) | all pass, including `auth/access.test.ts` (4) and `audit/mask.test.ts` (2) |
+| `pnpm test:integration` | api 102 pass, including `test/foundation.test.ts` (7) |
+
+### Next (spec build order step 2)
+MFR members and the question bank (modules 1 to 4), through a new `/api/admin/v1` in the shared panel backend that only
+MADP can call.
+
 ## Turn2Opinion first (2026-11-23)
 
 Kunal asked to start with Turn2Opinion, using the T2O Member Dashboard demo preview as reference. Everything here

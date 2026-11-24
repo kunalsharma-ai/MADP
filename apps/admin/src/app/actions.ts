@@ -45,6 +45,8 @@ export async function confirmMfa(_: unknown, form: FormData): Promise<{ error?: 
 }
 
 export async function signOut() {
+  // End the server-side session too, so the token cannot be reused.
+  await api('/auth/logout', { method: 'POST' }).catch(() => undefined);
   (await cookies()).delete(SESSION_COOKIE);
   redirect('/login');
 }
