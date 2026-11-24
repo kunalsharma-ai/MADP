@@ -26,6 +26,7 @@ export const ROLE_PERMISSIONS: Record<AdminRole, Permission[]> = {
     'loyalty.read',
     'loyalty.reconcile',
     'loyalty.approve',
+    'service_clients.manage',
   ],
   platform_admin: [
     'dashboard.read',
@@ -38,6 +39,7 @@ export const ROLE_PERMISSIONS: Record<AdminRole, Permission[]> = {
     'audit.read',
     'loyalty.read',
     'loyalty.reconcile',
+    'service_clients.manage',
   ],
   data_steward: [
     'dashboard.read',

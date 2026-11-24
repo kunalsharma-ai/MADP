@@ -99,7 +99,7 @@ Staff accounts are now skipped (`isStaff`, kunalsharma-ai/turn2opinion#21, merge
   - Birthday, on the member's local date. 29 February birthdays are greeted on 28 February in other years.
   - Calendar greeting, from an approved calendar date.
 - Every step passes the same contact gate as campaigns, plus spacing between messages from one automation.
-- Survey invitation reminders wait for Supply360, because MADP has no invitations of its own yet.
+- Survey invitation reminders wait until MADP sends the invitations that Supply360 authorises.
 - Frequency caps count queued, sent and delivered messages, and ignore events after the run's date. Opens and
   clicks count as activity, not as extra contacts.
 - Admin screen: Engagement → Lifecycle automations, with the builder, versions, dry runs and the calendar.
@@ -128,6 +128,21 @@ Staff accounts are now skipped (`isStaff`, kunalsharma-ai/turn2opinion#21, merge
   survey history is deleted; their ledger lines stay, because reward liabilities must stay auditable.
 - Admin screens: Loyalty → Loyalty ledger, and reward wallets on the 360° profile.
 - Tests: `test/loyalty.test.ts` (6, all three panels), `src/loyalty/position.test.ts` (4), and connector mapping.
+
+### Supply360 service API (Milestone 6, 2026-11-24)
+- Supply360 calls MADP as a signed service client: HMAC over method, path and body, a 300 s clock window, nonces
+  used once, scopes, allowed panels and a rate limit per client. Every refusal is audited with its reason.
+- Counts, a catalogue, and match: eligible members as random pseudonymous refs per client, with panel, categories
+  and country for quotas. No names, addresses, answers or health data. Below the minimum cell no refs are returned,
+  and match refuses health criteria. Health counts need a separate scope and the study feasibility purpose.
+- Reservations hold members for one project for up to 14 days, and other projects cannot hold or match them.
+- Invitation authorisation checks consent and the contact rules again and records invitations. Nothing is sent.
+- Participation events are idempotent by event id, mark the invitation's status and first click, and credit no
+  rewards. A consent check answers per ref and purpose.
+- Writes take an idempotency key. Admins create and revoke clients (the secret is shown once and stored encrypted)
+  on Supply360 → Supply360 console, with activity counts per client.
+- Tests: `test/supply360.test.ts` (13, all three panels).
+- Not yet: invitation delivery and reminders, which need approval to send; a live Supply360 client.
 
 ### Next for T2O
 A T2O-only dry run against the live backend once the token is in the cloud environment, with counts shown to Kunal

@@ -703,3 +703,161 @@ export const loyaltyReconciliations = pgTable('loyalty_reconciliation', {
   requestedBy: uuid('requested_by'),
   at: timestamp('at', { withTimezone: true }).notNull().defaultNow(),
 });
+
+// Supply360 (Milestone 6). A separate product that calls MADP as a signed service client. It sees counts,
+// eligibility and pseudonymous references only; the tables below never hold names, addresses or answers.
+
+export const serviceClients = pgTable(
+  'service_client',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    dataMode: dataMode('data_mode').notNull(),
+    name: text('name').notNull(),
+    /** Public id sent in x-madp-client. */
+    clientId: text('client_id').notNull(),
+    /** HMAC signing secret, field-encrypted (shown once at creation). */
+    secretEnc: text('secret_enc').notNull(),
+    scopes: text('scopes').array().notNull(),
+    panels: text('panels').array().notNull(),
+    rateLimitPerMinute: integer('rate_limit_per_minute').notNull().default(120),
+    /** active | revoked */
+    status: text('status').notNull().default('active'),
+    createdBy: uuid('created_by'),
+    createdAt: created(),
+    revokedAt: timestamp('revoked_at', { withTimezone: true }),
+    lastUsedAt: timestamp('last_used_at', { withTimezone: true }),
+  },
+  (t) => [uniqueIndex('service_client_client_id_key').on(t.clientId)],
+);
+
+/** Nonces seen inside the timestamp window; a repeat is a replay. Old rows are pruned. */
+export const serviceNonces = pgTable(
+  'service_nonce',
+  {
+    clientId: uuid('client_id')
+      .notNull()
+      .references(() => serviceClients.id),
+    nonce: text('nonce').notNull(),
+    seenAt: timestamp('seen_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [uniqueIndex('service_nonce_key').on(t.clientId, t.nonce), index('service_nonce_seen_idx').on(t.seenAt)],
+);
+
+export const serviceIdempotency = pgTable(
+  'service_idempotency',
+  {
+    clientId: uuid('client_id')
+      .notNull()
+      .references(() => serviceClients.id),
+    key: text('key').notNull(),
+    route: text('route').notNull(),
+    requestHash: text('request_hash').notNull(),
+    status: integer('status').notNull(),
+    response: jsonb('response').notNull(),
+    createdAt: created(),
+  },
+  (t) => [uniqueIndex('service_idempotency_key').on(t.clientId, t.key)],
+);
+
+/**
+ * A pseudonymous reference to one panel membership, for one service client. Random, so references cannot be
+ * linked across clients or back to a person without MADP.
+ */
+export const serviceReferences = pgTable(
+  'service_reference',
+  {
+    ref: text('ref').primaryKey(),
+    clientId: uuid('client_id')
+      .notNull()
+      .references(() => serviceClients.id),
+    dataMode: dataMode('data_mode').notNull(),
+    panelMembershipId: uuid('panel_membership_id')
+      .notNull()
+      .references(() => panelMemberships.id),
+    createdAt: created(),
+  },
+  (t) => [uniqueIndex('service_reference_member_key').on(t.clientId, t.panelMembershipId)],
+);
+
+export const audienceReservations = pgTable(
+  'audience_reservation',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    dataMode: dataMode('data_mode').notNull(),
+    clientId: uuid('client_id')
+      .notNull()
+      .references(() => serviceClients.id),
+    projectRef: text('project_ref').notNull(),
+    /** active | released | expired */
+    status: text('status').notNull().default('active'),
+    expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+    createdAt: created(),
+    releasedAt: timestamp('released_at', { withTimezone: true }),
+  },
+  (t) => [index('audience_reservation_client_idx').on(t.clientId, t.projectRef)],
+);
+
+export const reservationMembers = pgTable(
+  'reservation_member',
+  {
+    reservationId: uuid('reservation_id')
+      .notNull()
+      .references(() => audienceReservations.id),
+    panelMembershipId: uuid('panel_membership_id')
+      .notNull()
+      .references(() => panelMemberships.id),
+    ref: text('ref').notNull(),
+  },
+  (t) => [
+    uniqueIndex('reservation_member_key').on(t.reservationId, t.panelMembershipId),
+    index('reservation_member_membership_idx').on(t.panelMembershipId),
+  ],
+);
+
+/** A survey invitation MADP authorised for one member of a reservation. Its status follows participation events. */
+export const surveyInvitations = pgTable(
+  'survey_invitation',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    dataMode: dataMode('data_mode').notNull(),
+    panel: panelCode('panel').notNull(),
+    panelMembershipId: uuid('panel_membership_id')
+      .notNull()
+      .references(() => panelMemberships.id),
+    clientId: uuid('client_id')
+      .notNull()
+      .references(() => serviceClients.id),
+    reservationId: uuid('reservation_id')
+      .notNull()
+      .references(() => audienceReservations.id),
+    projectRef: text('project_ref').notNull(),
+    ref: text('ref').notNull(),
+    /** authorized, then the latest participation event (click, start, complete, terminate, ...). */
+    status: text('status').notNull().default('authorized'),
+    authorizedAt: timestamp('authorized_at', { withTimezone: true }).notNull().defaultNow(),
+    clickedAt: timestamp('clicked_at', { withTimezone: true }),
+    updatedAt: updated(),
+  },
+  (t) => [
+    uniqueIndex('survey_invitation_member_key').on(t.reservationId, t.panelMembershipId),
+    index('survey_invitation_membership_idx').on(t.panelMembershipId),
+  ],
+);
+
+export const participationEvents = pgTable(
+  'participation_event',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    clientId: uuid('client_id')
+      .notNull()
+      .references(() => serviceClients.id),
+    eventId: text('event_id').notNull(),
+    invitationId: uuid('invitation_id')
+      .notNull()
+      .references(() => surveyInvitations.id),
+    event: text('event').notNull(),
+    occurredAt: timestamp('occurred_at', { withTimezone: true }).notNull(),
+    receivedAt: created(),
+  },
+  (t) => [uniqueIndex('participation_event_key').on(t.clientId, t.eventId), index('participation_event_invitation_idx').on(t.invitationId)],
+);

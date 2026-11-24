@@ -109,17 +109,34 @@ Webhooks (panel → MADP)                    POST {madp}/api/v1/webhooks/{panel}
 
 MADP's side of the webhooks (the inbox table and replay protection) has a schema but no route yet (M3).
 
-## 4. Supply360 contract (spec §12): planned for M6, not implemented
-| Proposed path | Notes |
-|---|---|
-| `GET /audience/attributes` | Implemented for admins; Supply360 access needs a service client |
-| `POST /audience/counts` | Implemented for admins; same suppression rules will apply to Supply360 |
-| `POST /audience/match` | Returns eligible counts and an opaque cohort id, never PII or health answers |
-| `POST /audience/reservations` | Holds a cohort for a project batch, with expiry and idempotency key |
-| `POST /invitations/authorize` | Consent, fatigue and suppression check for an invitation batch |
-| `POST /participation/events` | click, start, partial, complete, terminate, quota-full, quality-fail, duplicate, security-reject, technical-error; idempotent |
-| `POST /consent/check` | Per-person, per-purpose, per-channel consent answer |
-| `GET /integrations/health` | Implemented for admins |
-| `GET /communications/timeline/{personId}` | MADP privileged roles only, never Supply360 by default |
+## 4. Supply360 contract (spec §12): implemented on DEMO data (2026-11-24)
 
-Service auth will use OAuth2 client credentials plus HMAC request signing, with a per-client scope list and rate limit.
+Supply360 is a separate product. It calls MADP as a service client under `/api/v1/supply360/...`. It never gets
+names, e-mail addresses, phone numbers, answers or health data: only counts, eligibility and pseudonymous refs
+(`ref_...`), which are random, stored by MADP, and different for each client.
+
+**Signing.** Every request carries `x-madp-client`, `x-madp-timestamp` (unix seconds, refused when more than 300 s
+off), `x-madp-nonce` (8–64 chars, accepted once) and
+`x-madp-signature: v1=<hex HMAC-SHA256(secret, "<ts>.<nonce>.<METHOD>.<path>.<sha256 hex of raw body>")>`. Each client
+has scopes, allowed panels and a per-minute rate limit. Every refusal is audited as `service.rejected` with its
+reason. Writes take an optional `idempotency-key`: the same key and body return the first answer, another body is
+409. Admin sessions are not accepted on these routes.
+
+| Route | Scope | Notes |
+|---|---|---|
+| `GET /supply360/attributes` | `attributes.read` | Categories and attribute keys; special-category keys only with `health.aggregate` |
+| `POST /supply360/counts` | `audience.counts` | Same counts and suppression as the admin explorer. Health filters need `health.aggregate` and `purpose: study_feasibility` |
+| `POST /supply360/match` | `audience.match` | Eligible members (active adult membership, terms accepted, usable address, no opt-out or bounce, under contact caps, not held for another project) as `{ref, panel, categories, country}`, with exclusion counts. Below the minimum cell, no refs. Health criteria are refused |
+| `POST /supply360/reservations` | `reservations.write` | Holds refs for one project, up to 14 days. Refs held by another active reservation are refused |
+| `GET`, `DELETE /supply360/reservations/{id}` | `reservations.write` | Status, or release |
+| `POST /supply360/invitations/authorize` | `invitations.authorize` | Checks each reserved ref again and records an invitation for those who pass. Nothing is sent and no address is shared; MADP delivers once sending is approved |
+| `POST /supply360/participation/events` | `participation.write` | click, start, partial, complete, terminate, quota_full, quality_fail, duplicate, security_reject, technical_error. Each event id counts once. Updates the invitation's status and first click. Credits no rewards |
+| `POST /supply360/consent/check` | `consent.check` | Consent state and eligibility per ref, for `survey_invitation` (terms) or `email_marketing` |
+| `GET /supply360/integrations/health` | `integrations.health` | Status of the client's panels, no data |
+
+Admins with `service_clients.manage` (super admin, platform admin) create, list and revoke clients at
+`/service-clients`. The secret is returned once and stored encrypted. The admin screen is Supply360 → Supply360
+console.
+
+Not built: OAuth2 client credentials (HMAC signing covers authentication), and reminders for invitations that were
+not clicked, which wait until MADP sends invitations.

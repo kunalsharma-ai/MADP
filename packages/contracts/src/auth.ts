@@ -27,6 +27,8 @@ export const Permission = z.enum([
   'loyalty.read',
   'loyalty.reconcile',
   'loyalty.approve',
+  /** Create and revoke Supply360 service clients and their secrets. */
+  'service_clients.manage',
   'connectors.read',
   'connectors.run',
   'imports.run',

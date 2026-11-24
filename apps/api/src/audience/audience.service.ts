@@ -38,7 +38,7 @@ export class AudienceService {
    * Scale note: the person set is passed to SQL as an array. That is fine for DEMO and early live volumes;
    * a materialised attribute read model replaces it in M3 (docs/IMPLEMENTATION_PLAN.md).
    */
-  private async resolveAttributes(
+  async resolveAttributes(
     mode: DataMode,
     filters: AttributeFilter[],
     caller: CountsCaller | undefined,
@@ -109,7 +109,7 @@ export class AudienceService {
     return this.registry.all().some((s) => s.dataMode === 'live') ? 'live' : 'demo';
   }
 
-  private where(mode: DataMode, f: CountsRequest, personIds: string[] | null = null): SQL {
+  where(mode: DataMode, f: CountsRequest, personIds: string[] | null = null): SQL {
     const parts: SQL[] = [sql`pm.data_mode = ${mode}`, sql`pm.status = 'active'`];
     // Passed as one array literal parameter (drizzle would expand a JS array into a value list).
     if (personIds) parts.push(sql`pm.master_person_id = any(${`{${personIds.join(',')}}`}::uuid[])`);
