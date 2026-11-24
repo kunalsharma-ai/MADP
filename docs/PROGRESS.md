@@ -1,5 +1,30 @@
 # Progress
 
+## Production readiness (Milestone 6, 2026-11-24)
+
+Local and DEMO only. Nothing is deployed, and deploying needs Kunal's go-ahead.
+
+### Completed and tested
+- Route security inventory (`apps/api/test/security.test.ts`, 9 tests). Every route is checked from the controllers' own
+  metadata. Each is either public by design (health, OpenAPI, login, and the Supply360 and webhook routes, which check
+  their own signatures) or needs a session and a permission. No route answers without credentials. Tampered, foreign,
+  unsigned and expired tokens are refused. Security headers are set, CORS allows only the admin origin, malformed input
+  gets 400 or 413, and sign-in is throttled.
+- OpenAPI now documents every route for audience, geography, consent, privacy, profiles, verification, reports,
+  insights and Supply360 (the test checks this).
+- Rate limit per client address is configurable (`RATE_LIMIT_PER_MINUTE`, default 300).
+- Backup and restore drill (`ops/backup/restore-drill.sh`). It ran on the preview database and matched 50 tables and 4
+  collections exactly in about 11 seconds.
+- Load test (`ops/load/load-test.mjs`) at 300 and 5,000 demo people across all three panels, with no errors. Results
+  are in `docs/PERFORMANCE.md`.
+- Runbooks (`docs/RUNBOOKS.md`): alerts, deploy (not executed), backup and restore, key rotation, panel sync failure,
+  privacy deadlines, and security incidents.
+
+### Not yet
+- The consent and verification summaries are slow at 5,000 people (consent p50 0.9 s). Cache or precompute them
+  before going live.
+- No production environment, monitoring or alerting is set up. That waits for Kunal's deploy decision.
+
 ## Super admin console, step 2: members, question bank and profiles (2026-11-24)
 
 Spec modules 1 to 4 for MFR. The panel side is in kunalsharma-ai/MFR#44 and #45 (merged, not deployed).

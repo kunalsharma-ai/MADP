@@ -67,7 +67,7 @@ export class AppModule {
   static forRoot(env: ApiEnv): DynamicModule {
     return {
       module: AppModule,
-      imports: [ThrottlerModule.forRoot([{ name: 'default', ttl: 60_000, limit: 300 }])],
+      imports: [ThrottlerModule.forRoot([{ name: 'default', ttl: 60_000, limit: env.RATE_LIMIT_PER_MINUTE ?? 300 }])],
       controllers: [
         HealthController,
         MetaController,
