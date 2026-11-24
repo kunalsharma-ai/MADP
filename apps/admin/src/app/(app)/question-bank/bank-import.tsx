@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from 'react';
 import { toast } from 'sonner';
-import { importAction } from '@/app/panel-actions';
+import { importAction, importXlsxAction } from '@/app/panel-actions';
 import { Badge, Card, CardHeader, btn, fmt } from '@/components/ui';
 
 type Part = { adds: number; changes: number; unchanged: number; duplicates: number };
@@ -24,22 +24,28 @@ interface Report {
  */
 export function BankImport() {
   const [pending, start] = useTransition();
-  const [file, setFile] = useState<{ name: string; json: unknown } | null>(null);
+  const [file, setFile] = useState<{ name: string; json?: unknown; xlsx?: string } | null>(null);
   const [report, setReport] = useState<Report | null>(null);
   const load = async (f: File | undefined) => {
     setReport(null);
     if (!f) return setFile(null);
+    if (/\.xlsx$/i.test(f.name)) {
+      const bytes = new Uint8Array(await f.arrayBuffer());
+      let bin = '';
+      for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+      return setFile({ name: f.name, xlsx: btoa(bin) });
+    }
     try {
       const json = JSON.parse(await f.text()) as Record<string, unknown>;
       setFile({ name: f.name, json });
     } catch {
-      toast.error('That file is not JSON. Use the Profile / Question / Option export shape.');
+      toast.error('That file is not JSON or an Excel workbook. Use the Profile / Question / Option export shape.');
     }
   };
   const go = (write: boolean) =>
     start(async () => {
       if (!file) return;
-      const r = await importAction(file.json, write);
+      const r = file.xlsx !== undefined ? await importXlsxAction(file.xlsx, write) : await importAction(file.json, write);
       if (!r.ok) return void toast.error(r.error);
       setReport(r.data as unknown as Report);
       toast.success(write ? 'Imported' : 'Dry run finished. Nothing was changed.');
@@ -58,9 +64,12 @@ export function BankImport() {
       <Card>
         <CardHeader
           title="Export"
-          hint="The whole bank of this brand as JSON, in today's Profile / Question / Option shape."
+          hint="The whole bank of this brand, in today's Profile / Question / Option shape. The Excel workbook has one sheet per part and imports back unchanged."
         />
-        <div className="px-5 py-4">
+        <div className="flex flex-wrap gap-2 px-5 py-4">
+          <a className={btn.secondary} href="/question-bank/export?format=xlsx">
+            Download bank (Excel)
+          </a>
           <a className={btn.secondary} href="/question-bank/export">
             Download bank (JSON)
           </a>
@@ -69,10 +78,10 @@ export function BankImport() {
       <Card className="xl:col-span-2">
         <CardHeader
           title="Import"
-          hint="A JSON file with Profile, Question and Option arrays. Nothing is ever deleted; options left out of a question are retired."
+          hint="An Excel workbook or a JSON file with Profile, Question and Option parts. Nothing is ever deleted; options left out of a question are retired."
         />
         <div className="flex flex-wrap items-center gap-2 px-5 py-4 text-[13px]">
-          <input type="file" accept="application/json,.json" onChange={(e) => load(e.target.files?.[0])} />
+          <input type="file" accept="application/json,.json,.xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" onChange={(e) => load(e.target.files?.[0])} />
           <button className={btn.secondary} disabled={pending || !file} onClick={() => go(false)}>
             Dry run
           </button>

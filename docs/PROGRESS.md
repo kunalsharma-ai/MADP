@@ -76,9 +76,21 @@ Spec modules 1 to 4 for MFR. The panel side is in kunalsharma-ai/MFR#44 and #45 
   that checks the signature. Full MADP integration run: 110 passed.
 - Previews from a local MFR backend with DEMO data: `/mnt/project-files/madp/preview-console/step2-members-question-bank/`.
 
+### Question bank in Excel (2026-11-24)
+- Question bank > Import and export downloads the bank as an Excel workbook for T2O, MFR and MHO
+  (`GET /panel/qb/export/xlsx`, `qb.read`, audited as `qb.export` with `format: xlsx`). The file name and an About
+  sheet say DEMO when the brand runs on DEMO data.
+- One sheet each for Profile, Question and Option, one row per record. Lists (categories, pages, parent values) are
+  JSON in columns marked `[json]`. A hidden sheet keeps each column's type, so a value Excel retypes (option value "1"
+  as the number 1) comes back as exported.
+- The same page imports a workbook (`POST /panel/qb/import/xlsx`, base64). MADP reads it and sends the panel the same
+  JSON as a .json import, so the dry run, the teen guardrails and the `qb.publish` rule for writing are unchanged.
+  Formulas, broken JSON cells and files that are not workbooks are refused, with sheet and row, before anything
+  reaches the panel. Text that a spreadsheet would run as a formula is stored with a ' prefix and restored on import.
+- Tests: `src/panel-admin/bank-workbook.test.ts` (4) and `test/qb-workbook.test.ts` (5, all three brands).
+
 ### Not yet
 - Question versions (draft, review, published) and translations.
-- Excel import and export.
 - Merge duplicates, reset password, resend welcome e-mail, log in as member.
 - T2O and MHO: the same backend serves them (step 6). Leak tests per brand come before they are switched on.
 - The 730 / 241 / 33 count check needs the real Profiles.json, Question.json and Option.json exports. They are not in
