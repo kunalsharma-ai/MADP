@@ -240,3 +240,9 @@ export async function revokeServiceClientAction(id: string) {
   revalidatePath('/supply360');
   return 'Client revoked. Its requests are refused from now on.';
 }
+
+export async function recordPreferenceAction(personId: string, input: { panel: string; channel: string; status: string; source: string; reason: string }) {
+  await api(`/consent/persons/${encodeURIComponent(personId)}/preferences`, { method: 'POST', json: input });
+  revalidatePath('/consent');
+  return input.status === 'opted_out' ? 'Opt-out recorded. MADP will not contact this member on that channel.' : 'Opt-out lifted.';
+}

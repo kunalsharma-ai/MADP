@@ -140,3 +140,14 @@ console.
 
 Not built: OAuth2 client credentials (HMAC signing covers authentication), and reminders for invitations that were
 not clicked, which wait until MADP sends invitations.
+
+## 5. Consent and preference center (implemented on DEMO data, 2026-11-24)
+| Route | Permission | Notes |
+|---|---|---|
+| `GET /consent/summary?panel=` | `consent.read` | Per panel: people per purpose and status, contactability funnel, MADP opt-outs by channel, gaps |
+| `GET /consent/events?panel=&purpose=&limit=` | `consent.read` | Append-only consent history, newest first; person ids only |
+| `GET /consent/preferences?panel=&limit=` | `consent.read` | Channel opt-outs and lifts recorded in MADP |
+| `GET /consent/persons/{personId}` | `consent.read` | Current consent, full history (including records moved by a merge), preferences. Audited as `consent.person_viewed` |
+| `POST /consent/persons/{personId}/preferences` | `consent.manage` | `{panel, channel: email|sms|push|whatsapp|all, status: opted_out|resumed, source, reason}`. 409 when it would not change anything; `resumed` only lifts a MADP opt-out |
+
+`consent.read`: super admin, privacy officer, support, data steward. `consent.manage`: super admin, privacy officer, support.

@@ -29,6 +29,10 @@ export const Permission = z.enum([
   'loyalty.approve',
   /** Create and revoke Supply360 service clients and their secrets. */
   'service_clients.manage',
+  /** Consent and preference center: read consent state and history. */
+  'consent.read',
+  /** Record a member's channel opt-out or its lifting. Never grants panel consent. */
+  'consent.manage',
   'connectors.read',
   'connectors.run',
   'imports.run',

@@ -861,3 +861,52 @@ export const participationEvents = pgTable(
   },
   (t) => [uniqueIndex('participation_event_key').on(t.clientId, t.eventId), index('participation_event_invitation_idx').on(t.invitationId)],
 );
+
+// ---------------------------------------------------------------------------------------------------------------
+// Consent and preference center (spec §11, screen 14). consent_record keeps the current state that the panel
+// reports. consent_event is its append-only history, written by a database trigger on every change, so the
+// evidence of each grant or withdrawal outlives later syncs. contact_preference holds channel opt-outs that a
+// member asked MADP for directly. MADP never grants consent itself: only the panel can.
+
+export const consentEvents = pgTable(
+  'consent_event',
+  {
+    id: bigserial('id', { mode: 'number' }).primaryKey(),
+    dataMode: dataMode('data_mode').notNull(),
+    /** No foreign key: the history is kept as evidence even if the person is later merged or erased. */
+    masterPersonId: uuid('master_person_id').notNull(),
+    panel: panelCode('panel').notNull(),
+    purpose: text('purpose').notNull(),
+    previousStatus: consentStatus('previous_status'),
+    status: consentStatus('status').notNull(),
+    evidence: jsonb('evidence').notNull(),
+    capturedAt: timestamp('captured_at', { withTimezone: true }),
+    at: timestamp('at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    index('consent_event_person_idx').on(t.masterPersonId, t.panel),
+    index('consent_event_at_idx').on(t.dataMode, t.panel, t.at),
+  ],
+);
+
+export const contactPreferences = pgTable(
+  'contact_preference',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    dataMode: dataMode('data_mode').notNull(),
+    /** Per panel membership, so the preference follows the account through identity merges and unmerges. */
+    panelMembershipId: uuid('panel_membership_id')
+      .notNull()
+      .references(() => panelMemberships.id),
+    panel: panelCode('panel').notNull(),
+    /** email, sms, push, whatsapp, or all. */
+    channel: text('channel').notNull(),
+    /** opted_out, or resumed (lifts an earlier MADP opt-out only; it never grants panel consent). */
+    status: text('status').notNull(),
+    source: text('source').notNull(),
+    reason: text('reason').notNull(),
+    recordedBy: uuid('recorded_by').notNull(),
+    recordedAt: timestamp('recorded_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index('contact_preference_membership_idx').on(t.panelMembershipId, t.channel, t.recordedAt)],
+);

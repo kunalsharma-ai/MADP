@@ -8,4 +8,5 @@ export * from './webhooks.js';
 export * from './engagement.js';
 export * from './automation.js';
 export * from './loyalty.js';
+export * from './consent.js';
 export * from './supply360.js';

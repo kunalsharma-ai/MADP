@@ -60,8 +60,11 @@ export function contactColumns(consent: string | null, now: Date) {
       and not e.dry_run and e.state = any(${contactStates}::text[]) and e.occurred_at > ${week} and e.occurred_at <= ${now}) as week,
     (select count(*) from communication_event e where e.master_person_id = pm.master_person_id and e.panel = pm.panel
       and not e.dry_run and e.state = any(${contactStates}::text[]) and e.occurred_at > ${month} and e.occurred_at <= ${now}) as month,
-    exists (select 1 from communication_event e where e.master_person_id = pm.master_person_id and e.panel = pm.panel
-      and not e.dry_run and e.state = 'opted_out' and e.occurred_at <= ${now}) as opted_out,
+    (exists (select 1 from communication_event e where e.master_person_id = pm.master_person_id and e.panel = pm.panel
+      and not e.dry_run and e.state = 'opted_out' and e.occurred_at <= ${now})
+      or coalesce((select cp.status = 'opted_out' from contact_preference cp
+        where cp.panel_membership_id = pm.id and cp.channel in ('email', 'all') and cp.recorded_at <= ${now}
+        order by cp.recorded_at desc, cp.id limit 1), false)) as opted_out,
     exists (select 1 from communication_event e where e.master_person_id = pm.master_person_id and e.panel = pm.panel
       and not e.dry_run and e.state in ('bounced', 'complained') and e.occurred_at <= ${now}) as bounced`;
 }
