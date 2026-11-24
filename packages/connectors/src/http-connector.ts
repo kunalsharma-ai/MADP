@@ -508,16 +508,25 @@ export class PanelAdminError extends Error {
 }
 
 /**
- * HMAC-SHA256 over `${timestamp}\n${METHOD}\n${path+query}\n${origin}\n${actor}\n${sha256(body)}`, hex. The same
- * canonical string as the panel side (admin/auth.js).
+ * HMAC-SHA256 over `${timestamp}\n${nonce}\n${METHOD}\n${path+query}\n${origin}\n${actor}\n${sha256(body)}`, hex. The
+ * same canonical string as the panel side (admin/auth.js). The nonce is new for every call and the panel accepts each
+ * nonce once, so a copied request can't be sent again.
  */
 export async function signPanelAdmin(
   secret: string,
-  p: { timestamp: string; method: string; path: string; origin: string; actor: string; body: string },
+  p: {
+    timestamp: string;
+    nonce: string;
+    method: string;
+    path: string;
+    origin: string;
+    actor: string;
+    body: string;
+  },
 ): Promise<string> {
   const { createHash, createHmac } = await import('node:crypto');
   const bodyHash = createHash('sha256').update(p.body).digest('hex');
-  const canonical = `${p.timestamp}\n${p.method.toUpperCase()}\n${p.path}\n${p.origin}\n${p.actor}\n${bodyHash}`;
+  const canonical = `${p.timestamp}\n${p.nonce}\n${p.method.toUpperCase()}\n${p.path}\n${p.origin}\n${p.actor}\n${bodyHash}`;
   return createHmac('sha256', secret).update(canonical).digest('hex');
 }
 
@@ -540,8 +549,11 @@ export class PanelAdminClient {
     const full = params.size ? `${path}?${params}` : path;
     const raw = body === undefined ? '' : JSON.stringify(body);
     const timestamp = String(Math.floor((this.cfg.now?.() ?? Date.now()) / 1000));
+    const { randomBytes } = await import('node:crypto');
+    const nonce = randomBytes(16).toString('hex');
     const signature = await signPanelAdmin(this.cfg.secret, {
       timestamp,
+      nonce,
       method,
       path: full,
       origin: this.cfg.origin,
@@ -555,10 +567,13 @@ export class PanelAdminClient {
         method,
         body: raw || undefined,
         signal: AbortSignal.timeout(this.cfg.timeoutMs ?? 30_000),
+        // never follow a redirect: the signed headers must only ever reach the panel itself
+        redirect: 'error',
         headers: {
           accept: 'application/json',
           ...(raw ? { 'content-type': 'application/json' } : {}),
           'x-madp-timestamp': timestamp,
+          'x-madp-nonce': nonce,
           'x-madp-origin': this.cfg.origin,
           'x-madp-actor': actor,
           'x-madp-signature': signature,
