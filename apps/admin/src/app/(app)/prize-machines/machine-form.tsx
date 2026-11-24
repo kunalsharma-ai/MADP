@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import type { PrizeMachineView } from '@madp/contracts';
 import { prizeMachineSaveAction } from '@/app/step4-actions';
 import { btn, input } from '@/components/ui';
+import { Toggle, ToggleLabel } from '@/components/toggle';
 
 type Prize = { label: string; kind: 'points' | 'badge' | 'nothing'; points: string; weight: string };
 
@@ -51,18 +52,22 @@ export function MachineForm({ m }: { m: PrizeMachineView }) {
           Title
           <input className={input} value={title} onChange={(e) => setTitle(e.target.value)} maxLength={80} />
         </label>
-        <label>
-          Status
-          <select
-            className={input}
-            value={status}
-            onChange={(e) => setStatus(e.target.value as typeof status)}
-          >
-            <option value="draft">Draft</option>
-            <option value="live">Live</option>
-            <option value="paused">Paused</option>
-          </select>
-        </label>
+        <div>
+          <span>Active</span>
+          <div className="mt-1.5 flex items-center gap-2">
+            <Toggle
+              on={status === 'live'}
+              label={status === 'live' ? 'Deactivate this machine' : 'Activate this machine'}
+              onClick={() => setStatus(status === 'live' ? (m.exists ? 'paused' : 'draft') : 'live')}
+            />
+            <ToggleLabel
+              on={status === 'live'}
+              onText="Active"
+              offText={status === 'paused' ? 'Inactive (paused)' : 'Inactive (draft)'}
+            />
+          </div>
+          <p className="mt-1 text-[11.5px] text-fg-3">Saved with the reason below.</p>
+        </div>
         <label>
           Plays per member per day
           <input

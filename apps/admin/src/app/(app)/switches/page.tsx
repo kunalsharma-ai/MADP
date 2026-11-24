@@ -5,6 +5,7 @@ import { withPanel } from '@/lib/panel';
 import { Badge, Card, CardHeader, PageHeader, Table, btn, fmtDate, input } from '@/components/ui';
 import { ReasonAction } from '@/components/reason-action';
 import { SwitchControl } from '@/components/switch-control';
+import { Toggle, ToggleLabel } from '@/components/toggle';
 
 export const metadata: Metadata = { title: 'Feature switches' };
 
@@ -47,7 +48,13 @@ function Override({
   return (
     <li className="flex flex-wrap items-center gap-2 text-[12px]">
       <span className="font-medium">{scopeName(o.segment, o.country)}</span>
-      {o.on ? <Badge tone="teal">On</Badge> : <Badge>Off</Badge>}
+      <Toggle
+        on={o.on}
+        label={`${scopeName(o.segment, o.country)}: ${o.on ? 'on' : 'off'}`}
+        size="sm"
+        readOnly
+      />
+      <ToggleLabel on={o.on} />
       {o.on && o.value !== null ? <span className="text-fg-2">{num(o.value, unit)}</span> : null}
       {o.reason ? <span className="text-fg-3">“{o.reason}”</span> : null}
       <span className="text-fg-3">{fmtDate(o.changedAt)}</span>
@@ -134,7 +141,12 @@ function Row({
               value={exact?.value ?? s.value ?? s.setValue}
               scopeLabel={scopeName(segment, country)}
             />
-          ) : null}
+          ) : (
+            <span className="flex items-center gap-2">
+              <Toggle on={s.effective} label={s.label} readOnly />
+              <ToggleLabel on={s.effective} />
+            </span>
+          )}
         </td>
       </tr>
       {overrides.length ? (
@@ -223,14 +235,18 @@ export default async function SwitchesPage({
                 hint="The kill switch turns every switch below off at once, for every segment and country. Each switch keeps its own setting for when the kill switch is turned off again."
                 action={
                   b.canFlip ? (
-                    <ReasonAction
-                      op={{ op: 'switch', key: 'kill', on: !b.killed }}
-                      label={b.killed ? 'Turn the kill switch off' : 'Stop everything'}
-                      done={b.killed ? 'Kill switch off' : 'Everything stopped'}
-                      danger={!b.killed}
+                    <SwitchControl
+                      k="kill"
+                      on={b.killed}
+                      scopeLabel="the whole brand"
+                      onText="Everything stopped"
+                      offText="Running"
                     />
                   ) : (
-                    <Badge>{b.killed ? 'Stopped' : 'Running'}</Badge>
+                    <span className="flex items-center gap-2">
+                      <Toggle on={b.killed} label="Kill switch" readOnly />
+                      <ToggleLabel on={b.killed} onText="Everything stopped" offText="Running" />
+                    </span>
                   )
                 }
               />

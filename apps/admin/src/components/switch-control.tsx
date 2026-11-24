@@ -4,6 +4,7 @@ import { useState, useTransition } from 'react';
 import { toast } from 'sonner';
 import { reasonAction } from '@/app/step4-actions';
 import { btn, input } from '@/components/ui';
+import { Toggle, ToggleLabel } from '@/components/toggle';
 
 interface Valued {
   unit: string;
@@ -25,6 +26,8 @@ export function SwitchControl({
   valued,
   value,
   scopeLabel,
+  onText = 'On',
+  offText = 'Off',
 }: {
   k: string;
   on: boolean;
@@ -33,6 +36,8 @@ export function SwitchControl({
   valued?: Valued | null;
   value?: number | null;
   scopeLabel: string;
+  onText?: string;
+  offText?: string;
 }) {
   const [mode, setMode] = useState<'closed' | 'flip' | 'number'>('closed');
   const [reason, setReason] = useState('');
@@ -41,14 +46,13 @@ export function SwitchControl({
   const scope = { ...(segment ? { segment } : {}), ...(country ? { country } : {}) };
   if (mode === 'closed')
     return (
-      <div className="flex flex-wrap items-center gap-1">
-        <button
-          className={on ? btn.ghost : `${btn.ghost} text-danger`}
+      <div className="flex flex-wrap items-center gap-2">
+        <Toggle
+          on={on}
+          label={`${on ? 'Turn off' : 'Turn on'} for ${scopeLabel}`}
           onClick={() => setMode('flip')}
-          title={`For ${scopeLabel}`}
-        >
-          {on ? 'Turn off' : 'Turn on'}
-        </button>
+        />
+        <ToggleLabel on={on} onText={onText} offText={offText} />
         {valued ? (
           <button className={btn.ghost} onClick={() => setMode('number')}>
             Set {valued.unit === 'x' ? 'multiplier' : valued.unit}
@@ -61,14 +65,19 @@ export function SwitchControl({
   const turningOn = mode === 'flip' ? !on : true;
   return (
     <div className="flex min-w-72 flex-col gap-1.5">
-      <p className="text-[11.5px] text-fg-3">
-        {mode === 'flip' ? (turningOn ? 'Turn on' : 'Turn off') : 'Set the number'} for {scopeLabel}
-      </p>
+      <div className="flex items-center gap-2">
+        <Toggle on={turningOn} label="Cancel this change" pending onClick={() => setMode('closed')} />
+        <p className="text-[11.5px] text-fg-3">
+          {mode === 'flip' ? (turningOn ? 'Turn on' : 'Turn off') : 'Set the number'} for {scopeLabel}: give a
+          reason to save
+        </p>
+      </div>
       <div className="flex items-center gap-1.5">
         {valued && (mode === 'number' || turningOn) ? (
           <label className="flex shrink-0 items-center gap-1 text-[12px] text-fg-2">
             <input
-              className={`${input} w-20 py-1 text-[12px]`}
+              className={`${input} py-1 text-[12px]`}
+              style={{ width: '5rem' }}
               value={num}
               onChange={(e) => setNum(e.target.value)}
               inputMode="decimal"
