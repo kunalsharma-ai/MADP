@@ -598,9 +598,11 @@ and MHO work on every console screen and that no brand ever sees or changes anot
   `MFR_ADMIN_API_BASE_URL` and `MHO_ADMIN_API_BASE_URL` pointed at it. Twenty panel screens and reports were opened as
   each brand: 60 page loads, no errors, and no other brand's names, references or survey names. The previews are in
   `/mnt/project-files/madp/preview-console/step6-three-brands/`.
-- **Still to watch.** Some older member-side code reads profiles without a brand filter: `controller/Profile.js`
-  `status()`, `engagement/lifecycle.js` `profileProgress()` and `routes/exportData.js`. This is fine while each brand
-  has its own database. It must be fixed before brands share one database.
+- **Member side too** (kunalsharma-ai/MFR#60, merged, not deployed). T2O, MFR and MHO share one database, so the
+  older member-side reads now filter on the brand as well: profile status, the question list and its option counts,
+  my surveys, feasibility, answer summaries and profile progress. The filter also applies inside `$lookup` and
+  `$graphLookup`. In `tests/member.crossbrand.test.mjs`, all three brands use the same profile slug, question names and
+  survey slug. The test has 6 cases, and 5 of them fail without the fix.
 - **Deploy needs Kunal's go-ahead.** The secret and the three hostnames go into `MADP_ADMIN_API_SECRETS` and
   `MADP_ADMIN_API_ORIGINS` on the panel, and the three base URLs go into MADP.
 
