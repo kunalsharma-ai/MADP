@@ -8,6 +8,8 @@ import type {
   SourceDeletion,
   SourcePage,
   SourceRespondent,
+  SourceResponse,
+  SourceReward,
 } from '@madp/contracts';
 import { AUDITED_CAPABILITIES } from './capabilities.js';
 import {
@@ -15,6 +17,8 @@ import {
   mapAnswerMap,
   mapOption,
   mapTombstone,
+  mapResponse,
+  mapReward,
   mapQuestion,
   mapQuestionnaire,
   mapUser,
@@ -24,6 +28,8 @@ import {
   type RawProfile,
   type RawQuestion,
   type RawUser,
+  type RawResponse,
+  type RawReward,
 } from './mapping.js';
 import { ConnectorError, type PanelConnector } from './types.js';
 
@@ -65,7 +71,7 @@ export interface EndpointMap {
    * Changed-since feeds (admin only). Added to the T2O backend by kunalsharma-ai/turn2opinion#20; a backend
    * without that change answers 404, and MADP reports automatic sync as not available for the panel.
    */
-  changes?: { members: string; answers: string; deletions: string };
+  changes?: { members: string; answers: string; deletions: string; rewards?: string; responses?: string };
 }
 
 /**
@@ -86,6 +92,9 @@ const T2O_BACKEND_ENDPOINTS: EndpointMap = {
     members: '/api/v1/changes/members',
     answers: '/api/v1/changes/answers',
     deletions: '/api/v1/changes/deletions',
+    // turn2opinion#24: reward rows and survey responses, same paging.
+    rewards: '/api/v1/changes/rewards',
+    responses: '/api/v1/changes/responses',
   },
 };
 
@@ -314,7 +323,7 @@ export class PanelApiConnector implements PanelConnector {
 
   /** One page of a changes feed. A 404 means the panel does not serve the feed (yet): kind 'not_supported'. */
   private async changePage<R, T>(
-    feed: 'members' | 'answers' | 'deletions',
+    feed: 'members' | 'answers' | 'deletions' | 'rewards' | 'responses',
     q: ChangeQuery,
     map: (raw: R) => T | null,
   ): Promise<SourceChangePage<T>> {
@@ -358,5 +367,13 @@ export class PanelApiConnector implements PanelConnector {
 
   deletions(q: ChangeQuery): Promise<SourceChangePage<SourceDeletion>> {
     return this.changePage<RawTombstone, SourceDeletion>('deletions', q, (t) => mapTombstone(this.panel, t));
+  }
+
+  rewardChanges(q: ChangeQuery): Promise<SourceChangePage<SourceReward>> {
+    return this.changePage<RawReward, SourceReward>('rewards', q, (r) => mapReward(this.panel, r));
+  }
+
+  responseChanges(q: ChangeQuery): Promise<SourceChangePage<SourceResponse>> {
+    return this.changePage<RawResponse, SourceResponse>('responses', q, (r) => mapResponse(this.panel, r));
   }
 }

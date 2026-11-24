@@ -35,6 +35,7 @@ import {
 } from '../mongo/mongo.js';
 import { FieldCrypto, maskEmail } from '../crypto/field-crypto.js';
 import { AuditService } from '../audit/audit.service.js';
+import { LoyaltyService, type LoyaltySyncCounts } from '../loyalty/loyalty.service.js';
 import { recomputePerson } from '../identity/precedence.js';
 import { DIRECT_IDENTIFIER_QUESTIONS, NAME_SUGGESTIONS, categoryFor, sensitivityFor } from './canonical.js';
 
@@ -54,6 +55,8 @@ const REFERENCE_LISTS = new Set([
 const PAGE_SIZE = 200;
 
 export interface ImportCounts {
+  /** The wallet mirror (rewards and survey responses), when the panel serves those feeds. */
+  loyalty?: LoyaltySyncCounts;
   questionnaires: number;
   questions: number;
   questionVersionsCreated: number;
@@ -135,7 +138,18 @@ export class IngestionService {
     private readonly mongo: Mongo,
     private readonly crypto: FieldCrypto,
     private readonly audit: AuditService,
+    private readonly loyalty: LoyaltyService,
   ) {}
+
+  /** Wallet mirror after an import or sync. A failure there is reported in the counts, not as a failed sync. */
+  private async syncLoyalty(panel: PanelCode, jobId: string, fromStart: boolean): Promise<LoyaltySyncCounts> {
+    try {
+      return await this.loyalty.sync(panel, jobId, { fromStart });
+    } catch (e) {
+      this.log.error(`Loyalty mirror for ${panel} (job ${jobId}): ${(e as Error).message}`);
+      return { status: 'failed', rewardsSeen: 0, responsesSeen: 0, linesWritten: 0, unmatchedMembers: 0, unknownStatuses: 0, message: (e as Error).message };
+    }
+  }
 
   /**
    * Initial backfill / reconciliation run for one panel: questionnaires -> question registry (versioned)
@@ -256,6 +270,7 @@ export class IngestionService {
 
       if (!opts.dryRun) {
         await this.saveCheckpoint(dataMode, panel, null, jobId, true);
+        counts.loyalty = await this.syncLoyalty(panel, jobId, true);
         await db
           .insert(outbox)
           .values({ topic: 'audience.counts.invalidated', payload: { panel, dataMode, importJobId: jobId } });
@@ -456,6 +471,7 @@ export class IngestionService {
         },
       );
 
+      counts.loyalty = await this.syncLoyalty(panel, jobId, false);
       const changed =
         counts.identitiesCreated + counts.identitiesUpdated + counts.answersChanged + counts.membersRemoved;
       if (changed > 0)
@@ -716,6 +732,11 @@ export class IngestionService {
     const key = { panel, dataMode, sourceMemberId };
     await this.mongo.profileAnswers.deleteMany(key);
     await this.mongo.answerHistory.deleteMany(key);
+    const memberships = await db
+      .select({ id: panelMemberships.id })
+      .from(panelMemberships)
+      .where(eq(panelMemberships.sourceIdentityId, identity.id));
+    for (const m of memberships) await this.loyalty.forgetParticipation(m.id);
     await this.audit.record({
       actorId: null,
       actorType: 'system',

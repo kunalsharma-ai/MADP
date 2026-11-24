@@ -7,8 +7,10 @@ import type {
   SourceDeletion,
   SourcePage,
   SourceRespondent,
+  SourceResponse,
+  SourceReward,
 } from '@madp/contracts';
-import { generateDemoPopulation, loadSourceSample, type DemoPopulation } from '@madp/testing';
+import { generateDemoLoyalty, generateDemoPopulation, loadSourceSample, type DemoPopulation } from '@madp/testing';
 import { AUDITED_CAPABILITIES } from './capabilities.js';
 import { mapOption, mapQuestion, mapQuestionnaire } from './mapping.js';
 import type { PanelConnector } from './types.js';
@@ -22,6 +24,10 @@ export class DemoConnector implements PanelConnector {
   readonly mode = 'demo' as const;
   private static population: DemoPopulation | null = null;
   private static populationSize = 0;
+  private static loyalty: ReturnType<typeof generateDemoLoyalty> | null = null;
+  /** Tests can replace or extend the DEMO wallet rows (for example, to reverse a credit). */
+  rewardsOverride: SourceReward[] | null = null;
+  responsesOverride: SourceResponse[] | null = null;
 
   constructor(
     readonly panel: PanelCode,
@@ -32,8 +38,15 @@ export class DemoConnector implements PanelConnector {
     if (!DemoConnector.population || DemoConnector.populationSize !== this.people) {
       DemoConnector.population = generateDemoPopulation({ people: this.people });
       DemoConnector.populationSize = this.people;
+      DemoConnector.loyalty = null;
     }
     return DemoConnector.population;
+  }
+
+  private get wallet() {
+    const pop = this.pop;
+    DemoConnector.loyalty ??= generateDemoLoyalty(pop);
+    return DemoConnector.loyalty;
   }
 
   capabilities() {
@@ -119,5 +132,13 @@ export class DemoConnector implements PanelConnector {
 
   async deletions(q: ChangeQuery): Promise<SourceChangePage<SourceDeletion>> {
     return { items: [], cursor: q.cursor, more: false };
+  }
+
+  async rewardChanges(q: ChangeQuery): Promise<SourceChangePage<SourceReward>> {
+    return this.feedPage(this.rewardsOverride ?? this.wallet.rewards.filter((x) => x.panel === this.panel), q);
+  }
+
+  async responseChanges(q: ChangeQuery): Promise<SourceChangePage<SourceResponse>> {
+    return this.feedPage(this.responsesOverride ?? this.wallet.responses.filter((x) => x.panel === this.panel), q);
   }
 }

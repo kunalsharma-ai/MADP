@@ -54,6 +54,11 @@ MFA completed. The machine-readable document is served at `GET /api/v1/openapi.j
 | `POST /communications/automations/:id/decision` `{pause\|resume\|archive}` | `communications.approve` | |
 | `POST /communications/automations/:id/run` `{dryRun, asOf?}` | `communications.manage` | Dry run only (`dryRun: false` is 403), as of now or `asOf`: per member, the step due and planned send time, or the reason it stops. Covered by `apps/api/test/automations.test.ts` |
 | `GET /communications/timeline/:personId?panel&includeDryRuns&limit` | `communications.read` | Per-person timeline and a per-panel contact-load score with its factors. Audited |
+| `GET /loyalty/liability?panel` | `loyalty.read` | Points per panel and bucket (approved, pending, reversed, redeemed), approved by category, pending by survey, last mirror times. Never summed across panels |
+| `GET /loyalty/persons/:personId` | `loyalty.read` | One wallet per panel membership with its latest ledger lines and survey outcomes. Audited |
+| `POST /loyalty/:panel/survey-approvals` `{surveySlug, note}` | `loyalty.approve` | Records the client's approval: that survey's pending completes move to approved in MADP's ledger only. 409 when none is pending |
+| `POST /loyalty/:panel/sync` | `loyalty.reconcile` | Reads the rewards and responses feeds from their checkpoints (also runs after every import and sync) |
+| `POST /loyalty/:panel/reconcile` `{repair}` · `GET /loyalty/reconciliations?panel` | `loyalty.reconcile` · `loyalty.read` | Full read compared with the ledger; repair books the differences. Covered by `apps/api/test/loyalty.test.ts` |
 | `GET /webhooks/inbox?panel` | `connectors.read` | Which panels have webhooks on, received and open counts, last 100 events (type and times only) |
 
 ## 2. Source panel endpoints MADP calls (verified in source, not live)
@@ -70,6 +75,7 @@ tenant host, because each panel resolves its tenant from the `Host` header.
 | Changed members | `GET /api/v1/changes/members?cursor&since&limit` (turn2opinion#20, not deployed) | same | same |
 | Changed answers | `GET /api/v1/changes/answers?cursor&since&limit` (turn2opinion#20, not deployed) | same | same |
 | Deletions | `GET /api/v1/changes/deletions?cursor&since&limit` (turn2opinion#20, not deployed) | same | same |
+| Rewards and survey responses | `GET /api/v1/changes/rewards` and `/changes/responses` (turn2opinion#24, not deployed) | same | same |
 
 All three panels run the T2O backend in production (confirmed 2026-11-23), so they share one endpoint map; only the
 host differs. MADP never requests direct identifiers (name, e-mail, phone, date of birth, postcode) as answers.
@@ -84,6 +90,8 @@ for the next call. Mounted at `/api/v1/changes` because `/api/v1/integration` is
 GET /api/v1/changes/members    ≤500  → items: member record (no guardian details, password or role), incl. isActive, isDeleted, parent consent status
 GET /api/v1/changes/answers    ≤1000 → items: {_id, user, question, answer: string[], updatedAt}; contact-detail questions left out
 GET /api/v1/changes/deletions  ≤1000 → items: {_id, kind: "member" | "answers", user, at}  (Tombstone written by admin delete and refresh)
+GET /api/v1/changes/rewards    ≤1000 → items: {_id, user, category, points, title, status, profile, createdAt, updatedAt}
+GET /api/v1/changes/responses  ≤1000 → items: {_id, user, survey, status, points, loi, source, startedAt, endedAt, isDeleted, createdAt, updatedAt}
 ```
 
 MADP reads them in `IngestionService.runSync` (members, then answers, then deletions, each from its own

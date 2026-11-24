@@ -60,6 +60,7 @@ type MemberRow = GateRow & Record<string, unknown> & {
   joined_at: Date | string | null;
   dob_enc: string | null;
   last_open_click: Date | string | null;
+  last_survey: Date | string | null;
   last_sent: Date | string | null;
   sent_steps: number[] | null;
 };
@@ -422,6 +423,8 @@ export class AutomationService {
           where cr.master_person_id = pm.master_person_id and cr.panel = pm.panel) as consent_by,
         (select max(e.occurred_at) from communication_event e where e.master_person_id = pm.master_person_id
           and e.panel = pm.panel and not e.dry_run and e.state in ('opened', 'clicked') and e.occurred_at <= ${asOf}) as last_open_click,
+        (select max(coalesce(sp.ended_at, sp.started_at)) from survey_participation sp where sp.panel_membership_id = pm.id
+          and coalesce(sp.ended_at, sp.started_at) <= ${asOf}) as last_survey,
         (select max(e.occurred_at) from communication_event e where e.master_person_id = pm.master_person_id
           and e.automation_id = ${a.id} and not e.dry_run and e.state = any(${contactStates}::text[]) and e.occurred_at <= ${asOf}) as last_sent,
         (select array_agg(distinct e.step) from communication_event e where e.master_person_id = pm.master_person_id
@@ -456,7 +459,7 @@ export class AutomationService {
       let step: AutomationStep | undefined;
       let preReason: Reason | null = null;
       if (trigger === 'inactivity') {
-        const last = [joined, profile!.get(r.person)?.lastAnswer ?? null, toDate(r.last_open_click)]
+        const last = [joined, profile!.get(r.person)?.lastAnswer ?? null, toDate(r.last_survey), toDate(r.last_open_click)]
           .filter((d): d is Date => !!d)
           .sort((x, y) => y.getTime() - x.getTime())[0];
         if (!last) {

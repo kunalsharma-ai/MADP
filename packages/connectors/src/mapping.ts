@@ -1,4 +1,6 @@
 import type {
+  SourceResponse,
+  SourceReward,
   PanelCode,
   SourceOption,
   SourceQuestion,
@@ -264,4 +266,70 @@ export function mapAnswerChange(panel: PanelCode, a: RawAnswerChange): SourceAns
 export function mapTombstone(panel: PanelCode, t: RawTombstone): SourceDeletion | null {
   if (t.kind !== 'member' && t.kind !== 'answers') return null;
   return { panel, sourceMemberId: String(t.user), kind: t.kind, at: iso(t.at) };
+}
+
+/** `GET /api/v1/changes/rewards` item (turn2opinion#24). */
+export interface RawReward {
+  _id: string;
+  user: string;
+  category?: string;
+  points?: unknown;
+  title?: string | null;
+  status?: string;
+  profile?: string | null;
+  createdAt?: string;
+  updatedAt?: string;
+}
+/** `GET /api/v1/changes/responses` item (turn2opinion#24). */
+export interface RawResponse {
+  _id: string;
+  user: string;
+  survey?: string | null;
+  status?: string;
+  points?: unknown;
+  loi?: unknown;
+  source?: string | null;
+  startedAt?: string | null;
+  endedAt?: string | null;
+  isDeleted?: boolean;
+  updatedAt?: string;
+}
+
+const int = (v: unknown) => {
+  const n = Math.round(Number(v));
+  return Number.isFinite(n) ? n : 0;
+};
+
+export function mapReward(panel: PanelCode, r: RawReward): SourceReward | null {
+  if (!r?._id || !r.user) return null;
+  return {
+    panel,
+    sourceRewardId: String(r._id),
+    sourceMemberId: String(r.user),
+    category: s(r.category) ?? 'unknown',
+    points: int(r.points),
+    title: s(r.title),
+    status: (s(r.status) ?? 'credited').toLowerCase(),
+    profileSlug: s(r.profile),
+    sourceCreatedAt: iso(r.createdAt),
+    sourceUpdatedAt: iso(r.updatedAt),
+  };
+}
+
+export function mapResponse(panel: PanelCode, r: RawResponse): SourceResponse | null {
+  if (!r?._id || !r.user) return null;
+  return {
+    panel,
+    sourceResponseId: String(r._id),
+    sourceMemberId: String(r.user),
+    surveySlug: s(r.survey),
+    status: (s(r.status) ?? 'invited').toLowerCase(),
+    points: int(r.points),
+    loi: Number(r.loi) || 0,
+    source: s(r.source),
+    startedAt: iso(r.startedAt),
+    endedAt: iso(r.endedAt),
+    isDeleted: r.isDeleted === true,
+    sourceUpdatedAt: iso(r.updatedAt),
+  };
 }

@@ -155,7 +155,7 @@ export default async function AutomationsPage({ searchParams }: { searchParams: 
       <DemoBanner mode={auto.dataMode} />
       <p className="mb-4 rounded-lg bg-surface-2 px-3 py-2 text-[13px] text-fg-2">
         Activity that counts for inactivity: {auto.qualifyingActivity.map((a) => a.replaceAll('_', ' ')).join(', ')}. The panels do
-        not export logins or survey completions yet, so those cannot count until they do.
+        not export logins, so those cannot count until they do.
       </p>
       <div className="grid gap-4">
         <Card>

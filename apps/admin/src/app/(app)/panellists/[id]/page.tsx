@@ -13,6 +13,7 @@ import {
   PageHeader,
   PanelChip,
   Table,
+  fmt,
   fmtDate,
 } from '@/components/ui';
 
@@ -48,11 +49,22 @@ export default async function PanellistPage({
   }
   const byPanel = Object.groupBy(d.answers, (a) => a.panel);
   type Timeline = {
-    items: { id: string; panel: keyof typeof PANELS; state: string; reason: string | null; dryRun: boolean; plannedFor: string | null; occurredAt: string; campaign: string | null }[];
+    items: { id: string; panel: keyof typeof PANELS; state: string; reason: string | null; dryRun: boolean; plannedFor: string | null; occurredAt: string; campaign: string | null; automation?: string | null; step?: number | null }[];
     fatigue: { panel: keyof typeof PANELS; score: number | null; band: string; factors: { factor: string; value: number; points: number }[] }[];
   };
   // Only roles with communications.read see the timeline; others get the profile without it.
   const timeline = await api<Timeline>(`/communications/timeline/${encodeURIComponent(id)}?limit=50`).catch(() => null);
+  type Wallets = {
+    accounts: {
+      panel: keyof typeof PANELS;
+      membershipStatus: string;
+      balances: { approved: number; pending: number; reversed: number; redeemed: number };
+      surveys: Record<string, number>;
+      lines: { id: number; bucket: string; points: number; entryKind: string; category: string; reference: string | null; sourceStatus: string | null; recordedAt: string }[];
+    }[];
+  };
+  // Only roles with loyalty.read see the wallets.
+  const wallets = await api<Wallets>(`/loyalty/persons/${encodeURIComponent(id)}`).catch(() => null);
   return (
     <>
       <PageHeader
@@ -231,7 +243,7 @@ export default async function PanellistPage({
               {timeline.items.map((e) => (
                 <li key={e.id} className="flex flex-wrap items-center gap-2 px-5 py-2 text-[13px]">
                   <PanelChip panel={e.panel} />
-                  <span>{e.campaign ?? 'Message'}</span>
+                  <span>{e.campaign ?? (e.automation ? `${e.automation}${e.step !== null && e.step !== undefined ? ` · day ${e.step}` : ''}` : 'Message')}</span>
                   <Badge tone={e.state === 'suppressed' ? 'warn' : 'neutral'}>{e.state}</Badge>
                   {e.reason ? <span className="text-fg-3">{e.reason.replaceAll('_', ' ')}</span> : null}
                   {e.dryRun ? <Badge>dry run</Badge> : null}
@@ -244,6 +256,40 @@ export default async function PanellistPage({
           ) : (
             <p className="px-5 py-6 text-sm text-fg-3">No messages yet.</p>
           )}
+        </Card>
+      ) : null}
+      {wallets?.accounts.length ? (
+        <Card className="mt-4">
+          <CardHeader title="Reward wallets" hint="One per panel, mirrored read-only from the panel and never added together. Survey completes stay pending until the client approves them." />
+          <ul className="divide-y divide-border">
+            {wallets.accounts.map((a) => (
+              <li key={a.panel} className="px-5 py-4 text-[13px]">
+                <div className="flex flex-wrap items-center gap-3">
+                  <PanelChip panel={a.panel} />
+                  <span>
+                    <span className="font-medium">{fmt(a.balances.approved)}</span> approved
+                  </span>
+                  <span className="text-fg-2">{fmt(a.balances.pending)} pending</span>
+                  {a.balances.reversed ? <span className="text-fg-3">{fmt(a.balances.reversed)} reversed</span> : null}
+                  <span className="text-fg-3">
+                    Surveys: {Object.entries(a.surveys).map(([k, n]) => `${k} ${n}`).join(', ') || 'none'}
+                  </span>
+                  {a.membershipStatus !== 'active' ? <Badge tone="warn">membership {a.membershipStatus}</Badge> : null}
+                </div>
+                <ul className="mt-2 space-y-0.5 text-[12px] text-fg-2">
+                  {a.lines.slice(0, 8).map((l) => (
+                    <li key={l.id} className="flex flex-wrap gap-2">
+                      <span className="w-14 text-right font-mono">{l.points > 0 ? `+${l.points}` : l.points}</span>
+                      <span className="w-20">{l.bucket}</span>
+                      <span>{l.category}{l.reference ? ` · ${l.reference}` : ''}</span>
+                      {l.entryKind === 'approval' ? <Badge tone="teal">client approval</Badge> : null}
+                      <span className="ml-auto text-fg-3">{fmtDate(l.recordedAt)}</span>
+                    </li>
+                  ))}
+                </ul>
+              </li>
+            ))}
+          </ul>
         </Card>
       ) : null}
     </>

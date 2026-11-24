@@ -202,3 +202,29 @@ export async function automationAction(id: string, action: 'pause' | 'resume' | 
   revalidatePath('/communications/automations');
   return action === 'dry_run' ? `Dry run: ${(r as { planned: number }).planned} of ${(r as { due: number }).due} due would get it` : r;
 }
+
+export async function approveSurveyAction(panel: string, surveySlug: string, note: string) {
+  const r = await api<{ completes: number; points: number }>(`/loyalty/${encodeURIComponent(panel)}/survey-approvals`, {
+    method: 'POST',
+    json: { surveySlug, note },
+  });
+  revalidatePath('/loyalty');
+  return `Approved ${r.completes} completes (${r.points} points)`;
+}
+
+export async function loyaltyAction(panel: string, action: 'sync' | 'reconcile' | 'repair') {
+  const p = encodeURIComponent(panel);
+  if (action === 'sync') {
+    const r = await api<{ status: string; linesWritten: number }>(`/loyalty/${p}/sync`, { method: 'POST', json: {} });
+    revalidatePath('/loyalty');
+    return r.status === 'succeeded' ? `Mirror updated: ${r.linesWritten} new ledger lines` : `Not available: ${r.status}`;
+  }
+  const r = await api<{ matches: boolean; missing: number; different: number; onlyInMadp: number; unmatched: number }>(
+    `/loyalty/${p}/reconcile`,
+    { method: 'POST', json: { repair: action === 'repair' } },
+  );
+  revalidatePath('/loyalty');
+  return r.matches
+    ? `Matches the panel${r.unmatched ? ` (${r.unmatched} rows of members MADP does not know)` : ''}`
+    : `Differences: ${r.missing} missing, ${r.different} different, ${r.onlyInMadp} only in MADP`;
+}

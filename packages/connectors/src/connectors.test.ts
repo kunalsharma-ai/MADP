@@ -342,3 +342,16 @@ describe('PanelApiConnector retry and backoff', () => {
     expect(parseRetryAfter(null)).toBeUndefined();
   });
 });
+
+describe('reward and response feeds (turn2opinion#24)', () => {
+  it('maps reward rows and responses, keeping only what the feed sends', async () => {
+    const { mapReward, mapResponse } = await import('./mapping.js');
+    expect(mapReward('mfr', { _id: 'a', user: 'u', category: 'profile', points: '50', status: 'Credited', profile: 'basic', updatedAt: '2026-11-24T00:00:00.000Z' })).toMatchObject({
+      panel: 'mfr', sourceRewardId: 'a', sourceMemberId: 'u', points: 50, status: 'credited', profileSlug: 'basic', title: null,
+    });
+    expect(mapReward('mfr', { _id: '', user: 'u' })).toBeNull();
+    expect(mapResponse('mho', { _id: 'r', user: 'u', survey: 's1', status: 'COMPLETE', points: 120, isDeleted: false })).toMatchObject({
+      panel: 'mho', sourceResponseId: 'r', surveySlug: 's1', status: 'complete', points: 120, isDeleted: false, startedAt: null,
+    });
+  });
+});
