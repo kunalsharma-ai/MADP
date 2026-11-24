@@ -36,6 +36,9 @@ import {
   Building2,
   ClipboardList,
   Gauge,
+  LifeBuoy,
+  MessageSquare,
+  BookOpen,
 } from 'lucide-react';
 import type { SessionUser } from '@madp/contracts';
 import { NAV, PLANNED } from './nav';
@@ -68,6 +71,9 @@ const ICONS = {
   Building2,
   ClipboardList,
   Gauge,
+  LifeBuoy,
+  MessageSquare,
+  BookOpen,
 } as const;
 const BRAND_LABEL: Record<string, string> = {
   all: 'All brands',

@@ -394,3 +394,13 @@ Screenshots are in `docs/screenshots/`.
 - Tests: `apps/api/test/panel-admin-step3.test.ts` (6), MFR `tests/admin.step3.test.mjs` (6).
 - Previews: `/mnt/project-files/madp/preview-console/step3a-segments-surveys-points-quality/` (DEMO data).
 - Not done: the T2O and MHO columns need their panel admin API connected (step 6). Live verification waits for deploy.
+
+## Super admin step 3b: ticket desk, portal messages, help centre (24 Nov 2026)
+
+- Panel side (kunalsharma-ai/MFR#52, merged, not deployed): `/api/admin/v1` tickets, messages and help. Members get
+  portal messages from `GET /api/v1/alerts` (the bell and Messages page already called it) and published help entries
+  from `GET /api/v1/help`.
+- MADP: `SupportAdminController`. Nothing is e-mailed. Ticket replies and notes are audited without their text.
+  A message that reaches teens needs `teen.read`; a ticket from a teen needs `teen.read`.
+- Screens: Ticket desk (list and detail), Portal messages, Help centre.
+- Tests: `apps/api/test/panel-admin-step3b.test.ts` (3), MFR `tests/admin.step3b.test.mjs` (3).

@@ -386,3 +386,101 @@ export const QualityReview = z.object({
 export type QualityReview = z.infer<typeof QualityReview>;
 export const ReferralFraud = z.object({ minReferrals: z.coerce.number().int().min(2).max(1000).default(5) });
 export type ReferralFraud = z.infer<typeof ReferralFraud>;
+
+// ---- step 3b: ticket desk, portal messages, help centre ------------------------------------------------------------
+export const TicketStatus = z.enum(['new', 'open', 'pending', 'resolved', 'closed']);
+export const TicketPriority = z.enum(['low', 'normal', 'high', 'urgent']);
+export const TicketList = z.object({
+  status: z.union([TicketStatus, z.literal('open_all')]).optional(),
+  priority: TicketPriority.optional(),
+  assignedTo: z.string().trim().max(120).optional(),
+  q: z.string().trim().max(80).optional(),
+  page: z.coerce.number().int().min(1).max(10_000).optional(),
+});
+export type TicketList = z.infer<typeof TicketList>;
+export const TicketReply = z.object({
+  message: z.string().trim().min(2).max(5000),
+  internal: z.boolean().default(false),
+  status: TicketStatus.optional(),
+});
+export type TicketReply = z.infer<typeof TicketReply>;
+export const TicketStatusChange = z.object({
+  status: TicketStatus,
+  reason: z.string().trim().max(500).optional(),
+});
+export type TicketStatusChange = z.infer<typeof TicketStatusChange>;
+export const TicketUpdate = z
+  .object({
+    priority: TicketPriority.optional(),
+    assignedTo: z.string().trim().max(120).optional(),
+    category: z.string().trim().max(60).optional(),
+  })
+  .strict();
+export type TicketUpdate = z.infer<typeof TicketUpdate>;
+
+const MemberPath = z
+  .string()
+  .trim()
+  .regex(/^\/member(\/[A-Za-z0-9/_?=&.-]*)?$/, 'a member-area path like /member/surveys')
+  .or(z.literal(''));
+const MessageFields = {
+  title: z.string().trim().min(1).max(120),
+  subtitle: z.string().trim().max(200).optional(),
+  body: z.string().trim().min(1).max(4000),
+  cta: MemberPath.optional(),
+  ctaLabel: z.string().trim().max(60).optional(),
+  filter: AudienceFilter.optional(),
+};
+export const MessageCreate = z.object(MessageFields).strict();
+export type MessageCreate = z.infer<typeof MessageCreate>;
+export const MessageUpdate = z.object(MessageFields).partial().strict();
+export type MessageUpdate = z.infer<typeof MessageUpdate>;
+export const MessageSend = z.object({ audienceId: ObjectId.optional(), reason: Reason });
+export type MessageSend = z.infer<typeof MessageSend>;
+export const MessagePreview = z.object({ audienceId: ObjectId.optional() });
+export type MessagePreview = z.infer<typeof MessagePreview>;
+export const MessageWithdraw = z.object({ reason: Reason });
+export type MessageWithdraw = z.infer<typeof MessageWithdraw>;
+
+export const HelpTopic = z.enum([
+  'start',
+  'profiles',
+  'surveys',
+  'rewards',
+  'quality',
+  'activity',
+  'referrals',
+  'account',
+  'settings',
+  'pro',
+  'teen',
+  'support',
+]);
+const HelpText = z.string().trim().min(1).max(2000);
+export const HelpBlock = z.union([
+  HelpText,
+  z.object({ ul: z.array(HelpText).min(1).max(30) }).strict(),
+  z.object({ ol: z.array(HelpText).min(1).max(30) }).strict(),
+  z.object({ note: HelpText }).strict(),
+]);
+const HelpFields = {
+  slug: z
+    .string()
+    .trim()
+    .toLowerCase()
+    .regex(/^[a-z0-9][a-z0-9-]{1,79}$/),
+  topic: HelpTopic,
+  title: z.string().trim().min(3).max(200),
+  body: z.array(HelpBlock).min(1).max(40),
+  keywords: z.array(z.string().trim().toLowerCase().min(1).max(40)).max(30).optional(),
+  types: z
+    .array(z.enum(['consumer', 'professional', 'teen']))
+    .max(3)
+    .optional(),
+};
+export const HelpCreate = z.object(HelpFields).strict();
+export type HelpCreate = z.infer<typeof HelpCreate>;
+export const HelpUpdate = z.object(HelpFields).partial().strict();
+export type HelpUpdate = z.infer<typeof HelpUpdate>;
+export const HelpStatus = z.object({ status: z.enum(['draft', 'published', 'archived']) });
+export type HelpStatus = z.infer<typeof HelpStatus>;
