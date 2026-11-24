@@ -40,6 +40,11 @@ import {
   LifeBuoy,
   MessageSquare,
   BookOpen,
+  Gift,
+  Flame,
+  Sprout,
+  FileX2,
+  ToggleRight,
 } from 'lucide-react';
 import type { SessionUser } from '@madp/contracts';
 import { NAV, PLANNED } from './nav';
@@ -77,6 +82,11 @@ const ICONS = {
   LifeBuoy,
   MessageSquare,
   BookOpen,
+  Gift,
+  Flame,
+  Sprout,
+  FileX2,
+  ToggleRight,
 } as const;
 const BRAND_LABEL: Record<string, string> = {
   all: 'All brands',
