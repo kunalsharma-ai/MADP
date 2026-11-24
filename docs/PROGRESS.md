@@ -568,3 +568,14 @@ Panel side: kunalsharma-ai/MFR#56 (and #57), merged, not deployed. Before deploy
   questions.
 - Tests: `packages/contracts/src/questionnaire.test.ts` (9) and `apps/api/test/questionnaire.test.ts` (16, T2O, MFR
   and MHO against a stand-in panel). Previews 80 to 85 use a preview-only stand-in panel with DEMO questions.
+
+## Super admin step 5: reports and dashboards (24 Nov 2026)
+
+The eleven reports from the spec, read from each panel's admin API (`GET /api/admin/v1/reports/:name`,
+kunalsharma-ai/MFR#58, merged, not deployed) and registered in the report registry, so they show on Reports & exports
+with CSV and Excel downloads like the others: panel health, sign-up funnel, teen pipeline (needs `teen.read`),
+profile completion, survey performance, points and liability by segment (valued at each brand's points rate),
+redemptions, quality, referrals, support and engagement. One block of rows per panel, never added across panels;
+country rows blank counts below `MIN_CELL_SIZE`; a panel whose admin API is not connected gets a note instead of rows.
+The panel returns aggregate counts only (no names or e-mails). Test: `panel-admin-step4.test.ts` (9 pass); MFR
+`tests/admin.reports.test.mjs` (2 pass).
