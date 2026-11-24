@@ -190,6 +190,8 @@ export class PanelApiConnector implements PanelConnector {
       const res = await (this.cfg.fetchImpl ?? fetch)(new URL(path, this.cfg.baseUrl), {
         method,
         signal: ctrl.signal,
+        // A panel API never redirects. Refusing to follow one keeps the bearer token from being sent anywhere else.
+        redirect: 'error',
         headers: {
           accept: 'application/json',
           'content-type': 'application/json',

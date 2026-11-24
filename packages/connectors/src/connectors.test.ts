@@ -319,6 +319,23 @@ describe('PanelApiConnector retry and backoff', () => {
     expect(sleeps[1]).toBeLessThanOrEqual(200);
   });
 
+  it('never follows a redirect, so the bearer token stays with the panel', async () => {
+    let init: RequestInit | undefined;
+    const c = new PanelApiConnector('t2o', {
+      baseUrl: 'https://panel.example.invalid',
+      tenantHost: 'panel.example.invalid',
+      bearerToken: 'good',
+      minIntervalMs: 0,
+      maxRetries: 0,
+      fetchImpl: (async (_u: URL, i: RequestInit) => {
+        init = i;
+        return envelope(200, { status: 'success', data: [] });
+      }) as unknown as typeof fetch,
+    });
+    await c.listQuestions();
+    expect(init?.redirect).toBe('error');
+  });
+
   it('retries network errors and gives up after maxRetries with the last error', async () => {
     const { c, calls } = build([() => Promise.reject(new TypeError('fetch failed'))], 2);
     await expect(c.listQuestions()).rejects.toMatchObject({ kind: 'source_error', message: /fetch failed/ });

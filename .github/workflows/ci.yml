@@ -29,6 +29,11 @@ jobs:
       - uses: actions/setup-node@v5
         with: { node-version-file: .nvmrc, cache: pnpm }
       - run: pnpm install --frozen-lockfile
+      # Security gates (Kunal, 24 Nov 2026): no committed secrets, and no known high or critical advisory in what ships.
+      - name: Secret scan
+        run: pnpm exec secretlint "**/*"
+      - name: Dependency audit (production dependencies)
+        run: pnpm audit --prod --audit-level high
       - run: pnpm build
       - run: pnpm typecheck
       - run: pnpm test
