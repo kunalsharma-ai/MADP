@@ -601,8 +601,10 @@ describe('super admin step 4 through the panel admin API', () => {
     expect(panel.seen.at(-1)!.path).toBe('/api/admin/v1/reports/panel_health?from=2026-11-01&to=2026-11-24');
     const india = r.body.rows.find((x: { country: string | null }) => x.country === 'india');
     expect([india.total, india.active30, india.newInPeriod]).toEqual([40, null, 12]);
-    const noCountry = r.body.rows.find((x: { country: string | null }) => x.country === null);
+    // A member with no country comes back as an empty value, never as "suppressed".
+    const noCountry = r.body.rows.find((x: { country: string | null }) => x.country === '');
     expect(noCountry.total).toBe(2);
+    expect(r.body.rows.some((x: Record<string, unknown>) => x.segmentLabel === null)).toBe(false);
     const pts = await request(t.server)
       .get('/api/v1/reports/points_by_segment')
       .set(bearer(superToken, 'mfr'))

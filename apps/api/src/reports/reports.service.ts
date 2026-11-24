@@ -100,7 +100,12 @@ export class ReportsService {
               from: iso(c.from),
               to: iso(c.to),
             });
-            let list: Row[] = r.rows.map((x) => ({ panel, ...x }));
+            // A null from the panel means "no value" (for example no guardian replies yet). Only MADP's own small-cell
+            // rule below sets null, which the console shows as suppressed.
+            let list: Row[] = r.rows.map((x) => ({
+              panel,
+              ...Object.fromEntries(Object.entries(x).map(([k, v]) => [k, v === null ? '' : v])),
+            }));
             if (opts.value) list = await opts.value(list, panel);
             for (const row of list) {
               if (row.country && opts.countryCounts)
@@ -741,7 +746,12 @@ export class ReportsService {
       generatedAt: new Date().toISOString(),
       period: d.period ? { from: iso(from), to: iso(to) } : null,
       columns: d.columns,
-      rows: r.rows,
+      // A field a row does not carry is empty, not suppressed: only a null means "too few people to show".
+      rows: r.rows.map((row) => {
+        const out = { ...row };
+        for (const c of d.columns) if (out[c.key] === undefined) out[c.key] = '';
+        return out;
+      }),
       notes: r.notes ?? [],
     };
   }
