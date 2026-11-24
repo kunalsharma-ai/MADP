@@ -266,3 +266,17 @@ export async function purgeRetentionAction(key: string) {
   revalidatePath('/privacy');
   return `${r.removed} rows removed`;
 }
+
+export async function recordEvidenceAction(input: { personId: string; panel: string; claim: string; method: string; reference: string; expiresOn?: string }) {
+  await api('/verification/evidence', { method: 'POST', json: input });
+  revalidatePath('/verification');
+  return 'Recorded. A second reviewer must verify or reject it.';
+}
+
+export async function evidenceStepAction(id: string, step: 'verified' | 'rejected' | 'revoke', note: string) {
+  const path = step === 'revoke' ? 'revoke' : 'decision';
+  const json = step === 'revoke' ? { note } : { decision: step, note };
+  const r = await api<{ status: string }>(`/verification/evidence/${encodeURIComponent(id)}/${path}`, { method: 'POST', json });
+  revalidatePath('/verification');
+  return `Evidence is now ${r.status}`;
+}
