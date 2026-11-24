@@ -20,11 +20,11 @@ export const TRIGGER_KINDS: Record<AutomationTrigger, CampaignKind[]> = {
 };
 
 /**
- * What counts as activity for inactivity: joining the panel, a profile answer the panel reports as changed, or a
- * real (not dry-run) open or click on a message. The panels do not export logins or survey completions yet, so
- * those cannot count until they do.
+ * What counts as activity for inactivity: joining the panel, a profile answer the panel reports as changed, a survey
+ * response (started or finished, from the panel's responses feed), or a real (not dry-run) open or click on a
+ * message. The panels do not export logins, so those cannot count until they do.
  */
-export const QUALIFYING_ACTIVITY = ['joined', 'profile_answer_updated', 'message_opened_or_clicked'] as const;
+export const QUALIFYING_ACTIVITY = ['joined', 'profile_answer_updated', 'survey_response', 'message_opened_or_clicked'] as const;
 
 export const AutomationStep = z.object({
   /**

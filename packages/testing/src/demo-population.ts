@@ -220,3 +220,55 @@ export function generateDemoPopulation({
   }
   return { respondents, answers };
 }
+
+/**
+ * DEMO reward rows and survey responses for a population, from their own seed so the people stay the same.
+ * Profile credits look like the panel's (50 points per finished profile); survey responses mix completes,
+ * terminates and invitations, and a few completes are later reversed to `terminate` by the panel.
+ */
+export function generateDemoLoyalty(pop: DemoPopulation, seed = 20261124) {
+  const r = rng(seed);
+  const rewards: import('@madp/contracts').SourceReward[] = [];
+  const responses: import('@madp/contracts').SourceResponse[] = [];
+  const surveys = ['demo-survey-a', 'demo-survey-b', 'demo-survey-c', 'demo-survey-d'];
+  for (const m of pop.respondents) {
+    if (m.isStaff) continue;
+    const created = m.sourceCreatedAt ?? '2026-01-01T00:00:00.000Z';
+    const at = (days: number) => new Date(Date.parse(created) + days * 86_400_000).toISOString();
+    for (const [k, slug] of ['basic', 'household'].entries()) {
+      if (k > 0 && r() < 0.5) continue;
+      rewards.push({
+        panel: m.panel,
+        sourceRewardId: `demo-rw-${m.sourceMemberId}-${slug}`,
+        sourceMemberId: m.sourceMemberId,
+        category: 'profile',
+        points: 50,
+        title: slug,
+        status: 'credited',
+        profileSlug: slug,
+        sourceCreatedAt: at(k + 1),
+        sourceUpdatedAt: at(k + 1),
+      });
+    }
+    const taken = surveys.filter(() => r() < 0.4);
+    for (const [k, slug] of taken.entries()) {
+      const roll = r();
+      const status = roll < 0.55 ? 'complete' : roll < 0.8 ? 'terminate' : 'invited';
+      responses.push({
+        panel: m.panel,
+        sourceResponseId: `demo-rs-${m.sourceMemberId}-${slug}`,
+        sourceMemberId: m.sourceMemberId,
+        surveySlug: slug,
+        status,
+        points: status === 'complete' ? 100 + 20 * k : 0,
+        loi: 10 + k * 5,
+        source: 'demo',
+        startedAt: at(10 + k),
+        endedAt: status === 'invited' ? null : at(10 + k),
+        isDeleted: false,
+        sourceUpdatedAt: at(10 + k),
+      });
+    }
+  }
+  return { rewards, responses };
+}

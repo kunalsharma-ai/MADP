@@ -8,6 +8,7 @@ import {
   jsonb,
   pgEnum,
   pgTable,
+  real,
   smallint,
   text,
   timestamp,
@@ -601,4 +602,104 @@ export const automationRuns = pgTable('automation_run', {
   requestedBy: uuid('requested_by'),
   startedAt: timestamp('started_at', { withTimezone: true }).notNull().defaultNow(),
   finishedAt: timestamp('finished_at', { withTimezone: true }),
+});
+
+// Loyalty (Milestone 5). Each panel keeps its own wallet: MADP mirrors it read-only, per panel membership, and
+// never merges balances across panels, even for one person.
+
+/** One wallet mirror per panel membership. */
+export const loyaltyAccounts = pgTable(
+  'loyalty_account',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    dataMode: dataMode('data_mode').notNull(),
+    panel: panelCode('panel').notNull(),
+    panelMembershipId: uuid('panel_membership_id')
+      .notNull()
+      .references(() => panelMemberships.id),
+    sourceMemberId: text('source_member_id').notNull(),
+    createdAt: created(),
+  },
+  (t) => [
+    uniqueIndex('loyalty_account_membership_key').on(t.panelMembershipId),
+    uniqueIndex('loyalty_account_source_key').on(t.dataMode, t.panel, t.sourceMemberId),
+  ],
+);
+
+/**
+ * Append-only reward ledger (a trigger rejects updates and deletes). Each line moves `points` (signed) into one
+ * bucket: pending, approved, reversed or redeemed. A source row's position is the bucket its lines leave
+ * non-zero; a change at the source appends lines that move it, numbered by `seq`, so re-reading a feed never
+ * books anything twice.
+ */
+export const rewardLedger = pgTable(
+  'reward_ledger',
+  {
+    id: bigserial('id', { mode: 'number' }).primaryKey(),
+    dataMode: dataMode('data_mode').notNull(),
+    panel: panelCode('panel').notNull(),
+    accountId: uuid('account_id')
+      .notNull()
+      .references(() => loyaltyAccounts.id),
+    /** reward (panel Rewards row) or response (panel survey Response). */
+    sourceKind: text('source_kind').notNull(),
+    sourceRef: text('source_ref').notNull(),
+    seq: integer('seq').notNull(),
+    bucket: text('bucket').notNull(),
+    points: integer('points').notNull(),
+    /** mirror (follows the panel) or approval (a MADP decision on a pending survey complete). */
+    entryKind: text('entry_kind').notNull(),
+    category: text('category').notNull(),
+    /** Profile slug or survey slug. */
+    reference: text('reference'),
+    sourceStatus: text('source_status'),
+    sourceUpdatedAt: timestamp('source_updated_at', { withTimezone: true }),
+    importJobId: uuid('import_job_id'),
+    decidedBy: uuid('decided_by'),
+    note: text('note'),
+    recordedAt: timestamp('recorded_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    uniqueIndex('reward_ledger_source_seq_key').on(t.dataMode, t.panel, t.sourceKind, t.sourceRef, t.seq),
+    index('reward_ledger_account_idx').on(t.accountId, t.recordedAt),
+    index('reward_ledger_panel_bucket_idx').on(t.dataMode, t.panel, t.bucket),
+  ],
+);
+
+/** Survey responses as the panel reports them: who took which survey, the outcome and its points. */
+export const surveyParticipations = pgTable(
+  'survey_participation',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    dataMode: dataMode('data_mode').notNull(),
+    panel: panelCode('panel').notNull(),
+    panelMembershipId: uuid('panel_membership_id')
+      .notNull()
+      .references(() => panelMemberships.id),
+    sourceResponseId: text('source_response_id').notNull(),
+    surveySlug: text('survey_slug'),
+    status: text('status').notNull(),
+    points: integer('points').notNull().default(0),
+    loi: real('loi'),
+    source: text('source'),
+    startedAt: timestamp('started_at', { withTimezone: true }),
+    endedAt: timestamp('ended_at', { withTimezone: true }),
+    sourceUpdatedAt: timestamp('source_updated_at', { withTimezone: true }),
+    updatedAt: updated(),
+  },
+  (t) => [
+    uniqueIndex('survey_participation_source_key').on(t.dataMode, t.panel, t.sourceResponseId),
+    index('survey_participation_membership_idx').on(t.panelMembershipId, t.endedAt),
+  ],
+);
+
+/** A reconciliation of one panel's mirrored ledger against a full read of the panel's feeds. */
+export const loyaltyReconciliations = pgTable('loyalty_reconciliation', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  dataMode: dataMode('data_mode').notNull(),
+  panel: panelCode('panel').notNull(),
+  repaired: boolean('repaired').notNull(),
+  report: jsonb('report').notNull(),
+  requestedBy: uuid('requested_by'),
+  at: timestamp('at', { withTimezone: true }).notNull().defaultNow(),
 });

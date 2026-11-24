@@ -12,6 +12,8 @@ import type {
   SourceQuestion,
   SourceQuestionnaire,
   SourceRespondent,
+  SourceResponse,
+  SourceReward,
 } from '@madp/contracts';
 
 /**
@@ -37,6 +39,9 @@ export interface PanelConnector {
   memberChanges?(q: ChangeQuery): Promise<SourceChangePage<SourceRespondent>>;
   answerChanges?(q: ChangeQuery): Promise<SourceChangePage<SourceAnswer>>;
   deletions?(q: ChangeQuery): Promise<SourceChangePage<SourceDeletion>>;
+  /** Reward rows and survey responses (turn2opinion#24), for the read-only loyalty mirror. */
+  rewardChanges?(q: ChangeQuery): Promise<SourceChangePage<SourceReward>>;
+  responseChanges?(q: ChangeQuery): Promise<SourceChangePage<SourceResponse>>;
 }
 
 export class ConnectorError extends Error {

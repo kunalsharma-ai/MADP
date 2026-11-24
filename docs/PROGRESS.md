@@ -105,6 +105,30 @@ Staff accounts are now skipped (`isStaff`, kunalsharma-ai/turn2opinion#21, merge
 - Admin screen: Engagement → Lifecycle automations, with the builder, versions, dry runs and the calendar.
 - Tests: `test/automations.test.ts` (9, on all three panels) and unit tests for dates and the gate.
 
+### Loyalty ledger mirror and reconciliation (2026-11-24)
+- The T2O backend now serves admin-only feeds of reward rows and survey responses
+  (`/api/v1/changes/rewards` and `/changes/responses`, turn2opinion#24, merged, not deployed). Free-text reward
+  remarks, response telemetry and review notes are left out.
+- MADP mirrors each panel's wallet read-only, with one account per panel membership. Balances are never added
+  across panels, even for one person. Nothing in MADP writes to a panel wallet.
+- The ledger is append-only (a database trigger rejects edits and deletes). A change at the panel adds lines that
+  move points between pending, approved, reversed and redeemed, so reading a feed again never books anything twice.
+- Credited panel rewards mirror as approved. Survey completes stay pending until someone with `loyalty.approve`
+  records the client's approval for that survey. A complete that later becomes a terminate, or is deleted, is
+  reversed.
+- The mirror runs after every import and sync. A panel that does not serve the feeds yet is reported as not
+  supported, and the sync still succeeds.
+- Reconciliation reads both feeds in full and compares every row with the ledger: rows missing, rows that differ,
+  rows of members MADP does not know, and rows only MADP still holds. It also compares the panel's own balance rule
+  (credited rewards plus complete survey points) with MADP's approved plus pending. Repair books the differences
+  and reverses rows the panel no longer has. Every run is kept.
+- The liability report gives points per panel and bucket. There is no money value, because the panels do not record
+  one, and no redemptions, because the panels have none yet.
+- Survey responses are kept per membership and count as activity for inactivity automations. A removed member's
+  survey history is deleted; their ledger lines stay, because reward liabilities must stay auditable.
+- Admin screens: Loyalty → Loyalty ledger, and reward wallets on the 360° profile.
+- Tests: `test/loyalty.test.ts` (6, all three panels), `src/loyalty/position.test.ts` (4), and connector mapping.
+
 ### Next for T2O
 A T2O-only dry run against the live backend once the token is in the cloud environment, with counts shown to Kunal
 before any write.

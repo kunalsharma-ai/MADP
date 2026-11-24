@@ -137,3 +137,42 @@ export interface ChangeQuery {
   since?: string | null;
   limit: number;
 }
+
+/**
+ * A reward row from a panel's wallet (T2O `Rewards`, `GET /api/v1/changes/rewards`, turn2opinion#24). The panel
+ * owns the wallet; MADP keeps a read-only mirror. `status` is the panel's own value (`credited` today).
+ */
+export const SourceReward = z.object({
+  panel: PanelCode,
+  sourceRewardId: z.string().min(1),
+  sourceMemberId: z.string().min(1),
+  category: z.string(),
+  points: z.number().int(),
+  title: z.string().nullable(),
+  status: z.string(),
+  /** The profile slug, for profile-completion credits only. */
+  profileSlug: z.string().nullable(),
+  sourceCreatedAt: z.string().datetime().nullable(),
+  sourceUpdatedAt: z.string().datetime().nullable(),
+});
+export type SourceReward = z.infer<typeof SourceReward>;
+
+/**
+ * A survey response (T2O `Response`, `GET /api/v1/changes/responses`, turn2opinion#24): who took which survey,
+ * the outcome and the points it carries. The panel adds a complete response's points to the member's balance.
+ */
+export const SourceResponse = z.object({
+  panel: PanelCode,
+  sourceResponseId: z.string().min(1),
+  sourceMemberId: z.string().min(1),
+  surveySlug: z.string().nullable(),
+  status: z.string(),
+  points: z.number().int(),
+  loi: z.number(),
+  source: z.string().nullable(),
+  startedAt: z.string().datetime().nullable(),
+  endedAt: z.string().datetime().nullable(),
+  isDeleted: z.boolean(),
+  sourceUpdatedAt: z.string().datetime().nullable(),
+});
+export type SourceResponse = z.infer<typeof SourceResponse>;

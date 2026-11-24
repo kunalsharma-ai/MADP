@@ -7,3 +7,4 @@ export * from './identity.js';
 export * from './webhooks.js';
 export * from './engagement.js';
 export * from './automation.js';
+export * from './loyalty.js';

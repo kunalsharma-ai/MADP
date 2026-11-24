@@ -29,6 +29,8 @@ import { EngagementService } from './engagement/engagement.service.js';
 import { EngagementController } from './engagement/engagement.controller.js';
 import { AutomationService } from './engagement/automation.service.js';
 import { AutomationController } from './engagement/automation.controller.js';
+import { LoyaltyService } from './loyalty/loyalty.service.js';
+import { LoyaltyController } from './loyalty/loyalty.controller.js';
 import { HealthController } from './common/health.controller.js';
 import { MetaController } from './common/meta.controller.js';
 
@@ -52,6 +54,7 @@ export class AppModule {
         WebhookController,
         EngagementController,
         AutomationController,
+        LoyaltyController,
       ],
       providers: [
         { provide: API_ENV, useValue: env },
@@ -69,6 +72,7 @@ export class AppModule {
         WebhookService,
         EngagementService,
         AutomationService,
+        LoyaltyService,
         { provide: APP_GUARD, useClass: ThrottlerGuard },
         { provide: APP_GUARD, useClass: AuthGuard },
       ],

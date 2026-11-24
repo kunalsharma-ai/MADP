@@ -174,7 +174,7 @@ describe('automations', () => {
     });
     const later = new Date(Date.now() + 400 * DAY);
     const first = await run(id, later);
-    expect(first.qualifyingActivity).toEqual(['joined', 'profile_answer_updated', 'message_opened_or_clicked']);
+    expect(first.qualifyingActivity).toEqual(['joined', 'profile_answer_updated', 'survey_response', 'message_opened_or_clicked']);
     expect(first.due).toBeGreaterThan(0);
     expect(Object.keys(first.byStep)).toEqual(['90']);
     // No panel exports an e-mail marketing consent, so a marketing message reaches nobody.

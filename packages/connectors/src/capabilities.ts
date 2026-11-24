@@ -67,7 +67,7 @@ const T2O_BACKEND: CapabilityFinding[] = [
     capability: 'rewards.read',
     status: 'partial',
     evidence:
-      'Rewards model (express-web-tools MongooseModel) + Response.points; GET /api/v1/me/rewards is member-scoped',
+      'Rewards model + Response.points. Admin feeds GET /api/v1/changes/rewards and /changes/responses (turn2opinion#24, merged, not deployed); no redemption or reversal states at source',
   },
   { capability: 'webhooks', status: 'missing', evidence: 'No webhook emitter in backend' },
   {
