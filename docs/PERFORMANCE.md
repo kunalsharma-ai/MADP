@@ -60,6 +60,28 @@ Status codes: 200 × 4552
 Status codes: 200 × 6393
 16 concurrent clients for 60.1 s: 106.4 requests/s, error rate 0.00%.
 
+## 2026-11-24: 5,000 demo people, after the audience count change
+
+Same database and mix, 16 concurrent clients for 60 seconds, with both the verification summary and the audience count
+changes. Throughput went from 107 to 188 requests a second and the overall p95 from 293 ms to 144 ms. The filtered
+audience count went from p50 272 ms to 86 ms, the unfiltered one from 193 ms to 106 ms. No call has a p95 above 170 ms.
+
+| Endpoint | Requests | p50 ms | p95 ms | p99 ms | Errors |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| audience counts | 3374 | 106 | 148 | 177 | 0 |
+| audience counts, filtered | 1705 | 86 | 123 | 143 | 0 |
+| geography, world | 1149 | 102 | 136 | 155 | 0 |
+| overlap | 576 | 115 | 159 | 178 | 0 |
+| panellist directory | 1679 | 42 | 65 | 77 | 0 |
+| verification summary | 538 | 124 | 167 | 202 | 0 |
+| consent summary | 558 | 117 | 153 | 179 | 0 |
+| report: audience by country | 1166 | 45 | 69 | 86 | 0 |
+| health | 557 | 9 | 24 | 31 | 0 |
+| **All** | 11302 | 90 | 144 | 168 | 0 |
+
+Status codes: 200 × 11302
+16 concurrent clients for 60.0 s: 188.2 requests/s, error rate 0.00%.
+
 ## 2026-11-24: 5,000 demo people, after the verification summary change
 
 Same database and mix, 16 concurrent clients for 60 seconds. The verification summary went from p50 386 ms and p95
@@ -115,5 +137,9 @@ Status codes: 200 × 8913
   queries for all panels at once, works those two lists out once per call, and gives the same numbers (checked against
   the old output on the 5,000-person and preview databases, and by a test that compares every check with its
   drill-down). One call on its own dropped from about 90 ms to about 30 ms; under load, see the run below.
-- Audience counts grow with the population (about 50 ms at 300 people, 190 ms at 5,000). At the real panel sizes,
-  check that the count cache is used.
+- **Audience counts were next:** the totals and the panel, country and category breakdowns came from five queries that
+  each ran the whole filter again. They now come from one query over the matching memberships, worked out once. Same
+  numbers for five filter mixes on the 5,000-person database (countries with equal counts are now listed by key, so
+  the order is stable). One call on its own: 42 to 25 ms unfiltered, 71 to 22 ms filtered.
+- Audience counts still grow with the population (about 50 ms at 300 people, about 100 ms at 5,000 under load). At
+  the real panel sizes, check that the count cache is used.

@@ -84,8 +84,9 @@ Local and DEMO only. Nothing is deployed, and deploying needs Kunal's go-ahead.
   privacy deadlines, and security incidents.
 
 ### Not yet
-- At 5,000 people the filtered audience count is the slowest call (p50 0.27 s under load). The consent summary (0.9 s
-  to 0.13 s) and the verification summary (0.39 s to 0.15 s) were fixed; see `docs/PERFORMANCE.md`.
+- At 5,000 people under load no call has a p95 above 0.17 s. The consent summary (p50 0.9 s to 0.12 s), the
+  verification summary (0.39 s to 0.12 s) and the audience counts (0.27 s to 0.09 s filtered) were made set-based;
+  see `docs/PERFORMANCE.md`.
 - No production environment, monitoring or alerting is set up. That waits for Kunal's deploy decision.
 
 ## Super admin console, step 2: members, question bank and profiles (2026-11-24)
