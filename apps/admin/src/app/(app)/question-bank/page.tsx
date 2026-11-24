@@ -19,6 +19,15 @@ interface Q {
   isActive?: boolean;
   topic?: string;
 }
+interface Missing {
+  lang: string;
+  questions: number;
+  complete: number;
+  missing: number;
+  missingOptions: number;
+  items: { name: string; label: string; missingLabel: boolean; missingOptions: number }[];
+}
+const LANG = /^[a-z]{2}(-[A-Z]{2})?$/;
 interface Rules {
   checked: number;
   broken: number;
@@ -29,6 +38,7 @@ const TABS = [
   ['questions', 'Questions'],
   ['rules', 'Show-when rules'],
   ['versions', 'Versions'],
+  ['translations', 'Translations'],
   ['import', 'Import and export'],
 ] as const;
 
@@ -91,9 +101,61 @@ export default async function QuestionBankPage({
           );
         }
         if (tab === 'import') return <BankImport />;
+        if (tab === 'translations') {
+          const lang = LANG.test(sp.lang ?? '') && sp.lang !== 'en' ? sp.lang! : 'hi';
+          const category = /^[a-z0-9_-]{1,60}$/.test(sp.category ?? '') ? sp.category : undefined;
+          const r = await api<Missing>(
+            `/panel/qb/translations/missing?${new URLSearchParams({ lang, ...(category ? { category } : {}) })}`,
+          );
+          return (
+            <Card>
+              <CardHeader
+                title={`${fmt(r.complete)} of ${fmt(r.questions)} questions are fully translated into ${r.lang}`}
+                hint={`${fmt(r.missing)} questions miss their wording or option labels, ${fmt(r.missingOptions)} option labels in all. Open a question to translate it.`}
+              />
+              <form className="flex flex-wrap items-center gap-2 border-b border-border px-5 py-3" action="/question-bank">
+                <input type="hidden" name="tab" value="translations" />
+                <div className="w-28">
+                  <input className={`${input} font-mono`} name="lang" defaultValue={lang} placeholder="hi" aria-label="Language" />
+                </div>
+                <div className="w-56">
+                  <input
+                    className={input}
+                    name="category"
+                    defaultValue={category ?? ''}
+                    placeholder="Segment, e.g. b2c-minor"
+                    aria-label="Segment category"
+                  />
+                </div>
+                <button className={btn.ghost}>Show</button>
+              </form>
+              {r.items.length === 0 ? (
+                <EmptyState title="Nothing missing">Every question here has its wording and option labels in {r.lang}.</EmptyState>
+              ) : (
+                <Table head={['Question', 'English wording', 'Wording', 'Option labels missing']}>
+                  {r.items.map((x) => (
+                    <tr key={x.name}>
+                      <td className="px-5 py-2">
+                        <Link className="font-mono text-accent hover:underline" href={`/question-bank/${x.name}`}>
+                          {x.name}
+                        </Link>
+                      </td>
+                      <td className="max-w-md truncate px-5 py-2 text-fg-2">{x.label}</td>
+                      <td className="px-5 py-2">{x.missingLabel ? <Badge tone="warn">missing</Badge> : <Badge tone="teal">done</Badge>}</td>
+                      <td className="num px-5 py-2">{fmt(x.missingOptions)}</td>
+                    </tr>
+                  ))}
+                </Table>
+              )}
+              {r.missing > r.items.length ? (
+                <p className="px-5 py-3 text-[12px] text-fg-3">The panel lists the first {fmt(r.items.length)}.</p>
+              ) : null}
+            </Card>
+          );
+        }
         if (tab === 'versions') {
-          const list = await api<Version[]>('/panel/qb/versions');
-          return <VersionActions versions={list} />;
+          const [list, me] = await Promise.all([api<Version[]>('/panel/qb/versions'), api<{ id: string }>('/auth/me')]);
+          return <VersionActions versions={list} me={me.id} />;
         }
         const qs = new URLSearchParams();
         for (const k of ['q', 'category', 'page']) if (sp[k]) qs.set(k, sp[k]!);

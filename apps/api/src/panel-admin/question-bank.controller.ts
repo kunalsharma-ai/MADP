@@ -230,18 +230,20 @@ export class QuestionBankController {
     @Req() req: Request,
   ) {
     const brand = b as PanelCode;
-    const r = await this.panel.call<Change>(
+    // The panel takes options as { value: label }; it refuses teen guardrail words on questions teens can see (422).
+    const { options, ...rest } = body;
+    const r = await this.panel.call<Change & { optionsSet?: number }>(
       brand,
       p.id,
       'PUT',
       R.questionTranslations(name),
       undefined,
-      body,
+      { ...rest, ...(options ? { options: Object.fromEntries(options.map((o) => [o.value, o.label])) } : {}) },
     );
     await this.log(req, brand, 'qb.translation.set', 'question', name, {
       before: r.before,
       after: r.after,
-      metadata: { lang: body.lang },
+      metadata: { lang: body.lang, options: options?.length ?? 0, optionsSet: r.optionsSet ?? 0 },
     });
     return r;
   }

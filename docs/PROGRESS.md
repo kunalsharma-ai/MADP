@@ -142,8 +142,15 @@ Spec modules 1 to 4 for MFR. The panel side is in kunalsharma-ai/MFR#44 and #45 
   reaches the panel. Text that a spreadsheet would run as a formula is stored with a ' prefix and restored on import.
 - Tests: `src/panel-admin/bank-workbook.test.ts` (4) and `test/qb-workbook.test.ts` (5, all three brands).
 
+- Versions and translations (MFR `app/admin/versions.js`, teen check on translations in MFR#66): the Versions tab
+  shows who may publish (the admin who drafted or asked for review can't; the panel enforces it). Each question has a
+  Translations card for one language at a time: wording, help text and option labels. On a question teens can see,
+  the teen guardrail words are flagged before saving, and the panel's refusal is shown as it is. A Translations tab
+  lists what is missing per language and segment. Option labels now reach the panel as its `{ value: label }` map
+  (they were sent as a list, which the panel would have saved under the wrong options), English is refused, and the
+  report filters by segment. Tests: `test/qb-translations.test.ts` (5, all three brands).
+
 ### Not yet
-- Question versions (draft, review, published) and translations.
 - Merge duplicates, reset password, resend welcome e-mail, log in as member.
 - T2O and MHO: the same backend serves them (step 6). Leak tests per brand come before they are switched on.
 - The 730 / 241 / 33 count check needs the real Profiles.json, Question.json and Option.json exports. They are not in
