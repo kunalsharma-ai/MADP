@@ -445,6 +445,10 @@ export const PANEL_ADMIN_ROUTES = {
   // step 4 (MFR backend app/admin/routes.js)
   switches: '/api/admin/v1/switches',
   switch: (key: string) => `/api/admin/v1/switches/${encodeURIComponent(key)}`,
+  // prize machines, one per segment (MFR#56)
+  prizeMachines: '/api/admin/v1/prize-machines',
+  prizeMachine: (segment: string) => `/api/admin/v1/prize-machines/${encodeURIComponent(segment)}`,
+  prizeMachinePlays: (segment: string) => `/api/admin/v1/prize-machines/${encodeURIComponent(segment)}/plays`,
   catalogue: '/api/admin/v1/rewards/catalogue',
   catalogueItem: (key: string) => `/api/admin/v1/rewards/catalogue/${encodeURIComponent(key)}`,
   redemptions: '/api/admin/v1/redemptions',

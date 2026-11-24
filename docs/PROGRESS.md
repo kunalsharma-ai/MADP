@@ -502,3 +502,25 @@ Panel side is kunalsharma-ai/MFR#55 (merged, not deployed).
       answers and guardian details are deleted on the move.
     - After 60 days the account closes. Points lapse and a delete request opens.
 - Tests: `panel-admin-step4.test.ts` has 6 passing, against the stand-in panel. On MFR, `admin.step4b.test.mjs` has 8 passing.
+
+## Super admin step 4c: switches per segment and country, money switches, prize machines (24 Nov 2026)
+
+Panel side: kunalsharma-ai/MFR#56 (and #57), merged, not deployed. Before deploying, run
+`node app/jobs/feature-switch-index.js` once per database (it drops the old unique index on FeatureSwitch).
+
+- **Switches per segment and country.** The most specific rule wins (segment and country > segment > country > whole
+  brand > default) and the kill switch still beats every rule. The board takes `?segment=&country=` and shows what
+  members in that group get, which rule decided it, the narrower rules and each switch's effect text.
+  `PUT /panel/switches/:key` takes `segment`, `country` and `value`; `on: null` removes a narrower rule. Audited as
+  `switch.flip` / `switch.scope.remove` with the scope and number in before/after.
+- **New switches:** points hold (days), points expiry, weekend multiplier (×), streak/challenge/referral bonuses (on by
+  default because they pay today), prize machines (legal), WhatsApp, and the turning-18 e-mails key in the contract.
+  Holds and multipliers only count from the moment a rule goes on, so points already earned are never moved back.
+  There is no payout provider switch: payouts are manual until a provider is connected.
+- **Prize machines** (module 7): one per segment (claw, lift, spiral) with prizes, odds, daily plays and countries.
+  `GET /panel/prize-machines`, `PUT /panel/prize-machines/:segment` (rewards.manage, reason, audited
+  `prize_machine.save`), `GET /panel/prize-machines/:segment/plays` (member ids only, audited). Teen prizes are never
+  points, checked in MADP and again in the panel. Members see a machine only while it is live, their country is
+  listed and the prize_machines switch is on for them.
+- Tests: `panel-admin-step4.test.ts` 8 pass; MFR `tests/admin.step4c.test.mjs` 5 pass.
+- Previews: `/mnt/project-files/madp/preview-console/step4c-switches/`.
