@@ -4,6 +4,8 @@ const config: NextConfig = {
   output: 'standalone',
   poweredByHeader: false,
   transpilePackages: ['@madp/contracts'],
+  // Question bank imports go through a server action; the bank file is a few MB.
+  experimental: { serverActions: { bodySizeLimit: '25mb' } },
   async headers() {
     return [
       {

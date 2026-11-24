@@ -47,6 +47,9 @@ import { ServiceClientsController, Supply360Controller } from './supply360/suppl
 import { AdminsController } from './admins/admins.controller.js';
 import { AdminsService } from './admins/admins.service.js';
 import { BrandsController } from './brands/brands.controller.js';
+import { PanelAdminService } from './panel-admin/panel-admin.service.js';
+import { MembersController } from './panel-admin/members.controller.js';
+import { QuestionBankController } from './panel-admin/question-bank.controller.js';
 import { HealthController } from './common/health.controller.js';
 import { MetaController } from './common/meta.controller.js';
 
@@ -68,6 +71,8 @@ export class AppModule {
         AuditController,
         AdminsController,
         BrandsController,
+        MembersController,
+        QuestionBankController,
         IdentityController,
         WebhookController,
         EngagementController,
@@ -89,6 +94,7 @@ export class AppModule {
         AuditService,
         AuthService,
         AdminsService,
+        PanelAdminService,
         ConnectorRegistry,
         IngestionService,
         SyncScheduler,
