@@ -176,7 +176,7 @@ describe('content and legal pages through the panel admin API', () => {
 
   it('refuses HTML, unknown blocks and bad keys before anything reaches the panel', async () => {
     const before = panel.actors.length;
-    const send = (b: unknown) => request(t.server).post('/api/v1/panel/content').set(bearer(tok.editor!, 'mfr')).send(b);
+    const send = (b: object) => request(t.server).post('/api/v1/panel/content').set(bearer(tok.editor!, 'mfr')).send(b);
     await send({ key: 'terms', title: 'Terms', body: [{ script: 'x' }] }).expect(400);
     await send({ key: 'terms', title: 'Terms', body: [{ h2: 'a', h3: 'b' }] }).expect(400);
     await send({ key: 'terms', title: 'Terms', body: [{ table: { head: ['a', 'b'], rows: [['1']] } }] }).expect(400);
