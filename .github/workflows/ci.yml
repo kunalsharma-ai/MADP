@@ -23,7 +23,7 @@ jobs:
       TEST_DATABASE_ADMIN_URL: postgres://madp:madp@localhost:5432/postgres
       TEST_MONGODB_URL: mongodb://localhost:27017
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - uses: pnpm/action-setup@v4
         with: { version: 12.23.0 }
       - uses: actions/setup-node@v5
