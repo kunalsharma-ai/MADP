@@ -41,6 +41,18 @@ The same backend copy served MFR and MHO as two more tenants. Import, consent, c
 patients), MHO special-category answers, re-import and three sync runs all pass for both (`docs/T2O_LOCAL_E2E.md`).
 Staff accounts are now skipped (`isStaff`, kunalsharma-ai/turn2opinion#21, merged, not deployed). Not live evidence.
 
+### Cross-panel identity review (2026-11-24)
+- Matches between panels stay candidates: a reviewer merges or rejects them on the new Identity review screen
+  (`identity.review`, held by super admins, data stewards and privacy officers). Two verified e-mails still link
+  automatically, and every link, automatic or reviewed, can be unmerged with a reason.
+- A merge moves one panel account with its own panel membership, categories, consents and answers. Panels are never
+  combined, and a person can't hold two live memberships of the same panel.
+- Every merge and unmerge goes into an append-only `identity_link_event` table and the audit log.
+- Source precedence: the person's country, state, city, gender and birth year come from their accounts in this order:
+  deleted memberships ignored, verified e-mail first, latest source update, then first seen. `field_sources` records
+  which account supplied each field. This replaces "first seen wins".
+- Tests: `apps/api/test/identity.test.ts` (5) and `src/identity/precedence.test.ts` (3), on DEMO data.
+
 ### Next for T2O
 A T2O-only dry run against the live backend once the token is in the cloud environment, with counts shown to Kunal
 before any write.

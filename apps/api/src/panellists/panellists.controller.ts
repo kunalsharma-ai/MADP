@@ -43,7 +43,7 @@ export class PanellistsController {
   @Get()
   async list(@Query(new ZodPipe(ListQuery)) q: z.infer<typeof ListQuery>) {
     const mode = this.audience.defaultMode();
-    const conds = [sql`mp.data_mode = ${mode}`];
+    const conds = [sql`mp.data_mode = ${mode}`, sql`mp.status <> 'merged'`];
     if (q.after) conds.push(sql`mp.id > ${q.after}`);
     if (q.country) conds.push(sql`mp.country = ${q.country.toLowerCase()}`);
     if (q.panel)
@@ -190,6 +190,8 @@ export class PanellistsController {
         city: person.city,
         birthYear: person.birthYear,
         gender: person.gender,
+        status: person.status,
+        fieldSources: person.fieldSources ?? {},
         createdAt: person.createdAt,
       },
       access: { pii: canPii, healthSensitive: canHealth },

@@ -35,6 +35,7 @@ import {
 } from '../mongo/mongo.js';
 import { FieldCrypto, maskEmail } from '../crypto/field-crypto.js';
 import { AuditService } from '../audit/audit.service.js';
+import { recomputePerson } from '../identity/precedence.js';
 import { DIRECT_IDENTIFIER_QUESTIONS, NAME_SUGGESTIONS, categoryFor, sensitivityFor } from './canonical.js';
 
 /** Location reference lists (tens of thousands of options) are not copied into the question registry. */
@@ -675,6 +676,11 @@ export class IngestionService {
           firstNameEnc: null,
           lastNameEnc: null,
           dateOfBirthEnc: null,
+          country: null,
+          state: null,
+          city: null,
+          gender: null,
+          birthYear: null,
           lastImportJobId: jobId,
           updatedAt: new Date(),
         })
@@ -704,6 +710,7 @@ export class IngestionService {
             eq(consentRecords.panel, panel),
           ),
         );
+      await recomputePerson(tx, identity.masterPersonId);
     });
     const key = { panel, dataMode, sourceMemberId };
     await this.mongo.profileAnswers.deleteMany(key);
@@ -1012,6 +1019,11 @@ export class IngestionService {
       emailVerification: r.emailVerification,
       phoneVerification: r.phoneVerification,
       qualityScore: r.qualityScore,
+      country: r.country ?? null,
+      state: r.state ?? null,
+      city: r.city ?? null,
+      gender: r.gender ?? null,
+      birthYear: r.dateOfBirth ? Number.parseInt(r.dateOfBirth.slice(0, 4), 10) || null : null,
       sourceActive: r.isActive,
       sourceCreatedAt: r.sourceCreatedAt ? new Date(r.sourceCreatedAt) : null,
       sourceUpdatedAt: r.sourceUpdatedAt ? new Date(r.sourceUpdatedAt) : null,
@@ -1136,19 +1148,8 @@ export class IngestionService {
         });
       counts.consentsSynced++;
     }
-    // Person-level location/demographics: fill gaps only, never overwrite another panel's value (source precedence = first seen).
-    const birthYear = r.dateOfBirth ? Number.parseInt(r.dateOfBirth.slice(0, 4), 10) : null;
-    await tx
-      .update(masterPersons)
-      .set({
-        country: sql`coalesce(${masterPersons.country}, ${r.country})`,
-        state: sql`coalesce(${masterPersons.state}, ${r.state})`,
-        city: sql`coalesce(${masterPersons.city}, ${r.city})`,
-        gender: sql`coalesce(${masterPersons.gender}, ${r.gender})`,
-        birthYear: sql`coalesce(${masterPersons.birthYear}, ${birthYear})`,
-        updatedAt: new Date(),
-      })
-      .where(eq(masterPersons.id, personId));
+    // Person-level location and demographics: chosen from all of the person's identities by source precedence.
+    await recomputePerson(tx, personId);
     return personId;
   }
 

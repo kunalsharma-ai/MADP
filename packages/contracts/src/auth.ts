@@ -20,6 +20,7 @@ export const Permission = z.enum([
   'questions.read',
   'questions.write',
   'mappings.review',
+  'identity.review',
   'connectors.read',
   'connectors.run',
   'imports.run',

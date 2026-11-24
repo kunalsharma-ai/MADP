@@ -63,7 +63,10 @@ export const masterPersons = pgTable(
     city: text('city'),
     birthYear: smallint('birth_year'),
     gender: text('gender'),
+    /** `active`, or `merged` once every source identity has moved to another person (kept for unmerge). */
     status: text('status').notNull().default('active'),
+    /** Which source identity supplied each field above, by the source precedence rule (identity/precedence.ts). */
+    fieldSources: jsonb('field_sources'),
     createdAt: created(),
     updatedAt: updated(),
   },
@@ -93,6 +96,12 @@ export const sourceIdentities = pgTable(
     emailVerification: verificationState('email_verification').notNull().default('unverified'),
     phoneVerification: verificationState('phone_verification').notNull().default('unverified'),
     qualityScore: integer('quality_score'),
+    /** Location and demographics as this panel reported them; the person's values are chosen from these. */
+    country: text('country'),
+    state: text('state'),
+    city: text('city'),
+    gender: text('gender'),
+    birthYear: smallint('birth_year'),
     sourceActive: boolean('source_active').notNull().default(true),
     sourceCreatedAt: timestamp('source_created_at', { withTimezone: true }),
     sourceUpdatedAt: timestamp('source_updated_at', { withTimezone: true }),
@@ -165,6 +174,34 @@ export const identityMatchCandidates = pgTable('identity_match_candidate', {
   decidedAt: timestamp('decided_at', { withTimezone: true }),
   createdAt: created(),
 });
+
+/** Every merge and unmerge of a source identity, so each link can be explained and reversed. Append only. */
+export const identityLinkEvents = pgTable(
+  'identity_link_event',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    dataMode: dataMode('data_mode').notNull(),
+    action: text('action').notNull(),
+    sourceIdentityId: uuid('source_identity_id')
+      .notNull()
+      .references(() => sourceIdentities.id),
+    fromPersonId: uuid('from_person_id')
+      .notNull()
+      .references(() => masterPersons.id),
+    toPersonId: uuid('to_person_id')
+      .notNull()
+      .references(() => masterPersons.id),
+    candidateId: uuid('candidate_id').references(() => identityMatchCandidates.id),
+    reason: text('reason'),
+    actorId: uuid('actor_id'),
+    createdAt: created(),
+  },
+  (t) => [
+    index('identity_link_event_identity_idx').on(t.sourceIdentityId, t.createdAt),
+    index('identity_link_event_from_idx').on(t.fromPersonId),
+    index('identity_link_event_to_idx').on(t.toPersonId),
+  ],
+);
 
 export const consentRecords = pgTable(
   'consent_record',
