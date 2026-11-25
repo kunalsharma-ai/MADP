@@ -132,6 +132,22 @@ export class VerificationService {
   ) {}
 
   /**
+   * Time zone names Postgres knows. Reading pg_timezone_names walks the zoneinfo files on every call, which was the
+   * largest single cost of the summary, and the list only changes with a Postgres upgrade, so it is read once per process.
+   */
+  private zones?: Promise<string[]>;
+  private timeZones(): Promise<string[]> {
+    this.zones ??= this.database.db
+      .execute<{ name: string }>(sql`select distinct name from pg_timezone_names`)
+      .then((r) => r.rows.map((x) => x.name))
+      .catch((e) => {
+        this.zones = undefined;
+        throw e;
+      });
+    return this.zones;
+  }
+
+  /**
    * All panels in four set-based queries, so the cost does not grow with the number of panels. The time zone names
    * and the shared e-mails are worked out once per call and joined, not looked up again for every member.
    */
@@ -142,13 +158,14 @@ export class VerificationService {
       QUALITY_CHECKS.map((c) => sql`count(*) filter (where ${summaryCheckSql(c)}) as ${sql.identifier(c)}`),
       sql`, `,
     );
+    const zones = await this.timeZones();
     const counts = (
       await db.execute<Record<string, string>>(sql`
         with s as materialized (
           select m.panel as member_panel, s.* from panel_membership m join source_identity s on s.id = m.source_identity_id
           where m.data_mode = ${mode} and m.panel in (${inPanels}) and m.status = 'active'),
         shared as (select member_panel, email_hash from s where email_hash is not null group by 1, 2 having count(*) > 1),
-        tz as materialized (select distinct name from pg_timezone_names)
+        tz as materialized (select jsonb_array_elements_text(${JSON.stringify(zones)}::jsonb) as name)
         select s.member_panel::text as panel, count(*) as members,
           count(*) filter (where s.email_verification = 'verified') as email_verified,
           count(*) filter (where s.email_verification = 'unverified') as email_unverified,
