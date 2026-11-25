@@ -1,8 +1,9 @@
 import type { Metadata } from 'next';
-import { api, ApiError } from '@/lib/api';
+import { api, ApiError, currentBrand } from '@/lib/api';
 import { withPanel } from '@/lib/panel';
 import { Badge, Card, CardHeader, EmptyState, PageHeader, Table, fmt, fmtDate } from '@/components/ui';
 import { STATUS_TONE, marketingLabel, type MemberRow } from '../shared';
+import { MemberAccess } from './member-access';
 import { MemberActions } from './member-actions';
 import { PointsQuality } from './points-quality';
 
@@ -40,6 +41,8 @@ interface Detail extends MemberRow {
   /** Newest first, at most 20 (panel admin member detail). */
   marketingOptInHistory?: { granted: boolean; at: string; source: string; wording: string; by: string }[];
   canUnmask: boolean;
+  canResendEmail?: boolean;
+  canLoginAs?: boolean;
 }
 interface Ledger {
   entries: {
@@ -190,6 +193,13 @@ export default async function MemberPage({ params }: { params: Promise<{ id: str
                 phoneVerified: m.phoneVerified,
               }}
               canUnmask={m.canUnmask}
+            />
+            <MemberAccess
+              member={m.id}
+              segment={m.segment}
+              brand={(await currentBrand()) ?? ''}
+              canResendEmail={Boolean(m.canResendEmail)}
+              canLoginAs={Boolean(m.canLoginAs)}
             />
             <PointsQuality member={m.id} score={m.qualityScore ?? null} />
           </div>

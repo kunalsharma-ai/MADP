@@ -75,6 +75,7 @@ admin API for all three brands.
 | `TOKEN_PEPPER` | | | yes | **Set it.** Without it the code falls back to `JWT_SECRET` |
 | Teen job key | `TEEN_CRON_KEY` | `TEEN_JOB_KEY` | | Protects the teen reminder and expiry sweep route |
 | `ENGAGEMENT_CONFIG` | | yes | | File that switches each e-mail job on. Leave jobs off until sending is approved |
+| `email_admin_actions` switch | | yes | | Console e-mails to one member (reset link, welcome again). Off by default; turn on per brand only after sending is approved |
 | `TEEN_MAIL_OUTBOX`, `ENGAGEMENT_MAIL_OUTBOX` | | yes | | Folder the jobs write e-mails to instead of sending |
 | `PUBLIC_SITE_URL` | | yes | | Links in e-mails. Defaults to `https://<origin>` |
 | `SUPPORT_TEAM_EMAIL` | yes | | | Support desk addresses |

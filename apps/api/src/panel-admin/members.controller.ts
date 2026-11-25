@@ -1,7 +1,11 @@
-import { Body, Controller, ForbiddenException, Get, Param, Post, Put, Query, Req } from '@nestjs/common';
+import { Body, Controller, ForbiddenException, Get, Header, Param, Post, Put, Query, Req } from '@nestjs/common';
 import { z } from 'zod';
 import {
   ArchiveRun,
+  MemberActionReason,
+  type MemberAdminSessions,
+  type MemberEmailResult,
+  type MemberLoginAs,
   MemberRestore,
   MemberSearch,
   MemberSegmentChange,
@@ -21,6 +25,7 @@ import { AuditService } from '../audit/audit.service.js';
 import { PanelAdminService } from './panel-admin.service.js';
 
 const MemberId = z.string().regex(/^[a-f0-9]{24}$/i, 'a member id');
+const SessionId = z.string().regex(/^[a-f0-9]{24}$/i, 'a session id');
 type Row = { id: string; segment?: string };
 type Change = { before: Record<string, unknown>; after: Record<string, unknown> };
 
@@ -107,7 +112,12 @@ export class MembersController {
       targetType: 'member',
       targetId: id,
     });
-    return { ...m, canUnmask: hasOn(p, brand, ['pii.view']) };
+    return {
+      ...m,
+      canUnmask: hasOn(p, brand, ['pii.view']),
+      canResendEmail: hasOn(p, brand, ['members.resend_email']),
+      canLoginAs: hasOn(p, brand, ['members.impersonate']),
+    };
   }
 
   @RequirePermissions('members.read', 'points.read')
@@ -288,6 +298,124 @@ export class MembersController {
       targetType: 'member',
       metadata: { ...r, ids: body.ids.slice(0, 50) },
       reason: body.reason,
+    });
+    return r;
+  }
+
+  // ---- Member actions -------------------------------------------------------------------------------------------
+  // The panel sends nothing unless the brand's email_admin_actions switch is on; while it is off the answer says what
+  // would be sent. The audit entry names the template and whether it went, never the address.
+
+  private async email(
+    kind: 'reset_password' | 'resend_welcome',
+    id: string,
+    body: MemberActionReason,
+    b: BrandSelection,
+    p: Principal,
+    req: Request,
+  ) {
+    const brand = b as PanelCode;
+    await this.guardTeen(p, brand, id, req);
+    const path = kind === 'reset_password' ? R.memberResetPassword(id) : R.memberResendWelcome(id);
+    const r = await this.panel.call<MemberEmailResult>(brand, p.id, 'POST', path, undefined, body);
+    await this.audit.record({
+      ...AuditService.fromRequest(req),
+      action: `members.${kind}`,
+      panel: brand,
+      targetType: 'member',
+      targetId: id,
+      metadata: { sent: r.sent, template: r.wouldSend.template, switch: r.switch },
+      reason: body.reason,
+    });
+    return r;
+  }
+
+  /** E-mail the member's own forgot-password link. The console never sees or sets a password. */
+  @RequirePermissions('members.read', 'members.resend_email')
+  @Post(':id/reset-password')
+  resetPassword(
+    @Param('id', new ZodPipe(MemberId)) id: string,
+    @Body(new ZodPipe(MemberActionReason)) body: MemberActionReason,
+    @CurrentBrand() b: BrandSelection,
+    @CurrentPrincipal() p: Principal,
+    @Req() req: Request,
+  ) {
+    return this.email('reset_password', id, body, b, p, req);
+  }
+
+  @RequirePermissions('members.read', 'members.resend_email')
+  @Post(':id/resend-welcome')
+  resendWelcome(
+    @Param('id', new ZodPipe(MemberId)) id: string,
+    @Body(new ZodPipe(MemberActionReason)) body: MemberActionReason,
+    @CurrentBrand() b: BrandSelection,
+    @CurrentPrincipal() p: Principal,
+    @Req() req: Request,
+  ) {
+    return this.email('resend_welcome', id, body, b, p, req);
+  }
+
+  /**
+   * "Log in as member": a one-use link for a 15-minute member session the panel marks as an admin session (no
+   * password, e-mail, payout or reward changes; no answers on MHO). Teens are refused by the panel. The attempt is
+   * audited before the panel is asked, and the link itself is never stored or logged.
+   */
+  @RequirePermissions('members.read', 'members.impersonate')
+  @Post(':id/login-as')
+  @Header('Cache-Control', 'no-store')
+  async loginAs(
+    @Param('id', new ZodPipe(MemberId)) id: string,
+    @Body(new ZodPipe(MemberActionReason)) body: MemberActionReason,
+    @CurrentBrand() b: BrandSelection,
+    @CurrentPrincipal() p: Principal,
+    @Req() req: Request,
+  ) {
+    const brand = b as PanelCode;
+    const m = await this.guardTeen(p, brand, id, req);
+    if (m.segment === 'teen') throw new ForbiddenException('Admins can’t sign in as a teen member');
+    const base = { ...AuditService.fromRequest(req), panel: brand, targetType: 'member', targetId: id, reason: body.reason };
+    await this.audit.record({ ...base, action: 'members.login_as.requested' });
+    const r = await this.panel.call<MemberLoginAs>(brand, p.id, 'POST', R.memberLoginAs(id), undefined, body);
+    await this.audit.record({
+      ...base,
+      action: 'members.login_as',
+      metadata: { sessionId: r.sessionId, expiresAt: r.expiresAt, redeemBy: r.redeemBy },
+    });
+    return r;
+  }
+
+  @RequirePermissions('members.read', 'members.impersonate')
+  @Get(':id/admin-sessions')
+  async adminSessions(
+    @Param('id', new ZodPipe(MemberId)) id: string,
+    @CurrentBrand() b: BrandSelection,
+    @CurrentPrincipal() p: Principal,
+    @Req() req: Request,
+  ) {
+    const brand = b as PanelCode;
+    await this.guardTeen(p, brand, id, req);
+    return this.panel.call<MemberAdminSessions>(brand, p.id, 'GET', R.memberAdminSessions(id));
+  }
+
+  /** End an admin session early, or cancel a link nobody has opened. */
+  @RequirePermissions('members.read', 'members.impersonate')
+  @Post(':id/admin-sessions/:sid/end')
+  async endAdminSession(
+    @Param('id', new ZodPipe(MemberId)) id: string,
+    @Param('sid', new ZodPipe(SessionId)) sid: string,
+    @CurrentBrand() b: BrandSelection,
+    @CurrentPrincipal() p: Principal,
+    @Req() req: Request,
+  ) {
+    const brand = b as PanelCode;
+    const r = await this.panel.call<{ id: string; endedAt: string }>(brand, p.id, 'POST', R.memberAdminSessionEnd(id, sid));
+    await this.audit.record({
+      ...AuditService.fromRequest(req),
+      action: 'members.login_as.ended',
+      panel: brand,
+      targetType: 'member',
+      targetId: id,
+      metadata: { sessionId: sid },
     });
     return r;
   }
