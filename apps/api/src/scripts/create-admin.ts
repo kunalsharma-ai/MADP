@@ -1,5 +1,5 @@
 import { parseArgs } from 'node:util';
-import { loadApiEnv } from '@madp/config';
+import { loadApiEnv, withSecretFiles } from '@madp/config';
 import { PanelCode, RoleKey } from '@madp/contracts';
 import { createApp } from '../bootstrap.js';
 import { AuthService } from '../auth/auth.service.js';
@@ -15,7 +15,7 @@ const { values } = parseArgs({
     brands: { type: 'string' },
   },
 });
-const password = process.env.MADP_ADMIN_PASSWORD;
+const password = withSecretFiles().MADP_ADMIN_PASSWORD;
 if (!values.email || !values.name || !password) {
   console.error('Required: --email, --name and MADP_ADMIN_PASSWORD in the environment');
   process.exit(2);

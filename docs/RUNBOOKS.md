@@ -32,12 +32,98 @@ Ask Kunal first. Then:
    `FIELD_ENCRYPTION_KEY(S)`, `PII_HASH_KEY`, `PANEL_ADMIN_API_SECRET`, `WEBHOOK_SECRETS_<PANEL>`, panel API tokens.
    Production must set `NODE_ENV=production`, `REQUIRE_MFA=true` and the real `ADMIN_ORIGIN`.
 4. Leave `LIVE_SOURCE_APPROVED_PANELS` empty unless Kunal has approved live read-only access for that panel.
-5. Run migrations: `pnpm db:migrate`. Migrations only add; an applied migration is never edited.
+5. Run migrations: `pnpm db:migrate` (on Swarm, the stack's `migrate` job does this). Migrations only add; an applied
+   migration is never edited.
 6. Start the API, then the admin app (`MADP_API_URL` pointing at the API).
 7. Check `GET /api/v1/health` is `ok`, sign in with MFA, open the dashboard, and confirm the DEMO banner shows only when
    data is DEMO.
 8. Roll back: redeploy the previous build. Migrations are additive, so the previous build runs on the new schema. Restore
    the backup only if data was damaged.
+
+### Docker Swarm (Kunal's hosting)
+
+MADP runs only in containers, from `ops/deploy/madp-stack.yml`. What the stack keeps to:
+
+- **No published ports.** Only the proxy manager in front (Traefik or Nginx Proxy Manager) publishes 80 and 443.
+  Docker writes its own iptables rules, so a port published by any container would bypass UFW. Leave `ports:` out of
+  every MADP service.
+- **Two networks.** Only the nginx gateway joins the external network `publicweb`, under the alias `madp-gateway`.
+  Everything else (api, admin, postgres, mongodb, the migration job) is on the overlay network `madp`, encrypted
+  between nodes. Postgres and MongoDB are never on `publicweb`.
+- **TLS stays in front.** The gateway listens on plain 80. The proxy manager terminates TLS, redirects http to https and
+  forwards `MADP_HOST` to `http://madp-gateway:80`. The gateway sends `/api/` to the API and everything else to the
+  console, and drops requests for any other host name.
+- **Secrets are Swarm secrets.** The API reads `X_FILE=/run/secrets/...` for each secret (`withSecretFiles` in
+  `packages/config`). Setting both `X` and `X_FILE` is refused.
+
+First deploy, on a manager node:
+
+1. Create the network once if it doesn't exist: `docker network create -d overlay --attachable publicweb`.
+2. Label the node that keeps the database volumes: `docker node update --label-add madp.db=true <node>`.
+3. Create the secrets (each value generated fresh, never typed into a file in the repository):
+
+   ```
+   openssl rand -hex 32 | docker secret create madp_postgres_password -
+   openssl rand -hex 32 | docker secret create madp_mongodb_password -
+   printf 'postgres://madp:%s@postgres:5432/madp' "<postgres password>" | docker secret create madp_database_url -
+   printf 'mongodb://madp:%s@mongodb:27017/?authSource=admin' "<mongodb password>" | docker secret create madp_mongodb_url -
+   openssl rand -hex 32    | docker secret create madp_auth_jwt_secret -
+   openssl rand -base64 32 | docker secret create madp_field_encryption_key -
+   openssl rand -hex 32    | docker secret create madp_pii_hash_key -
+   printf '%s' "<the same value as the panel backend's MADP_ADMIN_API_SECRETS>" | docker secret create madp_panel_admin_api_secret -
+   ```
+
+   Back up `madp_field_encryption_key` and `madp_pii_hash_key` apart from the database: losing either loses or unlinks
+   personal data.
+4. Build and push the images from a green `main`: `docker build -f apps/api/Dockerfile -t <registry>/api:<version> .`
+   and the same for `apps/admin`.
+5. Deploy: `MADP_HOST=<host> MADP_REGISTRY=<registry> MADP_VERSION=<version> docker stack deploy -c
+   ops/deploy/madp-stack.yml madp`. The `migrate` job runs the migrations once and exits; check it with `docker service
+   ps madp_migrate`. The api replicas never migrate.
+6. Create the first admin: `docker exec -it $(docker ps -q -f name=madp_api | head -1) node dist/scripts/create-admin.js
+   --email <e-mail> --name <name> --role super_admin`, with `MADP_ADMIN_PASSWORD` set for that one command.
+7. Add MADP to the proxy manager (below), then check `https://<host>/api/v1/health` and sign in with MFA.
+
+Each later release: steps 4 and 5 with the new version. Swarm runs the migration job again and replaces the api and
+admin replicas one at a time, starting the new one first and rolling back if it fails.
+
+Mail: MADP itself sends no e-mail today (panel campaigns are sent by the panel backend). When sending is approved,
+the SMTP details go in as Swarm secrets in the same way.
+
+**Traefik with static file routing.** Add to a file in Traefik's dynamic configuration directory:
+
+```yaml
+http:
+  routers:
+    madp:
+      rule: Host(`<MADP_HOST>`)
+      entryPoints: [websecure]
+      service: madp
+      tls: {}            # or certResolver: <your resolver>
+  services:
+    madp:
+      loadBalancer:
+        servers:
+          - url: http://madp-gateway:80
+```
+
+Traefik must itself be attached to `publicweb` to reach `madp-gateway`.
+
+**Nginx Proxy Manager.** Add a proxy host:
+
+- Domain names: `<MADP_HOST>`
+- Scheme `http`, forward hostname `madp-gateway`, forward port `80`
+- Websockets support: on. Block common exploits: on.
+- SSL tab: request or pick the certificate, then turn on Force SSL and HTTP/2.
+
+The NPM container must be attached to `publicweb`.
+
+**Tested (2026-11-25, local single-node swarm, throwaway secrets):** the images were built from this branch and the
+stack was deployed. The migration job finished, and both api and both admin replicas came up healthy. From a container
+on `publicweb`, `madp-gateway` answered `/api/v1/health` (200), the console sign-in page (200) and `/` (307 to sign-in).
+Another host name got no answer, and `madp_api` couldn't be reached from `publicweb`. No service published a port. The
+sandbox kernel has no IPVS, so that test used `endpoint_mode: dnsrr` and an unencrypted overlay. A normal Docker host
+doesn't need either change.
 
 ## 3. Backup and restore
 

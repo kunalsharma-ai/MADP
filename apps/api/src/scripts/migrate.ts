@@ -3,6 +3,7 @@ import { fileURLToPath } from 'node:url';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { migrate } from 'drizzle-orm/node-postgres/migrator';
 import pg from 'pg';
+import { withSecretFiles } from '@madp/config';
 import { PANELS, PANEL_CODES } from '@madp/contracts';
 import { attributeDefinitions, panels } from '../db/schema.js';
 import { SEED_ATTRIBUTES } from '../ingestion/canonical.js';
@@ -27,7 +28,7 @@ export async function runMigrations(databaseUrl: string) {
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
-  const url = process.env.DATABASE_URL;
+  const url = withSecretFiles().DATABASE_URL;
   if (!url) throw new Error('DATABASE_URL is required');
   await runMigrations(url);
   console.log('Migrations applied');

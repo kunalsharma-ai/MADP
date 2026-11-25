@@ -1,6 +1,7 @@
 FROM node:26.13.1-bookworm-slim AS build
 WORKDIR /repo
-RUN corepack enable && corepack prepare pnpm@12.23.0 --activate
+# Node 25 and later no longer ship corepack, so pnpm is installed at the version package.json pins.
+RUN npm install -g pnpm@12.23.0
 COPY . .
 ENV NEXT_TELEMETRY_DISABLED=1
 RUN pnpm install --frozen-lockfile && pnpm turbo run build --filter=@madp/admin...
