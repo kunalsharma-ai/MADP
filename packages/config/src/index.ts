@@ -99,7 +99,7 @@ export const ApiEnv = z.object({
   MHO_API_BASE_URL: z.string().url().optional(),
   MHO_API_TOKEN: z.string().optional(),
   /**
-   * Super admin console: the panel backend's signed admin API (/api/admin/v1). One shared secret per environment; the
+   * Super admin console: the panel backend's signed admin API (/api/v1/admin). One shared secret per environment; the
    * panel side accepts a list for rotation. No secret or no base URL = the console's member and question bank screens
    * say the brand is not connected. The brand's hostname comes from its brand settings (first origin).
    */

@@ -8,7 +8,7 @@ Legend: ✅ passed with live evidence · 🟡 implemented and tested on DEMO or 
 
 **As of 2026-11-24 (late), no column has passed for any panel.** Columns 3 to 14 have also run end to end against a local
 copy of the panel backend for all three panels (`T2O_LOCAL_E2E.md`); that is still not live evidence. The console's
-panel admin API (`/api/admin/v1`) is one API on the shared backend (MFR `main`) that serves all three brands by
+panel admin API (`/api/v1/admin`) is one API on the shared backend (MFR `main`) that serves all three brands by
 `x-madp-origin`; its rows below are tested against a stand-in, not a deployed panel.
 
 | Column | T2O | MFR | MHO |

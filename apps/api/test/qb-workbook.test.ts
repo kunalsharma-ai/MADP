@@ -59,8 +59,8 @@ function fakePanel() {
     };
     if (h('x-madp-signature') !== want) return send(401, { status: 'error', code: 'admin_auth', message: 'Bad signature' });
     const url = new URL(req.url!, 'http://x');
-    if (url.pathname === '/api/admin/v1/qb/export') return send(200, { status: 'success', data: BANK });
-    if (url.pathname === '/api/admin/v1/qb/import') {
+    if (url.pathname === '/api/v1/admin/qb/export') return send(200, { status: 'success', data: BANK });
+    if (url.pathname === '/api/v1/admin/qb/import') {
       imports.push({ origin: h('x-madp-origin'), dryRun: url.searchParams.get('dryRun'), body: JSON.parse(raw) });
       return send(200, { status: 'success', data: { dryRun: url.searchParams.get('dryRun') !== '0', ok: true, counts: { questions: 2 } } });
     }

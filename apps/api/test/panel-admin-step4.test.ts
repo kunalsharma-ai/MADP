@@ -8,7 +8,7 @@ import { startTestApp } from './helpers.js';
 
 /**
  * Super admin step 4 (feature switches, rewards, engagement, teens, data requests) through MADP. A stand-in for the
- * panel's /api/admin/v1 checks the signature the way the real one does (kunalsharma-ai/MFR#53) and answers with DEMO data.
+ * panel's /api/v1/admin checks the signature the way the real one does (kunalsharma-ai/MFR#53) and answers with DEMO data.
  */
 type T = Awaited<ReturnType<typeof startTestApp>>;
 const SECRET = 'demo-panel-admin-secret-0123456789abcdef0123';
@@ -68,7 +68,7 @@ function fakePanel() {
     });
     const ok = (data: unknown) => send(200, { status: 'success', data });
     const p = url.pathname;
-    const V = '/api/admin/v1';
+    const V = '/api/v1/admin';
     const sw = (k: string, on: boolean) => ({
       key: k,
       group: 'money',
@@ -609,7 +609,7 @@ describe('super admin step 4 through the panel admin API', () => {
       .set(bearer(superToken, 'mfr'))
       .expect(200);
     expect(r.body.rows.every((x: { panel: string }) => x.panel === 'mfr')).toBe(true);
-    expect(panel.seen.at(-1)!.path).toBe('/api/admin/v1/reports/panel_health?from=2026-11-01&to=2026-11-24');
+    expect(panel.seen.at(-1)!.path).toBe('/api/v1/admin/reports/panel_health?from=2026-11-01&to=2026-11-24');
     const india = r.body.rows.find((x: { country: string | null }) => x.country === 'india');
     expect([india.total, india.active30, india.newInPeriod]).toEqual([40, null, 12]);
     // A member with no country comes back as an empty value, never as "suppressed".
@@ -634,7 +634,7 @@ describe('super admin step 4 through the panel admin API', () => {
       .set(bearer(superToken, 'mfr'))
       .expect(200);
     expect(list.body.total).toBe(1);
-    expect(panel.seen.at(-1)!.path).toBe('/api/admin/v1/experts?status=requested&page=1');
+    expect(panel.seen.at(-1)!.path).toBe('/api/v1/admin/experts?status=requested&page=1');
     await request(t.server)
       .get('/api/v1/panel/experts?status=nope')
       .set(bearer(superToken, 'mfr'))

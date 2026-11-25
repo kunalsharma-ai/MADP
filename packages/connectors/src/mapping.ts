@@ -63,7 +63,7 @@ export interface RawUser {
   terms?: string[];
   /**
    * Marketing e-mail opt-in, the "Send me news and offers" box (shared backend, MFR#54). Unset means never asked.
-   * The raw record has `wording`; the admin member view (/api/admin/v1/members) has `asked` instead.
+   * The raw record has `wording`; the admin member view (/api/v1/admin/members) has `asked` instead.
    */
   marketingOptIn?: {
     granted?: boolean | null;

@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 /**
  * Super admin console, modules 1 to 4 (members, question bank, profiles). MADP checks the admin's permission and
- * brand, writes the audit entry, then calls the panel backend's signed /api/admin/v1 for that brand.
+ * brand, writes the audit entry, then calls the panel backend's signed /api/v1/admin for that brand.
  */
 const Reason = z.string().trim().min(5).max(500);
 const ObjectId = z.string().regex(/^[a-f0-9]{24}$/i, 'a member id');
