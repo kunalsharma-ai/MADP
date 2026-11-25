@@ -400,6 +400,11 @@ export const PANEL_ADMIN_ROUTES = {
   memberAdminSessions: (id: string) => `/api/admin/v1/members/${encodeURIComponent(id)}/admin-sessions`,
   memberAdminSessionEnd: (id: string, sid: string) =>
     `/api/admin/v1/members/${encodeURIComponent(id)}/admin-sessions/${encodeURIComponent(sid)}/end`,
+  // Duplicate accounts (MFR#68, Project/api/app/admin/merge.js): find, merge (dry run unless ?dryRun=0), list, undo
+  duplicates: '/api/admin/v1/members/duplicates',
+  merge: '/api/admin/v1/members/merge',
+  merges: '/api/admin/v1/members/merges',
+  mergeUndo: (id: string) => `/api/admin/v1/members/merges/${encodeURIComponent(id)}/undo`,
   archiveRun: '/api/admin/v1/members/archive-run',
   restore: '/api/admin/v1/members/restore',
   qbExport: '/api/admin/v1/qb/export',

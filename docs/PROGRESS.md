@@ -165,6 +165,14 @@ Spec modules 1 to 4 for MFR. The panel side is in kunalsharma-ai/MFR#44 and #45 
   and its end. Tests: `test/member-actions.test.ts` (3, all three brands) and MFR `tests/admin.memberactions.test.mjs`
   (6).
 
+- Duplicate members (panel side MFR#68, `app/admin/merge.js`, built by the console thread): Members → Find duplicates
+  lists likely duplicates by e-mail, phone, or name and date of birth, masked, without the matching value. Picking the
+  account to keep and the one to close runs a dry run first (what moves, what stays, points, blockers); the Merge button
+  exists only after a dry run of that pair with no blockers, and needs a reason. Merges are listed with an undo that
+  needs a reason and a confirm tick. Finding needs `members.read`; dry run, merge and undo need `members.status`. Every
+  step is audited (search, dry run, merge with before and after, undo). Teen accounts are never merged. Tests:
+  `test/member-duplicates.test.ts` (3, all three brands).
+
 ### Not yet
 - Merge duplicates, reset password, resend welcome e-mail, log in as member.
 - T2O and MHO: the same backend serves them (step 6). Leak tests per brand come before they are switched on.

@@ -76,6 +76,34 @@ export async function memberEndSessionAction(member: string, session: string) {
     api(`/panel/members/${id(member)}/admin-sessions/${id(session)}/end`, { method: 'POST', json: {} }),
   );
 }
+export type MergeReport = {
+  dryRun: boolean;
+  keep: { id: string; name: string; email: string | null; status: string };
+  duplicate: { id: string; name: string; email: string | null; status: string };
+  blockers: { code: string; message: string }[];
+  warnings: string[];
+  collections: Record<string, { move: number; stay: number }>;
+  referrals: number;
+  points: Record<string, { earned?: number; available?: number; pending?: number } | undefined>;
+  mergeId?: string;
+  moved?: Record<string, number>;
+};
+export async function mergeAction(keep: string, duplicate: string, apply: boolean, reason?: string) {
+  return run(
+    () =>
+      api<MergeReport>('/panel/duplicates/merge', {
+        method: 'POST',
+        json: { keep, duplicate, apply, ...(reason ? { reason } : {}) },
+      }),
+    apply ? '/members/duplicates' : undefined,
+  );
+}
+export async function mergeUndoAction(mergeId: string, reason: string) {
+  return run(
+    () => api(`/panel/duplicates/merges/${id(mergeId)}/undo`, { method: 'POST', json: { reason } }),
+    '/members/duplicates',
+  );
+}
 export async function archiveRunAction(dryRun: boolean, reason?: string) {
   return run(
     () =>

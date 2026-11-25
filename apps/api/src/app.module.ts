@@ -54,6 +54,7 @@ import { BrandsController } from './brands/brands.controller.js';
 import { AbuseService } from './common/abuse.service.js';
 import { PanelAdminService } from './panel-admin/panel-admin.service.js';
 import { MembersController } from './panel-admin/members.controller.js';
+import { DuplicatesController } from './panel-admin/duplicates.controller.js';
 import { QuestionBankController } from './panel-admin/question-bank.controller.js';
 import { QuestionnaireController } from './panel-admin/questionnaire.controller.js';
 import { QuestionnaireService } from './panel-admin/questionnaire.service.js';
@@ -87,6 +88,7 @@ export class AppModule {
         AdminsController,
         BrandsController,
         MembersController,
+        DuplicatesController,
         QuestionBankController,
         QuestionnaireController,
         SegmentsController,
