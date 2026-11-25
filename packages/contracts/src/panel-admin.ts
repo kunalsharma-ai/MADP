@@ -116,6 +116,27 @@ export type ArchiveRun = z.infer<typeof ArchiveRun>;
 export const MemberRestore = z.object({ ids: z.array(ObjectId).min(1).max(1000), reason: Reason });
 export type MemberRestore = z.infer<typeof MemberRestore>;
 
+// ---- duplicate accounts (MFR#68, Project/api/app/admin/merge.js) -------------------------------------------------
+export const DuplicateRule = z.enum(['email', 'phone', 'name_dob']);
+export const DuplicateSearch = z.object({
+  by: DuplicateRule.default('email'),
+  limit: z.coerce.number().int().min(1).max(200).default(50),
+});
+export type DuplicateSearch = z.infer<typeof DuplicateSearch>;
+
+/** A merge is a dry run unless `apply` is true; applying needs a reason. */
+export const MemberMergeRequest = z
+  .object({ keep: ObjectId, duplicate: ObjectId, apply: z.boolean().default(false), reason: Reason.optional() })
+  .strict()
+  .refine((m) => m.keep !== m.duplicate, { message: 'Choose two different accounts', path: ['duplicate'] })
+  .refine((m) => !m.apply || Boolean(m.reason), { message: 'A merge needs a reason', path: ['reason'] });
+export type MemberMergeRequest = z.infer<typeof MemberMergeRequest>;
+
+export const MergeHistoryQuery = z.object({ member: ObjectId.optional() });
+export type MergeHistoryQuery = z.infer<typeof MergeHistoryQuery>;
+export const MergeUndo = z.object({ reason: Reason }).strict();
+export type MergeUndo = z.infer<typeof MergeUndo>;
+
 // ---- question bank -------------------------------------------------------------------------------------------------
 const QuestionKey = z
   .string()

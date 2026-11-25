@@ -40,6 +40,11 @@ export default async function MembersPage({
         eyebrow="Panel"
         title="Members"
         description="Search members of the brand picked at the top. E-mail and phone are masked; full values need the PII permission and a reason, and every look-up is in the audit log. Teens show only to admins with teen access."
+        actions={
+          <Link href="/members/duplicates" className={btn.secondary}>
+            Find duplicates
+          </Link>
+        }
       />
       {await withPanel(async () => {
         const data = await api<{

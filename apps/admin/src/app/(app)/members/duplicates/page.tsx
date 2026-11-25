@@ -1,0 +1,104 @@
+import type { Metadata } from 'next';
+import Link from 'next/link';
+import { api } from '@/lib/api';
+import { withPanel } from '@/lib/panel';
+import { Badge, Card, CardHeader, EmptyState, PageHeader, Table, btn, fmtDate } from '@/components/ui';
+import type { MemberRow } from '../shared';
+import { MergeGroup, UndoMerge } from './merge-tools';
+
+export const metadata: Metadata = { title: 'Duplicate members' };
+
+const RULES = [
+  ['email', 'Same e-mail'],
+  ['phone', 'Same phone'],
+  ['name_dob', 'Same name and date of birth'],
+] as const;
+
+interface MergeRow {
+  id: string;
+  keep: string;
+  duplicate: string;
+  reason: string;
+  actor: string | null;
+  moved: Record<string, number>;
+  createdAt: string;
+  undoneAt: string | null;
+}
+
+export default async function DuplicatesPage({ searchParams }: { searchParams: Promise<{ by?: string }> }) {
+  const sp = await searchParams;
+  const by = RULES.some(([k]) => k === sp.by) ? sp.by! : 'email';
+  return (
+    <>
+      <PageHeader
+        eyebrow="Panel · Members"
+        title="Duplicate members"
+        description="Likely duplicate accounts in the brand picked at the top, with e-mail and phone masked. A merge always starts as a dry run that shows what moves; merging moves points and history to the kept account and closes the duplicate. Teen accounts are never merged. Every step is in the audit log, and a merge can be undone."
+        actions={
+          <Link href="/members" className={btn.secondary}>
+            Back to members
+          </Link>
+        }
+      />
+      {await withPanel(async () => {
+        const [found, history] = await Promise.all([
+          api<{ reason: string; groups: number; more: boolean; items: { reason: string; members: MemberRow[] }[] }>(
+            `/panel/duplicates?by=${by}`,
+          ),
+          api<{ items: MergeRow[] }>('/panel/duplicates/merges'),
+        ]);
+        return (
+          <div className="grid gap-4">
+            <div className="flex flex-wrap gap-2">
+              {RULES.map(([k, label]) => (
+                <Link key={k} href={`/members/duplicates?by=${k}`} className={k === by ? btn.primary : btn.secondary}>
+                  {label}
+                </Link>
+              ))}
+            </div>
+            <p className="text-[13px] text-fg-2">
+              {found.reason}. {found.groups} group{found.groups === 1 ? '' : 's'}
+              {found.more ? ' shown; more exist' : ''}.
+            </p>
+            {found.items.length === 0 ? (
+              <Card>
+                <EmptyState title="No duplicates found">Try another rule above.</EmptyState>
+              </Card>
+            ) : (
+              found.items.map((g, i) => <MergeGroup key={g.members.map((m) => m.id).join('-')} n={i + 1} members={g.members} />)
+            )}
+            <Card>
+              <CardHeader title="Merges" hint="Newest first. Undo puts every moved row back and reopens the duplicate." />
+              {history.items.length === 0 ? (
+                <EmptyState title="No merges yet" />
+              ) : (
+                <Table head={['When', 'Kept', 'Closed', 'Moved', 'Reason', '']}>
+                  {history.items.map((m) => (
+                    <tr key={m.id}>
+                      <td className="px-5 py-2">{fmtDate(m.createdAt)}</td>
+                      <td className="px-5 py-2">
+                        <Link className="text-accent" href={`/members/${m.keep}`}>
+                          {m.keep.slice(-6)}
+                        </Link>
+                      </td>
+                      <td className="px-5 py-2">
+                        <Link className="text-accent" href={`/members/${m.duplicate}`}>
+                          {m.duplicate.slice(-6)}
+                        </Link>
+                      </td>
+                      <td className="px-5 py-2">{Object.values(m.moved).reduce((a, b) => a + b, 0)} rows</td>
+                      <td className="px-5 py-2 text-fg-2">{m.reason}</td>
+                      <td className="px-5 py-2">
+                        {m.undoneAt ? <Badge>Undone {fmtDate(m.undoneAt)}</Badge> : <UndoMerge id={m.id} />}
+                      </td>
+                    </tr>
+                  ))}
+                </Table>
+              )}
+            </Card>
+          </div>
+        );
+      })}
+    </>
+  );
+}
