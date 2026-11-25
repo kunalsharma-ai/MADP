@@ -192,7 +192,7 @@ describe('super admin foundation: roles per brand, sessions, hash-chained audit,
     ).toEqual([
       ['t2o', 'https://www.turn2opinion.com/privacy/'],
       ['mfr', 'https://www.myfrequentrewards.com/privacy'],
-      ['mho', null],
+      ['mho', 'https://www.myhealthopinions.com/privacy/'],
     ]);
     await request(t.server)
       .put('/api/v1/brands/mho/settings')

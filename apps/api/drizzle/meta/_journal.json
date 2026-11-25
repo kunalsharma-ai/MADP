@@ -141,6 +141,13 @@
       "when": 1795551952295,
       "tag": "0019_mailer_template_source",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1795595669013,
+      "tag": "0020_brand_mho_privacy",
+      "breakpoints": true
     }
   ]
 }

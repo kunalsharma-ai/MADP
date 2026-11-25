@@ -143,8 +143,8 @@ describe('templates', () => {
     expect(p.body.html).toContain('https://www.turn2opinion.com/privacy/');
     expect(p.body.brandWarning).toBeNull();
     const kits = (await request(t.server).get('/api/v1/communications/templates').set(as('privacy_officer')).expect(200)).body.brandKits;
-    expect(kits.mho.privacyUrl).toBeNull();
-    expect(kits.mho.confirmed).toBe(false);
+    expect(kits.mho.privacyUrl).toBe('https://www.myhealthopinions.com/privacy/');
+    expect(kits.mho.confirmed).toBe(true); // every brand's kit is complete once MHO's privacy link is in
   });
 });
 
