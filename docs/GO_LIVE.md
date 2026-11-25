@@ -16,8 +16,22 @@ Secrets go into the secrets manager of each environment. Never into chat, a repo
 | Which backend MHO production runs, and the production host of each panel | The connectors and the signed admin API need the real addresses |
 | Confirm the shared backend | The console's signed admin API (`/api/admin/v1`) is on MFR `main` (MFR#44 onwards) and serves every brand by `x-madp-origin`, because the three brands share one panel backend and database. T2O `Main` and MHO `Main` do not carry it, by design. If MHO production turns out to run a separate backend, it needs its own copy |
 | An e-mail provider, and approval to send | Every panel job and MADP campaign writes to an outbox folder or stays a dry run. Nothing is sent today |
-| MHO's privacy policy link | Needed in the MHO legal footer and consent screens |
 | Deploy-time protection: WAF and load balancer rate limits, GitHub secret scanning and CodeQL | Not settable from the code |
+
+### Brand details to enter in Brands & settings
+
+Mail footers and consent screens read these from Brands & settings (`brand_setting`). The code holds none of them, so
+an admin with `brands.manage` enters them once per brand after go-live. Until then, mail previews show "[privacy
+policy link not set]".
+
+| Brand | Sender | Privacy policy |
+| --- | --- | --- |
+| T2O | support@turn2opinion.com | https://www.turn2opinion.com/privacy/ |
+| MFR | support@myfrequentrewards.com | https://www.myfrequentrewards.com/privacy |
+| MHO | support@myhealthopinions.com | https://www.myhealthopinions.com/privacy/ (given by Kunal on 2026-11-25) |
+
+The legal footer is the same for all three: FREQUENT RESEARCH FIELDWORK SOLUTIONS PRIVATE LIMITED, 70/1/2 Mangolpur
+Kalan, First Floor, West Enclave, Pitampura, Delhi 110085.
 
 ## 2. MADP API (`apps/api`)
 
