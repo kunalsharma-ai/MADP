@@ -18,11 +18,11 @@ Secrets go into the secrets manager of each environment. Never into chat, a repo
 | An e-mail provider, and approval to send | Every panel job and MADP campaign writes to an outbox folder or stays a dry run. Nothing is sent today |
 | Deploy-time protection: WAF and load balancer rate limits, GitHub secret scanning and CodeQL | Not settable from the code |
 
-### Brand details to enter in Brands & settings
+### Brand details (already set by the migrations)
 
-Mail footers and consent screens read these from Brands & settings (`brand_setting`). The code holds none of them, so
-an admin with `brands.manage` enters them once per brand after go-live. Until then, mail previews show "[privacy
-policy link not set]".
+Mail footers and consent screens read these from Brands & settings (`brand_setting`). The migrations fill them in
+for every brand (0015, 0016 and 0020), so nobody has to type them after go-live. An admin with `brands.manage` can still
+change them there, and every change is audited.
 
 | Brand | Sender | Privacy policy |
 | --- | --- | --- |
