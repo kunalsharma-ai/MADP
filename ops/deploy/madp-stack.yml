@@ -1,0 +1,166 @@
+# MADP on Docker Swarm (Kunal's hosting, 25 Nov 2026). Deploy:
+#   docker stack deploy -c ops/deploy/madp-stack.yml madp
+# See docs/RUNBOOKS.md section "Docker Swarm" for the secrets to create first and the migration job.
+#
+# Rules this file keeps:
+#   - No service publishes a port. Only the proxy manager in front (Traefik or Nginx Proxy Manager, on 80 and 443)
+#     is reachable from outside. Docker writes its own iptables rules, so a published port would bypass UFW.
+#   - Only the gateway joins the external network publicweb. Everything else talks on the overlay network madp.
+#   - Secrets are Swarm secrets, read through X_FILE=/run/secrets/... (packages/config withSecretFiles).
+#   - Images are pinned exactly. MADP_VERSION is the tag the release build pushed.
+
+x-api-env: &api-env
+  NODE_ENV: production
+  PORT: '4000'
+  MONGODB_DB: madp
+  ADMIN_ORIGIN: https://${MADP_HOST:?set MADP_HOST, e.g. madp.example.com}
+  REQUIRE_MFA: 'true'
+  # Live panel reads stay off until Kunal approves each panel (CLAUDE.md). Empty means DEMO data only.
+  LIVE_SOURCE_APPROVED_PANELS: ${LIVE_SOURCE_APPROVED_PANELS:-}
+  # The one shared panel backend serves all three brands; MADP signs with x-madp-origin per brand.
+  T2O_ADMIN_API_BASE_URL: ${T2O_ADMIN_API_BASE_URL:-https://www.turn2opinion.com}
+  MFR_ADMIN_API_BASE_URL: ${MFR_ADMIN_API_BASE_URL:-https://www.myfrequentrewards.com}
+  MHO_ADMIN_API_BASE_URL: ${MHO_ADMIN_API_BASE_URL:-https://www.myhealthopinions.com}
+  DATABASE_URL_FILE: /run/secrets/madp_database_url
+  MONGODB_URL_FILE: /run/secrets/madp_mongodb_url
+  AUTH_JWT_SECRET_FILE: /run/secrets/madp_auth_jwt_secret
+  FIELD_ENCRYPTION_KEY_FILE: /run/secrets/madp_field_encryption_key
+  PII_HASH_KEY_FILE: /run/secrets/madp_pii_hash_key
+  PANEL_ADMIN_API_SECRET_FILE: /run/secrets/madp_panel_admin_api_secret
+
+x-api-secrets: &api-secrets
+  - madp_database_url
+  - madp_mongodb_url
+  - madp_auth_jwt_secret
+  - madp_field_encryption_key
+  - madp_pii_hash_key
+  - madp_panel_admin_api_secret
+
+services:
+  gateway:
+    image: nginx:1.30.8-alpine
+    environment:
+      MADP_HOST: ${MADP_HOST:?set MADP_HOST}
+    configs:
+      - { source: gw_default, target: /etc/nginx/conf.d/default.conf }
+      - { source: gw_log_format, target: /etc/nginx/conf.d/01-log-format.conf }
+      - { source: gw_resolver, target: /etc/nginx/conf.d/02-resolver.conf }
+      - { source: gw_maps, target: /etc/nginx/conf.d/11-definition-map.conf }
+      - { source: gw_headers, target: /etc/nginx/conf.d/21-headers.inc }
+      - { source: gw_routing, target: /etc/nginx/conf.d/51-project-routing.conf }
+      - { source: gw_server, target: /etc/nginx/templates/91-server-madp.conf.template }
+    networks:
+      # The proxy manager forwards MADP_HOST to http://madp-gateway:80 (runbook: Traefik file route or NPM host).
+      publicweb: { aliases: [madp-gateway] }
+      madp: {}
+    healthcheck:
+      test:
+        ['CMD', 'wget', '-q', '-O', '/dev/null', 'http://127.0.0.1/healthz', '--header', 'Host: ${MADP_HOST}']
+      interval: 30s
+      retries: 3
+    deploy:
+      replicas: 2
+      update_config: { order: start-first }
+
+  api:
+    image: ${MADP_REGISTRY:-madp}/api:${MADP_VERSION:?set MADP_VERSION}
+    command: ['node', 'dist/main.js']
+    environment: *api-env
+    secrets: *api-secrets
+    networks: [madp]
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "fetch('http://127.0.0.1:4000/api/v1/health').then(r=>process.exit(r.ok?0:1),()=>process.exit(1))",
+        ]
+      interval: 30s
+      retries: 3
+      start_period: 30s
+    deploy:
+      replicas: 2
+      update_config: { order: start-first, failure_action: rollback }
+
+  # Database migrations, once per release, before the new api starts: docker service scale madp_migrate=1 (see the
+  # runbook). Kept apart from api so two api replicas never migrate at the same time.
+  migrate:
+    image: ${MADP_REGISTRY:-madp}/api:${MADP_VERSION:?set MADP_VERSION}
+    command: ['node', 'dist/scripts/migrate.js']
+    environment: *api-env
+    secrets: *api-secrets
+    networks: [madp]
+    deploy:
+      mode: replicated-job
+      replicas: 1
+
+  admin:
+    image: ${MADP_REGISTRY:-madp}/admin:${MADP_VERSION:?set MADP_VERSION}
+    environment:
+      MADP_API_URL: http://api:4000/api/v1
+    networks: [madp]
+    deploy:
+      replicas: 2
+      update_config: { order: start-first, failure_action: rollback }
+
+  postgres:
+    image: postgres:18.7
+    environment:
+      POSTGRES_USER: madp
+      POSTGRES_DB: madp
+      POSTGRES_PASSWORD_FILE: /run/secrets/madp_postgres_password
+    secrets: [madp_postgres_password]
+    volumes: [pgdata:/var/lib/postgresql]
+    networks: [madp]
+    healthcheck: { test: ['CMD-SHELL', 'pg_isready -U madp'], interval: 10s, retries: 10 }
+    deploy:
+      replicas: 1
+      # Keep the database on the node that holds its volume (label it: docker node update --label-add madp.db=true).
+      placement: { constraints: [node.labels.madp.db == true] }
+
+  mongodb:
+    image: mongo:8.3.17
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: madp
+      MONGO_INITDB_ROOT_PASSWORD_FILE: /run/secrets/madp_mongodb_password
+    secrets: [madp_mongodb_password]
+    volumes: [mongodata:/data/db]
+    networks: [madp]
+    healthcheck:
+      { test: ['CMD', 'mongosh', '--quiet', '--eval', 'db.runCommand({ping:1})'], interval: 10s, retries: 10 }
+    deploy:
+      replicas: 1
+      placement: { constraints: [node.labels.madp.db == true] }
+
+networks:
+  publicweb:
+    external: true
+  madp:
+    name: madp
+    driver: overlay
+    # Encrypt traffic between nodes on the internal network.
+    driver_opts: { encrypted: 'true' }
+
+volumes:
+  pgdata:
+  mongodata:
+
+secrets:
+  madp_database_url: { external: true }
+  madp_mongodb_url: { external: true }
+  madp_auth_jwt_secret: { external: true }
+  madp_field_encryption_key: { external: true }
+  madp_pii_hash_key: { external: true }
+  madp_panel_admin_api_secret: { external: true }
+  madp_postgres_password: { external: true }
+  madp_mongodb_password: { external: true }
+
+configs:
+  gw_default: { file: ./gateway/00-default.conf }
+  gw_log_format: { file: ./gateway/01-log-format.conf }
+  gw_resolver: { file: ./gateway/02-resolver.conf }
+  gw_maps: { file: ./gateway/11-definition-map.conf }
+  gw_headers: { file: ./gateway/21-headers.inc }
+  gw_routing: { file: ./gateway/51-project-routing.conf }
+  gw_server: { file: ./gateway/91-server-madp.conf.template }

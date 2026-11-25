@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { z } from 'zod';
 
 const panelList = z
@@ -145,8 +146,34 @@ export const ApiEnv = z.object({
 });
 export type ApiEnv = z.infer<typeof ApiEnv>;
 
+/**
+ * Docker Swarm secrets: `X_FILE=/run/secrets/x` sets X to that file's contents (one trailing newline dropped). Setting
+ * both X and X_FILE is refused, so a stray value can't silently win over the secret. Returns a new object.
+ */
+export function withSecretFiles(
+  source: Record<string, string | undefined> = process.env,
+  read: (path: string) => string = (path) => readFileSync(path, 'utf8'),
+): Record<string, string | undefined> {
+  const out = { ...source };
+  for (const [key, path] of Object.entries(source)) {
+    if (!key.endsWith('_FILE') || !path) continue;
+    const name = key.slice(0, -'_FILE'.length);
+    if (source[name] !== undefined && source[name] !== '')
+      throw new Error(`Invalid API configuration: set ${name} or ${key}, not both`);
+    let value: string;
+    try {
+      value = read(path);
+    } catch {
+      throw new Error(`Invalid API configuration: ${key} points to ${path}, which can't be read`);
+    }
+    out[name] = value.replace(/\r?\n$/, '');
+    delete out[key];
+  }
+  return out;
+}
+
 export function loadApiEnv(source: Record<string, string | undefined> = process.env): ApiEnv {
-  const parsed = ApiEnv.safeParse(source);
+  const parsed = ApiEnv.safeParse(withSecretFiles(source));
   if (!parsed.success) {
     const issues = parsed.error.issues.map((i) => `${i.path.join('.')}: ${i.message}`).join('; ');
     throw new Error(`Invalid API configuration: ${issues}`);

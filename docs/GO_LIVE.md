@@ -11,7 +11,7 @@ Secrets go into the secrets manager of each environment. Never into chat, a repo
 
 | Decision | Why it blocks |
 | --- | --- |
-| Where MADP runs (host, Postgres 18, MongoDB 8), and its public address | `ADMIN_ORIGIN` and `MADP_API_URL` need it |
+| MADP's public address (`MADP_HOST`) and which proxy manager fronts it | Hosting is decided: Docker Swarm, nginx gateway on `publicweb`, UFW, no published ports (`ops/deploy/madp-stack.yml`, RUNBOOKS section 2). The host name sets `ADMIN_ORIGIN` and the proxy route |
 | Approve live read-only access, one panel at a time | `LIVE_SOURCE_APPROVED_PANELS` stays empty until then; every screen shows DEMO data |
 | Which backend MHO production runs, and the production host of each panel | The connectors and the signed admin API need the real addresses |
 | Confirm the shared backend | The console's signed admin API (`/api/admin/v1`) is on MFR `main` (MFR#44 onwards) and serves every brand by `x-madp-origin`, because the three brands share one panel backend and database. T2O `Main` and MHO `Main` do not carry it, by design. If MHO production turns out to run a separate backend, it needs its own copy |
