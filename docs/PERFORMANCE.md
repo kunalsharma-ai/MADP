@@ -103,6 +103,34 @@ Same database and mix, 16 concurrent clients for 60 seconds. The verification su
 Status codes: 200 × 6451
 16 concurrent clients for 60.1 s: 107.3 requests/s, error rate 0.00%.
 
+## 2026-11-25: 5,000 demo people, time zone list read once
+
+The verification summary read `pg_timezone_names` on every call, and Postgres walks the zoneinfo files to answer it.
+The list only changes with a Postgres upgrade, so the API now reads it once per process and passes it in. The summary
+is unchanged (same JSON for every panel on the 5,000-person database, and `test/verification.test.ts` still compares
+every check with its drill-down). One call on its own went from about 50 ms to about 26 ms.
+
+Same database and mix, 16 concurrent clients for 60 seconds:
+
+| Endpoint | Requests | p50 ms | p95 ms | p99 ms | Errors |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| audience counts | 3075 | 116 | 169 | 209 | 0 |
+| audience counts, filtered | 1529 | 94 | 140 | 167 | 0 |
+| geography, world | 1086 | 110 | 157 | 185 | 0 |
+| overlap | 519 | 124 | 189 | 229 | 0 |
+| panellist directory | 1573 | 45 | 73 | 91 | 0 |
+| verification summary | 502 | 109 | 168 | 191 | 0 |
+| consent summary | 506 | 126 | 199 | 238 | 0 |
+| report: audience by country | 1081 | 49 | 78 | 96 | 0 |
+| health | 604 | 10 | 27 | 40 | 0 |
+| **All** | 10475 | 96 | 158 | 196 | 0 |
+
+Status codes: 200 × 10475
+16 concurrent clients for 60.1 s: 174.4 requests/s, error rate 0.00%.
+
+The verification summary went from p50 147 ms and p95 210 ms to p50 109 ms and p95 168 ms, in line with the other
+summaries.
+
 ## 2026-11-24: 300 demo people (preview database)
 
 16 concurrent clients for 30 seconds:

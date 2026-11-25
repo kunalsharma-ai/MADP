@@ -77,8 +77,9 @@ describe('verification and data quality', () => {
   });
 
   it('counts each check in the summary exactly as the drill-down finds it, per panel', async () => {
-    // An e-mail shared across two panels is not a duplicate in either.
-    const [mfr] = await members('mfr', 1);
+    // An e-mail shared across two panels is not a duplicate in either. The MFR member picked has an e-mail no MHO
+    // member has yet (DEMO people can be in both panels with one e-mail, which would make a real MHO duplicate).
+    const [mfr] = await members('mfr', 1, sql`s.email_hash not in (select s2.email_hash from source_identity s2 where s2.panel = 'mho' and s2.email_hash is not null)`);
     const [mho] = await members('mho', 1);
     const before = (await get('data_steward', '/summary').expect(200)).body as Summary;
     await q(sql`update source_identity set email_hash = (select email_hash from source_identity where id = ${mfr!.identity}) where id = ${mho!.identity}`);
