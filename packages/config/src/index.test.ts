@@ -60,7 +60,7 @@ describe('loadApiEnv', () => {
 describe('withSecretFiles', () => {
   const files: Record<string, string> = {
     '/run/secrets/jwt': 'j'.repeat(40) + '\n',
-    '/run/secrets/db': 'postgres://madp:s3cret@postgres:5432/madp',
+    '/run/secrets/db': 'postgres://u:p@postgres:5432/madp',
   };
   const read = (p: string) => {
     if (!(p in files)) throw new Error('ENOENT');
@@ -73,7 +73,7 @@ describe('withSecretFiles', () => {
     );
     expect(out).toEqual({
       AUTH_JWT_SECRET: 'j'.repeat(40),
-      DATABASE_URL: 'postgres://madp:s3cret@postgres:5432/madp',
+      DATABASE_URL: 'postgres://u:p@postgres:5432/madp',
       PORT: '4000',
     });
   });
