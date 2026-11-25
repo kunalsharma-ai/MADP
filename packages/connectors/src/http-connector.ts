@@ -393,7 +393,7 @@ export const PANEL_ADMIN_ROUTES = {
   memberStatus: (id: string) => `/api/admin/v1/members/${encodeURIComponent(id)}/status`,
   memberSegment: (id: string) => `/api/admin/v1/members/${encodeURIComponent(id)}/segment`,
   memberUnmask: (id: string) => `/api/admin/v1/members/${encodeURIComponent(id)}/unmask`,
-  // Member actions (Project/api/app/admin/memberactions.js): e-mails behind email_admin_actions, "log in as member"
+  // Member actions (MFR#67, Project/api/app/admin/memberactions.js): e-mails behind email_admin_actions, "log in as member"
   memberResetPassword: (id: string) => `/api/admin/v1/members/${encodeURIComponent(id)}/reset-password`,
   memberResendWelcome: (id: string) => `/api/admin/v1/members/${encodeURIComponent(id)}/resend-welcome`,
   memberLoginAs: (id: string) => `/api/admin/v1/members/${encodeURIComponent(id)}/login-as`,

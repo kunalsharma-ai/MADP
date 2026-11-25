@@ -154,8 +154,8 @@ Spec modules 1 to 4 for MFR. The panel side is in kunalsharma-ai/MFR#44 and #45 
   report filters by segment. Tests: `test/qb-translations.test.ts` (5, all three brands).
 
 - Member actions on the member page (Account help card): e-mail a password reset link, send the welcome again, and
-  log in as the member. The panel side (MFR `app/admin/memberactions.js`) is **not merged yet: it waits for Kunal's
-  approval to change the MFR repo** (patch in project files `madp/patches/mfr-member-actions.patch`). E-mails go out
+  log in as the member. The panel side is MFR `app/admin/memberactions.js` (MFR#67, merged with Kunal's approval on
+  25 Nov 2026, not deployed). E-mails go out
   only when the new `email_admin_actions` switch is on (off by default); until then the console shows the template,
   masked address and brand. The reset is the member's own forgot-password code, never a password. Log in as member is
   Super Admin only (`members.impersonate`), needs a reason, refuses teens and panel admins, and gives a one-use link
