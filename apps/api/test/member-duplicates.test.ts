@@ -7,7 +7,7 @@ import { signPanelAdmin } from '@madp/connectors';
 import { startTestApp } from './helpers.js';
 
 /**
- * Duplicate member accounts through MADP for T2O, MFR and MHO. A stand-in for the panel's /api/admin/v1
+ * Duplicate member accounts through MADP for T2O, MFR and MHO. A stand-in for the panel's /api/v1/admin
  * (kunalsharma-ai/MFR#68, app/admin/merge.js) checks MADP's signature and keeps its rules: a merge is a dry run unless
  * ?dryRun=0, applying needs a reason and no blockers, teen accounts are blocked, and an undo happens once.
  */
@@ -44,12 +44,12 @@ function fakePanel() {
     seen.push({ method: req.method!, url: req.url!, origin: h('x-madp-origin'), body });
     const url = new URL(req.url!, 'http://x');
     const p = url.pathname;
-    if (p === '/api/admin/v1/members/duplicates') {
+    if (p === '/api/v1/admin/members/duplicates') {
       const by = url.searchParams.get('by');
       if (!['email', 'phone', 'name_dob'].includes(by ?? '')) return err(400, 'invalid_value', 'by is email, phone or name_dob');
       return ok({ by, reason: 'Same e-mail address, ignoring capitals, dots and +tags', groups: 1, more: false, items: [{ reason: 'x', members: [row(A), row(B)] }] });
     }
-    if (p === '/api/admin/v1/members/merge') {
+    if (p === '/api/v1/admin/members/merge') {
       const dryRun = url.searchParams.get('dryRun') !== '0';
       const teen = body.keep === TEEN || body.duplicate === TEEN;
       const report = {
@@ -66,9 +66,9 @@ function fakePanel() {
       if (String(body.reason ?? '').trim().length < 5) return err(400, 'reason_required', 'A reason is required');
       return ok({ ...report, mergeId: MERGE, moved: { Response: 3, Reward: 2 }, stayed: { Response: 1, Reward: 0 }, points: { ...report.points, keepAfter: { earned: 140, available: 120 } }, before: { duplicateStatus: 'active' }, after: { duplicateStatus: 'closed', mergedInto: body.keep } });
     }
-    if (p === '/api/admin/v1/members/merges')
+    if (p === '/api/v1/admin/members/merges')
       return ok([{ id: MERGE, keep: A, duplicate: B, reason: 'Member confirmed both accounts', actor: null, moved: { Response: 3 }, stayed: {}, referrals: 1, createdAt: new Date().toISOString(), undoneAt: null, undoneBy: null }]);
-    if (p === `/api/admin/v1/members/merges/${MERGE}/undo`) {
+    if (p === `/api/v1/admin/members/merges/${MERGE}/undo`) {
       const key = h('x-madp-origin');
       if (undone.has(key)) return err(409, 'already_undone', 'This merge was already undone');
       undone.add(key);
@@ -111,12 +111,12 @@ describe('duplicate members through the panel admin API', () => {
 
       const dry = await request(t.server).post('/api/v1/panel/duplicates/merge').set(bearer(tok.super!, brand)).send({ keep: A, duplicate: B }).expect(201);
       expect(dry.body).toMatchObject({ dryRun: true, blockers: [] });
-      expect(panel.seen.at(-1)!.url).toBe('/api/admin/v1/members/merge');
+      expect(panel.seen.at(-1)!.url).toBe('/api/v1/admin/members/merge');
       expect((await audit('members.merge.dry_run', brand)).target_id).toBe(B);
 
       const done = await request(t.server).post('/api/v1/panel/duplicates/merge').set(bearer(tok.super!, brand)).send({ keep: A, duplicate: B, apply: true, reason: 'Member confirmed both accounts' }).expect(201);
       expect(done.body).toMatchObject({ dryRun: false, mergeId: MERGE });
-      expect(panel.seen.at(-1)!.url).toBe('/api/admin/v1/members/merge?dryRun=0');
+      expect(panel.seen.at(-1)!.url).toBe('/api/v1/admin/members/merge?dryRun=0');
       const a = await audit('members.merge', brand);
       expect(a).toMatchObject({ target_id: B, reason: 'Member confirmed both accounts', after: { duplicateStatus: 'closed', mergedInto: A } });
       expect(a.metadata).toMatchObject({ keep: A, mergeId: MERGE, moved: { Response: 3, Reward: 2 } });

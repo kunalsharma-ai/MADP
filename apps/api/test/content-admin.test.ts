@@ -8,7 +8,7 @@ import { signPanelAdmin } from '@madp/connectors';
 import { startTestApp } from './helpers.js';
 
 /**
- * Content and legal pages through MADP for T2O, MFR and MHO. A stand-in for the panel's /api/admin/v1/content
+ * Content and legal pages through MADP for T2O, MFR and MHO. A stand-in for the panel's /api/v1/admin/content
  * (kunalsharma-ai/MFR#64 app/admin/content.js) checks MADP's signature and keeps the same rules: legal keys are always
  * legal, a legal page publishes only from review and only by an admin who neither asked for review nor made the last
  * edit, and every publish is kept as a revision.
@@ -45,7 +45,7 @@ function fakePanel() {
     actors.push(actor);
     const body = raw ? JSON.parse(raw) : {};
     const url = new URL(req.url!, 'http://x');
-    const parts = url.pathname.replace('/api/admin/v1/content', '').split('/').filter(Boolean);
+    const parts = url.pathname.replace('/api/v1/admin/content', '').split('/').filter(Boolean);
     const page = parts[0] ? pages.find((p) => p.id === parts[0] && p.origin === origin) : undefined;
     if (parts[0] && !page) return err(404, 'not_found', 'Page not found');
     if (!parts.length && req.method === 'GET') return ok(pages.filter((p) => p.origin === origin && (!url.searchParams.get('kind') || p.kind === url.searchParams.get('kind'))));

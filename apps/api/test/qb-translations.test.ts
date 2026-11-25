@@ -9,7 +9,7 @@ import { startTestApp } from './helpers.js';
 
 /**
  * Question translations and the missing-translation report through MADP for T2O, MFR and MHO. A stand-in for the
- * panel's /api/admin/v1 (kunalsharma-ai/MFR app/admin/versions.js, teen check from MFR#66) checks MADP's signature and
+ * panel's /api/v1/admin (kunalsharma-ai/MFR app/admin/versions.js, teen check from MFR#66) checks MADP's signature and
  * keeps the same rules: options arrive as { value: label }, English is refused, and a question teens can see can't be
  * translated into wording the teen guardrail blocks (422 teen_guardrail, nothing saved).
  */
@@ -42,7 +42,7 @@ function fakePanel() {
     const origin = h('x-madp-origin');
     const body = raw ? JSON.parse(raw) : {};
     const url = new URL(req.url!, 'http://x');
-    const tr = /^\/api\/admin\/v1\/questions\/([^/]+)\/translations$/.exec(url.pathname);
+    const tr = /^\/api\/v1\/admin\/questions\/([^/]+)\/translations$/.exec(url.pathname);
     if (tr && req.method === 'PUT') {
       bodies.push(body);
       const { lang, label, description, options: opts } = body;
@@ -66,7 +66,7 @@ function fakePanel() {
         }
       return ok({ before, after: { label: label ?? before.label, description: description ?? before.description }, optionsSet });
     }
-    if (url.pathname === '/api/admin/v1/qb/translations/missing' && req.method === 'GET') {
+    if (url.pathname === '/api/v1/admin/qb/translations/missing' && req.method === 'GET') {
       const lang = url.searchParams.get('lang')!;
       const cat = url.searchParams.get('category');
       const qs = questions.filter((q) => q.origin === origin && (!cat || q.category.includes(cat)));

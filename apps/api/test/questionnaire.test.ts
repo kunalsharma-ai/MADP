@@ -8,7 +8,7 @@ import { startTestApp } from './helpers.js';
 
 /**
  * Questionnaire builder (spec screens 11 and 12) through MADP, for all three brands. A stand-in for the panel's
- * /api/admin/v1 checks MADP's signature like the real one and keeps a small DEMO profile per brand in memory, so the
+ * /api/v1/admin checks MADP's signature like the real one and keeps a small DEMO profile per brand in memory, so the
  * apply step's writes can be checked.
  */
 type T = Awaited<ReturnType<typeof startTestApp>>;
@@ -79,11 +79,11 @@ function fakePanel() {
     const ok = (data: unknown) => send(200, { status: 'success', data });
     const b = of(origin);
     const p = new URL(req.url!, 'http://x').pathname;
-    if (p === '/api/admin/v1/profiles' && req.method === 'GET')
+    if (p === '/api/v1/admin/profiles' && req.method === 'GET')
       return ok([{ id: PROFILE_ID, slug: b.profile.slug, category: b.profile.category, name: b.profile.name, questions: 3 }]);
-    if (p === '/api/admin/v1/qb/export')
+    if (p === '/api/v1/admin/qb/export')
       return ok({ exportedAt: '2026-11-24T00:00:00Z', Profile: [b.profile], Question: b.questions, Option: b.options });
-    const qm = p.match(/^\/api\/admin\/v1\/questions\/([^/]+)(\/options)?$/);
+    const qm = p.match(/^\/api\/v1\/admin\/questions\/([^/]+)(\/options)?$/);
     if (qm) {
       const q = b.questions.find((x) => x.name === decodeURIComponent(qm[1]!));
       if (!q) return send(404, { status: 'error', code: 'not_found', message: 'Question not found' });
@@ -99,13 +99,13 @@ function fakePanel() {
       Object.assign(q, body);
       return ok({ before: {}, after: body });
     }
-    if (p === `/api/admin/v1/profiles/${PROFILE_ID}` && req.method === 'PUT') {
+    if (p === `/api/v1/admin/profiles/${PROFILE_ID}` && req.method === 'PUT') {
       const before = b.profile.pages;
       b.profile.pages = body.pages;
       return ok({ before: { pages: before }, after: { pages: body.pages } });
     }
-    if (p === '/api/admin/v1/qb/versions' && req.method === 'POST') return ok({ number: 7, status: 'draft' });
-    if (p === '/api/admin/v1/qb/versions/7/review') return ok({ before: { status: 'draft' }, after: { status: 'review' } });
+    if (p === '/api/v1/admin/qb/versions' && req.method === 'POST') return ok({ number: 7, status: 'draft' });
+    if (p === '/api/v1/admin/qb/versions/7/review') return ok({ before: { status: 'draft' }, after: { status: 'review' } });
     return send(404, { status: 'error', code: 'not_found', message: 'Not found' });
   });
   return { server, seen, state };
@@ -223,12 +223,12 @@ describe('questionnaire builder: draft, second-admin approval, apply', () => {
       const origin = writes[0]!.origin;
       expect(writes.every((w) => w.origin === origin)).toBe(true);
       expect(writes.map((w) => `${w.method} ${w.path}`)).toEqual([
-        'PUT /api/admin/v1/questions/car-brand',
-        'PUT /api/admin/v1/questions/car-brand/options',
-        'PUT /api/admin/v1/questions/car-km',
-        `PUT /api/admin/v1/profiles/${PROFILE_ID}`,
-        'POST /api/admin/v1/qb/versions',
-        'POST /api/admin/v1/qb/versions/7/review',
+        'PUT /api/v1/admin/questions/car-brand',
+        'PUT /api/v1/admin/questions/car-brand/options',
+        'PUT /api/v1/admin/questions/car-km',
+        `PUT /api/v1/admin/profiles/${PROFILE_ID}`,
+        'POST /api/v1/admin/qb/versions',
+        'POST /api/v1/admin/qb/versions/7/review',
       ]);
       expect(writes[0]!.body).toEqual({ parent: 'owns-car' });
       expect(writes[1]!.body).toEqual({
@@ -265,7 +265,7 @@ describe('questionnaire builder: draft, second-admin approval, apply', () => {
       await request(t.server).post(`/api/v1/questionnaires/drafts/${d.body.id}/submit`).set(auth(author, brand)).expect(201);
       await request(t.server).post(`/api/v1/questionnaires/drafts/${d.body.id}/review`).set(auth(reviewer, brand)).send({ decision: 'approve' }).expect(201);
       // Someone edits the question on the panel directly in the meantime.
-      const origin = panel.seen.filter((s) => s.path.startsWith('/api/admin/v1/profiles')).at(-1)!.origin;
+      const origin = panel.seen.filter((s) => s.path.startsWith('/api/v1/admin/profiles')).at(-1)!.origin;
       panel.state.get(origin)!.questions.find((q) => q.name === 'pets')!.label = 'Pets at home';
       const r = await request(t.server).post(`/api/v1/questionnaires/drafts/${d.body.id}/apply`).set(auth(reviewer, brand)).expect(409);
       expect(r.body.code).toBe('profile_changed');

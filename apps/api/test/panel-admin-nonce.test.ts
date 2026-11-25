@@ -24,8 +24,8 @@ describe('panel admin client signing', () => {
       fetchImpl,
       now: () => 1_800_000_000_000,
     });
-    await client.call(ACTOR, 'POST', '/api/admin/v1/members/restore', undefined, { ids: [] });
-    await client.call(ACTOR, 'POST', '/api/admin/v1/members/restore', undefined, { ids: [] });
+    await client.call(ACTOR, 'POST', '/api/v1/admin/members/restore', undefined, { ids: [] });
+    await client.call(ACTOR, 'POST', '/api/v1/admin/members/restore', undefined, { ids: [] });
     const h = calls.map((c) => c.init.headers as Record<string, string>);
     expect(h[0]!['x-madp-nonce']).toMatch(/^[0-9a-f]{32}$/);
     expect(h[0]!['x-madp-nonce']).not.toBe(h[1]!['x-madp-nonce']);
@@ -35,7 +35,7 @@ describe('panel admin client signing', () => {
       timestamp: h[0]!['x-madp-timestamp']!,
       nonce: h[0]!['x-madp-nonce']!,
       method: 'POST',
-      path: '/api/admin/v1/members/restore',
+      path: '/api/v1/admin/members/restore',
       origin: 'www.myfrequentrewards.com',
       actor: ACTOR,
       body: JSON.stringify({ ids: [] }),
@@ -46,7 +46,7 @@ describe('panel admin client signing', () => {
       timestamp: h[0]!['x-madp-timestamp']!,
       nonce: '0'.repeat(32),
       method: 'POST',
-      path: '/api/admin/v1/members/restore',
+      path: '/api/v1/admin/members/restore',
       origin: 'www.myfrequentrewards.com',
       actor: ACTOR,
       body: JSON.stringify({ ids: [] }),

@@ -106,7 +106,7 @@ Local and DEMO only. Nothing is deployed, and deploying needs Kunal's go-ahead.
 Spec modules 1 to 4 for MFR. The panel side is in kunalsharma-ai/MFR#44 and #45 (merged, not deployed).
 
 ### Completed and tested
-- Write path: the shared panel backend has a new `/api/admin/v1`. MADP signs every call with HMAC-SHA256 over the
+- Write path: the shared panel backend has a new `/api/v1/admin`. MADP signs every call with HMAC-SHA256 over the
   time, method, path and query, brand hostname, admin id and body hash. The brand is the first origin in Brands &
   settings. Without `PANEL_ADMIN_API_SECRET` and the brand's `*_ADMIN_API_BASE_URL`, the screens say the brand is not
   connected. The routes are listed in `packages/connectors/src/http-connector.ts` (`PANEL_ADMIN_ROUTES`).
@@ -215,7 +215,7 @@ covers the spec's Foundation. Everything runs on DEMO data; no panel was contact
 | `pnpm test:integration` | api 102 pass, including `test/foundation.test.ts` (7) |
 
 ### Next (spec build order step 2)
-MFR members and the question bank (modules 1 to 4), through a new `/api/admin/v1` in the shared panel backend that only
+MFR members and the question bank (modules 1 to 4), through a new `/api/v1/admin` in the shared panel backend that only
 MADP can call.
 
 ## Turn2Opinion first (2026-11-23)
@@ -534,7 +534,7 @@ Screenshots are in `docs/screenshots/`.
 
 ## Super admin step 3a: segments, audiences, surveys, points, quality, referrals (24 Nov 2026)
 
-- Panel side (kunalsharma-ai/MFR#51, merged, not deployed): `/api/admin/v1` segments, audiences, surveys and
+- Panel side (kunalsharma-ai/MFR#51, merged, not deployed): `/api/v1/admin` segments, audiences, surveys and
   invitations, points adjustments and holds, quality score changes, referral fraud view.
 - MADP: `SegmentsController`, `SurveysController`, `PointsQualityController` and question bank versions and translations.
   Every write is audited with old and new values and a reason. Reads that show member names are audited.
@@ -549,7 +549,7 @@ Screenshots are in `docs/screenshots/`.
 
 ## Super admin step 3b: ticket desk, portal messages, help centre (24 Nov 2026)
 
-- Panel side (kunalsharma-ai/MFR#52, merged, not deployed): `/api/admin/v1` tickets, messages and help. Members get
+- Panel side (kunalsharma-ai/MFR#52, merged, not deployed): `/api/v1/admin` tickets, messages and help. Members get
   portal messages from `GET /api/v1/alerts` (the bell and Messages page already called it) and published help entries
   from `GET /api/v1/help`.
 - MADP: `SupportAdminController`. Nothing is e-mailed. Ticket replies and notes are audited without their text.
@@ -563,7 +563,7 @@ Screenshots are in `docs/screenshots/`.
   and e-mail feature asks the switch when it acts. That covers redemptions, teen learning rewards, the prize draw,
   push, and the welcome, new-user, new-survey, birthday, lifecycle, weekly and expiry e-mails. The brand's kill switch
   turns them all off. The defaults are unchanged, so everything is still off on every brand.
-- `/api/admin/v1` covers:
+- `/api/v1/admin` covers:
   - switches
   - the rewards catalogue and redemption queue
   - draws and offers
@@ -591,7 +591,7 @@ Screenshots are in `docs/screenshots/`.
   `withdrawn`; never asked means no record, which counts as no. Evidence keeps the wording and source
   (`news-offers-v1@signup`), never more. Teens can't opt in at the panel.
 - Members screen: a Marketing column, a filter (opted in, declined or withdrawn, never asked) passed to
-  `/api/admin/v1/members?marketing=`, and the opt-in with its history on the member page.
+  `/api/v1/admin/members?marketing=`, and the opt-in with its history on the member page.
 - DEMO data: adults get an opt-in record from a separate random stream (about 30% opted in, a third never asked), so
   every other DEMO value is unchanged.
 - Read path per panel: MFR and MHO read the field from `GET /api/v1/user` (the field is on the record). T2O has it
@@ -658,14 +658,14 @@ Panel side: kunalsharma-ai/MFR#56 (and #57), merged, not deployed. Before deploy
   screen with the panel's own four-eyes rule.
 - Nothing reaches the panel before approval. Drafts live in `questionnaire_draft` (migration 0017, `data_mode`, one
   open draft per profile). Every step is audited.
-- No new panel endpoint: it reads `/api/admin/v1/profiles` and `/qb/export`, and `GET /questions/:name` for added
+- No new panel endpoint: it reads `/api/v1/admin/profiles` and `/qb/export`, and `GET /questions/:name` for added
   questions.
 - Tests: `packages/contracts/src/questionnaire.test.ts` (9) and `apps/api/test/questionnaire.test.ts` (16, T2O, MFR
   and MHO against a stand-in panel). Previews 80 to 85 use a preview-only stand-in panel with DEMO questions.
 
 ## Super admin step 5: reports and dashboards (24 Nov 2026)
 
-The eleven reports from the spec, read from each panel's admin API (`GET /api/admin/v1/reports/:name`,
+The eleven reports from the spec, read from each panel's admin API (`GET /api/v1/admin/reports/:name`,
 kunalsharma-ai/MFR#58, merged, not deployed) and registered in the report registry, so they show on Reports & exports
 with CSV and Excel downloads like the others: panel health, sign-up funnel, teen pipeline (needs `teen.read`),
 profile completion, survey performance, points and liability by segment (valued at each brand's points rate),
@@ -676,7 +676,7 @@ The panel returns aggregate counts only (no names or e-mails). Test: `panel-admi
 
 ## Super admin step 6: T2O and MHO through the same console (24 Nov 2026)
 
-All three brands use the same signed `/api/admin/v1`, and the brand comes from `x-madp-origin`. Step 6 shows that T2O
+All three brands use the same signed `/api/v1/admin`, and the brand comes from `x-madp-origin`. Step 6 shows that T2O
 and MHO work on every console screen and that no brand ever sees or changes another brand's data.
 
 - **Panel leak test** (`tests/admin.crossbrand.test.mjs`, kunalsharma-ai/MFR#59, merged, not deployed). It seeds the
@@ -713,7 +713,7 @@ verified.
   kept as the panel's admin note. Only a waiting request can be decided, and only Professionals can be verified.
 - **Audit and e-mail.** Every read is audited (`experts.queue.view`, `expert.view`), and so is every decision
   (`expert.verified`, `expert.declined`). Nothing is e-mailed.
-- **Panel side.** `GET/POST /api/admin/v1/experts…` in kunalsharma-ai/MFR#61, merged, not deployed. That PR also counts
+- **Panel side.** `GET/POST /api/v1/admin/experts…` in kunalsharma-ai/MFR#61, merged, not deployed. That PR also counts
   MHO's `healthcare professional` category as Professional; it was treated as Consumer before.
 - **Tests.** MFR `tests/admin.experts.test.mjs` (3) and the cross-brand test, and MADP `panel-admin-step4.test.ts` (10).
 - **Previews.** `/mnt/project-files/madp/preview-console/expert-verification/`.

@@ -8,7 +8,7 @@ import { startTestApp } from './helpers.js';
 
 /**
  * Member actions through MADP for T2O, MFR and MHO: e-mail a password reset link, send the welcome again, and log in
- * as the member. A stand-in for the panel's /api/admin/v1 (kunalsharma-ai/MFR app/admin/memberactions.js) checks
+ * as the member. A stand-in for the panel's /api/v1/admin (kunalsharma-ai/MFR app/admin/memberactions.js) checks
  * MADP's signature and keeps the same rules: nothing is sent while email_admin_actions is off, teens are refused, a
  * member of another brand is not found, and the one-use link is for a 15-minute admin session.
  */
@@ -44,7 +44,7 @@ function fakePanel() {
     const body = raw ? JSON.parse(raw) : undefined;
     seen.push({ method: req.method!, path: req.url!, origin, actor: h('x-madp-actor'), body });
     const p = new URL(req.url!, 'http://x').pathname;
-    const m = /^\/api\/admin\/v1\/members\/([a-f0-9]{24})(\/.*)?$/.exec(p);
+    const m = /^\/api\/v1\/admin\/members\/([a-f0-9]{24})(\/.*)?$/.exec(p);
     if (!m) return err(404, 'not_found', 'Not found');
     const [, id, rest = ''] = m;
     if (id !== ADULT && id !== TEEN) return err(404, 'not_found', 'Member not found');

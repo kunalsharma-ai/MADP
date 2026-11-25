@@ -8,7 +8,7 @@ import { startTestApp } from './helpers.js';
 
 /**
  * Super admin step 3a (segments, audiences, surveys and invitations, points, quality, referral fraud) and question
- * bank versions through MADP. A stand-in for the panel's /api/admin/v1 checks the signature the way the real one
+ * bank versions through MADP. A stand-in for the panel's /api/v1/admin checks the signature the way the real one
  * does (kunalsharma-ai/MFR#51) and answers with fixed DEMO data.
  */
 type T = Awaited<ReturnType<typeof startTestApp>>;
@@ -67,7 +67,7 @@ function fakePanel() {
     });
     const ok = (data: unknown) => send(200, { status: 'success', data });
     const p = url.pathname;
-    const V = '/api/admin/v1';
+    const V = '/api/v1/admin';
     if (p === `${V}/members/${ADULT}`) return ok({ id: ADULT, segment: 'consumer' });
     if (p === `${V}/members/${TEEN}`) return ok({ id: TEEN, segment: 'teen' });
     if (p === `${V}/segments`)

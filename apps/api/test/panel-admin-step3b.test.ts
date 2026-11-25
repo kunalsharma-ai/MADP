@@ -7,7 +7,7 @@ import { signPanelAdmin } from '@madp/connectors';
 import { startTestApp } from './helpers.js';
 
 /**
- * Super admin step 3b (ticket desk, portal messages, help centre) through MADP. A stand-in for the panel's /api/admin/v1 checks the signature the way the real one
+ * Super admin step 3b (ticket desk, portal messages, help centre) through MADP. A stand-in for the panel's /api/v1/admin checks the signature the way the real one
  * does (kunalsharma-ai/MFR#52) and answers with fixed DEMO data.
  */
 type T = Awaited<ReturnType<typeof startTestApp>>;
@@ -66,7 +66,7 @@ function fakePanel() {
     });
     const ok = (data: unknown) => send(200, { status: 'success', data });
     const p = url.pathname;
-    const V = '/api/admin/v1';
+    const V = '/api/v1/admin';
     if (p === `${V}/tickets`) return ok({ items: [], total: 2, page: 1, pageSize: 50, counts: { new: 2 } });
     if (p === `${V}/tickets/${ADULT}`)
       return ok({ id: ADULT, no: 'MFR-T-1', member: { id: 'x', segment: 'b2c' } });
