@@ -3,7 +3,7 @@ import { z } from 'zod';
 /**
  * Questionnaire builder (spec screens 11 and 12). MADP edits a panel profile (its pages of questions) and the show
  * logic of those questions as a draft, a second admin approves it, and only then MADP writes it to the panel through
- * the existing signed /api/admin/v1 routes (profile pages, question, question options).
+ * the existing signed /api/v1/admin routes (profile pages, question, question options).
  *
  * The logic is the panel's own rule, not a new one. A question with a `parent` is hidden until the parent is answered.
  * For a choice question the panel then shows only the options whose `parentValue` holds the parent's answer, and hides

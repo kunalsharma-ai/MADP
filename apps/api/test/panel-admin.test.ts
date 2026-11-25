@@ -8,7 +8,7 @@ import { startTestApp } from './helpers.js';
 
 /**
  * Super admin step 2 (members, question bank, profiles) through MADP. A stand-in for the panel backend's
- * /api/admin/v1 checks MADP's signature the way the real one does (kunalsharma-ai/MFR#44) and answers with fixed
+ * /api/v1/admin checks MADP's signature the way the real one does (kunalsharma-ai/MFR#44) and answers with fixed
  * DEMO data, so these tests run without the panel.
  */
 type T = Awaited<ReturnType<typeof startTestApp>>;
@@ -65,25 +65,25 @@ function fakePanel() {
     });
     const ok = (data: unknown) => send(200, { status: 'success', data });
     const p = url.pathname;
-    if (p === '/api/admin/v1/members') {
+    if (p === '/api/v1/admin/members') {
       const items = [
         { id: ADULT, name: 'Demo A.', email: 'd***@example.invalid', segment: 'consumer', status: 'active' },
         { id: TEEN, name: 'Teen T.', email: 't***@example.invalid', segment: 'teen', status: 'active' },
       ].filter((m) => !(url.searchParams.get('noTeens') && m.segment === 'teen'));
       return ok({ items, total: items.length, page: 1, pageSize: 50 });
     }
-    if (p === `/api/admin/v1/members/${ADULT}`) {
+    if (p === `/api/v1/admin/members/${ADULT}`) {
       if (req.method === 'PUT') return ok({ before: { 'name.first': 'Demo' }, after: body });
       return ok({ id: ADULT, segment: 'consumer', status: 'active', email: 'd***@example.invalid' });
     }
-    if (p === `/api/admin/v1/members/${TEEN}`) return ok({ id: TEEN, segment: 'teen', status: 'active' });
-    if (p === `/api/admin/v1/members/${ADULT}/status`)
+    if (p === `/api/v1/admin/members/${TEEN}`) return ok({ id: TEEN, segment: 'teen', status: 'active' });
+    if (p === `/api/v1/admin/members/${ADULT}/status`)
       return ok({ before: { status: 'active' }, after: { status: 'suspended' } });
-    if (p === `/api/admin/v1/members/${ADULT}/unmask`)
+    if (p === `/api/v1/admin/members/${ADULT}/unmask`)
       return ok({ fields: body.fields, values: { email: 'demo@example.invalid' } });
-    if (p === '/api/admin/v1/members/archive-run')
+    if (p === '/api/v1/admin/members/archive-run')
       return ok({ dryRun: body.dryRun, months: 6, checked: 10, archived: 2, activityUpdated: 4, sample: [] });
-    if (p === '/api/admin/v1/questions' && req.method === 'POST') {
+    if (p === '/api/v1/admin/questions' && req.method === 'POST') {
       if (String(body.label).includes('alcohol'))
         return send(422, {
           status: 'error',
@@ -92,16 +92,16 @@ function fakePanel() {
         });
       return ok({ before: null, after: body, id: 'cccccccccccccccccccccccc' });
     }
-    if (p === '/api/admin/v1/qb/import')
+    if (p === '/api/v1/admin/qb/import')
       return ok({
         dryRun: url.searchParams.get('dryRun') !== '0',
         ok: true,
         counts: { questions: 1 },
         questions: { adds: 1 },
       });
-    if (p === '/api/admin/v1/qb/export')
+    if (p === '/api/v1/admin/qb/export')
       return ok({ counts: { questions: 1 }, Question: [{ name: 'q1' }], Option: [], Profile: [] });
-    if (p.startsWith('/api/admin/v1/profiles/') && req.method === 'PUT')
+    if (p.startsWith('/api/v1/admin/profiles/') && req.method === 'PUT')
       return ok({ before: { points: null }, after: { points: body.points } });
     return send(404, { status: 'error', code: 'not_found', message: 'Not found' });
   });

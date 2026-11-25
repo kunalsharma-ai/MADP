@@ -14,7 +14,7 @@ Secrets go into the secrets manager of each environment. Never into chat, a repo
 | Where MADP runs (host, Postgres 18, MongoDB 8), and its public address | `ADMIN_ORIGIN` and `MADP_API_URL` need it |
 | Approve live read-only access, one panel at a time | `LIVE_SOURCE_APPROVED_PANELS` stays empty until then; every screen shows DEMO data |
 | Which backend MHO production runs, and the production host of each panel | The connectors and the signed admin API need the real addresses |
-| Confirm the shared backend | The console's signed admin API (`/api/admin/v1`) is on MFR `main` (MFR#44 onwards) and serves every brand by `x-madp-origin`, because the three brands share one panel backend and database. T2O `Main` and MHO `Main` do not carry it, by design. If MHO production turns out to run a separate backend, it needs its own copy |
+| Confirm the shared backend | The console's signed admin API (`/api/v1/admin`) is on MFR `main` (MFR#44 onwards) and serves every brand by `x-madp-origin`, because the three brands share one panel backend and database. T2O `Main` and MHO `Main` do not carry it, by design. If MHO production turns out to run a separate backend, it needs its own copy |
 | An e-mail provider, and approval to send | Every panel job and MADP campaign writes to an outbox folder or stays a dry run. Nothing is sent today |
 | Deploy-time protection: WAF and load balancer rate limits, GitHub secret scanning and CodeQL | Not settable from the code |
 
