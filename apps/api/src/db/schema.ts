@@ -1394,3 +1394,17 @@ export const memberSavedViews = pgTable(
   },
   (t) => [index('member_saved_view_panel_idx').on(t.panel, t.adminUserId)],
 );
+
+/**
+ * The Members table's "Type" column rules of one brand (which question-bank answers show for which panel
+ * category: B2B designation, HCP type, caregiver type, patient condition...). Settings only, no panel data, so no
+ * data_mode. A brand with no row uses the defaults in code.
+ */
+export const memberTypeRules = pgTable('member_type_rules', {
+  panel: text('panel')
+    .primaryKey()
+    .references(() => panels.code),
+  rules: jsonb('rules').notNull(),
+  updatedBy: uuid('updated_by'),
+  updatedAt: updated(),
+});

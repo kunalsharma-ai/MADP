@@ -765,3 +765,21 @@ verified.
 - **Live activity** (`/activity`): sign-ups, survey completes, redemptions (MADP's synced copy) and new tickets (each
   panel's admin API) in one list for all three panels, polled every 20 seconds with a chime for new lines. No names,
   e-mails or ticket text; teens only with teen access. Test `test/activity.test.ts`.
+
+## Members table: gender, age and Type column (2026-11-26)
+
+- The Members table shows **Gender** (as the member gave it at sign-up), **Age** in whole years ("36 yr") and a
+  **Type** column with the member's own question-bank answers for their segment, on T2O, MFR and MHO alike.
+  Gender and age sort and filter on the whole list; the Segment filter now lists each panel's own categories (MHO:
+  healthcare professional, care giver, patient) with their MADP segment names.
+- Type rules are per brand (`member_type_rules`, migration 0027). Starting set from the real banks: T2O and MFR
+  b2c `empstat` (Work), b2b `jobrole` (Designation); MHO healthcare professional `doc-expertise` (HCP type) and
+  `specialty-area`, care giver `caregiving-situation` (shown as Home / Professional caregiver), patient
+  `primary-health-condition-currently` (Condition, health data). Segment managers change them on the Members screen
+  (`PUT /panel/members/type-columns`, audited with before and after).
+- MHO answers are special-category: without `health.sensitive.read` MADP does not ask the panel for them at all, and
+  says how many are hidden. Searches that read answers record the keys and `specialCategory` in the audit entry.
+- Needs the panel change in MFR#103 (`gender`, `age`, `typeQuestions`, `gender` / `ageMin` / `ageMax`). Older panel
+  builds leave the new columns empty ("—") and show the birth year instead of the age.
+- Tests: `apps/api/test/member-types.test.ts` (4) and MFR `tests/admin.members.test.mjs`. Screenshots:
+  `/mnt/project-files/madp/preview-madp/member-types/`.

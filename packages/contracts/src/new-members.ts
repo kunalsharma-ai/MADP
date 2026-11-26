@@ -55,6 +55,9 @@ export const MemberViewParams = z
     dueBefore: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
     bornFrom: z.coerce.number().int().min(1900).max(2100).optional(),
     bornTo: z.coerce.number().int().min(1900).max(2100).optional(),
+    gender: z.enum(['Male', 'Female', 'Other']).optional(),
+    ageMin: z.coerce.number().int().min(0).max(120).optional(),
+    ageMax: z.coerce.number().int().min(0).max(120).optional(),
     sort: z.string().trim().max(20).optional(),
     dir: z.enum(['asc', 'desc']).optional(),
   })

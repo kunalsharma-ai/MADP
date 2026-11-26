@@ -14,6 +14,7 @@ import {
   MemberStatusChange,
   MemberUnmask,
   MemberUpdate,
+  MemberTypeRules,
   type BrandSelection,
   type PanelCode,
 } from '@madp/contracts';
@@ -25,10 +26,13 @@ import { hasOn } from '../auth/access.js';
 import { ZodPipe } from '../common/zod.pipe.js';
 import { AuditService } from '../audit/audit.service.js';
 import { PanelAdminService } from './panel-admin.service.js';
+import { PanelDirectory } from '../panels/panel-directory.js';
+import { MemberTypes } from './member-types.js';
+import { SegmentDirectory } from '../segments/segment-directory.js';
 
 const MemberId = z.string().regex(/^[a-f0-9]{24}$/i, 'a member id');
 const SessionId = z.string().regex(/^[a-f0-9]{24}$/i, 'a session id');
-type Row = { id: string; segment?: string };
+type Row = { id: string; segment?: string; category?: string; types?: Record<string, string[]> };
 type Change = { before: Record<string, unknown>; after: Record<string, unknown> };
 
 /**
@@ -41,7 +45,19 @@ export class MembersController {
   constructor(
     private readonly panel: PanelAdminService,
     private readonly audit: AuditService,
+    private readonly types: MemberTypes,
+    private readonly directory: PanelDirectory,
+    private readonly segments: SegmentDirectory,
   ) {}
+
+  /** Rules the admin may see: on a sensitive panel (MHO) every answer needs health.sensitive.read. */
+  private async visibleTypeRules(p: Principal, brand: PanelCode) {
+    const { rules } = await this.types.rules(brand);
+    const health = hasOn(p, brand, ['health.sensitive.read']);
+    const panelSensitive = this.directory.sensitive(brand);
+    const shown = rules.filter((r) => health || !(r.sensitive || panelSensitive));
+    return { shown, hidden: rules.length - shown.length, sensitive: shown.some((r) => r.sensitive || panelSensitive) };
+  }
 
   private async deny(req: Request, brand: PanelCode, targetId: string, missing: string[]): Promise<never> {
     await this.audit.record({
@@ -75,14 +91,25 @@ export class MembersController {
     const brand = b as PanelCode;
     const teens = hasOn(p, brand, ['teen.read']);
     if (q.segment === 'teen' && !teens) await this.deny(req, brand, 'search', ['teen.read']);
-    const data = await this.panel.call<{ items: Row[]; total: number; page: number; pageSize: number }>(
-      brand,
-      p.id,
-      'GET',
-      R.members,
-      { ...q, ...(teens ? {} : { noTeens: 1 }) },
-    );
+    const types = await this.visibleTypeRules(p, brand);
+    const keys = [...new Set(types.shown.flatMap((r) => r.questions))];
+    // Age sorts by date of birth the other way round (youngest first = latest birth date first).
+    const sort = q.sort === 'age' ? { sort: 'born', dir: q.dir === 'asc' ? 'desc' : 'asc' } : {};
+    const data = await this.panel.call<{
+      items: Row[];
+      total: number;
+      page: number;
+      pageSize: number;
+      sort?: { by: string; dir: 'asc' | 'desc' } | null;
+    }>(brand, p.id, 'GET', R.members, {
+      ...q,
+      ...sort,
+      ...(teens ? {} : { noTeens: 1 }),
+      ...(keys.length ? { typeQuestions: keys.join(',') } : {}),
+    });
     if (!teens) data.items = data.items.filter((r) => r.segment !== 'teen');
+    if (q.sort === 'age' && data.sort?.by === 'born') data.sort = { by: 'age', dir: q.dir === 'asc' ? 'asc' : 'desc' };
+    MemberTypes.annotate(data.items, types.shown);
     await this.audit.record({
       ...AuditService.fromRequest(req),
       action: 'members.search',
@@ -92,9 +119,53 @@ export class MembersController {
         filters: Object.keys(q).filter((k) => q[k as keyof MemberSearch] !== undefined),
         total: data.total,
         page: data.page,
+        ...(keys.length ? { typeAnswers: keys, specialCategory: types.sensitive } : {}),
       },
     });
-    return { ...data, teensHidden: !teens };
+    return { ...data, teensHidden: !teens, typesHidden: types.hidden };
+  }
+
+  /** The Type column rules of this brand (which question-bank answers show for which segment). */
+  @RequirePermissions('members.read')
+  @Get('type-columns')
+  async typeColumns(@CurrentBrand() b: BrandSelection) {
+    const brand = b as PanelCode;
+    // The panel's own category values (for the Segment filter), each with the MADP segments it joins.
+    const byValue = new Map<string, { value: string; segments: string[]; minor: boolean }>();
+    for (const r of this.segments.rules()) {
+      if (r.panel !== brand || r.status !== 'active') continue;
+      const c = byValue.get(r.sourceValue) ?? { value: r.sourceValue, segments: [], minor: false };
+      c.segments.push(this.segments.label(r.segment));
+      c.minor ||= r.minor;
+      byValue.set(r.sourceValue, c);
+    }
+    return {
+      ...(await this.types.rules(brand)),
+      sensitivePanel: this.directory.sensitive(brand),
+      categories: [...byValue.values()].sort((a, b) => Number(a.minor) - Number(b.minor) || a.value.localeCompare(b.value)),
+    };
+  }
+
+  @RequirePermissions('segments.manage')
+  @Put('type-columns')
+  async saveTypeColumns(
+    @Body(new ZodPipe(MemberTypeRules)) body: MemberTypeRules,
+    @CurrentBrand() b: BrandSelection,
+    @CurrentPrincipal() p: Principal,
+    @Req() req: Request,
+  ) {
+    const brand = b as PanelCode;
+    const before = await this.types.rules(brand);
+    await this.types.save(brand, body.rules, p.id);
+    await this.audit.record({
+      ...AuditService.fromRequest(req),
+      action: 'members.type_columns_changed',
+      panel: brand,
+      targetType: 'member_type_rules',
+      targetId: brand,
+      metadata: { before: before.rules, after: body.rules },
+    });
+    return { rules: body.rules, saved: true };
   }
 
   @RequirePermissions('members.read')

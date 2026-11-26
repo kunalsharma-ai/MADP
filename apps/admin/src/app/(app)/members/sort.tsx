@@ -10,6 +10,8 @@ export const SORT_COLUMNS = [
   'segment',
   'country',
   'born',
+  'gender',
+  'age',
   'quality',
   'status',
   'marketing',
@@ -19,7 +21,7 @@ export const SORT_COLUMNS = [
 export type SortColumn = (typeof SORT_COLUMNS)[number];
 export type SortDir = 'asc' | 'desc';
 
-/** Dates and numbers start with the biggest (newest) first; text starts at A. */
+/** Dates and numbers start with the biggest (newest) first, age with the youngest; text starts at A. */
 const FIRST_DIR: Record<SortColumn, SortDir> = {
   name: 'asc',
   memberId: 'asc',
@@ -28,6 +30,8 @@ const FIRST_DIR: Record<SortColumn, SortDir> = {
   segment: 'asc',
   country: 'asc',
   born: 'desc',
+  gender: 'asc',
+  age: 'asc',
   quality: 'desc',
   status: 'asc',
   marketing: 'desc',
@@ -51,6 +55,10 @@ const value = (m: MemberRow, c: SortColumn): string | number | null => {
       return m.country;
     case 'born':
       return m.birthYear;
+    case 'gender':
+      return m.gender ?? null;
+    case 'age':
+      return m.age ?? null;
     case 'quality':
       return m.qualityScore;
     case 'status':

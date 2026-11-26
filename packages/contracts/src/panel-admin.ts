@@ -20,6 +20,9 @@ export const MemberSortKey = z.enum([
   'segment',
   'country',
   'born',
+  'gender',
+  /** Age in years: the panel sorts by date of birth the other way round. */
+  'age',
   'quality',
   'status',
   'marketing',
@@ -49,12 +52,56 @@ export const MemberSearch = z.object({
   /** Birth year range (the Born column). Needs a panel build that supports it; older builds ignore it. */
   bornFrom: z.coerce.number().int().min(1900).max(2100).optional(),
   bornTo: z.coerce.number().int().min(1900).max(2100).optional(),
+  /** Gender as the member gave it at sign-up, and age in whole years today. */
+  gender: z.enum(['Male', 'Female', 'Other']).optional(),
+  ageMin: z.coerce.number().int().min(0).max(120).optional(),
+  ageMax: z.coerce.number().int().min(0).max(120).optional(),
   /** Column to sort the whole list by. Older panel builds ignore it and keep newest sign-ups first. */
   sort: MemberSortKey.optional(),
   dir: z.enum(['asc', 'desc']).optional(),
   page: z.coerce.number().int().min(1).max(10_000).default(1),
 });
 export type MemberSearch = z.infer<typeof MemberSearch>;
+
+/** A question key in the panel's question bank (lower case, as the panel stores it). */
+const TypeQuestionKey = z
+  .string()
+  .trim()
+  .toLowerCase()
+  .regex(/^[\w.:-]{1,80}$/, 'a question key from the question bank');
+
+/**
+ * One "Type" column rule of the Members table: for members whose panel category is `category` (e.g. "b2b",
+ * "patient"), show their answers to `questions` under `label` (e.g. Designation, Condition). On a sensitive panel
+ * (MHO) every rule counts as special-category and shows only with health.sensitive.read.
+ */
+export const MemberTypeRule = z
+  .object({
+    category: z.string().trim().toLowerCase().min(1).max(40),
+    label: z.string().trim().min(2).max(40),
+    questions: z.array(TypeQuestionKey).min(1).max(3),
+    sensitive: z.boolean().default(false),
+    /** Shorter words for long option labels ("I provide paid care as part of my work" → "Professional caregiver"). */
+    aliases: z.record(z.string().max(300), z.string().trim().min(1).max(40)).optional(),
+  })
+  .strict();
+export type MemberTypeRule = z.infer<typeof MemberTypeRule>;
+
+/** All rules of one brand, replaced together. At most 8 question keys in all (one panel call). */
+export const MemberTypeRules = z
+  .object({ rules: z.array(MemberTypeRule).max(12) })
+  .strict()
+  .refine((v) => new Set(v.rules.flatMap((r) => r.questions)).size <= 8, { message: 'At most 8 different questions in all' })
+  .refine((v) => new Set(v.rules.map((r) => `${r.category}|${r.label.toLowerCase()}`)).size === v.rules.length, {
+    message: 'Each segment can use a label once',
+  });
+export type MemberTypeRules = z.infer<typeof MemberTypeRules>;
+
+/** What the Members table shows in its Type column for one member. */
+export interface MemberTypeValue {
+  label: string;
+  values: string[];
+}
 
 const Verification = z.enum(['unverified', 'verified', 'rejected']);
 export const MemberUpdate = z
