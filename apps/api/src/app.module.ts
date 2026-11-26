@@ -38,6 +38,8 @@ import { AutomationService } from './engagement/automation.service.js';
 import { AutomationController } from './engagement/automation.controller.js';
 import { LoyaltyService } from './loyalty/loyalty.service.js';
 import { LoyaltyController } from './loyalty/loyalty.controller.js';
+import { ParticipationController } from './loyalty/participation.controller.js';
+import { ParticipationService } from './loyalty/participation.service.js';
 import { Supply360Service } from './supply360/supply360.service.js';
 import { ConsentService } from './consent/consent.service.js';
 import { ConsentController } from './consent/consent.controller.js';
@@ -109,6 +111,7 @@ export class AppModule {
         EngagementController,
         AutomationController,
         LoyaltyController,
+        ParticipationController,
         Supply360Controller,
         ServiceClientsController,
         ConsentController,
@@ -147,6 +150,7 @@ export class AppModule {
         EngagementService,
         AutomationService,
         LoyaltyService,
+        ParticipationService,
         Supply360Service,
         ServiceAuthGuard,
         ConsentService,
