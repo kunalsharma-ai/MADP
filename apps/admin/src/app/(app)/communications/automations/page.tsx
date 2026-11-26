@@ -3,6 +3,8 @@ import { getPanels } from '@/lib/panels';
 import type { Metadata } from 'next';
 import { type AutomationStep, type DataMode, type PanelCode } from '@madp/contracts';
 import { api } from '@/lib/api';
+import { StepGuide } from '@/components/step-guide';
+import { PenLine, PlayCircle, UserCheck, Workflow } from 'lucide-react';
 import { Badge, Card, CardHeader, DataModeBadge, DemoBanner, EmptyState, PageHeader, PanelChip, fmt, fmtDate } from '@/components/ui';
 import {
   AutomationButtons,
@@ -157,7 +159,15 @@ export default async function AutomationsPage({ searchParams }: { searchParams: 
         }
       />
       <DemoBanner mode={auto.dataMode} />
-      <p className="mb-4 rounded-lg bg-surface-2 px-3 py-2 text-[13px] text-fg-2">
+      <StepGuide
+        steps={[
+          { icon: PenLine, title: 'Approve a template', body: 'Each automation sends an approved template of the right kind.', done: options.length > 0 },
+          { icon: Workflow, title: 'Set the rule', body: 'Pick when it fires: joining, inactivity, birthdays or a calendar date.', done: auto.items.length > 0 },
+          { icon: UserCheck, title: 'Get it approved', body: 'A second person approves every version before it runs.', done: auto.items.some((a) => a.versions.some((v) => v.status === 'approved')) },
+          { icon: PlayCircle, title: 'Try a dry run', body: 'See who it would reach today. Nothing is sent.', done: auto.items.some((a) => a.lastRun) },
+        ]}
+      />
+      <p className="mb-4 rounded-xl bg-surface-2 px-3 py-2 text-[13px] text-fg-2">
         Activity that counts for inactivity: {auto.qualifyingActivity.map((a) => a.replaceAll('_', ' ')).join(', ')}. The panels do
         not export logins, so those cannot count until they do.
       </p>

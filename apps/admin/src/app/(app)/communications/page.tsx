@@ -5,6 +5,8 @@ import type { Metadata } from 'next';
 import { brandKitGaps, SUPPRESSION_REASONS, type BrandKit, type DataMode, type PanelCode } from '@madp/contracts';
 import { api, currentBrand } from '@/lib/api';
 import { Badge, Card, CardHeader, DataModeBadge, DemoBanner, EmptyState, PageHeader, PanelChip, fmt, fmtDate } from '@/components/ui';
+import { StepGuide } from '@/components/step-guide';
+import { Megaphone, PenLine, PlayCircle, UserCheck } from 'lucide-react';
 import { CampaignButtons, NewCampaign, NewTemplate, NewVersion, VersionButtons } from './studio-forms';
 
 export const metadata: Metadata = { title: 'Engagement studio' };
@@ -87,6 +89,14 @@ export default async function CommunicationsPage({ searchParams }: { searchParam
         }
       />
       <DemoBanner mode={camp.dataMode} />
+      <StepGuide
+        steps={[
+          { icon: PenLine, title: 'Write a template', body: 'Pick a panel and write the message in its own brand.', done: tpl.items.length > 0 },
+          { icon: UserCheck, title: 'Get it approved', body: 'A second person checks and approves each version.', done: approved.length > 0 },
+          { icon: Megaphone, title: 'Make a campaign', body: 'Choose an approved template and who should get it.', done: camp.items.length > 0 },
+          { icon: PlayCircle, title: 'Try a dry run', body: 'See who would get it and why others would not. Nothing is sent.', done: camp.items.some((c) => c.lastRun) },
+        ]}
+      />
       <form method="get" className="mb-4 flex items-center gap-2">
         <select name="panel" defaultValue={panel ?? ''} aria-label="Panel" className="rounded-xl border border-border bg-surface px-3 py-2 text-sm">
           <option value="">All panels</option>
@@ -99,7 +109,7 @@ export default async function CommunicationsPage({ searchParams }: { searchParam
         <button className="rounded-xl border border-border bg-surface px-3 py-2 text-sm">Show</button>
       </form>
       {panelList.map((x) => x.code).some((p) => brandKitGaps(tpl.brandKits[p]).length) ? (
-        <p className="mb-4 rounded-lg bg-surface-2 px-3 py-2 text-[13px] text-fg-2">
+        <p className="mb-4 rounded-xl border border-warn/30 bg-warn-soft px-3 py-2 text-[13px] text-fg-2">
           Still to set in Brands &amp; settings:{' '}
           {panelList.map((x) => x.code).filter((p) => brandKitGaps(tpl.brandKits[p]).length)
             .map((p) => `${panelShort(p, panelList)} (${brandKitGaps(tpl.brandKits[p]).join(', ')})`)

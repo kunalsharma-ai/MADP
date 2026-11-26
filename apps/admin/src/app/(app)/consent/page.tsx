@@ -3,6 +3,7 @@ import { getPanels } from '@/lib/panels';
 import type { Metadata } from 'next';
 import { type DataMode, type PanelCode, type SessionUser } from '@madp/contracts';
 import { api } from '@/lib/api';
+import { PANEL_TONES } from '@/lib/panel-tones';
 import { Badge, Card, CardHeader, DataModeBadge, DemoBanner, EmptyState, PageHeader, PanelChip, Table, fmt, fmtDate } from '@/components/ui';
 import { PreferenceForm } from './consent-forms';
 
@@ -46,6 +47,15 @@ const FUNNEL: [keyof PanelConsent['contactable'], string][] = [
   ['reachable', 'Reachable (no bounce)'],
 ];
 
+const PURPOSES: Record<string, string> = {
+  email_marketing: 'Marketing e-mails',
+  push_notifications: 'Push notifications',
+  terms: 'Terms of use',
+  guardian_consent: 'Parent or guardian consent',
+  sms_marketing: 'Marketing SMS',
+};
+const purposeLabel = (p: string) => PURPOSES[p] ?? p.replaceAll('_', ' ');
+
 export default async function ConsentPage() {
   const panelList = await getPanels();
   const [me, s, events, prefs] = await Promise.all([
@@ -64,23 +74,42 @@ export default async function ConsentPage() {
         actions={<DataModeBadge mode={s.dataMode} />}
       />
       <DemoBanner mode={s.dataMode} />
-      <p className="mb-4 rounded-lg bg-surface-2 px-3 py-2 text-[13px] text-fg-2">{s.note}</p>
+      <p className="mb-4 rounded-xl bg-surface-2 px-3 py-2 text-[13px] text-fg-2">{s.note}</p>
       <div className="grid gap-4 xl:grid-cols-3">
         {s.panels.map((p) => (
           <Card key={p.panel}>
             <CardHeader title={panelName(p.panel, panelList)} hint="Who MADP may e-mail today, step by step" />
-            <ol className="space-y-1 px-5 py-4 text-[13px]">
-              {FUNNEL.map(([k, label]) => (
-                <li key={k} className="flex justify-between">
-                  <span className="text-fg-2">{label}</span>
-                  <span className="font-mono">{fmt(p.contactable[k])}</span>
-                </li>
-              ))}
+            <ol className="space-y-2 px-5 py-4 text-[13px]">
+              {FUNNEL.map(([k, label], i) => {
+                const top = Math.max(1, p.contactable.memberships);
+                const share = p.contactable[k] / top;
+                return (
+                  <li key={k}>
+                    <div className="flex justify-between">
+                      <span className="text-fg-2">{label}</span>
+                      <span className="font-mono">
+                        {fmt(p.contactable[k])}
+                        <span className="ml-1.5 text-[11px] text-fg-3">{Math.round(share * 100)}%</span>
+                      </span>
+                    </div>
+                    <span className="mt-1 block h-2 rounded-full bg-surface-2">
+                      <span
+                        className="grow-x block h-2 rounded-full"
+                        style={{
+                          width: `${share * 100}%`,
+                          background: `linear-gradient(90deg, ${PANEL_TONES[p.panel]?.[0] ?? '#818cf8'}, ${PANEL_TONES[p.panel]?.[1] ?? '#6366f1'})`,
+                          animationDelay: `${i * 70}ms`,
+                        }}
+                      />
+                    </span>
+                  </li>
+                );
+              })}
             </ol>
             <div className="border-t border-border px-5 py-3 text-[12px] text-fg-2">
               {Object.entries(p.purposes).map(([purpose, st]) => (
                 <div key={purpose}>
-                  <span className="font-mono">{purpose}</span>:{' '}
+                  <span className="font-medium text-fg">{purposeLabel(purpose)}</span>:{' '}
                   {Object.entries(st)
                     .map(([k, v]) => `${k} ${fmt(v)}`)
                     .join(', ')}
@@ -104,7 +133,7 @@ export default async function ConsentPage() {
         ))}
       </div>
       {canManage ? <PreferenceForm panels={s.panels.map((p) => p.panel)} /> : null}
-      <div className="mt-4 grid gap-4 xl:grid-cols-2">
+      <div className="mt-4 grid gap-4 2xl:grid-cols-2">
         <Card>
           <CardHeader title="Recent consent changes" hint="Append-only history, written on every change the panel reports" />
           {events.length === 0 ? (
@@ -115,7 +144,7 @@ export default async function ConsentPage() {
                 <tr key={e.id}>
                   <td className="px-5 py-2 text-fg-3">{fmtDate(e.at)}</td>
                   <td className="px-5 py-2"><PanelChip panel={e.panel} /></td>
-                  <td className="px-5 py-2 font-mono text-[12px]">{e.purpose}</td>
+                  <td className="px-5 py-2 text-[12.5px]">{purposeLabel(e.purpose)}</td>
                   <td className="px-5 py-2">
                     {e.previousStatus ? `${e.previousStatus} → ` : ''}
                     <Badge tone={e.status === 'granted' ? 'teal' : 'warn'}>{e.status}</Badge>

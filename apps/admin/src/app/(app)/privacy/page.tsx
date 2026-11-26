@@ -47,9 +47,9 @@ export default async function PrivacyPage() {
       />
       <DemoBanner mode={l.dataMode} />
       <div className="mb-4 grid grid-cols-3 gap-3">
-        <Card className="px-5 py-4"><Stat label="Open" value={fmt(l.open)} /></Card>
-        <Card className="px-5 py-4"><Stat label="Overdue" value={fmt(l.overdue)} /></Card>
-        <Card className="px-5 py-4"><Stat label="Waiting on a panel" value={fmt(l.awaitingPanel)} /></Card>
+        <Stat label="Open" value={fmt(l.open)} tone="accent" />
+        <Stat label="Overdue" value={fmt(l.overdue)} />
+        <Stat label="Waiting on a panel" value={fmt(l.awaitingPanel)} />
       </div>
       {canLog ? <NewRequest /> : null}
       <Card className="mt-4">
