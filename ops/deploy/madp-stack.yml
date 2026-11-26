@@ -4,7 +4,7 @@
 # tags them with the image names below; Swarm ignores `build:` and pulls those images from the registry:
 #   MADP_HOST=<host> MADP_REGISTRY=<registry> MADP_VERSION=<version> docker compose -f ops/deploy/madp-stack.yml build
 #   MADP_HOST=<host> MADP_REGISTRY=<registry> MADP_VERSION=<version> docker compose -f ops/deploy/madp-stack.yml push api admin
-# See docs/RUNBOOKS.md section "Docker Swarm" for the secrets to create first and the migration job.
+# See docs/RUNBOOKS.md section "Docker Swarm" for the secrets to create first.
 #
 # Rules this file keeps:
 #   - No service publishes a port. Only the proxy manager in front (Traefik or Nginx Proxy Manager, on 80 and 443)
@@ -70,7 +70,10 @@ services:
     image: ${MADP_REGISTRY:-madp}/api:${MADP_VERSION:?set MADP_VERSION}
     # Paths are relative to this file, so the context is the repository root (the Dockerfiles copy the workspace).
     build: { context: ../.., dockerfile: apps/api/Dockerfile }
-    command: ['node', 'dist/main.js']
+    # Each replica applies pending migrations before it listens (issue #67). runMigrations waits for Postgres and holds
+    # an advisory lock, so two replicas starting together migrate once, and a failed migration fails the new replica,
+    # which rolls the update back.
+    command: ['sh', '-c', 'node dist/scripts/migrate.js && node dist/main.js']
     environment: *api-env
     secrets: *api-secrets
     networks: [madp]
@@ -84,23 +87,11 @@ services:
         ]
       interval: 30s
       retries: 3
-      start_period: 30s
+      # Room for the replica to wait for Postgres and apply migrations before health checks count.
+      start_period: 120s
     deploy:
       replicas: 2
       update_config: { order: start-first, failure_action: rollback }
-
-  # Database migrations, once per release, before the new api starts: docker service scale madp_migrate=1 (see the
-  # runbook). Kept apart from api so two api replicas never migrate at the same time. It runs the api image, which the
-  # api service builds, so it has no build section of its own.
-  migrate:
-    image: ${MADP_REGISTRY:-madp}/api:${MADP_VERSION:?set MADP_VERSION}
-    command: ['node', 'dist/scripts/migrate.js']
-    environment: *api-env
-    secrets: *api-secrets
-    networks: [madp]
-    deploy:
-      mode: replicated-job
-      replicas: 1
 
   admin:
     image: ${MADP_REGISTRY:-madp}/admin:${MADP_VERSION:?set MADP_VERSION}

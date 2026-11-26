@@ -32,7 +32,7 @@ Ask Kunal first. Then:
    `FIELD_ENCRYPTION_KEY(S)`, `PII_HASH_KEY`, `PANEL_ADMIN_API_SECRET`, `WEBHOOK_SECRETS_<PANEL>`, panel API tokens.
    Production must set `NODE_ENV=production`, `REQUIRE_MFA=true` and the real `ADMIN_ORIGIN`.
 4. Leave `LIVE_SOURCE_APPROVED_PANELS` empty unless Kunal has approved live read-only access for that panel.
-5. Run migrations: `pnpm db:migrate` (on Swarm, the stack's `migrate` job does this). Migrations only add; an applied
+5. Run migrations: `pnpm db:migrate` (on Swarm, each api replica does this as it starts). Migrations only add; an applied
    migration is never edited.
 6. Start the API, then the admin app (`MADP_API_URL` pointing at the API).
 7. Check `GET /api/v1/health` is `ok`, sign in with MFA, open the dashboard, and confirm the DEMO banner shows only when
@@ -83,17 +83,21 @@ First deploy, on a manager node:
    docker compose -f ops/deploy/madp-stack.yml push api admin
    ```
 
-   This tags `<registry>/api:<version>` and `<registry>/admin:<version>`. The `migrate` job runs the api image, so it
-   isn't built twice. `docker stack deploy` ignores `build:` and pulls these images from the registry on each node.
+   This tags `<registry>/api:<version>` and `<registry>/admin:<version>`. `docker stack deploy` ignores `build:` and
+   pulls these images from the registry on each node.
 5. Deploy: `MADP_HOST=<host> MADP_REGISTRY=<registry> MADP_VERSION=<version> docker stack deploy -c
-   ops/deploy/madp-stack.yml madp`. The `migrate` job runs the migrations once and exits; check it with `docker service
-   ps madp_migrate`. The api replicas never migrate.
+   ops/deploy/madp-stack.yml madp`. Each api replica applies pending migrations before it listens. It waits up
+   to two minutes for Postgres, and an advisory lock makes replicas that start together migrate only once (issue #67).
+   Check it with `docker service logs madp_api`: each replica prints `Migrations applied` before `MADP API listening`.
 6. Create the first admin: `docker exec -it $(docker ps -q -f name=madp_api | head -1) node dist/scripts/create-admin.js
-   --email <e-mail> --name <name> --role super_admin`, with `MADP_ADMIN_PASSWORD` set for that one command.
+   --email <e-mail> --name <name> --role super_admin`, with `MADP_ADMIN_PASSWORD` set for that one command. It
+   applies any pending migrations first, so it also works on a database nothing has migrated yet.
 7. Add MADP to the proxy manager (below), then check `https://<host>/api/v1/health` and sign in with MFA.
 
-Each later release: steps 4 and 5 with the new version. Swarm runs the migration job again and replaces the api and
-admin replicas one at a time, starting the new one first and rolling back if it fails.
+Each later release: steps 4 and 5 with the new version. Swarm replaces the api and admin replicas (each new api
+replica migrates first) one at a time, starting the new one first and rolling back if it fails. A stack deployed
+before issue #67 still has the old `madp_migrate` job: remove it once with `docker service rm madp_migrate` (or deploy
+with `--prune`).
 
 Mail: MADP itself sends no e-mail today (panel campaigns are sent by the panel backend). When sending is approved,
 the SMTP details go in as Swarm secrets in the same way.

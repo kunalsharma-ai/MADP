@@ -3,6 +3,7 @@ import { loadApiEnv, withSecretFiles } from '@madp/config';
 import { PanelCode, RoleKey } from '@madp/contracts';
 import { createApp } from '../bootstrap.js';
 import { AuthService } from '../auth/auth.service.js';
+import { runMigrations } from './migrate.js';
 
 // Usage: MADP_ADMIN_PASSWORD=... pnpm --filter @madp/api admin:create --email you@company --name "Your Name" --role super_admin
 //        [--brands mfr,t2o]   (default: every brand)
@@ -20,7 +21,10 @@ if (!values.email || !values.name || !password) {
   console.error('Required: --email, --name and MADP_ADMIN_PASSWORD in the environment');
   process.exit(2);
 }
-const app = await createApp(loadApiEnv(), { logger: false });
+const env = loadApiEnv();
+// Apply any pending migrations first (idempotent, and locked against a starting api), so a fresh database works too.
+await runMigrations(env.DATABASE_URL, { log: console.log });
+const app = await createApp(env, { logger: false });
 const brands = values.brands ? values.brands.split(',').map((b) => PanelCode.parse(b.trim())) : null;
 const id = await app
   .get(AuthService)
