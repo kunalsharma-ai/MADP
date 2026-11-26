@@ -3,7 +3,6 @@ import {
   ConflictException,
   ForbiddenException,
   HttpException,
-  Inject,
   Injectable,
   NotFoundException,
   ServiceUnavailableException,
@@ -11,18 +10,11 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { eq } from 'drizzle-orm';
-import type { ApiEnv } from '@madp/config';
 import type { PanelCode } from '@madp/contracts';
 import { PanelAdminClient, PanelAdminError } from '@madp/connectors';
-import { API_ENV } from '../common/tokens.js';
+import { ConnectorRegistry } from '../connectors/connector-registry.js';
 import { Database } from '../db/database.js';
 import { brandSettings } from '../db/schema.js';
-
-const BASE_URL: Record<PanelCode, keyof ApiEnv> = {
-  t2o: 'T2O_ADMIN_API_BASE_URL',
-  mfr: 'MFR_ADMIN_API_BASE_URL',
-  mho: 'MHO_ADMIN_API_BASE_URL',
-};
 
 /**
  * Calls the shared panel backend's signed admin API for one brand. The brand's hostname is the first origin in its
@@ -31,28 +23,29 @@ const BASE_URL: Record<PanelCode, keyof ApiEnv> = {
 @Injectable()
 export class PanelAdminService {
   constructor(
-    @Inject(API_ENV) private readonly env: ApiEnv,
     private readonly database: Database,
+    private readonly registry: ConnectorRegistry,
   ) {}
 
-  /** Whether the brand's admin API is configured (secret and base URL). */
+  /** Whether the brand's admin API is configured (secret and base URL), on Panel connections or in env. */
   configured(panel: PanelCode): boolean {
-    return Boolean(this.env.PANEL_ADMIN_API_SECRET && this.env[BASE_URL[panel]]);
+    return this.registry.adminConfig(panel) !== null;
   }
 
   async client(panel: PanelCode): Promise<PanelAdminClient> {
-    const baseUrl = this.env[BASE_URL[panel]] as string | undefined;
-    if (!this.env.PANEL_ADMIN_API_SECRET || !baseUrl)
+    const cfg = this.registry.adminConfig(panel);
+    if (!cfg)
       throw new ServiceUnavailableException({
         code: 'panel_admin_not_configured',
-        message: `The ${panel.toUpperCase()} panel admin API is not connected yet (PANEL_ADMIN_API_SECRET and ${BASE_URL[panel]}).`,
+        message: `The ${panel.toUpperCase()} panel admin API is not connected yet. Set its address and admin secret on Panel connections.`,
       });
+    const { baseUrl, secret } = cfg;
     const row = await this.database.db.query.brandSettings.findFirst({
       where: eq(brandSettings.panel, panel),
     });
     const origin = row?.origins[0];
     if (!origin) throw new ServiceUnavailableException(`No hostname set for ${panel} in Brands & settings`);
-    return new PanelAdminClient(panel, { baseUrl, origin, secret: this.env.PANEL_ADMIN_API_SECRET });
+    return new PanelAdminClient(panel, { baseUrl, origin, secret });
   }
 
   async call<T>(

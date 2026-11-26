@@ -9,7 +9,11 @@ export const ENCRYPTED_COLUMNS: Record<string, string[]> = {
   source_identity: ['email_enc', 'phone_enc', 'first_name_enc', 'last_name_enc', 'date_of_birth_enc'],
   admin_user: ['totp_secret_enc'],
   service_client: ['secret_enc'],
+  panel_connection: ['sync_token_enc', 'admin_secret_enc', 'pending_enc'],
 };
+
+/** Primary key column of each table above, when it isn't `id`. */
+const KEY_COLUMN: Record<string, string> = { panel_connection: 'panel' };
 
 export interface RotationReport {
   activeKeyId: string;
@@ -57,10 +61,11 @@ export class KeyRotationService {
         cols.map((c) => sql`(${sql.identifier(c)} is not null and split_part(${sql.identifier(c)}, '.', 1) <> ${active})`),
         sql` or `,
       );
+      const key = sql.identifier(KEY_COLUMN[table] ?? 'id');
       for (;;) {
         const rows = await this.database.db.execute<Record<string, string | null> & { id: string }>(
-          sql`select id, ${sql.join(cols.map((c) => sql.identifier(c)), sql`, `)} from ${sql.identifier(table)}
-              where ${stale} order by id limit ${batch}`,
+          sql`select ${key} as id, ${sql.join(cols.map((c) => sql.identifier(c)), sql`, `)} from ${sql.identifier(table)}
+              where ${stale} order by ${key} limit ${batch}`,
         );
         if (!rows.rows.length) break;
         for (const r of rows.rows) {
@@ -71,7 +76,7 @@ export class KeyRotationService {
             sql` and `,
           );
           await this.database.db.execute(
-            sql`update ${sql.identifier(table)} set ${sql.join(sets, sql`, `)} where id = ${r.id} and ${same}`,
+            sql`update ${sql.identifier(table)} set ${sql.join(sets, sql`, `)} where ${key} = ${r.id} and ${same}`,
           );
           rowsRewritten++;
         }

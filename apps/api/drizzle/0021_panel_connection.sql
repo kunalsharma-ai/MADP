@@ -1,0 +1,23 @@
+CREATE TABLE "panel_connection" (
+	"panel" "panel_code" PRIMARY KEY NOT NULL,
+	"sync_base_url" text,
+	"sync_token_enc" text,
+	"sync_token_hint" text,
+	"admin_base_url" text,
+	"admin_secret_enc" text,
+	"admin_secret_hint" text,
+	"sync_interval_minutes" smallint,
+	"live_approved" boolean DEFAULT false NOT NULL,
+	"live_approved_by" uuid,
+	"live_approved_at" timestamp with time zone,
+	"pending_enc" text,
+	"pending_fields" text[],
+	"pending_by" uuid,
+	"pending_at" timestamp with time zone,
+	"pending_reason" text,
+	"last_test_at" timestamp with time zone,
+	"last_test_ok" boolean,
+	"last_test_message" text,
+	"updated_by" uuid,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
+);

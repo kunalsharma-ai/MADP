@@ -451,6 +451,43 @@ export const brandSettings = pgTable('brand_setting', {
 });
 
 /**
+ * How MADP reaches each panel, set in the console (Panel connections) instead of environment variables. Tokens and
+ * secrets are field-encrypted and never returned. Any column left null falls back to the matching environment
+ * value, so a stack configured through env keeps working. A change an admin proposes waits in `pending_enc` until
+ * a second super admin approves it, unless no other super admin exists (then the proposer's authenticator code
+ * suffices). Turning live sync on is the owner's approval to read that panel's production personal data.
+ */
+export const panelConnections = pgTable('panel_connection', {
+  panel: panelCode('panel').primaryKey(),
+  /** Changes feeds (`/api/v1/changes/*`), read with `sync_token_enc`. */
+  syncBaseUrl: text('sync_base_url'),
+  syncTokenEnc: text('sync_token_enc'),
+  /** Last four characters of the token, so admins can tell which one is set. */
+  syncTokenHint: text('sync_token_hint'),
+  /** Signed admin API (`/api/v1/admin/*`) on the shared panel backend. */
+  adminBaseUrl: text('admin_base_url'),
+  adminSecretEnc: text('admin_secret_enc'),
+  adminSecretHint: text('admin_secret_hint'),
+  /** Minutes between automatic syncs; 0 is off; null uses SYNC_INTERVAL_MINUTES. */
+  syncIntervalMinutes: smallint('sync_interval_minutes'),
+  liveApproved: boolean('live_approved').notNull().default(false),
+  liveApprovedBy: uuid('live_approved_by'),
+  liveApprovedAt: timestamp('live_approved_at', { withTimezone: true }),
+  /** Proposed change waiting for a second super admin: field-encrypted JSON. */
+  pendingEnc: text('pending_enc'),
+  /** What the pending change touches (field names only, never values), for the screen. */
+  pendingFields: text('pending_fields').array(),
+  pendingBy: uuid('pending_by'),
+  pendingAt: timestamp('pending_at', { withTimezone: true }),
+  pendingReason: text('pending_reason'),
+  lastTestAt: timestamp('last_test_at', { withTimezone: true }),
+  lastTestOk: boolean('last_test_ok'),
+  lastTestMessage: text('last_test_message'),
+  updatedBy: uuid('updated_by'),
+  updatedAt: updated(),
+});
+
+/**
  * Append-only and hash-chained. Triggers in the migrations reject UPDATE, DELETE and TRUNCATE, and on INSERT set
  * `prev_hash` to the previous entry's hash and `hash` to sha256 over this entry (see madp_audit_hash), so a changed
  * or missing entry breaks GET /audit/verify. Never stores raw PII: before/after values are masked.

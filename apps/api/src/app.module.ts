@@ -12,6 +12,7 @@ import { AuthService } from './auth/auth.service.js';
 import { AuthController } from './auth/auth.controller.js';
 import { AuthGuard } from './auth/auth.guard.js';
 import { ConnectorRegistry } from './connectors/connector-registry.js';
+import { PanelConnectionsController } from './connectors/panel-connections.controller.js';
 import { ConnectorsController } from './connectors/connectors.controller.js';
 import { IngestionService } from './ingestion/ingestion.service.js';
 import { SyncScheduler } from './ingestion/sync-scheduler.js';
@@ -111,6 +112,7 @@ export class AppModule {
         ReportsController,
         InsightsController,
         MailersController,
+        PanelConnectionsController,
       ],
       providers: [
         { provide: API_ENV, useValue: env },

@@ -15,10 +15,14 @@ import { IngestionService } from './ingestion.service.js';
 /** How long to wait before asking again a panel that does not serve its changes feed yet. */
 const NOT_SUPPORTED_BACKOFF_MS = 60 * 60_000;
 
+/** How often the scheduler checks which panels are due. */
+const CHECK_EVERY_MS = 60_000;
+
 /**
- * Runs the automatic sync of each live panel every SYNC_INTERVAL_MINUTES (off when 0, the default). Only panels
- * whose live access was approved (LIVE_SOURCE_APPROVED_PANELS) and that run LIVE are scheduled; DEMO panels are
- * synced on request only. A Postgres advisory lock per panel keeps two API instances from syncing the same
+ * Runs the automatic sync of each live panel at its own interval: the one set on Panel connections, else
+ * SYNC_INTERVAL_MINUTES (off when 0, the default). Only panels whose live access was approved and that run LIVE
+ * are scheduled; DEMO panels are synced on request only. A change on Panel connections takes effect at the next
+ * check, without a restart. A Postgres advisory lock per panel keeps two API instances from syncing the same
  * panel at once, and a run never starts while the previous one for that panel is still going.
  */
 @Injectable()
@@ -27,6 +31,8 @@ export class SyncScheduler implements OnApplicationBootstrap, OnModuleDestroy {
   private timer: NodeJS.Timeout | null = null;
   private readonly busy = new Set<PanelCode>();
   private readonly notSupportedUntil = new Map<PanelCode, number>();
+  private readonly lastStarted = new Map<PanelCode, number>();
+  private startedAt = Date.now();
   private stopped = false;
 
   constructor(
@@ -36,27 +42,32 @@ export class SyncScheduler implements OnApplicationBootstrap, OnModuleDestroy {
     private readonly ingestion: IngestionService,
   ) {}
 
-  /** Panels the schedule covers. */
+  /** Panels the schedule covers: live, approved, with an interval above 0. */
   panels(): PanelCode[] {
     return this.registry
       .all()
-      .filter((s) => s.dataMode === 'live' && this.env.LIVE_SOURCE_APPROVED_PANELS.includes(s.panel))
+      .filter((s) => s.dataMode === 'live' && this.registry.connection(s.panel).liveApproved)
+      .filter((s) => this.intervalFor(s.panel) > 0)
       .map((s) => s.panel);
   }
 
+  intervalFor(panel: PanelCode): number {
+    return this.registry.connection(panel).syncIntervalMinutes;
+  }
+
+  /** The environment default; each panel may override it on Panel connections. */
   get intervalMinutes() {
     return this.env.SYNC_INTERVAL_MINUTES;
   }
 
   onApplicationBootstrap() {
-    if (!this.env.SYNC_INTERVAL_MINUTES) return;
+    this.startedAt = Date.now();
     const panels = this.panels();
-    if (!panels.length) {
-      this.log.log('Automatic sync is on, but no panel runs LIVE; nothing is scheduled');
-      return;
-    }
-    this.log.log(`Automatic sync every ${this.env.SYNC_INTERVAL_MINUTES} min for ${panels.join(', ')}`);
-    this.timer = setInterval(() => void this.tick(), this.env.SYNC_INTERVAL_MINUTES * 60_000);
+    if (panels.length)
+      this.log.log(
+        `Automatic sync for ${panels.map((p) => `${p} every ${this.intervalFor(p)} min`).join(', ')}`,
+      );
+    this.timer = setInterval(() => void this.tick(), CHECK_EVERY_MS);
     this.timer.unref();
   }
 
@@ -65,12 +76,24 @@ export class SyncScheduler implements OnApplicationBootstrap, OnModuleDestroy {
     if (this.timer) clearInterval(this.timer);
   }
 
-  /** One round over every scheduled panel. Exposed for tests. */
+  /** One round over every scheduled panel that is due. Exposed for tests. */
   async tick(now = Date.now()) {
+    try {
+      await this.registry.reload();
+    } catch (e) {
+      this.log.warn(`Panel connections not reloaded: ${(e as Error).message}`);
+    }
     for (const panel of this.panels()) {
       if (this.stopped) return;
       if ((this.notSupportedUntil.get(panel) ?? 0) > now) continue;
-      await this.runLocked(panel);
+      const last = this.lastStarted.get(panel) ?? this.startedAt;
+      if (now - last < this.intervalFor(panel) * 60_000) continue;
+      this.lastStarted.set(panel, now);
+      try {
+        await this.runLocked(panel);
+      } catch {
+        // runLocked logged it; the next panel still runs.
+      }
     }
   }
 
