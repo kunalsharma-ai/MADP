@@ -52,6 +52,8 @@ import {
   type SaveOutcome,
 } from '@/app/registry-question-actions';
 import { Badge, btn, input } from '@/components/ui';
+import { TopicInfo, type TopicHelp } from '@/components/screen-info';
+import { EDITOR_SECTION_HELP, EXTRA_HELP, SETTING_HELP } from '@/lib/question-editor-help';
 
 const ICONS: Record<string, LucideIcon> = {
   radio: CircleDot,
@@ -96,17 +98,20 @@ interface PanelLite {
   sensitive: boolean;
 }
 
-function Section({ n, title, hint, tint, icon: Icon, children }: { n: number; title: string; hint: string; tint: string; icon: LucideIcon; children: ReactNode }) {
+function Section({ n, title, hint, tint, icon: Icon, help, children }: { n: number; title: string; hint: string; tint: string; icon: LucideIcon; help: TopicHelp; children: ReactNode }) {
   return (
-    <section className="rise overflow-hidden rounded-2xl border border-border/80 bg-surface shadow-soft">
+    <section className="rise relative rounded-2xl border border-border/80 bg-surface shadow-soft has-[[role=dialog]]:z-40">
       <header className="flex items-center gap-3 border-b border-border px-5 py-3.5">
         <span className="grid size-9 place-items-center rounded-xl text-white shadow-soft" style={{ backgroundImage: `linear-gradient(135deg, ${tint}99, ${tint})` }}>
           <Icon className="size-[18px]" aria-hidden />
         </span>
         <div>
-          <h2 className="text-[15px] font-bold text-fg">
-            <span className="mr-1.5 text-fg-3">{n}.</span>
-            {title}
+          <h2 className="flex items-center gap-2 text-[15px] font-bold text-fg">
+            <span>
+              <span className="mr-1.5 text-fg-3">{n}.</span>
+              {title}
+            </span>
+            <TopicInfo title={title} help={help} />
           </h2>
           <p className="text-[12px] text-fg-3">{hint}</p>
         </div>
@@ -116,9 +121,14 @@ function Section({ n, title, hint, tint, icon: Icon, children }: { n: number; ti
   );
 }
 
-function Toggle({ checked, onChange, label, hint }: { checked: boolean; onChange: (v: boolean) => void; label: string; hint: string }) {
+function Toggle({ checked, onChange, label, hint, help, align }: { checked: boolean; onChange: (v: boolean) => void; label: string; hint: string; help: TopicHelp; align: 'left' | 'right' }) {
+  // The "i" sits beside the label, not inside it, so opening it never flips the switch.
   return (
-    <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-border bg-surface px-3 py-2.5 transition hover:border-accent/40">
+    <div className="relative has-[[role=dialog]]:z-30">
+      <span className="absolute right-2.5 top-2.5 z-10">
+        <TopicInfo title={label} help={help} align={align} />
+      </span>
+    <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-border bg-surface py-2.5 pl-3 pr-10 transition hover:border-accent/40">
       <span className="relative mt-0.5 inline-flex shrink-0">
         <input type="checkbox" className="peer sr-only" checked={checked} onChange={(e) => onChange(e.target.checked)} />
         <span className="h-5 w-9 rounded-full bg-surface-2 ring-1 ring-border transition peer-checked:bg-gradient-to-r peer-checked:from-[#4f5bd5] peer-checked:to-[#8b5cf6] peer-focus-visible:ring-2 peer-focus-visible:ring-accent" />
@@ -129,6 +139,7 @@ function Toggle({ checked, onChange, label, hint }: { checked: boolean; onChange
         <span className="block text-[12px] text-fg-3">{hint}</span>
       </span>
     </label>
+    </div>
   );
 }
 
@@ -308,7 +319,7 @@ export function RegistryEditor({
   return (
     <div className="grid gap-4">
       {/* 1. Where */}
-      <Section n={1} title="Where it shows" hint="Tick the panels, then the segments. Each panel gets its own category words from the segment rules." tint="#6366f1" icon={Layers}>
+      <Section n={1} title="Where it shows" hint="Tick the panels, then the segments. Each panel gets its own category words from the segment rules." tint="#6366f1" icon={Layers} help={EDITOR_SECTION_HELP.where}>
         <div className="grid gap-3 sm:grid-cols-3">
           {panels.map((p) => {
             const c = copyOf(p.code);
@@ -403,6 +414,7 @@ export function RegistryEditor({
             <button type="button" className={cn(btn.ghost, 'ml-auto')} onClick={() => setWordsOpen((x) => !x)}>
               {wordsOpen ? 'Hide' : 'Change'} panel words
             </button>
+            <TopicInfo title="Panel words" help={EXTRA_HELP.panelWords} align="right" />
           </div>
           {wordsOpen ? (
             <div className="mt-3 grid gap-2 sm:grid-cols-3">
@@ -430,7 +442,7 @@ export function RegistryEditor({
       </Section>
 
       {/* 2. Type */}
-      <Section n={2} title="Kind of question" hint="Every kind the three panels use, grouped. Each one shows the answer it expects." tint="#ec4899" icon={ListChecks}>
+      <Section n={2} title="Kind of question" hint="Every kind the three panels use, grouped. Each one shows the answer it expects." tint="#ec4899" icon={ListChecks} help={EDITOR_SECTION_HELP.kind}>
         {q && !initialType ? (
           <p className="mb-3 rounded-xl bg-[#fffbeb] px-4 py-2 text-[12.5px] text-[#92400e]">
             This question is stored as “{q.type}”, which isn’t one of the known kinds. Pick the closest kind below before you save.
@@ -481,7 +493,7 @@ export function RegistryEditor({
       </Section>
 
       {/* 3. Wording */}
-      <Section n={3} title="Wording" hint="What the member reads. The key links answers, so it never changes once members have answered." tint="#f97316" icon={Type}>
+      <Section n={3} title="Wording" hint="What the member reads. The key links answers, so it never changes once members have answered." tint="#f97316" icon={Type} help={EDITOR_SECTION_HELP.wording}>
         <div className="grid gap-3 md:grid-cols-2">
           <label>
             Key {isNew ? '(lower case, never changes)' : ''}
@@ -510,14 +522,16 @@ export function RegistryEditor({
 
       {/* 4. Answers */}
       {info.choice ? (
-        <Section n={4} title="Answers" hint="The list the member picks from. A removed answer is retired, not deleted, so old answers keep their meaning." tint="#10b981" icon={ListChecks}>
+        <Section n={4} title="Answers" hint="The list the member picks from. A removed answer is retired, not deleted, so old answers keep their meaning." tint="#10b981" icon={ListChecks} help={EDITOR_SECTION_HELP.answers}>
           <div className="overflow-x-auto">
             <table className="w-full text-left text-[13px]">
               <thead>
                 <tr className="text-[11px] uppercase tracking-wider text-fg-3">
                   <th className="py-2 pr-3 font-semibold">Answer</th>
                   <th className="py-2 pr-3 font-semibold">Stored as</th>
-                  {info.multi ? <th className="py-2 pr-3 font-semibold">Clears the others</th> : null}
+                  {info.multi ? (
+                    <th className="py-2 pr-3 font-semibold">Clears the others</th>
+                  ) : null}
                   {f.parent && parentIsChoice ? <th className="py-2 pr-3 font-semibold">Only when {f.parent} is</th> : null}
                   <th className="py-2 pr-3 font-semibold">Only in countries</th>
                   <th />
@@ -592,12 +606,21 @@ export function RegistryEditor({
               <Plus className="size-4" aria-hidden /> Add
             </button>
           </form>
-          <p className="mt-2 text-[12px] text-fg-3">Countries are two-letter codes such as IN, US. Leave empty to show the answer everywhere.</p>
+          <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[12px] text-fg-3">
+            {info.multi ? (
+              <span className="inline-flex items-center gap-1.5">
+                <TopicInfo title="Clears the others" help={EXTRA_HELP.exclusive} /> What “Clears the others” does
+              </span>
+            ) : null}
+            <span className="inline-flex items-center gap-1.5">
+              <TopicInfo title="Only in countries" help={EXTRA_HELP.countries} /> Countries are two-letter codes such as IN, US. Leave empty to show the answer everywhere.
+            </span>
+          </div>
         </Section>
       ) : null}
 
       {/* 5. Rules */}
-      <Section n={info.choice ? 5 : 4} title="Rules and checks" hint="Whether the answer is required, and the other rules this kind of question supports." tint="#0ea5e9" icon={ShieldCheck}>
+      <Section n={info.choice ? 5 : 4} title="Rules and checks" hint="Whether the answer is required, and the other rules this kind of question supports." tint="#0ea5e9" icon={ShieldCheck} help={EDITOR_SECTION_HELP.rules}>
         <p className="mb-3 flex items-center gap-2 rounded-xl bg-[#ecfeff] px-4 py-2.5 text-[12.5px] text-[#155e75] dark:bg-[#083344]/50 dark:text-[#67e8f9]">
           <ShieldCheck className="size-4 shrink-0" aria-hidden />
           <span>
@@ -605,8 +628,8 @@ export function RegistryEditor({
           </span>
         </p>
         <div className="grid gap-2 md:grid-cols-2">
-          {info.settings.map((s) => (
-              <Toggle key={s} checked={!!f[s]} onChange={(v) => set(s, v)} label={QUESTION_SETTINGS[s].label} hint={QUESTION_SETTINGS[s].hint} />
+          {info.settings.map((s, i) => (
+              <Toggle key={s} checked={!!f[s]} onChange={(v) => set(s, v)} label={QUESTION_SETTINGS[s].label} hint={QUESTION_SETTINGS[s].hint} help={SETTING_HELP[s]} align={i % 2 ? 'right' : 'left'} />
             ))}
         </div>
         {teen ? (
@@ -646,6 +669,7 @@ export function RegistryEditor({
         hint="Show this question only after the member answers an earlier one, and, for answer lists, only for some of its answers."
         tint="#a855f7"
         icon={GitBranch}
+        help={EDITOR_SECTION_HELP.dependency}
       >
         <div className="flex flex-wrap items-end gap-2">
           <label className="min-w-64 flex-1">
@@ -764,6 +788,7 @@ export function RegistryEditor({
         hint="Link the question to a shared attribute so answers compare across panels, and place it on a profile page."
         tint="#eab308"
         icon={Link2}
+        help={EDITOR_SECTION_HELP.attribute}
       >
         {isNew ? (
           <p className="text-fg-2">
@@ -796,6 +821,7 @@ export function RegistryEditor({
       {/* Save bar */}
       <div className="sticky bottom-3 z-30 rounded-2xl border border-border bg-surface/95 px-4 py-3 shadow-[0_8px_30px_-12px_rgba(79,91,213,0.45)] backdrop-blur">
         <div className="flex flex-wrap items-center gap-3">
+          <TopicInfo title="Saving" help={EDITOR_SECTION_HELP.save} up />
           <input className={`${input} max-w-sm`} value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Reason for the change (kept in the audit log)" aria-label="Reason" />
           <button type="button" className={btn.primary} disabled={pending || problems.length > 0} onClick={save}>
             <Save className="size-4" aria-hidden />
