@@ -58,6 +58,7 @@ export const MemberViewParams = z
     gender: z.enum(['Male', 'Female', 'Other']).optional(),
     ageMin: z.coerce.number().int().min(0).max(120).optional(),
     ageMax: z.coerce.number().int().min(0).max(120).optional(),
+    tag: z.string().trim().toLowerCase().regex(/^[a-z0-9][a-z0-9 _-]{0,29}$/).optional(),
     sort: z.string().trim().max(20).optional(),
     dir: z.enum(['asc', 'desc']).optional(),
   })

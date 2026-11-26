@@ -52,6 +52,13 @@ export const MemberSearch = z.object({
   /** Birth year range (the Born column). Needs a panel build that supports it; older builds ignore it. */
   bornFrom: z.coerce.number().int().min(1900).max(2100).optional(),
   bornTo: z.coerce.number().int().min(1900).max(2100).optional(),
+  /** Members carrying this admin tag (MADP's own tags; see MemberTag). */
+  tag: z
+    .string()
+    .trim()
+    .toLowerCase()
+    .regex(/^[a-z0-9][a-z0-9 _-]{0,29}$/)
+    .optional(),
   /** Gender as the member gave it at sign-up, and age in whole years today. */
   gender: z.enum(['Male', 'Female', 'Other']).optional(),
   ageMin: z.coerce.number().int().min(0).max(120).optional(),
@@ -1119,3 +1126,28 @@ export const MemberResponsesQuery = z.object({
   page: z.coerce.number().int().min(1).max(10_000).default(1),
 });
 export type MemberResponsesQuery = z.infer<typeof MemberResponsesQuery>;
+
+// ---- tags and notes (kept in MADP, per brand) ----------------------------------------------------------------------
+/** A short admin label on a member: lower case letters, digits, space, dash or underscore, up to 30. */
+export const MemberTag = z
+  .string()
+  .trim()
+  .toLowerCase()
+  .regex(/^[a-z0-9][a-z0-9 _-]{0,29}$/, 'letters, digits, space, - or _, up to 30');
+export type MemberTag = z.infer<typeof MemberTag>;
+export const MemberTagsSet = z.object({ tags: z.array(MemberTag).max(10) }).strict();
+export type MemberTagsSet = z.infer<typeof MemberTagsSet>;
+export const MemberNoteCreate = z.object({ body: z.string().trim().min(2).max(2000), pinned: z.boolean().default(false) }).strict();
+export type MemberNoteCreate = z.infer<typeof MemberNoteCreate>;
+export interface MemberNote {
+  id: string;
+  body: string;
+  pinned: boolean;
+  author: string | null;
+  mine: boolean;
+  createdAt: string;
+}
+export interface MemberTagsNotes {
+  tags: string[];
+  notes: MemberNote[];
+}

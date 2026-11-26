@@ -28,3 +28,28 @@ export async function saveTypeColumnsAction(rules: MemberTypeRule[]) {
     return r;
   });
 }
+
+export async function setMemberTagsAction(member: string, tags: string[]) {
+  return attempt(async () => {
+    const r = await api<{ tags: string[] }>(`/panel/members/${encodeURIComponent(member)}/tags`, { method: 'PUT', json: { tags } });
+    revalidatePath(`/members/${member}`);
+    revalidatePath('/members');
+    return r;
+  });
+}
+
+export async function addMemberNoteAction(member: string, body: string, pinned: boolean) {
+  return attempt(async () => {
+    const r = await api<{ id: string }>(`/panel/members/${encodeURIComponent(member)}/notes`, { method: 'POST', json: { body, pinned } });
+    revalidatePath(`/members/${member}`);
+    return r;
+  });
+}
+
+export async function deleteMemberNoteAction(member: string, note: string) {
+  return attempt(async () => {
+    await api(`/panel/members/${encodeURIComponent(member)}/notes/${encodeURIComponent(note)}`, { method: 'DELETE' });
+    revalidatePath(`/members/${member}`);
+    return null;
+  });
+}

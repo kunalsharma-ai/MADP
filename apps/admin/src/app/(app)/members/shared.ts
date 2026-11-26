@@ -14,6 +14,8 @@ export interface MemberRow {
   age?: number | null;
   /** The Type column: question-bank answers for this member's segment (designation, HCP type, condition...). */
   typeValues?: { label: string; values: string[] }[];
+  /** MADP's own admin tags on this member. */
+  tags?: string[];
   qualityScore: number;
   emailVerified: string;
   signedUpAt: string;
@@ -43,4 +45,12 @@ export interface PanelCategory {
   value: string;
   segments: string[];
   minor: boolean;
+}
+
+const TAG_TINTS = ['#6366f1', '#ec4899', '#14b8a6', '#f59e0b', '#0ea5e9', '#a855f7', '#22c55e', '#f43f5e'];
+/** The same tag always gets the same colour. */
+export function tagTint(tag: string): string {
+  let h = 0;
+  for (const c of tag) h = (h * 31 + c.charCodeAt(0)) >>> 0;
+  return TAG_TINTS[h % TAG_TINTS.length]!;
 }

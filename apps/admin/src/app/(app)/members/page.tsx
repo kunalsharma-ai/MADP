@@ -11,7 +11,7 @@ import { SortHead, sortPage, SORT_COLUMNS, type SortDir } from './sort';
 import { SavedViews } from './saved-views';
 import { TypeColumns } from './type-columns';
 import { MemberViewParams, type MemberTypeRule, type MemberView, type SessionUser } from '@madp/contracts';
-import { GENDER_TONE, STATUS_TONE, marketingLabel, type MemberRow, type PanelCategory } from './shared';
+import { GENDER_TONE, STATUS_TONE, marketingLabel, tagTint, type MemberRow, type PanelCategory } from './shared';
 
 export const metadata: Metadata = { title: 'Members' };
 
@@ -34,6 +34,7 @@ const FILTERS = [
   'gender',
   'ageMin',
   'ageMax',
+  'tag',
   'sort',
   'dir',
   'page',
@@ -78,7 +79,7 @@ export default async function MembersPage({
         }
       />
       {await withPanel(async (brand) => {
-        const [data, { views }, types, me] = await Promise.all([api<{
+        const [data, { views }, types, me, tagList] = await Promise.all([api<{
           items: MemberRow[];
           total: number;
           page: number;
@@ -94,6 +95,7 @@ export default async function MembersPage({
             '/panel/members/type-columns',
           ).catch(() => ({ rules: [] as MemberTypeRule[], saved: false, sensitivePanel: false, categories: [] as PanelCategory[] })),
           api<SessionUser>('/auth/me').catch(() => null),
+          api<{ tags: { tag: string; members: number }[] }>('/member-tags').catch(() => ({ tags: [] })),
         ]);
         const categories = types.categories.filter((c) => !c.minor || !data.teensHidden);
         const segmentName = (v: string) => types.categories.find((c) => c.value === v)?.segments.join(', ') || v;
@@ -128,7 +130,7 @@ export default async function MembersPage({
             />
             <Card>
               <form id={FORM} className="grid gap-3 px-5 py-4 text-[13px] md:grid-cols-6" method="get">
-                <label className="md:col-span-3">
+                <label className="md:col-span-2">
                   Search
                   <input
                     name="q"
@@ -136,6 +138,17 @@ export default async function MembersPage({
                     placeholder="E-mail, phone, member ID or name"
                     className={input}
                   />
+                </label>
+                <label>
+                  Tag
+                  <select name="tag" defaultValue={sp.tag ?? ''} className={input}>
+                    <option value="">Any tag</option>
+                    {tagList.tags.map((t) => (
+                      <option key={t.tag} value={t.tag}>
+                        {t.tag} ({fmt(t.members)})
+                      </option>
+                    ))}
+                  </select>
                 </label>
                 <label>
                   Due for 6-month check by
@@ -302,6 +315,15 @@ export default async function MembersPage({
                           {m.name || '(no name)'}
                         </Link>
                         <div className="font-mono text-[11px] text-fg-3">{m.memberId ?? m.id}</div>
+                        {m.tags?.length ? (
+                          <div className="mt-1 flex max-w-48 flex-wrap gap-1">
+                            {m.tags.map((t) => (
+                              <Link key={t} href={`/members?tag=${encodeURIComponent(t)}`} className="rounded-full px-1.5 py-px text-[10px] font-semibold text-white" style={{ background: tagTint(t) }}>
+                                {t}
+                              </Link>
+                            ))}
+                          </div>
+                        ) : null}
                       </td>
                       <td className="px-5 py-2.5 font-mono text-[12px]">{m.email ?? '—'}</td>
                       <td className="px-5 py-2.5 font-mono text-[12px]">{m.phone ?? '—'}</td>

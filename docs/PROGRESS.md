@@ -783,3 +783,13 @@ verified.
   builds leave the new columns empty ("—") and show the birth year instead of the age.
 - Tests: `apps/api/test/member-types.test.ts` (4) and MFR `tests/admin.members.test.mjs`. Screenshots:
   `/mnt/project-files/madp/preview-madp/member-types/`.
+
+## Member tags and notes (2026-11-26)
+
+- Admins tag members ("vip", "check payout") and keep notes on them, per brand, for T2O, MFR, MHO and added panels.
+  Kept in MADP (`member_tag`, `member_note`, migration 0028, with data_mode), never sent to the panel.
+- Members table: tag chips under each name (click one to filter) and a Tag filter; tagged lists read each member's
+  list fields from the panel (never the member page's extra fields).
+- Member page: "Tags and notes" card. Reading notes is audited (`members.notes_read`); note text stays out of the
+  audit trail. Only the author deletes a note. Writes need `members.edit`; teen members need `teen.read`.
+- Tests: `apps/api/test/member-tags.test.ts` (3).

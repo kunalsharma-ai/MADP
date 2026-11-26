@@ -1408,3 +1408,43 @@ export const memberTypeRules = pgTable('member_type_rules', {
   updatedBy: uuid('updated_by'),
   updatedAt: updated(),
 });
+
+/**
+ * Admin tags on panel members ("VIP", "check payout", ...), per brand. The member is the panel's own id. A tag is a
+ * label, not personal data, but it is about a panel member, so it carries data_mode.
+ */
+export const memberTags = pgTable(
+  'member_tag',
+  {
+    panel: text('panel')
+      .notNull()
+      .references(() => panels.code),
+    memberId: text('member_id').notNull(),
+    tag: text('tag').notNull(),
+    dataMode: dataMode('data_mode').notNull(),
+    createdBy: uuid('created_by'),
+    createdAt: created(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.panel, t.dataMode, t.memberId, t.tag] }),
+    index('member_tag_by_tag_idx').on(t.panel, t.dataMode, t.tag),
+  ],
+);
+
+/** Admin notes on a panel member. Free text may hold personal data: reads are audited, only the author deletes. */
+export const memberNotes = pgTable(
+  'member_note',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    panel: text('panel')
+      .notNull()
+      .references(() => panels.code),
+    memberId: text('member_id').notNull(),
+    dataMode: dataMode('data_mode').notNull(),
+    body: text('body').notNull(),
+    pinned: boolean('pinned').notNull().default(false),
+    createdBy: uuid('created_by').references(() => adminUsers.id, { onDelete: 'set null' }),
+    createdAt: created(),
+  },
+  (t) => [index('member_note_member_idx').on(t.panel, t.dataMode, t.memberId)],
+);
