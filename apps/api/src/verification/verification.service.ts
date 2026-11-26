@@ -1,7 +1,6 @@
 import { ForbiddenException, Injectable, NotFoundException, ConflictException } from '@nestjs/common';
 import { and, desc, eq, inArray, ne, sql, type SQL } from 'drizzle-orm';
 import {
-  PANEL_CODES,
   QUALITY_CHECKS,
   type DataMode,
   type EvidenceCreate,
@@ -13,6 +12,7 @@ import {
 import { Database } from '../db/database.js';
 import { panelMemberships, verificationEvidence } from '../db/schema.js';
 import { AuditService, type AuditEntry } from '../audit/audit.service.js';
+import { PanelDirectory } from '../panels/panel-directory.js';
 
 /** T2O and MFR accept ages 13 to 120 (panel audits). */
 const MIN_AGE = 13;
@@ -129,6 +129,7 @@ export class VerificationService {
   constructor(
     private readonly database: Database,
     private readonly audit: AuditService,
+    private readonly panels: PanelDirectory,
   ) {}
 
   /**
@@ -360,13 +361,5 @@ export class VerificationService {
       metadata: { evidenceId: e.id, claim: e.claim },
     });
     return { ...row, personId };
-  }
-
-  static panelsFor(brand: string, panel?: PanelCode): PanelCode[] {
-    if (brand !== 'all') {
-      if (panel && panel !== brand) throw new ForbiddenException('That panel is outside the selected brand');
-      return [brand as PanelCode];
-    }
-    return panel ? [panel] : [...PANEL_CODES];
   }
 }

@@ -5,13 +5,14 @@ import { BrandScoped, CurrentBrand, CurrentPrincipal, RequirePermissions } from 
 import type { Principal } from '../auth/auth.types.js';
 import { EngagementService } from '../engagement/engagement.service.js';
 import { ZodPipe } from '../common/zod.pipe.js';
-import { VerificationService } from '../verification/verification.service.js';
 import { MailersService } from './mailers.service.js';
+import { PanelDirectory } from '../panels/panel-directory.js';
 
 /** The panels' mailer packs, read-only, for the selected brand. Previews use the designers' sample data only. */
 @Controller('communications/mailers')
 export class MailersController {
   constructor(
+    private readonly panelDirectory: PanelDirectory,
     private readonly mailers: MailersService,
     private readonly engagement: EngagementService,
   ) {}
@@ -20,21 +21,21 @@ export class MailersController {
   @BrandScoped({ allowAll: true })
   @Get()
   list(@Query(new ZodPipe(MailerQuery)) q: MailerQuery, @CurrentBrand() brand: BrandSelection) {
-    return this.mailers.list(VerificationService.panelsFor(brand, q.panel), q.pack);
+    return this.mailers.list(this.panelDirectory.forBrand(brand, q.panel), q.pack);
   }
 
   @RequirePermissions('communications.read')
   @BrandScoped({ allowAll: true })
   @Get(':pack/:id')
   detail(@Param(new ZodPipe(MailerParams)) p: MailerParams, @CurrentBrand() brand: BrandSelection) {
-    return this.mailers.detail(VerificationService.panelsFor(brand), p.pack, p.id);
+    return this.mailers.detail(this.panelDirectory.forBrand(brand), p.pack, p.id);
   }
 
   @RequirePermissions('communications.read')
   @BrandScoped({ allowAll: true })
   @Get(':pack/:id/preview')
   preview(@Param(new ZodPipe(MailerParams)) p: MailerParams, @CurrentBrand() brand: BrandSelection) {
-    return this.mailers.preview(VerificationService.panelsFor(brand), p.pack, p.id);
+    return this.mailers.preview(this.panelDirectory.forBrand(brand), p.pack, p.id);
   }
 
   /**
@@ -51,7 +52,7 @@ export class MailersController {
     @CurrentPrincipal() principal: Principal,
     @Req() req: Request,
   ) {
-    const m = this.mailers.toStudio(VerificationService.panelsFor(brand), p.pack, p.id, b.subject);
+    const m = this.mailers.toStudio(this.panelDirectory.forBrand(brand), p.pack, p.id, b.subject);
     const r = await this.engagement.createFromMailer({ ...m, key: b.key ?? m.key }, { id: principal.id, ip: req.ip ?? null });
     return { ...r, added: m.added };
   }

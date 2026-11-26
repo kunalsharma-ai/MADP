@@ -81,11 +81,16 @@ export interface BrandKit {
   confirmed: boolean;
 }
 /** Fallback before Brands & settings is read: display names only, nothing confirmed. */
-export const BRAND_KITS: Record<PanelCode, BrandKit> = {
+export const BRAND_KITS: Record<string, BrandKit> = {
   t2o: { displayName: 'Turn2Opinion', senderName: null, senderAddress: null, legalFooter: null, privacyUrl: null, logo: null, confirmed: false },
   mfr: { displayName: 'MyFrequentRewards', senderName: null, senderAddress: null, legalFooter: null, privacyUrl: null, logo: null, confirmed: false },
   mho: { displayName: 'MyHealthOpinions', senderName: null, senderAddress: null, legalFooter: null, privacyUrl: null, logo: null, confirmed: false },
 };
+/** A brand kit with nothing set yet, for a panel without Brands & settings. */
+export function emptyBrandKit(displayName: string): BrandKit {
+  return { displayName, senderName: null, senderAddress: null, legalFooter: null, privacyUrl: null, logo: null, confirmed: false };
+}
+
 /** What a brand kit still lacks, in words for the screens. */
 export function brandKitGaps(k: BrandKit): string[] {
   const gaps: string[] = [];

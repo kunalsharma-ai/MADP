@@ -6,8 +6,8 @@ import { BrandScoped, CurrentBrand, RequirePermissions } from '../auth/decorator
 import { ZodPipe } from '../common/zod.pipe.js';
 import { AuditService } from '../audit/audit.service.js';
 import { AudienceService } from '../audience/audience.service.js';
-import { VerificationService } from '../verification/verification.service.js';
 import { InsightsService } from './insights.service.js';
+import { PanelDirectory } from '../panels/panel-directory.js';
 
 const RefreshQuery = z.object({ panel: PanelCode.optional() });
 
@@ -15,6 +15,7 @@ const RefreshQuery = z.object({ panel: PanelCode.optional() });
 @Controller('insights')
 export class InsightsController {
   constructor(
+    private readonly panelDirectory: PanelDirectory,
     private readonly insights: InsightsService,
     private readonly audience: AudienceService,
   ) {}
@@ -23,7 +24,7 @@ export class InsightsController {
   @BrandScoped({ allowAll: true })
   @Get()
   list(@Query(new ZodPipe(InsightQuery)) q: InsightQuery, @CurrentBrand() brand: BrandSelection) {
-    return this.insights.list(this.audience.defaultMode(), VerificationService.panelsFor(brand, q.panel), q);
+    return this.insights.list(this.audience.defaultMode(), this.panelDirectory.forBrand(brand, q.panel), q);
   }
 
   @RequirePermissions('insights.review')
@@ -31,7 +32,7 @@ export class InsightsController {
   @Post('refresh')
   @HttpCode(200)
   refresh(@Query(new ZodPipe(RefreshQuery)) q: z.infer<typeof RefreshQuery>, @CurrentBrand() brand: BrandSelection, @Req() req: Request) {
-    return this.insights.refresh(this.audience.defaultMode(), VerificationService.panelsFor(brand, q.panel), AuditService.fromRequest(req));
+    return this.insights.refresh(this.audience.defaultMode(), this.panelDirectory.forBrand(brand, q.panel), AuditService.fromRequest(req));
   }
 
   @RequirePermissions('insights.review')
@@ -44,6 +45,6 @@ export class InsightsController {
     @CurrentBrand() brand: BrandSelection,
     @Req() req: Request,
   ) {
-    return this.insights.decide(id, VerificationService.panelsFor(brand), b, AuditService.fromRequest(req));
+    return this.insights.decide(id, this.panelDirectory.forBrand(brand), b, AuditService.fromRequest(req));
   }
 }

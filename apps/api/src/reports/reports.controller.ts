@@ -7,9 +7,9 @@ import type { Principal } from '../auth/auth.types.js';
 import { ZodPipe } from '../common/zod.pipe.js';
 import { AuditService } from '../audit/audit.service.js';
 import { AudienceService } from '../audience/audience.service.js';
-import { VerificationService } from '../verification/verification.service.js';
 import { ReportsService } from './reports.service.js';
 import { toCsv, toXlsx } from './export-writer.js';
+import { PanelDirectory } from '../panels/panel-directory.js';
 
 const key = (k: string) => {
   const r = ReportKey.safeParse(k);
@@ -24,6 +24,7 @@ const key = (k: string) => {
 @Controller('reports')
 export class ReportsController {
   constructor(
+    private readonly panelDirectory: PanelDirectory,
     private readonly reports: ReportsService,
     private readonly audience: AudienceService,
     private readonly audit: AuditService,
@@ -48,7 +49,7 @@ export class ReportsController {
     return this.reports.run(
       this.audience.defaultMode(),
       key(k),
-      VerificationService.panelsFor(brand, q.panel),
+      this.panelDirectory.forBrand(brand, q.panel),
       q,
       this.held(p, brand),
       p.id,
@@ -74,7 +75,7 @@ export class ReportsController {
     const r = await this.reports.run(
       this.audience.defaultMode(),
       rk,
-      VerificationService.panelsFor(brand, q.panel),
+      this.panelDirectory.forBrand(brand, q.panel),
       q,
       held,
       p.id,

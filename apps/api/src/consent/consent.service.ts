@@ -1,9 +1,10 @@
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { sql } from 'drizzle-orm';
-import { PANEL_CODES, type ContactPreferenceCreate, type DataMode, type PanelCode } from '@madp/contracts';
+import { type ContactPreferenceCreate, type DataMode, type PanelCode } from '@madp/contracts';
 import { Database } from '../db/database.js';
 import { contactPreferences } from '../db/schema.js';
 import { AuditService } from '../audit/audit.service.js';
+import { PanelDirectory } from '../panels/panel-directory.js';
 
 /** Purposes a panel would have to report before MADP could send that kind of message. */
 const EXPECTED_PURPOSES = ['terms', 'email_marketing'] as const;
@@ -17,6 +18,7 @@ export class ConsentService {
   constructor(
     private readonly database: Database,
     private readonly audit: AuditService,
+    private readonly panels: PanelDirectory,
   ) {}
 
   private get db() {
@@ -24,7 +26,7 @@ export class ConsentService {
   }
 
   async summary(mode: DataMode, panel?: PanelCode) {
-    const panels = panel ? [panel] : [...PANEL_CODES];
+    const panels = panel ? [panel] : this.panels.codes();
     const list = sql`${`{${panels.join(',')}}`}::text[]`;
     // One set-based pass per question for every panel at once. The engagement gate's per-member subqueries
     // (contactColumns in engagement/gate.ts) also count recent contacts for frequency caps, which this summary does not need.

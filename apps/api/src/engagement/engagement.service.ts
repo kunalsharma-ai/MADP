@@ -9,6 +9,8 @@ import { and, asc, desc, eq, sql } from 'drizzle-orm';
 import {
   BASIS_CONSENT,
   BRAND_KITS,
+  emptyBrandKit,
+  isBuiltInPanel,
   brandKitGaps,
   type BrandKit,
   KIND_BASIS,
@@ -199,7 +201,8 @@ export class EngagementService {
         senderAddress: r.supportEmail,
         legalFooter: r.legalName && r.postalAddress ? `${r.legalName}, ${r.postalAddress}` : (r.legalName ?? null),
         privacyUrl: r.privacyUrl,
-        logo: `/brands/${r.panel}.png`,
+        // Logos ship with the admin app for the built-in brands only.
+        logo: isBuiltInPanel(r.panel) ? `/brands/${r.panel}.png` : null,
         confirmed: false,
       };
       kit.confirmed = brandKitGaps(kit).length === 0;
@@ -211,7 +214,7 @@ export class EngagementService {
   /** Renders a version with sample values only; never with a member's data. The brand's logo and legal footer wrap it. */
   async preview(versionId: string) {
     const { v, t } = await this.version(versionId);
-    const brand = (await this.brandKits())[t.panel as PanelCode];
+    const brand = (await this.brandKits())[t.panel] ?? emptyBrandKit(t.panel.toUpperCase());
     const sample = 'https://example.invalid';
     const gaps = brandKitGaps(brand);
     const body = render(v, {

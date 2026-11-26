@@ -11,7 +11,8 @@ import type {
   SourceResponse,
   SourceReward,
 } from '@madp/contracts';
-import { AUDITED_CAPABILITIES } from './capabilities.js';
+import { isBuiltInPanel, type BuiltInPanelCode } from '@madp/contracts';
+import { capabilitiesFor } from './capabilities.js';
 import {
   mapAnswerChange,
   mapAnswerMap,
@@ -98,7 +99,8 @@ const T2O_BACKEND_ENDPOINTS: EndpointMap = {
   },
 };
 
-export const ENDPOINTS: Record<PanelCode, EndpointMap> = {
+/** Built-in panels. A panel added in the console runs on the same shared backend, so it uses these routes too. */
+export const ENDPOINTS: Record<BuiltInPanelCode, EndpointMap> = {
   t2o: T2O_BACKEND_ENDPOINTS,
   mfr: T2O_BACKEND_ENDPOINTS,
   mho: T2O_BACKEND_ENDPOINTS,
@@ -134,6 +136,11 @@ interface Envelope<T> {
  * called. It is constructed only when live access for that panel has been explicitly approved
  * (see apps/api ConnectorRegistry and docs/SECURITY_PRIVACY.md section 4).
  */
+/** Routes for a panel: its audited map, else the shared panel backend's. */
+export function endpointsFor(panel: PanelCode): EndpointMap {
+  return isBuiltInPanel(panel) ? ENDPOINTS[panel] : T2O_BACKEND_ENDPOINTS;
+}
+
 export class PanelApiConnector implements PanelConnector {
   readonly mode = 'live' as const;
   private lastCall = 0;
@@ -142,7 +149,7 @@ export class PanelApiConnector implements PanelConnector {
   constructor(
     readonly panel: PanelCode,
     private readonly cfg: PanelApiConfig,
-    private readonly endpoints: EndpointMap = ENDPOINTS[panel],
+    private readonly endpoints: EndpointMap = endpointsFor(panel),
   ) {
     if (!cfg.bearerToken) throw new ConnectorError('Missing integration credential', panel, 'not_authorised');
     // The panel backend derives its tenant from the Host header, so we must call it on the tenant's own
@@ -157,7 +164,7 @@ export class PanelApiConnector implements PanelConnector {
   }
 
   capabilities(): CapabilityFinding[] {
-    return AUDITED_CAPABILITIES[this.panel];
+    return capabilitiesFor(this.panel);
   }
 
   private readonly sleep = (ms: number) =>

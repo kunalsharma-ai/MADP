@@ -1,7 +1,7 @@
 import http from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { PANEL_CODES } from '@madp/contracts';
+import { BUILT_IN_PANEL_CODES } from '@madp/contracts';
 import {
   AUDITED_CAPABILITIES,
   DemoConnector,
@@ -128,7 +128,7 @@ const make = (panel: 't2o' | 'mfr' | 'mho', token = 'good') =>
     minIntervalMs: 0,
   });
 
-describe.each(PANEL_CODES)('PanelApiConnector [%s]', (panel) => {
+describe.each(BUILT_IN_PANEL_CODES)('PanelApiConnector [%s]', (panel) => {
   it('reads questions, options and questionnaires with the audited shapes', async () => {
     const c = make(panel);
     const [q] = await c.listQuestions();
@@ -269,7 +269,7 @@ describe('panel-specific answer endpoints', () => {
   });
 });
 
-describe.each(PANEL_CODES)('DemoConnector [%s]', (panel) => {
+describe.each(BUILT_IN_PANEL_CODES)('DemoConnector [%s]', (panel) => {
   it('serves sampled questionnaires and synthetic respondents only', async () => {
     const c = new DemoConnector(panel, 300);
     expect((await c.listQuestionnaires()).length).toBeGreaterThan(0);

@@ -142,7 +142,7 @@ export class ReportsService {
               count(distinct cm.master_person_id) filter (where cm.is_minor)::int as minors
             from category_membership cm
             join panel_membership pm on pm.master_person_id = cm.master_person_id and pm.panel = cm.panel and pm.status = 'active'
-            where cm.data_mode = ${c.mode} and cm.panel = any(${`{${c.panels.join(',')}}`}::panel_code[])
+            where cm.data_mode = ${c.mode} and cm.panel = any(${`{${c.panels.join(',')}}`}::text[])
             group by 1, 2 order by 1, 2`),
           notes: ['Categories overlap, so the rows of one panel are not added together.'],
         }),
@@ -166,7 +166,7 @@ export class ReportsService {
             select pm.panel::text as panel, coalesce(nullif(si.country, ''), 'Unknown') as country,
               coalesce(nullif(si.state, ''), 'Unknown') as state, count(*)::int as members
             from panel_membership pm join source_identity si on si.id = pm.source_identity_id
-            where pm.data_mode = ${c.mode} and pm.status = 'active' and pm.panel = any(${`{${c.panels.join(',')}}`}::panel_code[])
+            where pm.data_mode = ${c.mode} and pm.status = 'active' and pm.panel = any(${`{${c.panels.join(',')}}`}::text[])
             group by 1, 2, 3 order by 1, 4 desc, 2, 3`);
           let hidden = 0;
           const out = rows.map((r) => {
@@ -383,7 +383,7 @@ export class ReportsService {
             from communication_event ce
             left join campaign cp on cp.id = ce.campaign_id
             left join automation a on a.id = ce.automation_id
-            where ce.data_mode = ${c.mode} and ce.panel = any(${`{${c.panels.join(',')}}`}::panel_code[])
+            where ce.data_mode = ${c.mode} and ce.panel = any(${`{${c.panels.join(',')}}`}::text[])
               and ce.occurred_at >= ${c.from} and ce.occurred_at < ${c.toExclusive}
             group by 1, 2, 3, 4 order by 1, 2, 3, 4`),
           notes: [
@@ -437,7 +437,7 @@ export class ReportsService {
               count(*) filter (where status = 'succeeded')::int as succeeded,
               count(*) filter (where status = 'failed')::int as failed,
               to_char(max(finished_at) filter (where status = 'succeeded') at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as "lastSuccess"
-            from import_job where data_mode = ${c.mode} and not dry_run and panel = any(${`{${c.panels.join(',')}}`}::panel_code[])
+            from import_job where data_mode = ${c.mode} and not dry_run and panel = any(${`{${c.panels.join(',')}}`}::text[])
               and coalesce(started_at, finished_at) >= ${c.from} and coalesce(started_at, finished_at) < ${c.toExclusive}
             group by 1, 2 order by 1, 2`),
         }),

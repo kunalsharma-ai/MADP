@@ -12,7 +12,8 @@ import {
 } from '@nestjs/common';
 import { and, count, desc, eq } from 'drizzle-orm';
 import { z } from 'zod';
-import { PANELS, PanelCode } from '@madp/contracts';
+import { PANELS, PanelCode, isBuiltInPanel } from '@madp/contracts';
+import { PanelDirectory } from '../panels/panel-directory.js';
 import type { Request } from 'express';
 import { CurrentPrincipal, RequirePermissions } from '../auth/decorators.js';
 import type { Principal } from '../auth/auth.types.js';
@@ -42,6 +43,7 @@ export class ConnectorsController {
     private readonly audit: AuditService,
     private readonly mongo: Mongo,
     private readonly scheduler: SyncScheduler,
+    private readonly panels: PanelDirectory,
   ) {}
 
   /** Proposed Supply360-facing health endpoint (spec section 12): no panel data, only status. */
@@ -71,10 +73,10 @@ export class ConnectorsController {
         ]);
         return {
           panel: slot.panel,
-          name: PANELS[slot.panel].name,
-          shortName: PANELS[slot.panel].shortName,
-          sensitive: PANELS[slot.panel].sensitive,
-          sourceRepository: PANELS[slot.panel].sourceRepository,
+          name: this.panels.name(slot.panel),
+          shortName: this.panels.shortName(slot.panel),
+          sensitive: this.panels.sensitive(slot.panel),
+          sourceRepository: isBuiltInPanel(slot.panel) ? PANELS[slot.panel].sourceRepository : null,
           dataMode: slot.dataMode,
           reason: slot.reason,
           health,

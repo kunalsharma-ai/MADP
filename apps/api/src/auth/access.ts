@@ -1,4 +1,4 @@
-import { PANEL_CODES, type PanelCode, type Permission, type RoleGrant } from '@madp/contracts';
+import { BUILT_IN_PANEL_CODES, type PanelCode, type Permission, type RoleGrant } from '@madp/contracts';
 
 export interface Access {
   permissions: Permission[];
@@ -14,27 +14,32 @@ export interface Access {
 export function computeAccess(
   grants: RoleGrant[],
   rolePermissions: ReadonlyMap<string, readonly Permission[]>,
+  /** Every active panel. `brands: null` grants cover all of them, panels added later included. */
+  panels: readonly PanelCode[] = BUILT_IN_PANEL_CODES,
 ): Access {
-  const per: Record<PanelCode, Set<Permission>> = { t2o: new Set(), mfr: new Set(), mho: new Set() };
+  const per = new Map<PanelCode, Set<Permission>>(panels.map((p) => [p, new Set()]));
   for (const g of grants) {
     const perms = rolePermissions.get(g.role) ?? [];
-    for (const b of g.brands ?? PANEL_CODES) for (const p of perms) per[b].add(p);
+    for (const b of g.brands ?? panels) for (const p of perms) per.get(b)?.add(p);
   }
   const brandPermissions: Partial<Record<PanelCode, Permission[]>> = {};
   const brands: PanelCode[] = [];
-  for (const b of PANEL_CODES) {
-    if (per[b].size) {
-      brandPermissions[b] = [...per[b]].sort();
+  for (const b of panels) {
+    const set = per.get(b)!;
+    if (set.size) {
+      brandPermissions[b] = [...set].sort();
       brands.push(b);
     }
   }
-  const permissions = [...per.t2o].filter((p) => per.mfr.has(p) && per.mho.has(p)).sort();
+  const sets = panels.map((b) => per.get(b)!);
+  const permissions = sets.length ? [...sets[0]!].filter((p) => sets.every((s) => s.has(p))).sort() : [];
   return { permissions, brandPermissions, brands };
 }
 
 /** True when `holder` has every permission of `wanted` on every brand `wanted` covers (no privilege escalation). */
 export function covers(holder: Access, wanted: Access): boolean {
-  return PANEL_CODES.every((b) => {
+  const all = new Set([...Object.keys(holder.brandPermissions), ...Object.keys(wanted.brandPermissions)]);
+  return [...all].every((b) => {
     const need = wanted.brandPermissions[b] ?? [];
     const have = new Set(holder.brandPermissions[b] ?? []);
     return need.every((p) => have.has(p));

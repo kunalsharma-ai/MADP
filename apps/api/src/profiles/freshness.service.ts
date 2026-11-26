@@ -1,8 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { sql } from 'drizzle-orm';
-import { PANEL_CODES, type DataMode, type PanelCode } from '@madp/contracts';
+import { type DataMode, type PanelCode } from '@madp/contracts';
 import { Database } from '../db/database.js';
 import { Mongo } from '../mongo/mongo.js';
+import { PanelDirectory } from '../panels/panel-directory.js';
 
 /** Kunal's rule (super admin spec, 24 Nov 2026): every respondent's data is rechecked every 6 months. */
 export const DEFAULT_STALE_DAYS = 180;
@@ -18,12 +19,13 @@ export class FreshnessService {
   constructor(
     private readonly database: Database,
     private readonly mongo: Mongo,
+    private readonly panels: PanelDirectory,
   ) {}
 
   async report(mode: DataMode, opts: { panel?: PanelCode; staleDays: number; healthAllowed: boolean; now?: Date }) {
     const now = opts.now ?? new Date();
     const staleBefore = new Date(now.getTime() - opts.staleDays * 86_400_000);
-    const panels = opts.panel ? [opts.panel] : [...PANEL_CODES];
+    const panels = opts.panel ? [opts.panel] : this.panels.codes();
     const out = [];
     for (const panel of panels) out.push(await this.panel(mode, panel, staleBefore, opts.healthAllowed));
     return { dataMode: mode, staleDays: opts.staleDays, asOf: now.toISOString(), panels: out };
