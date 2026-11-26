@@ -4,6 +4,10 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { HEALTH_ACCESS_PURPOSE_LABELS, HealthAccessPurpose } from '@madp/contracts';
 import { getSegments } from '@/lib/segments';
+import Link from 'next/link';
+import { Ring } from '@/components/dashboard/fx';
+import { PANEL_TONES } from '@/lib/panel-tones';
+import { STATUS_TONE, statusLabel } from '../../participation/status';
 import { api, ApiError } from '@/lib/api';
 import type { PanellistDetail } from '@/lib/types';
 import {
@@ -21,6 +25,8 @@ import {
 } from '@/components/ui';
 
 export const metadata: Metadata = { title: 'Panellist profile' };
+
+const BAND_TONE = { 'very active': 'teal', active: 'accent', cooling: 'warn', inactive: 'neutral' } as const;
 
 const CONSENT_PURPOSE_LABELS: Record<string, string> = {
   guardian_consent: 'Parent or guardian consent',
@@ -70,6 +76,28 @@ export default async function PanellistPage({
       lines: { id: number; bucket: string; points: number; entryKind: string; category: string; reference: string | null; sourceStatus: string | null; recordedAt: string }[];
     }[];
   };
+  type Engagement = {
+    panels: {
+      panel: string;
+      attempts: number;
+      completes: number;
+      terminates: number;
+      completeRate: number | null;
+      points: number;
+      lastActivity: string | null;
+      score: number;
+      band: 'very active' | 'active' | 'cooling' | 'inactive';
+    }[];
+  };
+  type History = {
+    total: number;
+    items: { id: string; panel: string; surveySlug: string | null; status: string; points: number; loi: number | null; startedAt: string | null; endedAt: string | null }[];
+  };
+  // Engagement and survey history need loyalty.read too; others get the profile without them.
+  const [engagement, history] = await Promise.all([
+    api<Engagement>(`/participation/persons/${encodeURIComponent(id)}/engagement`).catch(() => null),
+    api<History>(`/participation?personId=${encodeURIComponent(id)}&size=25`).catch(() => null),
+  ]);
   // Only roles with loyalty.read see the wallets.
   const wallets = await api<Wallets>(`/loyalty/persons/${encodeURIComponent(id)}`).catch(() => null);
   return (
@@ -155,6 +183,68 @@ export default async function PanellistPage({
           ) : null}
         </Card>
       </div>
+      {engagement?.panels.length ? (
+        <Card className="mt-4">
+          <CardHeader
+            title="Engagement & survey history"
+            hint="Worked out from the surveys this person took on each panel. Each panel is scored on its own."
+            action={
+              <Link href="/participation" className="text-[12px] font-semibold text-accent hover:underline">
+                All survey records
+              </Link>
+            }
+          />
+          <div className="grid gap-4 border-b border-border px-5 py-4 md:grid-cols-3">
+            {engagement.panels.map((e) => {
+              const [from, to] = PANEL_TONES[e.panel] ?? ['#818cf8', '#6366f1'];
+              return (
+                <div key={e.panel} className="flex items-center gap-4 rounded-xl bg-surface-2/60 p-3">
+                  <Ring value={e.score} max={100} size={76} stroke={8} from={from} to={to} label={`Engagement score ${e.score} of 100`}>
+                    <span className="text-center leading-tight">
+                      <span className="block text-[17px] font-bold">{e.score}</span>
+                      <span className="text-[9.5px] text-fg-3">of 100</span>
+                    </span>
+                  </Ring>
+                  <div className="min-w-0 text-[12px]">
+                    <p className="flex items-center gap-1.5">
+                      <PanelChip panel={e.panel} />
+                      <Badge tone={BAND_TONE[e.band]}>{e.band}</Badge>
+                    </p>
+                    <p className="mt-1.5 text-fg-2">
+                      {fmt(e.completes)} complete · {fmt(e.terminates)} terminate
+                      {e.completeRate !== null ? ` · ${Math.round(e.completeRate * 100)}% complete rate` : ''}
+                    </p>
+                    <p className="text-fg-3">
+                      {fmt(e.points)} points from surveys · last survey {e.lastActivity ? fmtDate(e.lastActivity) : 'never'}
+                    </p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          {history?.items.length ? (
+            <Table head={['When', 'Panel', 'Survey', 'Result', 'Points', 'Length']}>
+              {history.items.map((r) => (
+                <tr key={r.id}>
+                  <td className="whitespace-nowrap px-5 py-2 text-fg-2">{fmtDate(r.endedAt ?? r.startedAt)}</td>
+                  <td className="px-5 py-2">
+                    <PanelChip panel={r.panel} />
+                  </td>
+                  <td className="px-5 py-2">{r.surveySlug ?? '—'}</td>
+                  <td className="px-5 py-2">
+                    <Badge tone={STATUS_TONE[r.status] ?? 'neutral'}>{statusLabel(r.status)}</Badge>
+                  </td>
+                  <td className="num px-5 py-2">{r.points ? `+${fmt(r.points)}` : '0'}</td>
+                  <td className="num px-5 py-2 text-fg-2">{r.loi ? `${r.loi} min` : '—'}</td>
+                </tr>
+              ))}
+            </Table>
+          ) : null}
+          {history && history.total > history.items.length ? (
+            <p className="px-5 py-2 text-[12px] text-fg-3">Showing the latest {history.items.length} of {fmt(history.total)}.</p>
+          ) : null}
+        </Card>
+      ) : null}
       {d.consents.length ? (
         <Card className="mt-4">
           <CardHeader

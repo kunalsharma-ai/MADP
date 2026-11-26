@@ -31,6 +31,7 @@ export const NAV: NavGroup[] = [
       { href: '/geo', label: 'Geography & overlap', icon: 'Map', permission: 'audience.counts.read' },
       { href: '/panellists', label: 'Panellist directory', icon: 'Users', permission: 'panellists.read' },
       { href: '/identity', label: 'Identity review', icon: 'UserRoundCheck', permission: 'identity.review' },
+      { href: '/participation', label: 'Survey participation', icon: 'ClipboardCheck', permission: 'loyalty.read' },
     ],
   },
   {
