@@ -306,7 +306,7 @@ export function RegistryEditor({
     });
 
   return (
-    <div className="grid gap-4 pb-28">
+    <div className="grid gap-4">
       {/* 1. Where */}
       <Section n={1} title="Where it shows" hint="Tick the panels, then the segments. Each panel gets its own category words from the segment rules." tint="#6366f1" icon={Layers}>
         <div className="grid gap-3 sm:grid-cols-3">
@@ -794,8 +794,8 @@ export function RegistryEditor({
       </Section>
 
       {/* Save bar */}
-      <div className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-surface/95 px-4 py-3 shadow-[0_-8px_24px_-16px_rgba(0,0,0,0.3)] backdrop-blur sm:pl-72">
-        <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-3">
+      <div className="sticky bottom-3 z-30 rounded-2xl border border-border bg-surface/95 px-4 py-3 shadow-[0_8px_30px_-12px_rgba(79,91,213,0.45)] backdrop-blur">
+        <div className="flex flex-wrap items-center gap-3">
           <input className={`${input} max-w-sm`} value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Reason for the change (kept in the audit log)" aria-label="Reason" />
           <button type="button" className={btn.primary} disabled={pending || problems.length > 0} onClick={save}>
             <Save className="size-4" aria-hidden />
