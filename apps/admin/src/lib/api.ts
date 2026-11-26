@@ -74,14 +74,17 @@ export async function apiPublic<T>(
 }
 
 /** Raw server-side GET (CSV downloads), with the same session and brand headers. */
-export async function apiRaw(path: string): Promise<Response> {
+/** A raw API response (files). With `json`, a POST with that body. */
+export async function apiRaw(path: string, json?: unknown): Promise<Response> {
   const token = (await cookies()).get(SESSION_COOKIE)?.value;
   const brand = await currentBrand();
   return fetch(`${API}${path}`, {
     cache: 'no-store',
+    ...(json === undefined ? {} : { method: 'POST', body: JSON.stringify(json) }),
     headers: {
       ...(token ? { authorization: `Bearer ${token}` } : {}),
       ...(brand ? { 'x-madp-brand': brand } : {}),
+      ...(json === undefined ? {} : { 'content-type': 'application/json' }),
     },
   });
 }

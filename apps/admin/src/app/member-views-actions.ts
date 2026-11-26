@@ -1,7 +1,7 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import type { MemberTypeRule, MemberViewParams } from '@madp/contracts';
+import type { MemberBulkAction, MemberBulkResult, MemberTypeRule, MemberViewParams } from '@madp/contracts';
 import { api } from '@/lib/api';
 import { attempt } from '@/lib/attempt';
 
@@ -51,5 +51,13 @@ export async function deleteMemberNoteAction(member: string, note: string) {
     await api(`/panel/members/${encodeURIComponent(member)}/notes/${encodeURIComponent(note)}`, { method: 'DELETE' });
     revalidatePath(`/members/${member}`);
     return null;
+  });
+}
+
+export async function memberBulkAction(input: MemberBulkAction) {
+  return attempt(async () => {
+    const r = await api<MemberBulkResult>('/member-bulk', { method: 'POST', json: input });
+    revalidatePath('/members');
+    return r;
   });
 }

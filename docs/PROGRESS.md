@@ -793,3 +793,14 @@ verified.
 - Member page: "Tags and notes" card. Reading notes is audited (`members.notes_read`); note text stays out of the
   audit trail. Only the author deletes a note. Writes need `members.edit`; teen members need `teen.read`.
 - Tests: `apps/api/test/member-tags.test.ts` (3).
+
+## Members bulk actions and download (2026-11-26)
+
+- Tick members on the Members table (or the whole page), then: add a tag, remove a tag, change segment, or download
+  the ticked members or the whole filtered list (up to 2,000) as Excel or CSV. T2O, MFR, MHO and added panels alike.
+- Every action asks for a reason (audit log). Segment changes go to the panel one member at a time and are audited
+  per member as on the member page; teens and unknown ids are skipped and listed. `POST /member-bulk` (members.edit;
+  segment also segments.manage), `POST /member-bulk/export` (members.read + export.read).
+- Downloads hold masked e-mail and phone only, never the member page's full name; formula cells are neutralised;
+  DEMO files are named `-DEMO` and carry a data_mode column.
+- Tests: `apps/api/test/member-bulk.test.ts` (3). Screenshots: `/mnt/project-files/madp/preview-madp/tags-bulk/`.

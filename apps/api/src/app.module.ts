@@ -68,6 +68,7 @@ import { PanelAdminService } from './panel-admin/panel-admin.service.js';
 import { MembersController } from './panel-admin/members.controller.js';
 import { MemberTypes } from './panel-admin/member-types.js';
 import { MemberTagStore } from './panel-admin/member-tags.js';
+import { MemberBulkController } from './panel-admin/member-bulk.controller.js';
 import { MemberNotesController, MemberTagsController } from './panel-admin/member-notes.controller.js';
 import { DuplicatesController } from './panel-admin/duplicates.controller.js';
 import { QuestionBankController } from './panel-admin/question-bank.controller.js';
@@ -108,6 +109,7 @@ export class AppModule {
         MembersController,
         MemberNotesController,
         MemberTagsController,
+        MemberBulkController,
         DuplicatesController,
         QuestionBankController,
         QuestionnaireController,

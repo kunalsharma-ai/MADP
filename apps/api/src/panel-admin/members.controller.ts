@@ -32,7 +32,7 @@ import { SegmentDirectory } from '../segments/segment-directory.js';
 import { MemberTagStore } from './member-tags.js';
 
 /** Fields of a list row; a member page carries more, which the tag list must not pass on. */
-const LIST_FIELDS = ['id', 'memberId', 'name', 'email', 'phone', 'category', 'segment', 'status', 'country', 'birthYear', 'gender', 'age', 'qualityScore', 'emailVerified', 'signedUpAt', 'lastActivityAt', 'marketingOptIn'] as const;
+export const LIST_FIELDS = ['id', 'memberId', 'name', 'email', 'phone', 'category', 'segment', 'status', 'country', 'birthYear', 'gender', 'age', 'qualityScore', 'emailVerified', 'signedUpAt', 'lastActivityAt', 'marketingOptIn'] as const;
 
 const MemberId = z.string().regex(/^[a-f0-9]{24}$/i, 'a member id');
 const SessionId = z.string().regex(/^[a-f0-9]{24}$/i, 'a session id');

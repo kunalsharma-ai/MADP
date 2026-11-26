@@ -1151,3 +1151,28 @@ export interface MemberTagsNotes {
   tags: string[];
   notes: MemberNote[];
 }
+
+// ---- bulk actions on the Members table ------------------------------------------------------------------------------
+const BulkIds = z.array(ObjectId).min(1).max(100);
+export const MemberBulkAction = z.discriminatedUnion('action', [
+  z.object({ action: z.literal('tag_add'), ids: BulkIds, tag: MemberTag, reason: Reason }).strict(),
+  z.object({ action: z.literal('tag_remove'), ids: BulkIds, tag: MemberTag, reason: Reason }).strict(),
+  z.object({ action: z.literal('segment'), ids: BulkIds, category: z.string().trim().min(1).max(40), reason: Reason }).strict(),
+]);
+export type MemberBulkAction = z.infer<typeof MemberBulkAction>;
+export interface MemberBulkResult {
+  done: number;
+  skipped: { id: string; why: string }[];
+}
+
+/** Export of the Members list: the members ticked, or the whole filtered list (up to 2,000). Masked values only. */
+export const MemberExport = z
+  .object({
+    format: z.enum(['csv', 'xlsx']),
+    reason: Reason,
+    ids: z.array(ObjectId).min(1).max(500).optional(),
+    /** The Members filters as they are in the address bar (validated as a search). */
+    filters: z.record(z.string(), z.string()).optional(),
+  })
+  .strict();
+export type MemberExport = z.infer<typeof MemberExport>;

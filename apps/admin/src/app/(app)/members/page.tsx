@@ -10,6 +10,7 @@ import { ArchiveCheck } from './archive-check';
 import { SortHead, sortPage, SORT_COLUMNS, type SortDir } from './sort';
 import { SavedViews } from './saved-views';
 import { TypeColumns } from './type-columns';
+import { BulkBar } from './bulk-bar';
 import { MemberViewParams, type MemberTypeRule, type MemberView, type SessionUser } from '@madp/contracts';
 import { GENDER_TONE, STATUS_TONE, marketingLabel, tagTint, type MemberRow, type PanelCategory } from './shared';
 
@@ -172,6 +173,15 @@ export default async function MembersPage({
                 </p>
               </form>
             </Card>
+            <BulkBar
+              filters={Object.fromEntries([...qs.entries()].filter(([k]) => k !== 'page'))}
+              categories={types.categories}
+              tags={tagList.tags.map((t) => t.tag)}
+              canEdit={!!me?.permissions.includes('members.edit')}
+              canSegment={!!me?.permissions.includes('members.edit') && !!me?.permissions.includes('segments.manage')}
+              canExport={!!me?.permissions.includes('export.read')}
+              total={data.total}
+            />
             <Card>
               <CardHeader
                 title={
@@ -206,6 +216,9 @@ export default async function MembersPage({
                 <table className="w-full text-left text-[13px]">
                   <thead>
                     <tr className="border-b border-border bg-surface-2/50 text-[11px] uppercase tracking-wider text-fg-3">
+                      <th scope="col" className="w-8 py-3 pl-4 pr-0">
+                        <input type="checkbox" data-bulk-all aria-label="Tick every member on this page" className="size-4 accent-[var(--accent)]" />
+                      </th>
                       {head('name', 'Member')}
                       {head('email', 'E-mail')}
                       {head('phone', 'Phone')}
@@ -223,6 +236,7 @@ export default async function MembersPage({
                       {head('lastActivity', 'Last activity')}
                     </tr>
                     <tr className="border-b border-border bg-surface-2/30 align-top">
+                      <th />
                       <th className="px-3 py-2">
                         <input form={FORM} name="qName" defaultValue={sp.qName} placeholder="Name or ID" aria-label="Filter by member name or ID" className={f('min-w-28')} />
                       </th>
@@ -303,13 +317,16 @@ export default async function MembersPage({
                   <tbody className="divide-y divide-border [&>tr]:transition-colors [&>tr:hover]:bg-accent-soft/40">
                     {items.length === 0 ? (
                       <tr>
-                        <td colSpan={13}>
+                        <td colSpan={14}>
                           <EmptyState title="No members match">Change the filters or clear them.</EmptyState>
                         </td>
                       </tr>
                     ) : null}
                     {items.map((m) => (
-                    <tr key={m.id} className="hover:bg-surface-2">
+                    <tr key={m.id} className="hover:bg-surface-2 has-[input:checked]:bg-accent-soft/50">
+                      <td className="w-8 py-2.5 pl-4 pr-0">
+                        <input type="checkbox" data-bulk-member value={m.id} aria-label={`Tick ${m.name || m.id}`} className="size-4 accent-[var(--accent)]" />
+                      </td>
                       <td className="px-5 py-2.5">
                         <Link href={`/members/${m.id}`} className="font-medium text-accent hover:underline">
                           {m.name || '(no name)'}
