@@ -1,8 +1,10 @@
 'use client';
+import { panelName, panelShort } from '@/lib/panel-names';
+import { usePanels } from '@/components/panels-context';
 
 import { useState, useTransition } from 'react';
 import { toast } from 'sonner';
-import { AutomationTrigger, PANEL_CODES, PANELS, TRIGGER_KINDS } from '@madp/contracts';
+import { AutomationTrigger, TRIGGER_KINDS } from '@madp/contracts';
 import {
   automationAction,
   automationVersionAction,
@@ -37,6 +39,7 @@ const TRIGGER_LABELS: Record<AutomationTrigger, string> = {
 };
 
 export function NewCelebration() {
+  const panelList = usePanels();
   const [open, setOpen] = useState(false);
   const { pending, act } = useAct();
   if (!open)
@@ -66,9 +69,9 @@ export function NewCelebration() {
       }
     >
       <select name="panel" className={field} aria-label="Panel">
-        {PANEL_CODES.map((p) => (
+        {panelList.map((x) => x.code).map((p) => (
           <option key={p} value={p}>
-            {PANELS[p].shortName}
+            {panelShort(p, panelList)}
           </option>
         ))}
       </select>
@@ -115,8 +118,9 @@ export function NewAutomation({
   templates: TemplateOption[];
   celebrations: { id: string; panel: string; label: string }[];
 }) {
+  const panelList = usePanels();
   const [open, setOpen] = useState(false);
-  const [panel, setPanel] = useState<string>(PANEL_CODES[0]);
+  const [panel, setPanel] = useState<string>(panelList.map((x) => x.code)[0]);
   const [trigger, setTrigger] = useState<AutomationTrigger>('inactivity');
   const { pending, act } = useAct();
   if (!open)
@@ -169,9 +173,9 @@ export function NewAutomation({
       <label className="flex flex-col gap-1">
         1. Panel
         <select className={field} value={panel} onChange={(e) => setPanel(e.target.value)}>
-          {PANEL_CODES.map((p) => (
+          {panelList.map((x) => x.code).map((p) => (
             <option key={p} value={p}>
-              {PANELS[p].name}
+              {panelName(p, panelList)}
             </option>
           ))}
         </select>

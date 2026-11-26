@@ -1,5 +1,7 @@
+import { panelName, panelShort } from '@/lib/panel-names';
+import { getPanels } from '@/lib/panels';
 import type { Metadata } from 'next';
-import { PANEL_CODES, PANELS, type DataMode } from '@madp/contracts';
+import { type DataMode } from '@madp/contracts';
 import { api } from '@/lib/api';
 import type { Attribute, MappingRow } from '@/lib/types';
 import { Card, DataModeBadge, DemoBanner, EmptyState, PageHeader, btn, fmt } from '@/components/ui';
@@ -13,10 +15,11 @@ export default async function MappingsPage({
 }: {
   searchParams: Promise<{ panel?: string; status?: string }>;
 }) {
+  const panelList = await getPanels();
   const sp = await searchParams;
   const status = (STATUSES as readonly string[]).includes(sp.status ?? '') ? sp.status! : 'pending';
   const qs = new URLSearchParams({ status });
-  if (sp.panel && (PANEL_CODES as readonly string[]).includes(sp.panel)) qs.set('panel', sp.panel);
+  if (sp.panel && panelList.map((x) => x.code).includes(sp.panel)) qs.set('panel', sp.panel);
   const [queue, attrs] = await Promise.all([
     api<{ dataMode: DataMode; totals: Record<string, number>; items: MappingRow[] }>(
       `/mappings/review?${qs}`,
@@ -40,9 +43,9 @@ export default async function MappingsPage({
           aria-label="Panel"
         >
           <option value="">All panels</option>
-          {PANEL_CODES.map((p) => (
+          {panelList.map((x) => x.code).map((p) => (
             <option key={p} value={p}>
-              {PANELS[p].name}
+              {panelName(p, panelList)}
             </option>
           ))}
         </select>

@@ -1,8 +1,10 @@
 'use client';
+import { panelName, panelShort } from '@/lib/panel-names';
+import { usePanels } from '@/components/panels-context';
 
 import { useState, useTransition } from 'react';
 import { toast } from 'sonner';
-import { PANEL_CODES, VERIFICATION_CLAIMS, VERIFICATION_METHODS } from '@madp/contracts';
+import { VERIFICATION_CLAIMS, VERIFICATION_METHODS } from '@madp/contracts';
 import { evidenceStepAction, recordEvidenceAction } from '../../actions';
 import { Card, CardHeader, btn, input } from '@/components/ui';
 
@@ -22,6 +24,7 @@ function useAct() {
 const label = (s: string) => s.replaceAll('_', ' ');
 
 export function NewEvidence() {
+  const panelList = usePanels();
   const { pending, act } = useAct();
   return (
     <Card>
@@ -51,7 +54,7 @@ export function NewEvidence() {
         <label className="text-[13px]">
           Panel
           <select name="panel" className={input}>
-            {PANEL_CODES.map((p) => (
+            {panelList.map((x) => x.code).map((p) => (
               <option key={p} value={p}>
                 {p.toUpperCase()}
               </option>

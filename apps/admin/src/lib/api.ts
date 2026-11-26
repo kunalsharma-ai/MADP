@@ -6,7 +6,6 @@ import { redirect } from 'next/navigation';
 export const SESSION_COOKIE = 'madp_session';
 /** Brand picked in the brand switcher. The API checks it against the admin's grants on every request. */
 export const BRAND_COOKIE = 'madp_brand';
-const BRANDS = new Set(['t2o', 'mfr', 'mho', 'all']);
 
 /**
  * The brand this request works in: the switcher's choice when the admin may use it, otherwise every brand side by
@@ -21,7 +20,7 @@ export const currentBrand = cache(async (): Promise<string | null> => {
   const me = (await res.json()) as { brands: string[]; permissions: string[] };
   const allowAll = me.permissions.includes('dashboard.read');
   const picked = jar.get(BRAND_COOKIE)?.value;
-  if (picked && BRANDS.has(picked) && (picked === 'all' ? allowAll : me.brands.includes(picked))) return picked;
+  if (picked && (picked === 'all' || /^[a-z][a-z0-9_]{1,15}$/.test(picked)) && (picked === 'all' ? allowAll : me.brands.includes(picked))) return picked;
   return allowAll ? 'all' : (me.brands[0] ?? null);
 });
 const API = process.env.MADP_API_URL ?? 'http://localhost:4000/api/v1';

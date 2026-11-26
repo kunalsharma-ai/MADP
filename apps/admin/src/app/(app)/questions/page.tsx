@@ -1,6 +1,8 @@
+import { panelName, panelShort } from '@/lib/panel-names';
+import { getPanels } from '@/lib/panels';
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { PANEL_CODES, PANELS, type DataMode } from '@madp/contracts';
+import { type DataMode } from '@madp/contracts';
 import { api } from '@/lib/api';
 import type { QuestionRow } from '@/lib/types';
 import {
@@ -24,9 +26,10 @@ export default async function QuestionsPage({
 }: {
   searchParams: Promise<{ panel?: string; search?: string }>;
 }) {
+  const panelList = await getPanels();
   const sp = await searchParams;
   const qs = new URLSearchParams();
-  if (sp.panel && (PANEL_CODES as readonly string[]).includes(sp.panel)) qs.set('panel', sp.panel);
+  if (sp.panel && panelList.map((x) => x.code).includes(sp.panel)) qs.set('panel', sp.panel);
   if (sp.search) qs.set('search', sp.search.slice(0, 100));
   const data = await api<{ dataMode: DataMode; items: QuestionRow[] }>(`/questions?${qs}`);
   return (
@@ -46,9 +49,9 @@ export default async function QuestionsPage({
           aria-label="Panel"
         >
           <option value="">All panels</option>
-          {PANEL_CODES.map((p) => (
+          {panelList.map((x) => x.code).map((p) => (
             <option key={p} value={p}>
-              {PANELS[p].name}
+              {panelName(p, panelList)}
             </option>
           ))}
         </select>

@@ -1,6 +1,8 @@
+import { panelName, panelShort } from '@/lib/panel-names';
+import { getPanels } from '@/lib/panels';
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { PANELS, VERIFICATION_CLAIMS, type DataMode, type PanelCode, type SessionUser } from '@madp/contracts';
+import { VERIFICATION_CLAIMS, type DataMode, type PanelCode, type SessionUser } from '@madp/contracts';
 import { api } from '@/lib/api';
 import { Country } from '@/components/country';
 import { Badge, Card, CardHeader, DataModeBadge, DemoBanner, EmptyState, PageHeader, PanelChip, Stat, Table, fmt, fmtDate } from '@/components/ui';
@@ -59,6 +61,7 @@ const pct = (n: number, d: number) => (d ? `${Math.round((n / d) * 100)}%` : 'â€
 const human = (s: string) => s.replaceAll('_', ' ');
 
 export default async function VerificationPage({ searchParams }: { searchParams: Promise<{ panel?: string; check?: string }> }) {
+  const panelList = await getPanels();
   const sp = await searchParams;
   const [me, s, ev] = await Promise.all([
     api<SessionUser>('/auth/me'),
@@ -93,7 +96,7 @@ export default async function VerificationPage({ searchParams }: { searchParams:
           const max = Math.max(1, ...bands.map((b) => b[1]));
           return (
             <Card key={p.panel}>
-              <CardHeader title={PANELS[p.panel].name} hint="Verification and quality scores are as the panel reported them" />
+              <CardHeader title={panelName(p.panel, panelList)} hint="Verification and quality scores are as the panel reported them" />
               <div className="grid grid-cols-2 gap-3 px-5 py-4 md:grid-cols-4">
                 <Stat label="Active members" value={fmt(p.members)} />
                 <Stat label="E-mail verified (panel)" value={fmt(p.sourceReported.email.verified)} hint={`${pct(p.sourceReported.email.verified, p.members)} Â· ${fmt(p.sourceReported.email.rejected)} rejected`} />
@@ -177,7 +180,7 @@ export default async function VerificationPage({ searchParams }: { searchParams:
           <Card>
             <div id="members" />
             <CardHeader
-              title={`${PANELS[drill.panel].shortName}: ${drill.label}`}
+              title={`${panelShort(drill.panel, panelList)}: ${drill.label}`}
               hint={`${drill.why} Person ids and masked panel ids only; open a profile to see more, which is audited.`}
             />
             {drill.items.length === 0 ? (

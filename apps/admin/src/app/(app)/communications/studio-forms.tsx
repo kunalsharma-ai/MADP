@@ -1,8 +1,10 @@
 'use client';
+import { panelName, panelShort } from '@/lib/panel-names';
+import { usePanels } from '@/components/panels-context';
 
 import { useState, useTransition } from 'react';
 import { toast } from 'sonner';
-import { CampaignKind, PANEL_CODES, PANELS } from '@madp/contracts';
+import { CampaignKind } from '@madp/contracts';
 import { addTemplateVersion, campaignAction, createCampaignAction, createTemplateAction, versionAction } from '../../actions';
 import { btn } from '@/components/ui';
 
@@ -23,6 +25,7 @@ function useAct() {
 }
 
 export function NewTemplate() {
+  const panelList = usePanels();
   const [open, setOpen] = useState(false);
   const { pending, act } = useAct();
   if (!open)
@@ -42,9 +45,9 @@ export function NewTemplate() {
       }
     >
       <select name="panel" className={field} aria-label="Panel">
-        {PANEL_CODES.map((p) => (
+        {panelList.map((x) => x.code).map((p) => (
           <option key={p} value={p}>
-            {PANELS[p].shortName}
+            {panelShort(p, panelList)}
           </option>
         ))}
       </select>

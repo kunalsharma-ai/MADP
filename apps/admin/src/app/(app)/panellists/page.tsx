@@ -1,12 +1,8 @@
+import { panelName, panelShort } from '@/lib/panel-names';
+import { getPanels } from '@/lib/panels';
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import {
-  AUDIENCE_CATEGORIES,
-  AUDIENCE_CATEGORY_LABELS,
-  PANEL_CODES,
-  PANELS,
-  type DataMode,
-} from '@madp/contracts';
+import { AUDIENCE_CATEGORIES, AUDIENCE_CATEGORY_LABELS, type DataMode } from '@madp/contracts';
 import { api } from '@/lib/api';
 import { Country } from '@/components/country';
 import type { PanellistRow } from '@/lib/types';
@@ -31,6 +27,7 @@ export default async function PanellistsPage({
 }: {
   searchParams: Promise<Record<string, string | undefined>>;
 }) {
+  const panelList = await getPanels();
   const sp = await searchParams;
   const qs = new URLSearchParams();
   for (const k of [
@@ -66,9 +63,9 @@ export default async function PanellistsPage({
           aria-label="Panel"
         >
           <option value="">All panels</option>
-          {PANEL_CODES.map((p) => (
+          {panelList.map((x) => x.code).map((p) => (
             <option key={p} value={p}>
-              {PANELS[p].name}
+              {panelName(p, panelList)}
             </option>
           ))}
         </select>

@@ -1,5 +1,7 @@
+import { panelName, panelShort } from '@/lib/panel-names';
+import { getPanels } from '@/lib/panels';
 import type { Metadata } from 'next';
-import { PANELS, type DataMode, type PanelCode, type SessionUser } from '@madp/contracts';
+import { type DataMode, type PanelCode, type SessionUser } from '@madp/contracts';
 import { api } from '@/lib/api';
 import { Badge, Card, CardHeader, DataModeBadge, DemoBanner, EmptyState, PageHeader, PanelChip, Table, fmt, fmtDate } from '@/components/ui';
 import { PreferenceForm } from './consent-forms';
@@ -45,6 +47,7 @@ const FUNNEL: [keyof PanelConsent['contactable'], string][] = [
 ];
 
 export default async function ConsentPage() {
+  const panelList = await getPanels();
   const [me, s, events, prefs] = await Promise.all([
     api<SessionUser>('/auth/me'),
     api<{ dataMode: DataMode; note: string; panels: PanelConsent[] }>('/consent/summary'),
@@ -65,7 +68,7 @@ export default async function ConsentPage() {
       <div className="grid gap-4 xl:grid-cols-3">
         {s.panels.map((p) => (
           <Card key={p.panel}>
-            <CardHeader title={PANELS[p.panel].name} hint="Who MADP may e-mail today, step by step" />
+            <CardHeader title={panelName(p.panel, panelList)} hint="Who MADP may e-mail today, step by step" />
             <ol className="space-y-1 px-5 py-4 text-[13px]">
               {FUNNEL.map(([k, label]) => (
                 <li key={k} className="flex justify-between">

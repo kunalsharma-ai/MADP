@@ -1,5 +1,7 @@
+import { panelName, panelShort } from '@/lib/panel-names';
+import { getPanels } from '@/lib/panels';
 import type { Metadata } from 'next';
-import { PANELS, type DataMode, type PanelCode } from '@madp/contracts';
+import { type DataMode, type PanelCode } from '@madp/contracts';
 import { api } from '@/lib/api';
 import { Card, CardHeader, DataModeBadge, DemoBanner, EmptyState, PageHeader, Stat, Table, btn, fmt, fmtDate, input } from '@/components/ui';
 
@@ -22,6 +24,7 @@ interface PanelFreshness {
 const pct = (x: number) => `${Math.round(x * 100)}%`;
 
 export default async function FreshnessPage({ searchParams }: { searchParams: Promise<{ staleDays?: string }> }) {
+  const panelList = await getPanels();
   const sp = await searchParams;
   const days = /^\d+$/.test(sp.staleDays ?? '') ? sp.staleDays : '180';
   const r = await api<{ dataMode: DataMode; staleDays: number; asOf: string; panels: PanelFreshness[] }>(`/profiles/freshness?staleDays=${days}`);
@@ -48,7 +51,7 @@ export default async function FreshnessPage({ searchParams }: { searchParams: Pr
           return (
             <Card key={p.panel}>
               <CardHeader
-                title={PANELS[p.panel].name}
+                title={panelName(p.panel, panelList)}
                 hint={`${fmt(p.questionBank)} questions in the bank · last import ${p.lastSync ? fmtDate(p.lastSync) : 'never'}`}
               />
               <div className="grid grid-cols-2 gap-3 px-5 py-4 md:grid-cols-4">

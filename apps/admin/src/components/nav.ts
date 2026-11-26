@@ -174,6 +174,7 @@ export const NAV: NavGroup[] = [
         permission: 'verification.read',
       },
       { href: '/connectors', label: 'Connectors & sync', icon: 'PlugZap', permission: 'connectors.read' },
+      { href: '/panels', label: 'Panels', icon: 'Layers', permission: 'connectors.read' },
       {
         href: '/panel-connections',
         label: 'Panel connections',

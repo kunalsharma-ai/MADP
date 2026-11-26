@@ -1,5 +1,7 @@
+import { panelName, panelShort } from '@/lib/panel-names';
+import { getPanels } from '@/lib/panels';
 import type { Metadata } from 'next';
-import { PANEL_CODES, PANELS, type AutomationStep, type DataMode, type PanelCode } from '@madp/contracts';
+import { type AutomationStep, type DataMode, type PanelCode } from '@madp/contracts';
 import { api } from '@/lib/api';
 import { Badge, Card, CardHeader, DataModeBadge, DemoBanner, EmptyState, PageHeader, PanelChip, fmt, fmtDate } from '@/components/ui';
 import {
@@ -87,10 +89,11 @@ const STOP: Record<string, string> = {
 };
 
 /** The builder's stages, filled in from one version, so a reviewer can read the rule left to right. */
-function Pipeline({ a, v, templates, celebrations }: { a: Automation; v: Version; templates: Map<string, string>; celebrations: Map<string, string> }) {
+async function Pipeline({ a, v, templates, celebrations }: { a: Automation; v: Version; templates: Map<string, string>; celebrations: Map<string, string> }) {
+  const panelList = await getPanels();
   const stages: [string, string][] = [
     ['Trigger', a.trigger.replace('_', ' ')],
-    ['Segment', PANELS[a.panel].shortName],
+    ['Segment', panelShort(a.panel, panelList)],
     [
       'Conditions',
       a.trigger === 'festival'
@@ -121,8 +124,9 @@ function Pipeline({ a, v, templates, celebrations }: { a: Automation; v: Version
 }
 
 export default async function AutomationsPage({ searchParams }: { searchParams: Promise<{ panel?: string }> }) {
+  const panelList = await getPanels();
   const sp = await searchParams;
-  const panel = (PANEL_CODES as readonly string[]).includes(sp.panel ?? '') ? (sp.panel as PanelCode) : undefined;
+  const panel = panelList.map((x) => x.code).includes(sp.panel ?? '') ? (sp.panel as PanelCode) : undefined;
   const qs = panel ? `?panel=${panel}` : '';
   const [cal, auto, tpl] = await Promise.all([
     api<{ items: Celebration[]; rule: string }>(`/communications/calendar${qs}`),

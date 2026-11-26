@@ -1,6 +1,8 @@
+import { panelName, panelShort } from '@/lib/panel-names';
+import { getPanels } from '@/lib/panels';
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { AUDIENCE_CATEGORY_LABELS, PANELS, type AudienceCategory, type PanelCode, type SessionUser } from '@madp/contracts';
+import { AUDIENCE_CATEGORY_LABELS, type AudienceCategory, type PanelCode, type SessionUser } from '@madp/contracts';
 import { api } from '@/lib/api';
 import type { DashboardSummary } from '@/lib/types';
 import {
@@ -20,6 +22,7 @@ import { RegistrationsChart } from '@/components/charts';
 export const metadata: Metadata = { title: 'Executive dashboard' };
 
 export default async function Dashboard() {
+  const panelList = await getPanels();
   const me = await api<SessionUser>('/auth/me');
   // The executive dashboard spans every brand. Admins limited to some brands start on their brand's screens instead.
   if (!me.permissions.includes('dashboard.read')) {
@@ -28,7 +31,7 @@ export default async function Dashboard() {
         <PageHeader eyebrow="Overview" title={`Welcome, ${me.displayName}`} />
         <Card>
           <div className="px-5 py-4 text-sm text-fg-2">
-            You work in {me.brands.map((b) => PANELS[b].name).join(', ')}. The menu on the left shows the screens your roles
+            You work in {me.brands.map((b) => panelName(b, panelList)).join(', ')}. The menu on the left shows the screens your roles
             allow for the brand picked at the top. The cross-brand executive dashboard needs access to every brand.
           </div>
         </Card>
@@ -127,14 +130,14 @@ export default async function Dashboard() {
         <Card>
           <CardHeader title="By panel" hint="Unique people per panel" />
           <ul className="divide-y divide-border">
-            {(Object.keys(PANELS) as PanelCode[]).map((p) => {
+            {panelList.map((x) => x.code).map((p) => {
               const cell = c.byPanel.find((x) => x.key === p);
               const conn = d.connectors.find((x) => x.panel === p)!;
               return (
                 <li key={p} className="flex items-center justify-between gap-3 px-5 py-3 text-[13px]">
                   <div className="flex items-center gap-2">
                     <PanelChip panel={p} />
-                    <span>{PANELS[p].name}</span>
+                    <span>{panelName(p, panelList)}</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <DataModeBadge mode={conn.dataMode} />

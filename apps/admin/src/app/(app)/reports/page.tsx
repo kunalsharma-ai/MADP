@@ -1,6 +1,8 @@
+import { panelName, panelShort } from '@/lib/panel-names';
+import { getPanels } from '@/lib/panels';
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { PANELS, type PanelCode, type ReportResult } from '@madp/contracts';
+import { type PanelCode, type ReportResult } from '@madp/contracts';
 import { api } from '@/lib/api';
 import { Country } from '@/components/country';
 import { Card, CardHeader, DataModeBadge, DemoBanner, EmptyState, PageHeader, PanelChip, Table, btn, fmt, fmtDate, input } from '@/components/ui';
@@ -23,7 +25,7 @@ const DAY = /^\d{4}-\d{2}-\d{2}$/;
 
 function cell(v: string | number | null, type: string, key: string) {
   if (v === '') return <span className="text-fg-3">—</span>;
-  if (key === 'panel' && typeof v === 'string' && v in PANELS) return <PanelChip panel={v as PanelCode} />;
+  if (key === 'panel' && typeof v === 'string' && /^[a-z][a-z0-9_]{1,15}$/.test(v)) return <PanelChip panel={v as PanelCode} />;
   if (key === 'country' && typeof v === 'string') return <Country code={v} />;
   if (v === null) return <span className="text-fg-3" title="Suppressed: too few people">&lt; min</span>;
   if (type === 'money' && typeof v === 'number') return v.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -33,6 +35,7 @@ function cell(v: string | number | null, type: string, key: string) {
 }
 
 export default async function ReportsPage({ searchParams }: { searchParams: Promise<{ key?: string; panel?: string; from?: string; to?: string }> }) {
+  const panelList = await getPanels();
   const sp = await searchParams;
   const { reports } = await api<{ reports: CatalogueItem[] }>('/reports');
   const visible = reports.filter((r) => r.canView);
@@ -111,7 +114,7 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
                     <option value="">Every panel</option>
                     {(['t2o', 'mfr', 'mho'] as const).map((p) => (
                       <option key={p} value={p}>
-                        {PANELS[p].name}
+                        {panelName(p, panelList)}
                       </option>
                     ))}
                   </select>

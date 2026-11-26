@@ -6,7 +6,8 @@ import { api, BRAND_COOKIE } from '@/lib/api';
 
 /** Brand switcher. The API re-checks the brand against the admin's grants on every call. */
 export async function setBrand(brand: string) {
-  if (!['t2o', 'mfr', 'mho', 'all'].includes(brand)) return;
+  // Any panel code or "all"; the API checks the brand against the admin's grants on every call.
+  if (brand !== 'all' && !/^[a-z][a-z0-9_]{1,15}$/.test(brand)) return;
   (await cookies()).set(BRAND_COOKIE, brand, {
     httpOnly: true,
     sameSite: 'strict',

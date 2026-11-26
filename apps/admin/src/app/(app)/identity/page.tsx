@@ -1,5 +1,7 @@
+import { panelName, panelShort } from '@/lib/panel-names';
+import { getPanels } from '@/lib/panels';
 import type { Metadata } from 'next';
-import { PANEL_CODES, PANELS, SOURCE_PRECEDENCE, type DataMode } from '@madp/contracts';
+import { SOURCE_PRECEDENCE, type DataMode } from '@madp/contracts';
 import { api } from '@/lib/api';
 import { Card, DataModeBadge, DemoBanner, EmptyState, PageHeader, btn, fmt } from '@/components/ui';
 import { MatchRow, type Match } from './match-row';
@@ -12,10 +14,11 @@ export default async function IdentityPage({
 }: {
   searchParams: Promise<{ panel?: string; status?: string }>;
 }) {
+  const panelList = await getPanels();
   const sp = await searchParams;
   const status = (STATUSES as readonly string[]).includes(sp.status ?? '') ? sp.status! : 'pending';
   const qs = new URLSearchParams({ status, limit: '100' });
-  if (sp.panel && (PANEL_CODES as readonly string[]).includes(sp.panel)) qs.set('panel', sp.panel);
+  if (sp.panel && panelList.map((x) => x.code).includes(sp.panel)) qs.set('panel', sp.panel);
   const queue = await api<{ dataMode: DataMode; totals: Record<string, number>; items: Match[] }>(
     `/identity/candidates?${qs}`,
   );
@@ -36,9 +39,9 @@ export default async function IdentityPage({
           aria-label="Panel"
         >
           <option value="">All panels</option>
-          {PANEL_CODES.map((p) => (
+          {panelList.map((x) => x.code).map((p) => (
             <option key={p} value={p}>
-              {PANELS[p].name}
+              {panelName(p, panelList)}
             </option>
           ))}
         </select>

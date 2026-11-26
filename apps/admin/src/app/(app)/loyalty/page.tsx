@@ -1,5 +1,7 @@
+import { panelName, panelShort } from '@/lib/panel-names';
+import { getPanels } from '@/lib/panels';
 import type { Metadata } from 'next';
-import { PANELS, type DataMode, type PanelCode, type SessionUser } from '@madp/contracts';
+import { type DataMode, type PanelCode, type SessionUser } from '@madp/contracts';
 import { api } from '@/lib/api';
 import { Badge, Card, CardHeader, DataModeBadge, DemoBanner, EmptyState, PageHeader, PanelChip, Stat, fmt, fmtDate } from '@/components/ui';
 import { ApproveSurvey, PanelButtons } from './loyalty-forms';
@@ -39,6 +41,7 @@ interface Reconciliation {
 }
 
 export default async function LoyaltyPage() {
+  const panelList = await getPanels();
   const [me, l, recs] = await Promise.all([
     api<SessionUser>('/auth/me'),
     api<{ dataMode: DataMode; unit: string; note: string; panels: PanelLiability[] }>('/loyalty/liability'),
@@ -62,7 +65,7 @@ export default async function LoyaltyPage() {
         <div className="grid gap-4 xl:grid-cols-3">
           {l.panels.map((p) => (
             <Card key={p.panel}>
-              <CardHeader title={PANELS[p.panel].name} hint={`${fmt(p.accounts)} wallets`} action={<PanelButtons panel={p.panel} canRun={canRun} />} />
+              <CardHeader title={panelName(p.panel, panelList)} hint={`${fmt(p.accounts)} wallets`} action={<PanelButtons panel={p.panel} canRun={canRun} />} />
               <div className="grid grid-cols-2 gap-3 px-5 py-4">
                 <Stat label="Approved (outstanding)" value={fmt(p.approved)} />
                 <Stat label="Pending client approval" value={fmt(p.pending)} />
