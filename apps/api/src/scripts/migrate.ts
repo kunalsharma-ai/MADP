@@ -9,7 +9,7 @@ import { PANELS, PANEL_CODES } from '@madp/contracts';
 import { attributeDefinitions, panels } from '../db/schema.js';
 import { SEED_ATTRIBUTES } from '../ingestion/canonical.js';
 
-/** One fixed key, so every process that migrates this database waits for the others (two api replicas, a job). */
+/** One fixed key, so every process that migrates this database waits for the others (api replicas, create-admin). */
 const MIGRATION_LOCK_KEY = 4_206_742_001;
 
 /** Errors that mean the database isn't reachable yet (Swarm starts every service at once), not that it is wrong. */
