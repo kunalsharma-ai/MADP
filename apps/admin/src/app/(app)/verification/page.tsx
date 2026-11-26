@@ -5,20 +5,46 @@ import Link from 'next/link';
 import { VERIFICATION_CLAIMS, type DataMode, type PanelCode, type SessionUser } from '@madp/contracts';
 import { api } from '@/lib/api';
 import { Country } from '@/components/country';
-import { Badge, Card, CardHeader, DataModeBadge, DemoBanner, EmptyState, PageHeader, PanelChip, Stat, Table, fmt, fmtDate } from '@/components/ui';
+import {
+  Badge,
+  Card,
+  CardHeader,
+  DataModeBadge,
+  DemoBanner,
+  EmptyState,
+  PageHeader,
+  PanelChip,
+  Stat,
+  Table,
+  fmt,
+  fmtDate,
+} from '@/components/ui';
 import { EvidenceSteps, NewEvidence } from './verification-forms';
+import { DownloadMenu } from '@/components/files';
 
 export const metadata: Metadata = { title: 'Verification & data quality' };
 
 type Counts = { verified: number; unverified: number; rejected: number };
-type EvidenceCounts = { pending: number; verified: number; expired: number; rejected: number; revoked: number };
+type EvidenceCounts = {
+  pending: number;
+  verified: number;
+  expired: number;
+  rejected: number;
+  revoked: number;
+};
 interface PanelQuality {
   panel: PanelCode;
   members: number;
   sourceReported: {
     email: Counts;
     phone: Counts;
-    qualityScore: { none: number; below50: number; from50to99: number; from100to149: number; from150: number };
+    qualityScore: {
+      none: number;
+      below50: number;
+      from50to99: number;
+      from100to149: number;
+      from150: number;
+    };
   };
   checks: Record<string, number>;
   evidence: Record<string, EvidenceCounts>;
@@ -48,7 +74,14 @@ interface Drill {
   check: string;
   label: string;
   why: string;
-  items: { personId: string; sourceMember: string; qualityScore: number | null; emailVerification: string; country: string | null; timezone?: string | null }[];
+  items: {
+    personId: string;
+    sourceMember: string;
+    qualityScore: number | null;
+    emailVerification: string;
+    country: string | null;
+    timezone?: string | null;
+  }[];
 }
 
 const CLAIM_LABEL: Record<string, string> = {
@@ -60,7 +93,11 @@ const CLAIM_LABEL: Record<string, string> = {
 const pct = (n: number, d: number) => (d ? `${Math.round((n / d) * 100)}%` : '—');
 const human = (s: string) => s.replaceAll('_', ' ');
 
-export default async function VerificationPage({ searchParams }: { searchParams: Promise<{ panel?: string; check?: string }> }) {
+export default async function VerificationPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ panel?: string; check?: string }>;
+}) {
   const panelList = await getPanels();
   const sp = await searchParams;
   const [me, s, ev] = await Promise.all([
@@ -96,32 +133,73 @@ export default async function VerificationPage({ searchParams }: { searchParams:
           const max = Math.max(1, ...bands.map((b) => b[1]));
           return (
             <Card key={p.panel}>
-              <CardHeader title={panelName(p.panel, panelList)} hint="Verification and quality scores are as the panel reported them" />
+              <CardHeader
+                title={panelName(p.panel, panelList)}
+                hint="Verification and quality scores are as the panel reported them"
+                action={
+                  <DownloadMenu
+                    screen="verification_summary"
+                    title={`Verification checks · ${panelShort(p.panel, panelList)}`}
+                    subtitle={`${fmt(p.members)} active members · quality scores: ${bands.map(([l, n]) => `${l} ${fmt(n)}`).join(', ')}`}
+                    columns={[
+                      { key: 'check', label: 'Check' },
+                      { key: 'why', label: 'Why it matters' },
+                      { key: 'members', label: 'Members', type: 'number' },
+                      { key: 'share', label: 'Share' },
+                    ]}
+                    rows={s.checks.map((c) => ({
+                      check: c.label,
+                      why: c.why,
+                      members: p.checks[c.key] ?? 0,
+                      share: pct(p.checks[c.key] ?? 0, p.members),
+                    }))}
+                  />
+                }
+              />
               <div className="grid grid-cols-2 gap-3 px-5 py-4 md:grid-cols-4">
                 <Stat label="Active members" value={fmt(p.members)} />
-                <Stat label="E-mail verified (panel)" value={fmt(p.sourceReported.email.verified)} hint={`${pct(p.sourceReported.email.verified, p.members)} · ${fmt(p.sourceReported.email.rejected)} rejected`} />
-                <Stat label="Phone verified (panel)" value={fmt(p.sourceReported.phone.verified)} hint={`${pct(p.sourceReported.phone.verified, p.members)} · ${fmt(p.sourceReported.phone.rejected)} rejected`} />
+                <Stat
+                  label="E-mail verified (panel)"
+                  value={fmt(p.sourceReported.email.verified)}
+                  hint={`${pct(p.sourceReported.email.verified, p.members)} · ${fmt(p.sourceReported.email.rejected)} rejected`}
+                />
+                <Stat
+                  label="Phone verified (panel)"
+                  value={fmt(p.sourceReported.phone.verified)}
+                  hint={`${pct(p.sourceReported.phone.verified, p.members)} · ${fmt(p.sourceReported.phone.rejected)} rejected`}
+                />
                 <Stat
                   label="Identity matches to review"
                   value={fmt(p.identityReviewOpen)}
-                  hint={<Link className="underline" href="/identity">Identity review</Link>}
+                  hint={
+                    <Link className="underline" href="/identity">
+                      Identity review
+                    </Link>
+                  }
                 />
               </div>
               <div className="grid gap-4 border-t border-border px-5 py-4 lg:grid-cols-3">
                 <div>
-                  <h3 className="mb-2 text-[12px] font-medium text-fg-2">Quality score (members start at 100, maximum 200)</h3>
+                  <h3 className="mb-2 text-[12px] font-medium text-fg-2">
+                    Quality score (members start at 100, maximum 200)
+                  </h3>
                   <ul className="space-y-1.5 text-[12px]">
                     {bands.map(([label, n]) => (
                       <li key={label} className="grid grid-cols-[96px_1fr_48px] items-center gap-2">
                         <span className="text-fg-2">{label}</span>
                         <span className="h-2 rounded bg-surface-2">
-                          <span className="block h-2 rounded bg-accent" style={{ width: `${(n / max) * 100}%` }} />
+                          <span
+                            className="block h-2 rounded bg-accent"
+                            style={{ width: `${(n / max) * 100}%` }}
+                          />
                         </span>
                         <span className="text-right font-mono">{fmt(n)}</span>
                       </li>
                     ))}
                   </ul>
-                  <h3 className="mb-2 mt-5 text-[12px] font-medium text-fg-2">Independent verification (MADP)</h3>
+                  <h3 className="mb-2 mt-5 text-[12px] font-medium text-fg-2">
+                    Independent verification (MADP)
+                  </h3>
                   <ul className="space-y-1 text-[12px]">
                     {VERIFICATION_CLAIMS.map((c) => {
                       const e = p.evidence[c];
@@ -161,7 +239,10 @@ export default async function VerificationPage({ searchParams }: { searchParams:
                           <td className="px-5 py-1.5">{pct(n, p.members)}</td>
                           <td className="px-5 py-1.5 text-right">
                             {canDrill && n > 0 ? (
-                              <Link className="text-[12px] text-accent underline" href={`/verification?panel=${p.panel}&check=${c.key}#members`}>
+                              <Link
+                                className="text-[12px] text-accent underline"
+                                href={`/verification?panel=${p.panel}&check=${c.key}#members`}
+                              >
                                 See members
                               </Link>
                             ) : null}
@@ -182,11 +263,43 @@ export default async function VerificationPage({ searchParams }: { searchParams:
             <CardHeader
               title={`${panelShort(drill.panel, panelList)}: ${drill.label}`}
               hint={`${drill.why} Person ids and masked panel ids only; open a profile to see more, which is audited.`}
+              action={
+                <DownloadMenu
+                  screen="verification"
+                  title={`${panelShort(drill.panel, panelList)}: ${drill.label}`}
+                  subtitle={drill.why}
+                  columns={[
+                    { key: 'person', label: 'Person id' },
+                    { key: 'member', label: 'Panel id (masked)' },
+                    { key: 'score', label: 'Quality score', type: 'number' },
+                    { key: 'email', label: 'E-mail (panel)' },
+                    { key: 'country', label: 'Country' },
+                    { key: 'tz', label: 'Time zone' },
+                  ]}
+                  rows={drill.items.map((i) => ({
+                    person: i.personId,
+                    member: i.sourceMember,
+                    score: i.qualityScore,
+                    email: i.emailVerification,
+                    country: i.country,
+                    tz: i.timezone ?? '',
+                  }))}
+                />
+              }
             />
             {drill.items.length === 0 ? (
               <EmptyState title="Nobody fails this check" />
             ) : (
-              <Table head={['Person', 'Panel id', 'Quality score', 'E-mail (panel)', 'Country', ...(drill.items.some((i) => i.timezone !== undefined) ? ['Time zone'] : [])]}>
+              <Table
+                head={[
+                  'Person',
+                  'Panel id',
+                  'Quality score',
+                  'E-mail (panel)',
+                  'Country',
+                  ...(drill.items.some((i) => i.timezone !== undefined) ? ['Time zone'] : []),
+                ]}
+              >
                 {drill.items.map((i) => (
                   <tr key={i.personId}>
                     <td className="px-5 py-1.5 font-mono text-[12px]">
@@ -198,7 +311,9 @@ export default async function VerificationPage({ searchParams }: { searchParams:
                     <td className="px-5 py-1.5">{fmt(i.qualityScore)}</td>
                     <td className="px-5 py-1.5">{i.emailVerification}</td>
                     <td className="px-5 py-1.5">{i.country ? <Country code={i.country} compact /> : '—'}</td>
-                    {i.timezone !== undefined ? <td className="px-5 py-1.5 font-mono text-[12px]">{i.timezone ?? '—'}</td> : null}
+                    {i.timezone !== undefined ? (
+                      <td className="px-5 py-1.5 font-mono text-[12px]">{i.timezone ?? '—'}</td>
+                    ) : null}
                   </tr>
                 ))}
               </Table>
@@ -209,9 +324,42 @@ export default async function VerificationPage({ searchParams }: { searchParams:
         {canReview ? <NewEvidence /> : null}
 
         <Card>
-          <CardHeader title="Verification evidence" hint="Pending first. Whoever recorded the evidence cannot decide it." />
+          <CardHeader
+            title="Verification evidence"
+            hint="Pending first. Whoever recorded the evidence cannot decide it."
+            action={
+              <DownloadMenu
+                screen="verification"
+                title="Verification evidence"
+                columns={[
+                  { key: 'claim', label: 'Claim' },
+                  { key: 'method', label: 'Method' },
+                  { key: 'reference', label: 'Reference' },
+                  { key: 'person', label: 'Person id' },
+                  { key: 'panel', label: 'Panel' },
+                  { key: 'status', label: 'Status' },
+                  { key: 'note', label: 'Decision note' },
+                  { key: 'recorded', label: 'Recorded', type: 'date' },
+                  { key: 'expires', label: 'Expires', type: 'date' },
+                ]}
+                rows={ev.items.map((e) => ({
+                  claim: CLAIM_LABEL[e.claim] ?? e.claim,
+                  method: human(e.method),
+                  reference: e.reference,
+                  person: e.personId,
+                  panel: e.panel.toUpperCase(),
+                  status: e.expired ? 'expired' : e.status,
+                  note: e.decisionNote,
+                  recorded: e.createdAt,
+                  expires: e.expiresOn,
+                }))}
+              />
+            }
+          />
           {ev.items.length === 0 ? (
-            <EmptyState title="No evidence recorded yet">Record a licence, identity, age or employment check above.</EmptyState>
+            <EmptyState title="No evidence recorded yet">
+              Record a licence, identity, age or employment check above.
+            </EmptyState>
           ) : (
             <Table head={['Claim', 'Panel', 'Status', 'Recorded', 'Expires', '']}>
               {ev.items.map((e) => (
@@ -224,20 +372,34 @@ export default async function VerificationPage({ searchParams }: { searchParams:
                         {e.personId.slice(0, 8)}
                       </Link>
                     </span>
-                    {e.decisionNote ? <span className="block text-[12px] text-fg-3">Note: {e.decisionNote}</span> : null}
+                    {e.decisionNote ? (
+                      <span className="block text-[12px] text-fg-3">Note: {e.decisionNote}</span>
+                    ) : null}
                   </td>
                   <td className="px-5 py-2">
                     <PanelChip panel={e.panel} />
                   </td>
                   <td className="px-5 py-2">
-                    <Badge tone={e.expired ? 'danger' : e.status === 'verified' ? 'teal' : e.status === 'pending' ? 'warn' : 'neutral'}>
+                    <Badge
+                      tone={
+                        e.expired
+                          ? 'danger'
+                          : e.status === 'verified'
+                            ? 'teal'
+                            : e.status === 'pending'
+                              ? 'warn'
+                              : 'neutral'
+                      }
+                    >
                       {e.expired ? 'expired' : e.status}
                     </Badge>
                   </td>
                   <td className="px-5 py-2 text-[12px]">{fmtDate(e.createdAt)}</td>
                   <td className="px-5 py-2 text-[12px]">{e.expiresOn ?? '—'}</td>
                   <td className="px-5 py-2 text-right">
-                    {canReview ? <EvidenceSteps id={e.id} status={e.status} mine={e.recordedBy === me.id} /> : null}
+                    {canReview ? (
+                      <EvidenceSteps id={e.id} status={e.status} mine={e.recordedBy === me.id} />
+                    ) : null}
                   </td>
                 </tr>
               ))}

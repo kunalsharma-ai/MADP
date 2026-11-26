@@ -9,6 +9,8 @@ import {
   surveyStatusAction,
 } from '@/app/panel-actions';
 import { Badge, Card, CardHeader, EmptyState, Table, btn, fmt, fmtDate, input } from '@/components/ui';
+import type { ParsedTable } from '@madp/contracts';
+import { DownloadMenu, UploadButton, mapHeader } from '@/components/files';
 
 export interface ResponseRow {
   id: string;
@@ -170,9 +172,105 @@ export function Reconcile({ id, rows }: { id: string; rows: ResponseRow[] }) {
       setPick({});
       setReason('');
     });
+  /**
+   * The client's final list (Excel or CSV) only ticks Approve / Reject on the rows shown here. Nothing is saved
+   * until the admin gives a reason and presses Reconcile.
+   */
+  const fromFile = (t: ParsedTable, name: string) => {
+    const [head = [], ...body] = t.sheets[0]?.rows ?? [];
+    const { index, missing } = mapHeader(head, {
+      response: ['response id', 'id'],
+      member: ['member id', 'member', 'respondent', 'respondent id'],
+      decision: ['decision', 'result', 'status'],
+    });
+    if (missing.includes('decision') || (missing.includes('response') && missing.includes('member')))
+      return void toast.error(
+        'The file needs a Decision column and a Response id or Member id column. Use Download to get the layout.',
+      );
+    const byResponse = new Map(rows.map((r) => [r.id, r]));
+    const byMember = new Map(rows.map((r) => [r.member, r]));
+    const next: Record<string, 'approve' | 'reject'> = {};
+    let notHere = 0;
+    let notAllowed = 0;
+    for (const line of body) {
+      const d = (line[index.decision!] ?? '').trim().toLowerCase();
+      const v = /^(approve|approved|accept|accepted|complete|valid|yes)$/.test(d)
+        ? 'approve'
+        : /^(reject|rejected|invalid|fraud|no)$/.test(d)
+          ? 'reject'
+          : null;
+      if (!v) continue;
+      const r =
+        (index.response !== undefined && byResponse.get((line[index.response] ?? '').trim())) ||
+        (index.member !== undefined && byMember.get((line[index.member] ?? '').trim()));
+      if (!r) {
+        notHere++;
+        continue;
+      }
+      const ok = v === 'approve' ? r.status === 'dropout' || r.status === 'invited' : r.status === 'complete';
+      if (!ok) {
+        notAllowed++;
+        continue;
+      }
+      next[r.id] = v;
+    }
+    setPick(next);
+    if (!reason) setReason(`Client's final list (${name})`);
+    toast.success(`Ticked ${Object.keys(next).length} rows from ${name}. Check them, then press Reconcile.`, {
+      description:
+        [
+          notHere ? `${notHere} not in this list (try the "all" tab)` : '',
+          notAllowed ? `${notAllowed} already in that state` : '',
+        ]
+          .filter(Boolean)
+          .join(' · ') || undefined,
+      duration: 8000,
+    });
+  };
   if (!rows.length) return <EmptyState title="No responses here yet" />;
   return (
     <>
+      <div className="flex flex-wrap items-center justify-end gap-2 px-5 pt-3">
+        <DownloadMenu
+          screen="survey"
+          title="Survey responses"
+          subtitle="Fill the Decision column with approve or reject and upload it back to tick the rows."
+          columns={[
+            { key: 'response', label: 'Response id' },
+            { key: 'member', label: 'Member id' },
+            { key: 'name', label: 'Member' },
+            { key: 'status', label: 'Status' },
+            { key: 'points', label: 'Points', type: 'number' },
+            { key: 'updated', label: 'Updated', type: 'date' },
+            { key: 'decision', label: 'Decision' },
+          ]}
+          rows={rows.map((r) => ({
+            response: r.id,
+            member: r.member,
+            name: r.memberName,
+            status: r.status,
+            points: r.points,
+            updated: r.updatedAt,
+            decision: '',
+          }))}
+        />
+        <UploadButton
+          kind="table"
+          label="Upload client list"
+          title="Upload the client's list"
+          help={{
+            why: 'The client sends back which completes they accept. Ticking hundreds of rows by hand is slow and easy to get wrong.',
+            where:
+              'Any Excel or CSV with a Response id (or Member id) column and a Decision column: approve or reject. Download gives you the right layout.',
+            how: [
+              'Upload the file: matching rows below get ticked. Nothing is saved yet.',
+              'Check the ticks and the reason.',
+              'Press Reconcile. Approving pays the points, rejecting takes them back, and both are audited.',
+            ],
+          }}
+          onParsed={fromFile}
+        />
+      </div>
       <Table head={['Member', 'Status', 'Points', 'Updated', 'Reconcile']}>
         {rows.map((r) => (
           <tr key={r.id}>

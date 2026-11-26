@@ -6,6 +6,7 @@ import { Badge, Card, CardHeader, PageHeader, Table, btn, fmtDate, input } from 
 import { ReasonAction } from '@/components/reason-action';
 import { SwitchControl } from '@/components/switch-control';
 import { Toggle, ToggleLabel } from '@/components/toggle';
+import { DownloadMenu } from '@/components/files';
 
 export const metadata: Metadata = { title: 'Feature switches' };
 
@@ -229,6 +230,39 @@ export default async function SwitchesPage({
                 setting.
               </p>
             ) : null}
+            <div className="flex justify-end">
+              <DownloadMenu
+                screen="switches"
+                title="Feature switches"
+                subtitle={`For: ${scopeName(segment, country)}${b.killed ? ' · kill switch ON (everything stopped)' : ''}`}
+                columns={[
+                  { key: 'group', label: 'Group' },
+                  { key: 'label', label: 'Switch' },
+                  { key: 'key', label: 'Key' },
+                  { key: 'now', label: 'Now' },
+                  { key: 'value', label: 'Value', type: 'number' },
+                  { key: 'from', label: 'Decided by' },
+                  { key: 'brand', label: 'Whole brand' },
+                  { key: 'default', label: 'Default' },
+                  { key: 'reason', label: 'Last reason' },
+                  { key: 'by', label: 'Changed by' },
+                  { key: 'at', label: 'Changed', type: 'date' },
+                ]}
+                rows={b.switches.map((s) => ({
+                  group: GROUPS.find((g) => g.key === s.group)?.title ?? s.group,
+                  label: s.label,
+                  key: s.key,
+                  now: b.killed ? 'off (kill switch)' : s.effective ? 'on' : 'off',
+                  value: s.value ?? null,
+                  from: s.from ?? '',
+                  brand: s.set === null ? 'default' : s.set ? 'on' : 'off',
+                  default: s.default ? 'on' : 'off',
+                  reason: s.reason,
+                  by: s.changedBy,
+                  at: s.changedAt,
+                }))}
+              />
+            </div>
             <Card>
               <CardHeader
                 title={b.killed ? 'Everything is stopped on this brand' : 'Stop everything'}

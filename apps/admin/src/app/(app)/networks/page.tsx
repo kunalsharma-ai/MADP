@@ -4,6 +4,7 @@ import { NETWORK_FILE_COLUMNS } from '@madp/contracts';
 import { api } from '@/lib/api';
 import { Badge, Card, CardHeader, EmptyState, PageHeader, Table, fmtDate } from '@/components/ui';
 import { PushKey, UploadForm } from './network-forms';
+import { DownloadMenu } from '@/components/files';
 
 export const metadata: Metadata = { title: 'Networks' };
 
@@ -20,13 +21,14 @@ export default async function NetworksPage() {
         title="Networks"
         description={
           <>
-            Bring in a panel network that runs on other software, without a developer on our side. Add it on Panels
-            as &ldquo;another network&rdquo;, approve live sync on Panel connections, then send its data here in one
-            of two ways: upload a CSV or Excel file (members, questions or answers), or let the network&apos;s own
-            system push data to MADP&apos;s signed push API. Both go into an encrypted inbox, and the normal sync reads
-            it, so duplicate matching, consent, minor rules, segments and the audit log work exactly as for T2O, MFR and
-            MHO. Always check a file first: nothing is saved until every row is valid. Only a Super Admin on every
-            brand sends data, and each upload is kept in the audit log by its row count, never its contents.
+            Bring in a panel network that runs on other software, without a developer on our side. Add it on
+            Panels as &ldquo;another network&rdquo;, approve live sync on Panel connections, then send its
+            data here in one of two ways: upload a CSV or Excel file (members, questions or answers), or let
+            the network&apos;s own system push data to MADP&apos;s signed push API. Both go into an encrypted
+            inbox, and the normal sync reads it, so duplicate matching, consent, minor rules, segments and the
+            audit log work exactly as for T2O, MFR and MHO. Always check a file first: nothing is saved until
+            every row is valid. Only a Super Admin on every brand sends data, and each upload is kept in the
+            audit log by its row count, never its contents.
           </>
         }
       />
@@ -44,8 +46,8 @@ export default async function NetworksPage() {
                 title={n.name}
                 hint={
                   <span>
-                    Inbox: {n.inbox.members} member, {n.inbox.questions} question, {n.inbox.answers} answer and{' '}
-                    {n.inbox.deletions} deletion records
+                    Inbox: {n.inbox.members} member, {n.inbox.questions} question, {n.inbox.answers} answer
+                    and {n.inbox.deletions} deletion records
                   </span>
                 }
                 action={
@@ -67,20 +69,46 @@ export default async function NetworksPage() {
                   <section className="grid gap-2">
                     <h3 className="text-sm font-medium">Push API</h3>
                     <p className="text-[12px] text-fg-3">
-                      The network&apos;s system sends <code className="font-mono">POST /api/v1/networks/{n.panel}/push</code>{' '}
-                      with a JSON body of <code className="font-mono">members</code>,{' '}
-                      <code className="font-mono">questions</code>, <code className="font-mono">answers</code> and{' '}
-                      <code className="font-mono">deletions</code>. Headers: <code className="font-mono">x-madp-batch</code>{' '}
-                      (a unique id, so a retry is never stored twice), <code className="font-mono">x-madp-timestamp</code>{' '}
-                      (Unix seconds) and <code className="font-mono">x-madp-signature: v1=&lt;HMAC-SHA256 of
-                      &quot;timestamp.batch.body&quot; with the push key&gt;</code>. The fields are the same as the file
-                      columns below.
+                      The network&apos;s system sends{' '}
+                      <code className="font-mono">POST /api/v1/networks/{n.panel}/push</code> with a JSON body
+                      of <code className="font-mono">members</code>,{' '}
+                      <code className="font-mono">questions</code>, <code className="font-mono">answers</code>{' '}
+                      and <code className="font-mono">deletions</code>. Headers:{' '}
+                      <code className="font-mono">x-madp-batch</code> (a unique id, so a retry is never stored
+                      twice), <code className="font-mono">x-madp-timestamp</code> (Unix seconds) and{' '}
+                      <code className="font-mono">
+                        x-madp-signature: v1=&lt;HMAC-SHA256 of &quot;timestamp.batch.body&quot; with the push
+                        key&gt;
+                      </code>
+                      . The fields are the same as the file columns below.
                     </p>
                     <PushKey panel={n.panel} set={n.pushKey.set} hint={n.pushKey.hint} />
                   </section>
                 ) : null}
                 <section className="grid gap-2">
-                  <h3 className="text-sm font-medium">Recent uploads and pushes</h3>
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <h3 className="text-sm font-medium">Recent uploads and pushes</h3>
+                    {n.batches.length ? (
+                      <DownloadMenu
+                        screen="networks"
+                        title={`${n.name}: uploads and pushes`}
+                        columns={[
+                          { key: 'batch', label: 'Batch' },
+                          { key: 'from', label: 'From' },
+                          { key: 'kind', label: 'Holds' },
+                          { key: 'records', label: 'Records', type: 'number' },
+                          { key: 'at', label: 'Received', type: 'date' },
+                        ]}
+                        rows={n.batches.map((b) => ({
+                          batch: b.batch,
+                          from: b.source === 'push' ? 'Push API' : 'Upload',
+                          kind: b.kind,
+                          records: b.records,
+                          at: b.receivedAt,
+                        }))}
+                      />
+                    ) : null}
+                  </div>
                   {n.batches.length ? (
                     <Table head={['Batch', 'From', 'Holds', 'Records', 'Received']}>
                       {n.batches.map((b) => (

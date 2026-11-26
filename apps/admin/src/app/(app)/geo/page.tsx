@@ -3,20 +3,47 @@ import { getPanels } from '@/lib/panels';
 import type { Metadata } from 'next';
 import { PANEL_TONES } from '@/lib/panel-tones';
 import Link from 'next/link';
-import { type AudienceCategory, type GeoResponse, type OverlapResponse, type PanelCode } from '@madp/contracts';
+import {
+  type AudienceCategory,
+  type GeoResponse,
+  type OverlapResponse,
+  type PanelCode,
+} from '@madp/contracts';
 import { getSegments } from '@/lib/segments';
 import { api } from '@/lib/api';
-import { Card, CardHeader, DataModeBadge, DemoBanner, EmptyState, PageHeader, PanelChip, Stat, Table, btn, fmt, fmtDate, ChipCheck } from '@/components/ui';
+import {
+  Card,
+  CardHeader,
+  DataModeBadge,
+  DemoBanner,
+  EmptyState,
+  PageHeader,
+  PanelChip,
+  Stat,
+  Table,
+  btn,
+  fmt,
+  fmtDate,
+  ChipCheck,
+} from '@/components/ui';
 import { cn } from '@/lib/cn';
 import { Country, countryName } from '@/components/country';
 import { WorldMap } from './world-map';
+import { DownloadMenu } from '@/components/files';
 
 export const metadata: Metadata = { title: 'Geography & overlap' };
 
 type SP = Promise<Record<string, string | string[] | undefined>>;
 const arr = (v: string | string[] | undefined) => (v === undefined ? [] : ([] as string[]).concat(v));
 const place = (k: string) => (k === 'unknown' ? 'Not given' : k);
-const n = (v: number | null) => (v === null ? <span className="text-fg-3" title="Hidden: below the minimum cell size">hidden</span> : fmt(v));
+const n = (v: number | null) =>
+  v === null ? (
+    <span className="text-fg-3" title="Hidden: below the minimum cell size">
+      hidden
+    </span>
+  ) : (
+    fmt(v)
+  );
 
 export default async function GeoPage({ searchParams }: { searchParams: SP }) {
   const segmentList = await getSegments();
@@ -26,12 +53,15 @@ export default async function GeoPage({ searchParams }: { searchParams: SP }) {
   const sp = await searchParams;
   const panels = arr(sp.panel).filter((p): p is PanelCode => panelList.map((x) => x.code).includes(p));
   const categories = arr(sp.category).filter((c): c is AudienceCategory => SEG_KEYS.includes(c));
-  const country = typeof sp.country === 'string' && /^[a-z]{2}$/i.test(sp.country) ? sp.country.toLowerCase() : undefined;
+  const country =
+    typeof sp.country === 'string' && /^[a-z]{2}$/i.test(sp.country) ? sp.country.toLowerCase() : undefined;
   const state = country && typeof sp.state === 'string' && sp.state.length <= 120 ? sp.state : undefined;
   const filters = { panels, categories };
   const [world, here, overlap] = await Promise.all([
     api<GeoResponse>('/audience/geo', { method: 'POST', json: filters }),
-    country ? api<GeoResponse>('/audience/geo', { method: 'POST', json: { ...filters, country, state } }) : null,
+    country
+      ? api<GeoResponse>('/audience/geo', { method: 'POST', json: { ...filters, country, state } })
+      : null,
     api<OverlapResponse>('/audience/overlap', {
       method: 'POST',
       json: { ...filters, ...(country ? { countries: [country] } : {}) },
@@ -45,7 +75,9 @@ export default async function GeoPage({ searchParams }: { searchParams: SP }) {
     for (const [k, v] of Object.entries(extra)) if (v) q.set(k, v);
     return `/geo?${q}`;
   };
-  const mapValues = Object.fromEntries(world.rows.filter((r) => r.key !== 'unknown').map((r) => [r.key, r.uniquePeople]));
+  const mapValues = Object.fromEntries(
+    world.rows.filter((r) => r.key !== 'unknown').map((r) => [r.key, r.uniquePeople]),
+  );
   const maxCombo = Math.max(1, ...overlap.panelCombinations.map((c) => c.people ?? 0));
   const cat = (a: string, b: string) => overlap.categoryMatrix.find((m) => m.a === a && m.b === b);
   const usedCats = SEG_KEYS.filter((c) => cat(c, c));
@@ -63,14 +95,31 @@ export default async function GeoPage({ searchParams }: { searchParams: SP }) {
         {state ? <input type="hidden" name="state" value={state} /> : null}
         <fieldset className="flex flex-wrap items-center gap-2">
           <legend className="mb-1.5 text-[12px] font-bold uppercase tracking-wider text-fg-3">Panels</legend>
-          {panelList.map((x) => x.code).map((p) => (
-            <ChipCheck key={p} name="panel" value={p} label={panelShort(p, panelList)} defaultChecked={panels.includes(p)} dot={PANEL_TONES[p]?.[1]} />
-          ))}
+          {panelList
+            .map((x) => x.code)
+            .map((p) => (
+              <ChipCheck
+                key={p}
+                name="panel"
+                value={p}
+                label={panelShort(p, panelList)}
+                defaultChecked={panels.includes(p)}
+                dot={PANEL_TONES[p]?.[1]}
+              />
+            ))}
         </fieldset>
         <fieldset className="flex flex-wrap items-center gap-2">
-          <legend className="mb-1.5 text-[12px] font-bold uppercase tracking-wider text-fg-3">Segments</legend>
+          <legend className="mb-1.5 text-[12px] font-bold uppercase tracking-wider text-fg-3">
+            Segments
+          </legend>
           {SEG_KEYS.map((c) => (
-            <ChipCheck key={c} name="category" value={c} label={SEG_LABEL[c] ?? c} defaultChecked={categories.includes(c)} />
+            <ChipCheck
+              key={c}
+              name="category"
+              value={c}
+              label={SEG_LABEL[c] ?? c}
+              defaultChecked={categories.includes(c)}
+            />
           ))}
         </fieldset>
         <button className={btn.primary}>Show</button>
@@ -80,18 +129,34 @@ export default async function GeoPage({ searchParams }: { searchParams: SP }) {
       </form>
 
       <div className="mb-4 grid grid-cols-2 gap-3 md:grid-cols-4">
-        <Stat label={country ? `Unique people in ${state ? place(state) : countryName(country)}` : 'Unique people'} value={fmt(view.uniquePeople)} tone="accent" />
-        {panelList.map((x) => x.code).map((p) => (
-          <Stat
-            key={p}
-            label={`${panelShort(p, panelList)} members`}
-            value={n(view.rows.reduce<number | null>((a, r) => (a === null || r.byPanel[p] === null ? null : a + (r.byPanel[p] ?? 0)), 0))}
-          />
-        ))}
+        <Stat
+          label={
+            country ? `Unique people in ${state ? place(state) : countryName(country)}` : 'Unique people'
+          }
+          value={fmt(view.uniquePeople)}
+          tone="accent"
+        />
+        {panelList
+          .map((x) => x.code)
+          .map((p) => (
+            <Stat
+              key={p}
+              label={`${panelShort(p, panelList)} members`}
+              value={n(
+                view.rows.reduce<number | null>(
+                  (a, r) => (a === null || r.byPanel[p] === null ? null : a + (r.byPanel[p] ?? 0)),
+                  0,
+                ),
+              )}
+            />
+          ))}
       </div>
 
       <Card className="mb-4">
-        <CardHeader title="Where people are" hint="Darker means more unique people. Select a country to drill down." />
+        <CardHeader
+          title="Where people are"
+          hint="Darker means more unique people. Select a country to drill down."
+        />
         <div className="px-5 py-3">
           <WorldMap values={mapValues} selected={country ?? null} hrefFor={(c) => keep({ country: c })} />
         </div>
@@ -120,57 +185,115 @@ export default async function GeoPage({ searchParams }: { searchParams: SP }) {
         <Card>
           <CardHeader
             title={
-              (
-                <nav aria-label="Breadcrumb" className="flex flex-wrap items-center gap-1.5">
-                  <Link className={cn(!country && 'font-semibold')} href={keep({})}>
-                    World
-                  </Link>
-                  {country ? (
-                    <>
-                      <span className="text-fg-3">/</span>
-                      <Link className={cn(!state && 'font-semibold')} href={keep({ country })}>
-                        <Country code={country} />
-                      </Link>
-                    </>
-                  ) : null}
-                  {state ? (
-                    <>
-                      <span className="text-fg-3">/</span>
-                      <span className="font-semibold">{place(state)}</span>
-                    </>
-                  ) : null}
-                </nav>
-              )
+              <nav aria-label="Breadcrumb" className="flex flex-wrap items-center gap-1.5">
+                <Link className={cn(!country && 'font-semibold')} href={keep({})}>
+                  World
+                </Link>
+                {country ? (
+                  <>
+                    <span className="text-fg-3">/</span>
+                    <Link className={cn(!state && 'font-semibold')} href={keep({ country })}>
+                      <Country code={country} />
+                    </Link>
+                  </>
+                ) : null}
+                {state ? (
+                  <>
+                    <span className="text-fg-3">/</span>
+                    <span className="font-semibold">{place(state)}</span>
+                  </>
+                ) : null}
+              </nav>
             }
-            hint={view.level === 'country' ? 'Countries' : view.level === 'state' ? 'States and provinces' : 'Cities'}
+            hint={
+              view.level === 'country'
+                ? 'Countries'
+                : view.level === 'state'
+                  ? 'States and provinces'
+                  : 'Cities'
+            }
+            action={
+              <DownloadMenu
+                screen="geo"
+                title={`Where people are · ${country ? `${countryName(country)}${state ? ` / ${place(state)}` : ''}` : 'World'}`}
+                subtitle="Unique people, and each panel's members. A person in two panels counts in both panel columns, once in unique people. Small groups stay hidden."
+                columns={[
+                  {
+                    key: 'place',
+                    label:
+                      view.level === 'country'
+                        ? 'Country'
+                        : view.level === 'state'
+                          ? 'State or province'
+                          : 'City',
+                  },
+                  { key: 'code', label: 'Code' },
+                  { key: 'unique', label: 'Unique people', type: 'number' },
+                  ...panelList.map((x) => ({ key: x.code, label: x.shortName, type: 'number' as const })),
+                ]}
+                rows={view.rows.map((r) => ({
+                  place: view.level === 'country' ? countryName(r.key) : place(r.key),
+                  code: r.key,
+                  unique: r.uniquePeople ?? 'hidden',
+                  ...Object.fromEntries(
+                    panelList.map((x) => [
+                      x.code,
+                      r.byPanel[x.code] === null ? 'hidden' : (r.byPanel[x.code] ?? 0),
+                    ]),
+                  ),
+                }))}
+              />
+            }
           />
           {view.rows.length === 0 ? (
             <EmptyState title="Nobody matches these filters" />
           ) : (
-            <Table head={[view.level === 'country' ? 'Country' : view.level === 'state' ? 'State or province' : 'City', 'Unique people', 'T2O', 'MFR', 'MHO']}>
+            <Table
+              head={[
+                view.level === 'country' ? 'Country' : view.level === 'state' ? 'State or province' : 'City',
+                'Unique people',
+                'T2O',
+                'MFR',
+                'MHO',
+              ]}
+            >
               {view.rows.map((r) => (
                 <tr key={r.key}>
                   <td className="px-5 py-1.5">
                     {view.level === 'city' || r.key === 'unknown' ? (
-                      view.level === 'country' ? <Country code={r.key} /> : place(r.key)
+                      view.level === 'country' ? (
+                        <Country code={r.key} />
+                      ) : (
+                        place(r.key)
+                      )
                     ) : (
-                      <Link className="text-accent underline" href={view.level === 'country' ? keep({ country: r.key }) : keep({ country, state: r.key })}>
+                      <Link
+                        className="text-accent underline"
+                        href={
+                          view.level === 'country'
+                            ? keep({ country: r.key })
+                            : keep({ country, state: r.key })
+                        }
+                      >
                         {view.level === 'country' ? <Country code={r.key} /> : place(r.key)}
                       </Link>
                     )}
                   </td>
                   <td className="px-5 py-1.5 font-mono text-[12px]">{n(r.uniquePeople)}</td>
-                  {panelList.map((x) => x.code).map((p) => (
-                    <td key={p} className="px-5 py-1.5 font-mono text-[12px]">
-                      {n(r.byPanel[p] ?? 0)}
-                    </td>
-                  ))}
+                  {panelList
+                    .map((x) => x.code)
+                    .map((p) => (
+                      <td key={p} className="px-5 py-1.5 font-mono text-[12px]">
+                        {n(r.byPanel[p] ?? 0)}
+                      </td>
+                    ))}
                 </tr>
               ))}
             </Table>
           )}
           <p className="border-t border-border px-5 py-2 text-[12px] text-fg-3">
-            Panel columns count each panel&apos;s members, so a person in two panels appears in both, but only once under unique people.
+            Panel columns count each panel&apos;s members, so a person in two panels appears in both, but only
+            once under unique people.
           </p>
         </Card>
         <div className="space-y-4">
@@ -188,7 +311,10 @@ export default async function GeoPage({ searchParams }: { searchParams: SP }) {
             </Card>
           ) : null}
           <Card>
-            <CardHeader title="Panel overlap" hint={`People by the exact panels they belong to${country ? `, in ${countryName(country)}` : ''}`} />
+            <CardHeader
+              title="Panel overlap"
+              hint={`People by the exact panels they belong to${country ? `, in ${countryName(country)}` : ''}`}
+            />
             <ul className="space-y-2 px-5 py-3 text-[12px]">
               {overlap.panelCombinations.map((c) => (
                 <li key={c.panels.join('+')} className="grid grid-cols-[120px_1fr_44px] items-center gap-2">
@@ -198,7 +324,10 @@ export default async function GeoPage({ searchParams }: { searchParams: SP }) {
                     ))}
                   </span>
                   <span className="h-2 rounded bg-surface-2">
-                    <span className="block h-2 rounded bg-teal" style={{ width: `${((c.people ?? 0) / maxCombo) * 100}%` }} />
+                    <span
+                      className="block h-2 rounded bg-teal"
+                      style={{ width: `${((c.people ?? 0) / maxCombo) * 100}%` }}
+                    />
                   </span>
                   <span className="text-right font-mono">{n(c.people)}</span>
                 </li>
@@ -209,20 +338,46 @@ export default async function GeoPage({ searchParams }: { searchParams: SP }) {
       </div>
 
       <Card className="mt-4">
-        <CardHeader title="Category overlap" hint="People in both categories, in any panel. The diagonal is everyone in the category." />
+        <CardHeader
+          title="Category overlap"
+          hint="People in both categories, in any panel. The diagonal is everyone in the category."
+          action={
+            <DownloadMenu
+              screen="geo"
+              title="Category overlap"
+              subtitle={country ? `In ${countryName(country)}` : undefined}
+              columns={[
+                { key: 'category', label: 'Category' },
+                ...usedCats.map((c) => ({ key: c, label: SEG_LABEL[c] ?? c, type: 'number' as const })),
+              ]}
+              rows={usedCats.map((a) => ({
+                category: SEG_LABEL[a] ?? a,
+                ...Object.fromEntries(
+                  usedCats.map((b) => [b, cat(a, b) ? (cat(a, b)!.people ?? 'hidden') : 0]),
+                ),
+              }))}
+            />
+          }
+        />
         {usedCats.length === 0 ? (
           <EmptyState title="No category memberships yet" />
         ) : (
-          <Table head={['', ...usedCats.map((c) => (SEG_LABEL[c] ?? c))]}>
+          <Table head={['', ...usedCats.map((c) => SEG_LABEL[c] ?? c)]}>
             {usedCats.map((a) => (
               <tr key={a}>
                 <th scope="row" className="px-5 py-1.5 text-left font-medium">
-                  {(SEG_LABEL[a] ?? a)}
+                  {SEG_LABEL[a] ?? a}
                 </th>
                 {usedCats.map((b) => {
                   const x = cat(a, b);
                   return (
-                    <td key={b} className={cn('px-5 py-1.5 font-mono text-[12px]', a === b && 'bg-accent-soft font-semibold text-accent')}>
+                    <td
+                      key={b}
+                      className={cn(
+                        'px-5 py-1.5 font-mono text-[12px]',
+                        a === b && 'bg-accent-soft font-semibold text-accent',
+                      )}
+                    >
                       {x ? n(x.people) : '0'}
                     </td>
                   );

@@ -5,6 +5,9 @@ import { withPanel } from '@/lib/panel';
 import { Badge, Card, CardHeader, EmptyState, PageHeader, Table, btn, fmt, input } from '@/components/ui';
 import { BankImport } from './bank-import';
 import { VersionActions, type Version } from './versions';
+import { TranslationUpload } from './translation-upload';
+import { DownloadMenu } from '@/components/files';
+import { translationSheetAction } from '@/app/panel-actions';
 
 export const metadata: Metadata = { title: 'Question bank' };
 
@@ -75,6 +78,24 @@ export default async function QuestionBankPage({
               <CardHeader
                 title={`${fmt(r.broken)} broken rules`}
                 hint={`${fmt(r.checked)} questions have a show-when rule. A broken rule points at a question or answer that doesn't exist, so the question never shows.`}
+                action={
+                  <DownloadMenu
+                    screen="question_bank"
+                    title="Broken show-when rules"
+                    columns={[
+                      { key: 'question', label: 'Question' },
+                      { key: 'parent', label: 'Shown under' },
+                      { key: 'problem', label: 'Problem' },
+                      { key: 'values', label: 'Answers that do not exist' },
+                    ]}
+                    rows={r.rules.map((x) => ({
+                      question: x.question,
+                      parent: x.parent,
+                      problem: x.problem,
+                      values: x.values?.join(', ') ?? '',
+                    }))}
+                  />
+                }
               />
               {r.rules.length === 0 ? (
                 <EmptyState title="Every show-when rule points at a real question and answer" />
@@ -111,12 +132,45 @@ export default async function QuestionBankPage({
             <Card>
               <CardHeader
                 title={`${fmt(r.complete)} of ${fmt(r.questions)} questions are fully translated into ${r.lang}`}
-                hint={`${fmt(r.missing)} questions miss their wording or option labels, ${fmt(r.missingOptions)} option labels in all. Open a question to translate it.`}
+                hint={`${fmt(r.missing)} questions miss their wording or option labels, ${fmt(r.missingOptions)} option labels in all. Open a question to translate it, or fill the sheet in Excel and upload it.`}
+                action={
+                  <DownloadMenu
+                    screen="translations"
+                    label="Download sheet"
+                    title={`Translations to fill (${r.lang})`}
+                    subtitle={`Fill the Translation column in ${r.lang}, then upload it on this tab. Blank cells are skipped.${category ? ` Segment: ${category}.` : ''}`}
+                    formats={['xlsx', 'csv']}
+                    columns={[
+                      { key: 'question', label: 'Question key' },
+                      { key: 'part', label: 'Part' },
+                      { key: 'value', label: 'Option value' },
+                      { key: 'english', label: 'English' },
+                      { key: 'translation', label: 'Translation' },
+                      { key: 'teens', label: 'Teens see it' },
+                    ]}
+                    rows={[]}
+                    load={translationSheetAction.bind(
+                      null,
+                      r.lang,
+                      r.items.map((x) => x.name),
+                    )}
+                  />
+                }
               />
-              <form className="flex flex-wrap items-center gap-2 border-b border-border px-5 py-3" action="/question-bank">
+              <TranslationUpload lang={r.lang} />
+              <form
+                className="flex flex-wrap items-center gap-2 border-b border-border px-5 py-3"
+                action="/question-bank"
+              >
                 <input type="hidden" name="tab" value="translations" />
                 <div className="w-28">
-                  <input className={`${input} font-mono`} name="lang" defaultValue={lang} placeholder="hi" aria-label="Language" />
+                  <input
+                    className={`${input} font-mono`}
+                    name="lang"
+                    defaultValue={lang}
+                    placeholder="hi"
+                    aria-label="Language"
+                  />
                 </div>
                 <div className="w-56">
                   <input
@@ -130,31 +184,47 @@ export default async function QuestionBankPage({
                 <button className={btn.ghost}>Show</button>
               </form>
               {r.items.length === 0 ? (
-                <EmptyState title="Nothing missing">Every question here has its wording and option labels in {r.lang}.</EmptyState>
+                <EmptyState title="Nothing missing">
+                  Every question here has its wording and option labels in {r.lang}.
+                </EmptyState>
               ) : (
                 <Table head={['Question', 'English wording', 'Wording', 'Option labels missing']}>
                   {r.items.map((x) => (
                     <tr key={x.name}>
                       <td className="px-5 py-2">
-                        <Link className="font-mono text-accent hover:underline" href={`/question-bank/${x.name}`}>
+                        <Link
+                          className="font-mono text-accent hover:underline"
+                          href={`/question-bank/${x.name}`}
+                        >
                           {x.name}
                         </Link>
                       </td>
                       <td className="max-w-md truncate px-5 py-2 text-fg-2">{x.label}</td>
-                      <td className="px-5 py-2">{x.missingLabel ? <Badge tone="warn">missing</Badge> : <Badge tone="teal">done</Badge>}</td>
+                      <td className="px-5 py-2">
+                        {x.missingLabel ? (
+                          <Badge tone="warn">missing</Badge>
+                        ) : (
+                          <Badge tone="teal">done</Badge>
+                        )}
+                      </td>
                       <td className="num px-5 py-2">{fmt(x.missingOptions)}</td>
                     </tr>
                   ))}
                 </Table>
               )}
               {r.missing > r.items.length ? (
-                <p className="px-5 py-3 text-[12px] text-fg-3">The panel lists the first {fmt(r.items.length)}.</p>
+                <p className="px-5 py-3 text-[12px] text-fg-3">
+                  The panel lists the first {fmt(r.items.length)}.
+                </p>
               ) : null}
             </Card>
           );
         }
         if (tab === 'versions') {
-          const [list, me] = await Promise.all([api<Version[]>('/panel/qb/versions'), api<{ id: string }>('/auth/me')]);
+          const [list, me] = await Promise.all([
+            api<Version[]>('/panel/qb/versions'),
+            api<{ id: string }>('/auth/me'),
+          ]);
           return <VersionActions versions={list} me={me.id} />;
         }
         const qs = new URLSearchParams();
@@ -186,7 +256,40 @@ export default async function QuestionBankPage({
             </form>
             <CardHeader
               title={`${fmt(data.total)} questions`}
-              hint={`Page ${data.page}, ${data.pageSize} a page`}
+              hint={`Page ${data.page}, ${data.pageSize} a page. For the whole bank with options and profiles, use Import & export.`}
+              action={
+                <DownloadMenu
+                  screen="question_bank"
+                  title="Question bank (this page)"
+                  subtitle={[
+                    sp.q ? `Search: ${sp.q}` : '',
+                    sp.category ? `Segment: ${sp.category}` : '',
+                    `Page ${data.page}`,
+                  ]
+                    .filter(Boolean)
+                    .join(' · ')}
+                  columns={[
+                    { key: 'name', label: 'Key' },
+                    { key: 'label', label: 'Wording' },
+                    { key: 'type', label: 'Type' },
+                    { key: 'segments', label: 'Segments' },
+                    { key: 'parent', label: 'Shown under' },
+                    { key: 'required', label: 'Required' },
+                    { key: 'active', label: 'Active' },
+                    { key: 'topic', label: 'Topic' },
+                  ]}
+                  rows={data.items.map((q) => ({
+                    name: q.name,
+                    label: q.label,
+                    type: q.type,
+                    segments: q.category.join(', '),
+                    parent: q.parent ?? '',
+                    required: q.isRequired !== false,
+                    active: q.isActive !== false,
+                    topic: q.topic ?? '',
+                  }))}
+                />
+              }
             />
             {data.items.length === 0 ? (
               <EmptyState title="No questions match" />

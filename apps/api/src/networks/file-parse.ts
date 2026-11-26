@@ -44,7 +44,7 @@ export function parseCsv(text: string): string[][] {
   return out.filter((r) => r.some((v) => v.trim() !== ''));
 }
 
-function cellText(v: ExcelJS.CellValue): string {
+export function cellText(v: ExcelJS.CellValue): string {
   if (v === null || v === undefined) return '';
   if (v instanceof Date) return v.toISOString();
   if (typeof v === 'object') {
@@ -126,10 +126,22 @@ export function toObject(kind: NetworkFileKind, r: Row): Record<string, unknown>
     if (v !== undefined && v !== '') o[k] = v;
   };
   if (kind === 'members') {
-    for (const k of ['memberId', 'category', 'email', 'phone', 'firstName', 'lastName', 'gender', 'country', 'state', 'city'])
+    for (const k of [
+      'memberId',
+      'category',
+      'email',
+      'phone',
+      'firstName',
+      'lastName',
+      'gender',
+      'country',
+      'state',
+      'city',
+    ])
       put(k, r[k]?.trim());
     put('dateOfBirth', r.dateOfBirth !== undefined ? dateOnly(r.dateOfBirth) : undefined);
-    for (const k of ['emailVerified', 'phoneVerified', 'active']) if (r[k] !== undefined && r[k].trim() !== '') o[k] = bool(r[k]);
+    for (const k of ['emailVerified', 'phoneVerified', 'active'])
+      if (r[k] !== undefined && r[k].trim() !== '') o[k] = bool(r[k]);
     put('marketingConsent', r.marketingConsent?.trim().toLowerCase());
     put('createdAt', r.createdAt !== undefined ? when(r.createdAt) : undefined);
     put('updatedAt', r.updatedAt !== undefined ? when(r.updatedAt) : undefined);
@@ -153,7 +165,9 @@ export function toObject(kind: NetworkFileKind, r: Row): Record<string, unknown>
         .filter(Boolean)
         .map((x) => {
           const i = x.indexOf('=');
-          return i > 0 ? { value: x.slice(0, i).trim(), label: x.slice(i + 1).trim() } : { value: x, label: x };
+          return i > 0
+            ? { value: x.slice(0, i).trim(), label: x.slice(i + 1).trim() }
+            : { value: x, label: x };
         });
   }
   return o;
@@ -170,7 +184,10 @@ export function readRows(kind: NetworkFileKind, table: string[][]) {
     .filter((c) => c.required && !columns.some((x) => x.field === c.field))
     .map((c) => c.field);
   if (missing.length) {
-    problems.push({ row: 1, message: `Missing column${missing.length > 1 ? 's' : ''}: ${missing.join(', ')}` });
+    problems.push({
+      row: 1,
+      message: `Missing column${missing.length > 1 ? 's' : ''}: ${missing.join(', ')}`,
+    });
     return { columns, rows: body.length, items: [] as unknown[], problems };
   }
   const items: unknown[] = [];

@@ -15,12 +15,20 @@ export const currentBrand = cache(async (): Promise<string | null> => {
   const jar = await cookies();
   const token = jar.get(SESSION_COOKIE)?.value;
   if (!token) return null;
-  const res = await fetch(`${API}/auth/me`, { cache: 'no-store', headers: { authorization: `Bearer ${token}` } });
+  const res = await fetch(`${API}/auth/me`, {
+    cache: 'no-store',
+    headers: { authorization: `Bearer ${token}` },
+  });
   if (!res.ok) return null;
   const me = (await res.json()) as { brands: string[]; permissions: string[] };
   const allowAll = me.permissions.includes('dashboard.read');
   const picked = jar.get(BRAND_COOKIE)?.value;
-  if (picked && (picked === 'all' || /^[a-z][a-z0-9_]{1,15}$/.test(picked)) && (picked === 'all' ? allowAll : me.brands.includes(picked))) return picked;
+  if (
+    picked &&
+    (picked === 'all' || /^[a-z][a-z0-9_]{1,15}$/.test(picked)) &&
+    (picked === 'all' ? allowAll : me.brands.includes(picked))
+  )
+    return picked;
   return allowAll ? 'all' : (me.brands[0] ?? null);
 });
 const API = process.env.MADP_API_URL ?? 'http://localhost:4000/api/v1';
@@ -83,5 +91,21 @@ export async function apiRaw(path: string): Promise<Response> {
       ...(token ? { authorization: `Bearer ${token}` } : {}),
       ...(brand ? { 'x-madp-brand': brand } : {}),
     },
+  });
+}
+
+/** Raw server-side POST with a JSON body (file downloads), with the same session and brand headers. */
+export async function apiRawPost(path: string, json: unknown): Promise<Response> {
+  const token = (await cookies()).get(SESSION_COOKIE)?.value;
+  const brand = await currentBrand();
+  return fetch(`${API}${path}`, {
+    method: 'POST',
+    cache: 'no-store',
+    headers: {
+      'content-type': 'application/json',
+      ...(token ? { authorization: `Bearer ${token}` } : {}),
+      ...(brand ? { 'x-madp-brand': brand } : {}),
+    },
+    body: JSON.stringify(json),
   });
 }

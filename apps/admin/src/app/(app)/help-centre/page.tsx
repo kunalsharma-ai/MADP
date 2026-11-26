@@ -2,9 +2,11 @@ import type { Metadata } from 'next';
 import { api } from '@/lib/api';
 import { withPanel } from '@/lib/panel';
 import { Badge, Card, CardHeader, EmptyState, PageHeader, Table, fmtDate } from '@/components/ui';
-import { HelpEditor, HelpStatusButtons } from './help-forms';
+import { HelpEditor, HelpImport, HelpStatusButtons } from './help-forms';
 
 export const metadata: Metadata = { title: 'Help centre' };
+
+import { DownloadMenu } from '@/components/files';
 
 interface Entry {
   id: string;
@@ -31,8 +33,43 @@ export default async function HelpCentrePage() {
         return (
           <div className="grid gap-4">
             <HelpEditor />
+            <HelpImport />
             <Card>
-              <CardHeader title={`${rows.length} entries`} />
+              <CardHeader
+                title={`${rows.length} entries`}
+                action={
+                  <DownloadMenu
+                    screen="help_centre"
+                    title="Help centre"
+                    columns={[
+                      { key: 'title', label: 'Question' },
+                      { key: 'answer', label: 'Answer' },
+                      { key: 'topic', label: 'Topic' },
+                      { key: 'types', label: 'Shown to' },
+                      { key: 'status', label: 'Status' },
+                      { key: 'slug', label: 'Slug' },
+                      { key: 'updated', label: 'Updated', type: 'date' },
+                    ]}
+                    rows={rows.map((e) => ({
+                      title: e.title,
+                      answer: e.body
+                        .map((b) =>
+                          typeof b === 'string'
+                            ? b
+                            : Object.values(b as object)
+                                .flat(2)
+                                .join(' · '),
+                        )
+                        .join('\n'),
+                      topic: e.topic,
+                      types: e.types.join(', '),
+                      status: e.status,
+                      slug: e.slug,
+                      updated: e.updatedAt,
+                    }))}
+                  />
+                }
+              />
               {rows.length === 0 ? (
                 <EmptyState title="No entries yet">
                   The member Help centre shows its built-in content until you publish one.

@@ -17,6 +17,8 @@ import {
 
 export const metadata: Metadata = { title: 'Quality & referrals' };
 
+import { DownloadMenu } from '@/components/files';
+
 interface Review {
   total: number;
   rows: {
@@ -87,7 +89,38 @@ export default async function QualityPage({
               </div>
             </Card>
             <Card>
-              <CardHeader title={`${fmt(review.total)} members at or below ${below}`} />
+              <CardHeader
+                title={`${fmt(review.total)} members at or below ${below}`}
+                action={
+                  <DownloadMenu
+                    screen="quality"
+                    title="Quality review"
+                    subtitle={`Score at or below ${below}`}
+                    columns={[
+                      { key: 'member', label: 'Member id' },
+                      { key: 'name', label: 'Name' },
+                      { key: 'segment', label: 'Segment' },
+                      { key: 'score', label: 'Score', type: 'number' },
+                      { key: 'tier', label: 'Tier' },
+                      { key: 'status', label: 'Status' },
+                      { key: 'rejected', label: 'Rejected responses', type: 'number' },
+                      { key: 'rule', label: 'Last rule' },
+                      { key: 'changed', label: 'Last change', type: 'date' },
+                    ]}
+                    rows={review.rows.map((r) => ({
+                      member: r.member,
+                      name: r.name,
+                      segment: r.category,
+                      score: r.score,
+                      tier: r.tier,
+                      status: r.status,
+                      rejected: r.rejectedResponses,
+                      rule: r.lastRule?.replaceAll('_', ' ') ?? '',
+                      changed: r.lastChangeAt,
+                    }))}
+                  />
+                }
+              />
               <form className="flex items-end gap-2 px-5 pt-3 text-[13px]" method="get">
                 <label>
                   Score at or below
@@ -131,6 +164,28 @@ export default async function QualityPage({
             <Card>
               <CardHeader
                 title="Referrers to check"
+                action={
+                  <DownloadMenu
+                    screen="quality"
+                    title="Referrers to check"
+                    columns={[
+                      { key: 'member', label: 'Member id' },
+                      { key: 'name', label: 'Referrer' },
+                      { key: 'referrals', label: 'Referrals', type: 'number' },
+                      { key: 'verified', label: 'E-mail verified', type: 'number' },
+                      { key: 'finished', label: 'Finished a survey', type: 'number' },
+                      { key: 'inactive', label: 'Never took part (%)', type: 'number' },
+                    ]}
+                    rows={fraud.referrers.map((r) => ({
+                      member: r.member,
+                      name: r.name,
+                      referrals: r.referrals,
+                      verified: r.verified,
+                      finished: r.finishedASurvey,
+                      inactive: r.inactiveShare,
+                    }))}
+                  />
+                }
                 hint={`Members with 5 or more referrals, by how many of them never finished a survey. ${fraud.notTracked.length ? `The panel doesn't record ${fraud.notTracked.map((k) => NOT_TRACKED[k] ?? k).join(' or ')}, so those can't be compared.` : ''}`}
               />
               {fraud.referrers.length === 0 ? (
@@ -165,6 +220,26 @@ export default async function QualityPage({
               <CardHeader
                 title="Payout destinations shared by several members"
                 hint="Shown masked. The full destination never leaves the panel."
+                action={
+                  <DownloadMenu
+                    screen="quality"
+                    title="Shared payout destinations"
+                    columns={[
+                      { key: 'method', label: 'Method' },
+                      { key: 'masked', label: 'Destination (masked)' },
+                      { key: 'members', label: 'Members' },
+                      { key: 'count', label: 'How many', type: 'number' },
+                      { key: 'points', label: 'Points paid', type: 'number' },
+                    ]}
+                    rows={fraud.sharedPayouts.map((g) => ({
+                      method: g.method,
+                      masked: g.masked,
+                      members: g.members.join(', '),
+                      count: g.members.length,
+                      points: g.points,
+                    }))}
+                  />
+                }
               />
               {fraud.sharedPayouts.length === 0 ? (
                 <EmptyState title="No shared payout destinations" />

@@ -5,9 +5,24 @@ import { type DataMode, type PanelCode } from '@madp/contracts';
 import { api } from '@/lib/api';
 import { Ring } from '@/components/dashboard/fx';
 import { PANEL_TONES } from '@/lib/panel-tones';
-import { Card, CardHeader, DataModeBadge, DemoBanner, EmptyState, PageHeader, Stat, Table, btn, fmt, fmtDate, input } from '@/components/ui';
+import {
+  Card,
+  CardHeader,
+  DataModeBadge,
+  DemoBanner,
+  EmptyState,
+  PageHeader,
+  Stat,
+  Table,
+  btn,
+  fmt,
+  fmtDate,
+  input,
+} from '@/components/ui';
 
 export const metadata: Metadata = { title: 'Profile freshness' };
+
+import { DownloadMenu } from '@/components/files';
 
 interface PanelFreshness {
   panel: PanelCode;
@@ -17,8 +32,21 @@ interface PanelFreshness {
   neverProfiled: number;
   dueForCheck: number;
   completeness: { band: string; members: number }[];
-  leastAnswered: { sourceQuestionId: string; label: string; answered: number; stale: number; coverage: number }[];
-  attributes: { key: string; label: string; sensitivity: string; members: number; coverage: number; stale: number }[];
+  leastAnswered: {
+    sourceQuestionId: string;
+    label: string;
+    answered: number;
+    stale: number;
+    coverage: number;
+  }[];
+  attributes: {
+    key: string;
+    label: string;
+    sensitivity: string;
+    members: number;
+    coverage: number;
+    stale: number;
+  }[];
   hiddenSensitiveQuestions: number;
   lastSync: string | null;
 }
@@ -45,11 +73,17 @@ function Cover({ x }: { x: number }) {
   );
 }
 
-export default async function FreshnessPage({ searchParams }: { searchParams: Promise<{ staleDays?: string }> }) {
+export default async function FreshnessPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ staleDays?: string }>;
+}) {
   const panelList = await getPanels();
   const sp = await searchParams;
   const days = /^\d+$/.test(sp.staleDays ?? '') ? sp.staleDays : '180';
-  const r = await api<{ dataMode: DataMode; staleDays: number; asOf: string; panels: PanelFreshness[] }>(`/profiles/freshness?staleDays=${days}`);
+  const r = await api<{ dataMode: DataMode; staleDays: number; asOf: string; panels: PanelFreshness[] }>(
+    `/profiles/freshness?staleDays=${days}`,
+  );
   return (
     <>
       <PageHeader
@@ -62,7 +96,15 @@ export default async function FreshnessPage({ searchParams }: { searchParams: Pr
       <form className="mb-4 flex items-end gap-2 text-[13px]">
         <label>
           An answer is stale after (days)
-          <input name="staleDays" type="number" min={7} max={730} defaultValue={r.staleDays} className={input} style={{ width: '8rem' }} />
+          <input
+            name="staleDays"
+            type="number"
+            min={7}
+            max={730}
+            defaultValue={r.staleDays}
+            className={input}
+            style={{ width: '8rem' }}
+          />
         </label>
         <button className={btn.secondary}>Apply</button>
         <span className="text-fg-3">The 6-month recheck rule uses 180 days.</span>
@@ -75,6 +117,47 @@ export default async function FreshnessPage({ searchParams }: { searchParams: Pr
               <CardHeader
                 title={panelName(p.panel, panelList)}
                 hint={`${fmt(p.questionBank)} questions in the bank · last import ${p.lastSync ? fmtDate(p.lastSync) : 'never'}`}
+                action={
+                  <DownloadMenu
+                    screen="freshness"
+                    title={`Profile freshness · ${panelShort(p.panel, panelList)}`}
+                    subtitle={`Stale after ${r.staleDays} days · ${fmt(p.activeMemberships)} active accounts, ${fmt(p.membersWithAnswers)} with any answer, ${fmt(p.neverProfiled)} never profiled, ${fmt(p.dueForCheck)} due for check`}
+                    columns={[
+                      { key: 'part', label: 'Part' },
+                      { key: 'label', label: 'Name' },
+                      { key: 'key', label: 'Key' },
+                      { key: 'members', label: 'Members', type: 'number' },
+                      { key: 'coverage', label: 'Coverage (%)', type: 'number' },
+                      { key: 'stale', label: 'Stale', type: 'number' },
+                    ]}
+                    rows={[
+                      ...p.completeness.map((b) => ({
+                        part: 'Share of bank answered',
+                        label: b.band,
+                        key: '',
+                        members: b.members,
+                        coverage: null,
+                        stale: null,
+                      })),
+                      ...p.attributes.map((a) => ({
+                        part: 'Attribute',
+                        label: a.label,
+                        key: a.key,
+                        members: a.members,
+                        coverage: Math.round(a.coverage * 100),
+                        stale: a.stale,
+                      })),
+                      ...p.leastAnswered.map((q) => ({
+                        part: 'Least-answered question',
+                        label: q.label,
+                        key: q.sourceQuestionId,
+                        members: q.answered,
+                        coverage: Math.round(q.coverage * 100),
+                        stale: q.stale,
+                      })),
+                    ]}
+                  />
+                }
               />
               <div className="grid grid-cols-2 items-center gap-3 px-5 py-4 md:grid-cols-[auto_repeat(4,1fr)]">
                 <Ring
@@ -87,9 +170,7 @@ export default async function FreshnessPage({ searchParams }: { searchParams: Pr
                   label={`${profiled(p)} of active accounts have answered at least one question`}
                 >
                   <span className="text-center leading-tight">
-                    <span className="block text-[15px] font-bold">
-                      {profiled(p)}
-                    </span>
+                    <span className="block text-[15px] font-bold">{profiled(p)}</span>
                     <span className="text-[10px] text-fg-3">profiled</span>
                   </span>
                 </Ring>
@@ -100,13 +181,18 @@ export default async function FreshnessPage({ searchParams }: { searchParams: Pr
               </div>
               <div className="grid gap-4 border-t border-border px-5 py-4 lg:grid-cols-3">
                 <div>
-                  <h3 className="mb-2 text-[12px] font-medium text-fg-2">Share of the question bank answered</h3>
+                  <h3 className="mb-2 text-[12px] font-medium text-fg-2">
+                    Share of the question bank answered
+                  </h3>
                   <ul className="space-y-1.5 text-[12px]">
                     {p.completeness.map((b) => (
                       <li key={b.band} className="grid grid-cols-[90px_1fr_48px] items-center gap-2">
                         <span className="text-fg-2">{b.band}</span>
                         <span className="h-2 rounded bg-surface-2">
-                          <span className="block h-2 rounded bg-accent" style={{ width: `${(b.members / max) * 100}%` }} />
+                          <span
+                            className="block h-2 rounded bg-accent"
+                            style={{ width: `${(b.members / max) * 100}%` }}
+                          />
                         </span>
                         <span className="text-right font-mono">{fmt(b.members)}</span>
                       </li>
@@ -114,9 +200,13 @@ export default async function FreshnessPage({ searchParams }: { searchParams: Pr
                   </ul>
                 </div>
                 <div className="lg:col-span-2">
-                  <h3 className="mb-2 text-[12px] font-medium text-fg-2">Canonical attributes (approved mappings only)</h3>
+                  <h3 className="mb-2 text-[12px] font-medium text-fg-2">
+                    Canonical attributes (approved mappings only)
+                  </h3>
                   {p.attributes.length === 0 ? (
-                    <EmptyState title="No approved mappings yet">Approve mappings in the mapping workbench to see coverage here.</EmptyState>
+                    <EmptyState title="No approved mappings yet">
+                      Approve mappings in the mapping workbench to see coverage here.
+                    </EmptyState>
                   ) : (
                     <Table head={['Attribute', 'Members', 'Coverage', 'Stale']}>
                       {p.attributes.map((a) => (
@@ -125,7 +215,9 @@ export default async function FreshnessPage({ searchParams }: { searchParams: Pr
                             {a.label} <span className="font-mono text-[11px] text-fg-3">{a.key}</span>
                           </td>
                           <td className="px-5 py-1.5">{fmt(a.members)}</td>
-                          <td className="px-5 py-1.5"><Cover x={a.coverage} /></td>
+                          <td className="px-5 py-1.5">
+                            <Cover x={a.coverage} />
+                          </td>
                           <td className="px-5 py-1.5">{fmt(a.stale)}</td>
                         </tr>
                       ))}
@@ -138,17 +230,21 @@ export default async function FreshnessPage({ searchParams }: { searchParams: Pr
                   {p.leastAnswered.map((q) => (
                     <tr key={q.sourceQuestionId}>
                       <td className="px-5 py-1.5">
-                        {q.label} <span className="font-mono text-[11px] text-fg-3">{q.sourceQuestionId}</span>
+                        {q.label}{' '}
+                        <span className="font-mono text-[11px] text-fg-3">{q.sourceQuestionId}</span>
                       </td>
                       <td className="px-5 py-1.5">{fmt(q.answered)}</td>
-                      <td className="px-5 py-1.5"><Cover x={q.coverage} /></td>
+                      <td className="px-5 py-1.5">
+                        <Cover x={q.coverage} />
+                      </td>
                       <td className="px-5 py-1.5">{fmt(q.stale)}</td>
                     </tr>
                   ))}
                 </Table>
                 {p.hiddenSensitiveQuestions ? (
                   <p className="px-5 py-2 text-[12px] text-fg-3">
-                    {fmt(p.hiddenSensitiveQuestions)} health questions are left out because you do not have health access.
+                    {fmt(p.hiddenSensitiveQuestions)} health questions are left out because you do not have
+                    health access.
                   </p>
                 ) : null}
               </div>

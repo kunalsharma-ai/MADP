@@ -3,6 +3,7 @@ import { api } from '@/lib/api';
 import { withPanel } from '@/lib/panel';
 import { Badge, Card, CardHeader, EmptyState, PageHeader, Table, fmt, fmtDate } from '@/components/ui';
 import { AudienceBuilder, SegmentEditor, type Segment } from './segment-forms';
+import { DownloadMenu } from '@/components/files';
 
 export const metadata: Metadata = { title: 'Segments & audiences' };
 
@@ -42,6 +43,36 @@ export default async function SegmentsPage() {
               <CardHeader
                 title={`${segments.length} segments`}
                 hint="Member counts by status. Changing a rule needs a reason and is audited."
+                action={
+                  <DownloadMenu
+                    screen="segments"
+                    title="Segments"
+                    columns={[
+                      { key: 'name', label: 'Segment' },
+                      { key: 'signup', label: 'Sign-up' },
+                      { key: 'countries', label: 'Countries' },
+                      { key: 'minAge', label: 'Min age', type: 'number' },
+                      { key: 'core', label: 'Core profiles' },
+                      { key: 'theme', label: 'Theme' },
+                      { key: 'active', label: 'Active', type: 'number' },
+                      { key: 'suspended', label: 'Suspended', type: 'number' },
+                      { key: 'archived', label: 'Archived', type: 'number' },
+                    ]}
+                    rows={segments.map((s) => ({
+                      name: s.name,
+                      signup: s.settings.signupOpen ? 'open' : 'closed',
+                      countries: s.settings.countries.length
+                        ? s.settings.countries.join(', ').toUpperCase()
+                        : 'any',
+                      minAge: s.settings.minAge,
+                      core: s.settings.coreProfiles.join(', '),
+                      theme: s.settings.theme,
+                      active: s.members.active ?? 0,
+                      suspended: s.members.suspended ?? 0,
+                      archived: s.members.archived ?? 0,
+                    }))}
+                  />
+                }
               />
               {segments.length === 0 ? (
                 <EmptyState title="No segments" />
@@ -89,6 +120,26 @@ export default async function SegmentsPage() {
               <CardHeader
                 title={`${audiences.length} saved audiences`}
                 hint="Use one when inviting members to a survey."
+                action={
+                  <DownloadMenu
+                    screen="segments"
+                    title="Saved audiences"
+                    columns={[
+                      { key: 'name', label: 'Audience' },
+                      { key: 'description', label: 'Description' },
+                      { key: 'filter', label: 'Filter' },
+                      { key: 'members', label: 'Members', type: 'number' },
+                      { key: 'counted', label: 'Counted', type: 'date' },
+                    ]}
+                    rows={audiences.map((a) => ({
+                      name: a.name,
+                      description: a.description,
+                      filter: describe(a.filter),
+                      members: a.lastCount,
+                      counted: a.lastCountAt,
+                    }))}
+                  />
+                }
               />
               {audiences.length === 0 ? (
                 <EmptyState title="No saved audiences yet">

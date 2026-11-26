@@ -10,6 +10,8 @@ import { Plus } from 'lucide-react';
 import { TopicInfo } from '@/components/screen-info';
 import { REGISTRY_HELP } from '@/lib/question-editor-help';
 import { cn } from '@/lib/cn';
+import { DownloadMenu } from '@/components/files';
+import { scopeText } from '@/lib/export-scope';
 import {
   Badge,
   Card,
@@ -41,7 +43,9 @@ export default async function QuestionsPage({
   const [data, seg, attrs] = await Promise.all([
     api<{ dataMode: DataMode; items: QuestionRow[] }>(`/questions?${qs}`),
     // Both lists only label the grouping; an admin without access to them still sees every question.
-    api<{ segments: { key: string; label: string }[]; rules: SegmentRuleInfo[] }>('/audience-segments').catch(() => ({ segments: [], rules: [] })),
+    api<{ segments: { key: string; label: string }[]; rules: SegmentRuleInfo[] }>('/audience-segments').catch(
+      () => ({ segments: [], rules: [] }),
+    ),
     api<{ attributes: Attribute[] }>('/audience/attributes').catch(() => ({ attributes: [] })),
   ]);
   const SIZE = 50;
@@ -73,11 +77,13 @@ export default async function QuestionsPage({
           aria-label="Panel"
         >
           <option value="">All panels</option>
-          {panelList.map((x) => x.code).map((p) => (
-            <option key={p} value={p}>
-              {panelName(p, panelList)}
-            </option>
-          ))}
+          {panelList
+            .map((x) => x.code)
+            .map((p) => (
+              <option key={p} value={p}>
+                {panelName(p, panelList)}
+              </option>
+            ))}
         </select>
         <input
           name="search"
@@ -94,20 +100,71 @@ export default async function QuestionsPage({
               key={v}
               href={`/questions?${new URLSearchParams({ ...(sp.panel ? { panel: sp.panel } : {}), ...(sp.search ? { search: sp.search } : {}), view: v })}`}
               aria-current={view === v ? 'page' : undefined}
-              className={cn('rounded-lg px-3 py-1.5 font-semibold', view === v ? 'bg-surface text-fg shadow-soft' : 'text-fg-2 hover:text-fg')}
+              className={cn(
+                'rounded-lg px-3 py-1.5 font-semibold',
+                view === v ? 'bg-surface text-fg shadow-soft' : 'text-fg-2 hover:text-fg',
+              )}
             >
-              {v === 'grouped' ? 'By segment & profile' : v === 'attributes' ? 'By attribute, all panels' : 'Plain list'}
+              {v === 'grouped'
+                ? 'By segment & profile'
+                : v === 'attributes'
+                  ? 'By attribute, all panels'
+                  : 'Plain list'}
             </Link>
           ))}
         </nav>
         <TopicInfo title="Three ways to view" help={REGISTRY_HELP.views} />
-        <span className="ml-auto text-xs text-fg-3">{fmt(data.items.length)} questions</span>
+        <span className="ml-auto flex items-center gap-2 text-xs text-fg-3">
+          {fmt(data.items.length)} questions
+          <DownloadMenu
+            screen="questions"
+            title="Question registry"
+            subtitle={scopeText(sp)}
+            columns={[
+              { key: 'panel', label: 'Panel' },
+              { key: 'id', label: 'Source question' },
+              { key: 'label', label: 'Wording' },
+              { key: 'type', label: 'Type' },
+              { key: 'parent', label: 'Depends on' },
+              { key: 'segments', label: 'Panel categories' },
+              { key: 'questionnaires', label: 'In profiles' },
+              { key: 'options', label: 'Options', type: 'number' },
+              { key: 'version', label: 'Version', type: 'number' },
+              { key: 'sensitivity', label: 'Sensitivity' },
+              { key: 'mapping', label: 'Mapping' },
+            ]}
+            rows={data.items.map((q) => ({
+              panel: q.panel.toUpperCase(),
+              id: q.sourceQuestionId,
+              label: q.label,
+              type: q.type,
+              parent: q.parent,
+              segments: q.sourceCategories.join(', '),
+              questionnaires: q.questionnaires.join(', '),
+              options: q.optionCount,
+              version: q.version,
+              sensitivity:
+                q.sensitivity === 'special_category'
+                  ? q.panel === 'mho'
+                    ? 'health / special'
+                    : 'special category'
+                  : 'standard',
+              mapping: q.mapping
+                ? q.mapping.status === 'approved'
+                  ? q.mapping.attributeKey
+                  : q.mapping.status
+                : '',
+            }))}
+          />
+        </span>
       </form>
       {view === 'attributes' && data.items.length ? (
         <AttributeMatrix
           items={data.items}
           attributes={attrs.attributes}
-          panels={panelList.filter((x) => !sp.panel || x.code === sp.panel).map(({ code, name }) => ({ code, name }))}
+          panels={panelList
+            .filter((x) => !sp.panel || x.code === sp.panel)
+            .map(({ code, name }) => ({ code, name }))}
           segmentLabel={Object.fromEntries(seg.segments.map((x) => [x.key, x.label]))}
         />
       ) : view === 'grouped' && data.items.length ? (
@@ -118,69 +175,76 @@ export default async function QuestionsPage({
           attributes={attrs.attributes}
         />
       ) : (
-      <Card>
-        {data.items.length === 0 ? (
-          <EmptyState title="No questions imported yet">Run an import from Connectors &amp; sync.</EmptyState>
-        ) : (
-          <Table
-            head={[
-              'Panel',
-              'Source question',
-              'Wording',
-              'Depends on',
-              'Options',
-              'Version',
-              'Sensitivity',
-              'Mapping',
-              '',
-            ]}
-          >
-            {shown.map((q) => (
-              <tr key={`${q.panel}-${q.sourceQuestionId}`} className="align-top">
-                <td className="px-5 py-2.5">
-                  <PanelChip panel={q.panel} />
-                </td>
-                <td className="px-5 py-2.5 font-mono text-xs">{q.sourceQuestionId}</td>
-                <td className="max-w-md px-5 py-2.5">
-                  {q.label}
-                  <div className="mt-0.5 text-[11px] text-fg-3">
-                    {q.sourceCategories.join(', ')}
-                    {q.questionnaires.length ? ` · in ${q.questionnaires.join(', ')}` : ''}
-                  </div>
-                </td>
-                <td className="px-5 py-2.5 font-mono text-xs text-fg-3">{q.parent ?? '—'}</td>
-                <td className="num px-5 py-2.5">{fmt(q.optionCount)}</td>
-                <td className="px-5 py-2.5">
-                  v{q.version}
-                  {q.versions > 1 ? <span className="text-fg-3"> · {q.versions} total</span> : null}
-                </td>
-                <td className="px-5 py-2.5">
-                  {q.sensitivity === 'special_category' ? (
-                    <Badge tone="danger">{q.panel === 'mho' ? 'health / special' : 'special category'}</Badge>
-                  ) : (
-                    <Badge>standard</Badge>
-                  )}
-                </td>
-                <td className="px-5 py-2.5">
-                  {q.mapping?.status === 'approved' ? (
-                    <Badge tone="teal">{q.mapping.attributeKey}</Badge>
-                  ) : q.mapping ? (
-                    <Link href={`/mappings?panel=${q.panel}`} className="text-xs text-accent hover:underline">
-                      {q.mapping.status}
-                    </Link>
-                  ) : (
-                    '—'
-                  )}
-                </td>
-                <td className="px-5 py-2.5">
-                  <EditLink q={q} />
-                </td>
-              </tr>
-            ))}
-          </Table>
-        )}
-        <Pager total={data.items.length} page={page} size={SIZE} path="/questions" params={sp} />
-      </Card>
+        <Card>
+          {data.items.length === 0 ? (
+            <EmptyState title="No questions imported yet">
+              Run an import from Connectors &amp; sync.
+            </EmptyState>
+          ) : (
+            <Table
+              head={[
+                'Panel',
+                'Source question',
+                'Wording',
+                'Depends on',
+                'Options',
+                'Version',
+                'Sensitivity',
+                'Mapping',
+                '',
+              ]}
+            >
+              {shown.map((q) => (
+                <tr key={`${q.panel}-${q.sourceQuestionId}`} className="align-top">
+                  <td className="px-5 py-2.5">
+                    <PanelChip panel={q.panel} />
+                  </td>
+                  <td className="px-5 py-2.5 font-mono text-xs">{q.sourceQuestionId}</td>
+                  <td className="max-w-md px-5 py-2.5">
+                    {q.label}
+                    <div className="mt-0.5 text-[11px] text-fg-3">
+                      {q.sourceCategories.join(', ')}
+                      {q.questionnaires.length ? ` · in ${q.questionnaires.join(', ')}` : ''}
+                    </div>
+                  </td>
+                  <td className="px-5 py-2.5 font-mono text-xs text-fg-3">{q.parent ?? '—'}</td>
+                  <td className="num px-5 py-2.5">{fmt(q.optionCount)}</td>
+                  <td className="px-5 py-2.5">
+                    v{q.version}
+                    {q.versions > 1 ? <span className="text-fg-3"> · {q.versions} total</span> : null}
+                  </td>
+                  <td className="px-5 py-2.5">
+                    {q.sensitivity === 'special_category' ? (
+                      <Badge tone="danger">
+                        {q.panel === 'mho' ? 'health / special' : 'special category'}
+                      </Badge>
+                    ) : (
+                      <Badge>standard</Badge>
+                    )}
+                  </td>
+                  <td className="px-5 py-2.5">
+                    {q.mapping?.status === 'approved' ? (
+                      <Badge tone="teal">{q.mapping.attributeKey}</Badge>
+                    ) : q.mapping ? (
+                      <Link
+                        href={`/mappings?panel=${q.panel}`}
+                        className="text-xs text-accent hover:underline"
+                      >
+                        {q.mapping.status}
+                      </Link>
+                    ) : (
+                      '—'
+                    )}
+                  </td>
+                  <td className="px-5 py-2.5">
+                    <EditLink q={q} />
+                  </td>
+                </tr>
+              ))}
+            </Table>
+          )}
+          <Pager total={data.items.length} page={page} size={SIZE} path="/questions" params={sp} />
+        </Card>
       )}
     </>
   );

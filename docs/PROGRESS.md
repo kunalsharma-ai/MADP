@@ -783,3 +783,20 @@ verified.
   builds leave the new columns empty ("—") and show the birth year instead of the age.
 - Tests: `apps/api/test/member-types.test.ts` (4) and MFR `tests/admin.members.test.mjs`. Screenshots:
   `/mnt/project-files/madp/preview-madp/member-types/`.
+
+## Download and upload across the console
+
+- One Download button (Excel, CSV, PDF, Word) on about 40 screens: `apps/admin/src/components/files.tsx` posts the
+  table on screen to `POST /api/v1/files/export/table` (or `/document` for a page). The file holds only what the screen
+  showed, so masking, teen hiding and MHO health rules still apply. The data mode comes from the brand's connector and
+  is printed on every file. `export.read` is needed, plus `export.pii` on screens listed `pii` in
+  `packages/contracts/src/files.ts` (`EXPORT_SCREENS`), plus the screen's own read permission. Every download is
+  audited as `screen.exported` (columns and row count, never values); a refusal is audited as `authz.denied`.
+- Reports also download as PDF and Word. Writers: `apps/api/src/exports/writers.ts` (no new PDF/Word library beyond
+  `pdf-lib` and `jszip`; PDF uses the standard fonts, so non-Latin text shows as `?` there; Excel and Word keep it).
+- Uploads never save by themselves: `POST /api/v1/files/parse` reads a spreadsheet or Word file and the screen shows a
+  preview first. Translations (Excel/CSV sheet per language, teen guardrail checked), site and legal pages (Word into
+  the editor, still Save draft / review / four eyes), help centre (Excel rows saved as drafts), survey reconciliation
+  (the client's list ticks Approve / Reject; the admin still gives a reason and presses Reconcile).
+- Not done here: the Members table export belongs to the member tools work (bulk actions).
+- Tests: `apps/api/src/exports/files.test.ts` (11) and `apps/api/test/files.test.ts` (6).

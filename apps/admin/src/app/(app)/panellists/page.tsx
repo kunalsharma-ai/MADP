@@ -10,6 +10,7 @@ import type { PanellistRow } from '@/lib/types';
 import {
   Badge,
   Card,
+  CardHeader,
   CategoryChip,
   DataModeBadge,
   DemoBanner,
@@ -20,6 +21,9 @@ import {
   btn,
   input,
 } from '@/components/ui';
+
+import { DownloadMenu } from '@/components/files';
+import { scopeText } from '@/lib/export-scope';
 
 export const metadata: Metadata = { title: 'Panellist directory' };
 
@@ -67,11 +71,13 @@ export default async function PanellistsPage({
           aria-label="Panel"
         >
           <option value="">All panels</option>
-          {panelList.map((x) => x.code).map((p) => (
-            <option key={p} value={p}>
-              {panelName(p, panelList)}
-            </option>
-          ))}
+          {panelList
+            .map((x) => x.code)
+            .map((p) => (
+              <option key={p} value={p}>
+                {panelName(p, panelList)}
+              </option>
+            ))}
         </select>
         <select
           name="category"
@@ -82,7 +88,7 @@ export default async function PanellistsPage({
           <option value="">All categories</option>
           {SEG_KEYS.map((c) => (
             <option key={c} value={c}>
-              {(SEG_LABEL[c] ?? c)}
+              {SEG_LABEL[c] ?? c}
             </option>
           ))}
         </select>
@@ -131,6 +137,50 @@ export default async function PanellistsPage({
         <button className={btn.secondary}>Search</button>
       </form>
       <Card>
+        <CardHeader
+          title={`${data.items.length} people on this page`}
+          hint="E-mails stay masked in downloads too."
+          action={
+            <DownloadMenu
+              screen="panellists"
+              title="Panellist directory"
+              subtitle={scopeText(sp)}
+              columns={[
+                { key: 'id', label: 'Person id' },
+                { key: 'panels', label: 'Panels' },
+                { key: 'categories', label: 'Categories' },
+                { key: 'teen', label: 'Teen' },
+                { key: 'guardian', label: 'Guardian consent' },
+                { key: 'country', label: 'Country' },
+                { key: 'state', label: 'State' },
+                { key: 'city', label: 'City' },
+                { key: 'born', label: 'Born', type: 'number' },
+                { key: 'gender', label: 'Gender' },
+                { key: 'email', label: 'E-mail (masked)' },
+                { key: 'verified', label: 'E-mail verified' },
+              ]}
+              rows={data.items.map((p) => ({
+                id: p.id,
+                panels: (p.memberships.length
+                  ? p.memberships
+                  : p.panels.map((x) => ({ panel: x, status: 'active' }))
+                )
+                  .map((m) => `${m.panel.toUpperCase()}${m.status !== 'active' ? ` (${m.status})` : ''}`)
+                  .join(', '),
+                categories: p.categories.map((c) => SEG_LABEL[c] ?? c).join(', '),
+                teen: p.minor,
+                guardian: p.guardianConsent ?? '',
+                country: p.country,
+                state: p.state,
+                city: p.city,
+                born: p.birthYear,
+                gender: p.gender,
+                email: p.emailMasked,
+                verified: p.emailVerified,
+              }))}
+            />
+          }
+        />
         {data.items.length === 0 ? (
           <EmptyState title="No people match">
             Try fewer filters. Search matches exact values only, so partial e-mails do not match.

@@ -3,6 +3,7 @@ import { api } from '@/lib/api';
 import { withPanel } from '@/lib/panel';
 import { Card, CardHeader, EmptyState, PageHeader, Table, fmt, input, btn } from '@/components/ui';
 import { ProfileRows, type ProfileRow } from './profile-rows';
+import { DownloadMenu } from '@/components/files';
 
 export const metadata: Metadata = { title: 'Profiles' };
 
@@ -56,6 +57,32 @@ export default async function ProfilesPage({
               <CardHeader
                 title={`${rows.length} profiles`}
                 hint="Changes save one row at a time and go into the audit log."
+                action={
+                  <DownloadMenu
+                    screen="profiles"
+                    title={`Profiles (${category})`}
+                    columns={[
+                      { key: 'name', label: 'Name' },
+                      { key: 'slug', label: 'Slug' },
+                      { key: 'category', label: 'Segment' },
+                      { key: 'order', label: 'Order', type: 'number' },
+                      { key: 'active', label: 'Active' },
+                      { key: 'points', label: 'Points', type: 'number' },
+                      { key: 'minutes', label: 'Minutes', type: 'number' },
+                      { key: 'questions', label: 'Questions', type: 'number' },
+                    ]}
+                    rows={rows.map((r) => ({
+                      name: r.name,
+                      slug: r.slug,
+                      category: r.category,
+                      order: r.sortOrder,
+                      active: r.isActive,
+                      points: r.points,
+                      minutes: r.estimatedMinutes,
+                      questions: r.questions,
+                    }))}
+                  />
+                }
               />
               {rows.length === 0 ? (
                 <EmptyState title="No profiles in this segment" />
@@ -67,6 +94,32 @@ export default async function ProfilesPage({
               <CardHeader
                 title="Completion"
                 hint="Members of the segment who answered at least one question (started) or all of them (finished), and the question where most starters stop."
+                action={
+                  <DownloadMenu
+                    screen="profiles"
+                    title={`Profile completion (${category})`}
+                    columns={[
+                      { key: 'slug', label: 'Profile' },
+                      { key: 'questions', label: 'Questions', type: 'number' },
+                      { key: 'members', label: 'Members', type: 'number' },
+                      { key: 'started', label: 'Started', type: 'number' },
+                      { key: 'finished', label: 'Finished', type: 'number' },
+                      { key: 'rate', label: 'Finish rate' },
+                      { key: 'drop', label: 'Drop-off question' },
+                      { key: 'dropMembers', label: 'Stopped there', type: 'number' },
+                    ]}
+                    rows={completion.profiles.map((p) => ({
+                      slug: p.slug,
+                      questions: p.questions,
+                      members: p.members,
+                      started: p.started,
+                      finished: p.finished,
+                      rate: pct(p.finished, p.started),
+                      drop: p.dropOff?.question ?? '',
+                      dropMembers: p.dropOff?.members ?? null,
+                    }))}
+                  />
+                }
               />
               <Table
                 head={[

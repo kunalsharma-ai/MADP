@@ -3,8 +3,21 @@ import { getPanels } from '@/lib/panels';
 import type { Metadata } from 'next';
 import { type DataMode, type PanelCode, type SessionUser } from '@madp/contracts';
 import { api } from '@/lib/api';
-import { Badge, Card, CardHeader, DataModeBadge, DemoBanner, EmptyState, PageHeader, PanelChip, Stat, fmt, fmtDate } from '@/components/ui';
+import {
+  Badge,
+  Card,
+  CardHeader,
+  DataModeBadge,
+  DemoBanner,
+  EmptyState,
+  PageHeader,
+  PanelChip,
+  Stat,
+  fmt,
+  fmtDate,
+} from '@/components/ui';
 import { ApproveSurvey, PanelButtons } from './loyalty-forms';
+import { DownloadMenu } from '@/components/files';
 
 export const metadata: Metadata = { title: 'Loyalty ledger' };
 
@@ -60,12 +73,18 @@ export default async function LoyaltyPage() {
       <DemoBanner mode={l.dataMode} />
       <p className="mb-4 rounded-lg bg-surface-2 px-3 py-2 text-[13px] text-fg-2">{l.note}</p>
       {l.panels.length === 0 ? (
-        <EmptyState title="No wallets mirrored yet">Run an import or sync of a panel that serves the rewards feed.</EmptyState>
+        <EmptyState title="No wallets mirrored yet">
+          Run an import or sync of a panel that serves the rewards feed.
+        </EmptyState>
       ) : (
         <div className="grid gap-4 xl:grid-cols-3">
           {l.panels.map((p) => (
             <Card key={p.panel}>
-              <CardHeader title={panelName(p.panel, panelList)} hint={`${fmt(p.accounts)} wallets`} action={<PanelButtons panel={p.panel} canRun={canRun} />} />
+              <CardHeader
+                title={panelName(p.panel, panelList)}
+                hint={`${fmt(p.accounts)} wallets`}
+                action={<PanelButtons panel={p.panel} canRun={canRun} />}
+              />
               <div className="grid grid-cols-2 gap-3 px-5 py-4">
                 <Stat label="Approved (outstanding)" value={fmt(p.approved)} />
                 <Stat label="Pending client approval" value={fmt(p.pending)} />
@@ -74,7 +93,9 @@ export default async function LoyaltyPage() {
               </div>
               <div className="px-5 pb-3 text-[12px] text-fg-2">
                 Approved by category:{' '}
-                {Object.entries(p.approvedByCategory).map(([k, v]) => `${k} ${fmt(v)}`).join(', ') || 'none'}
+                {Object.entries(p.approvedByCategory)
+                  .map(([k, v]) => `${k} ${fmt(v)}`)
+                  .join(', ') || 'none'}
                 <br />
                 Last mirror: rewards {p.lastSync.rewards ? fmtDate(p.lastSync.rewards) : 'never'}, responses{' '}
                 {p.lastSync.responses ? fmtDate(p.lastSync.responses) : 'never'}
@@ -101,7 +122,44 @@ export default async function LoyaltyPage() {
         </div>
       )}
       <Card className="mt-4">
-        <CardHeader title="Reconciliations" hint="A full read of the panel's feeds compared with the ledger, line by line" />
+        <CardHeader
+          title="Reconciliations"
+          hint="A full read of the panel's feeds compared with the ledger, line by line"
+          action={
+            <DownloadMenu
+              screen="points"
+              title="Loyalty reconciliations"
+              columns={[
+                { key: 'at', label: 'When', type: 'date' },
+                { key: 'panel', label: 'Panel' },
+                { key: 'result', label: 'Result' },
+                { key: 'repaired', label: 'Lines repaired', type: 'number' },
+                { key: 'rewards', label: 'Rewards read', type: 'number' },
+                { key: 'responses', label: 'Responses read', type: 'number' },
+                { key: 'missing', label: 'Missing', type: 'number' },
+                { key: 'different', label: 'Different', type: 'number' },
+                { key: 'onlyMadp', label: 'Only in MADP', type: 'number' },
+                { key: 'unmatched', label: 'Unknown members', type: 'number' },
+                { key: 'panelBalance', label: 'Panel balance', type: 'number' },
+                { key: 'madpBalance', label: 'MADP balance', type: 'number' },
+              ]}
+              rows={recs.map((r) => ({
+                at: r.at,
+                panel: r.panel.toUpperCase(),
+                result: r.report.matches ? 'matches' : 'differences',
+                repaired: r.repaired ? r.report.repairedLines : 0,
+                rewards: r.report.sourceRewards,
+                responses: r.report.sourceResponses,
+                missing: r.report.missing,
+                different: r.report.different,
+                onlyMadp: r.report.onlyInMadp,
+                unmatched: r.report.unmatched,
+                panelBalance: r.report.panelBalance,
+                madpBalance: r.report.madpApproved + r.report.madpPending,
+              }))}
+            />
+          }
+        />
         {recs.length === 0 ? (
           <EmptyState title="No reconciliations yet" />
         ) : (
@@ -110,14 +168,18 @@ export default async function LoyaltyPage() {
               <li key={r.id} className="flex flex-wrap items-center gap-2 px-5 py-2 text-[13px]">
                 <PanelChip panel={r.panel} />
                 <span className="text-fg-3">{fmtDate(r.at)}</span>
-                <Badge tone={r.report.matches ? 'teal' : 'warn'}>{r.report.matches ? 'matches' : 'differences'}</Badge>
+                <Badge tone={r.report.matches ? 'teal' : 'warn'}>
+                  {r.report.matches ? 'matches' : 'differences'}
+                </Badge>
                 {r.repaired ? <Badge>repaired ({fmt(r.report.repairedLines)} lines)</Badge> : null}
                 <span className="text-fg-2">
-                  {fmt(r.report.sourceRewards)} rewards and {fmt(r.report.sourceResponses)} responses read · missing {r.report.missing} ·
-                  different {r.report.different} · only in MADP {r.report.onlyInMadp} · unknown members {r.report.unmatched}
+                  {fmt(r.report.sourceRewards)} rewards and {fmt(r.report.sourceResponses)} responses read ·
+                  missing {r.report.missing} · different {r.report.different} · only in MADP{' '}
+                  {r.report.onlyInMadp} · unknown members {r.report.unmatched}
                 </span>
                 <span className="ml-auto text-[12px] text-fg-3">
-                  Panel balance {fmt(r.report.panelBalance)} vs MADP {fmt(r.report.madpApproved + r.report.madpPending)}
+                  Panel balance {fmt(r.report.panelBalance)} vs MADP{' '}
+                  {fmt(r.report.madpApproved + r.report.madpPending)}
                 </span>
               </li>
             ))}

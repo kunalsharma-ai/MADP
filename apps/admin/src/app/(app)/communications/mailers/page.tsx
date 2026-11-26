@@ -4,22 +4,38 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { type MailerPack, type MailerTemplate, type PanelCode } from '@madp/contracts';
 import { api } from '@/lib/api';
-import { Badge, Card, CardHeader, CategoryChip, EmptyState, PageHeader, PanelChip, Table } from '@/components/ui';
+import {
+  Badge,
+  Card,
+  CardHeader,
+  CategoryChip,
+  EmptyState,
+  PageHeader,
+  PanelChip,
+  Table,
+} from '@/components/ui';
 import { cn } from '@/lib/cn';
+import { DownloadMenu } from '@/components/files';
 
 export const metadata: Metadata = { title: 'Mailer library' };
 
 type Row = MailerTemplate & { unmappedFields: string[] };
 type List = { importedAt: string; packs: (Omit<MailerPack, 'templates'> & { templates: Row[] })[] };
 
-export default async function MailersPage({ searchParams }: { searchParams: Promise<{ panel?: string; sent?: string }> }) {
+export default async function MailersPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ panel?: string; sent?: string }>;
+}) {
   const panelList = await getPanels();
   const sp = await searchParams;
   const panel = panelList.map((x) => x.code).includes(sp.panel ?? '') ? (sp.panel as PanelCode) : undefined;
   const sent = sp.sent === 'panel' || sp.sent === 'madp' ? sp.sent : undefined;
   const data = await api<List>(`/communications/mailers${panel ? `?panel=${panel}` : ''}`);
   const keep = (o: Record<string, string | undefined>) => {
-    const q = new URLSearchParams(Object.entries({ panel, sent, ...o }).filter((e): e is [string, string] => !!e[1]));
+    const q = new URLSearchParams(
+      Object.entries({ panel, sent, ...o }).filter((e): e is [string, string] => !!e[1]),
+    );
     return `/communications/mailers${q.size ? `?${q}` : ''}`;
   };
   const show = (t: Row) => !sent || (sent === 'madp' ? !!t.campaignKind : !t.campaignKind);
@@ -37,7 +53,10 @@ export default async function MailersPage({ searchParams }: { searchParams: Prom
           <Link
             key={p ?? 'all'}
             href={keep({ panel: p })}
-            className={cn('rounded-full border border-border px-3 py-1', panel === p && 'border-accent bg-accent-soft text-accent')}
+            className={cn(
+              'rounded-full border border-border px-3 py-1',
+              panel === p && 'border-accent bg-accent-soft text-accent',
+            )}
           >
             {p ? panelShort(p, panelList) : 'Every panel'}
           </Link>
@@ -47,9 +66,16 @@ export default async function MailersPage({ searchParams }: { searchParams: Prom
           <Link
             key={s ?? 'any'}
             href={keep({ sent: s })}
-            className={cn('rounded-full border border-border px-3 py-1', sent === s && 'border-accent bg-accent-soft text-accent')}
+            className={cn(
+              'rounded-full border border-border px-3 py-1',
+              sent === s && 'border-accent bg-accent-soft text-accent',
+            )}
           >
-            {s === 'madp' ? 'Usable for MADP campaigns' : s === 'panel' ? 'Sent by the panel' : 'All templates'}
+            {s === 'madp'
+              ? 'Usable for MADP campaigns'
+              : s === 'panel'
+                ? 'Sent by the panel'
+                : 'All templates'}
           </Link>
         ))}
       </nav>
@@ -63,16 +89,46 @@ export default async function MailersPage({ searchParams }: { searchParams: Prom
               <CardHeader
                 title={
                   <span className="flex flex-wrap items-center gap-2">
-                    <PanelChip panel={p.panel} /> {p.title} {p.category ? <CategoryChip category={p.category} /> : null}
+                    <PanelChip panel={p.panel} /> {p.title}{' '}
+                    {p.category ? <CategoryChip category={p.category} /> : null}
                   </span>
                 }
                 hint={`${rows.length} of ${p.templates.length} templates`}
+                action={
+                  <DownloadMenu
+                    screen="mailers"
+                    title={`Mailer library · ${p.title}`}
+                    columns={[
+                      { key: 'name', label: 'Template' },
+                      { key: 'group', label: 'Group' },
+                      { key: 'sentBy', label: 'Sent by' },
+                      { key: 'subject', label: 'Sample subject' },
+                      { key: 'fields', label: 'Merge fields' },
+                      { key: 'unmapped', label: 'Not mapped' },
+                    ]}
+                    rows={rows.map((t) => ({
+                      name: t.name,
+                      group: t.group,
+                      sentBy: t.campaignKind
+                        ? `MADP campaign: ${t.campaignKind.replaceAll('_', ' ')}`
+                        : t.internal
+                          ? 'Panel, to the team'
+                          : 'Panel, at the event',
+                      subject: t.subjectsSample[0] ?? '',
+                      fields: t.fields.join(', '),
+                      unmapped: t.unmappedFields.join(', '),
+                    }))}
+                  />
+                }
               />
               <Table head={['Template', 'Group', 'Sent by', 'Sample subject', 'Merge fields']}>
                 {rows.map((t) => (
                   <tr key={t.id}>
                     <td className="px-5 py-2">
-                      <Link className="text-accent underline" href={`/communications/mailers/${p.id}/${t.id}`}>
+                      <Link
+                        className="text-accent underline"
+                        href={`/communications/mailers/${p.id}/${t.id}`}
+                      >
                         {t.name}
                       </Link>
                     </td>
@@ -91,7 +147,9 @@ export default async function MailersPage({ searchParams }: { searchParams: Prom
                     </td>
                     <td className="px-5 py-2 font-mono text-[12px]">
                       {t.fields.length}
-                      {t.unmappedFields.length ? <Badge tone="warn">{t.unmappedFields.length} not mapped</Badge> : null}
+                      {t.unmappedFields.length ? (
+                        <Badge tone="warn">{t.unmappedFields.length} not mapped</Badge>
+                      ) : null}
                     </td>
                   </tr>
                 ))}

@@ -6,6 +6,8 @@ import { ReasonAction } from '@/components/reason-action';
 
 export const metadata: Metadata = { title: 'Data requests' };
 
+import { DownloadMenu } from '@/components/files';
+
 interface Req {
   id: string;
   kind: string;
@@ -28,7 +30,35 @@ export default async function DataRequestsPage() {
         const r = await api<{ total: number; items: Req[] }>('/panel/data-requests?status=open');
         return (
           <Card>
-            <CardHeader title={`${r.total} open`} />
+            <CardHeader
+              title={`${r.total} open`}
+              action={
+                <DownloadMenu
+                  screen="data_requests"
+                  title="Data requests (open)"
+                  columns={[
+                    { key: 'name', label: 'Member' },
+                    { key: 'email', label: 'E-mail' },
+                    { key: 'teen', label: 'Teen' },
+                    { key: 'kind', label: 'Request' },
+                    { key: 'reason', label: 'Reason' },
+                    { key: 'status', label: 'Status' },
+                    { key: 'days', label: 'Waiting (days)', type: 'number' },
+                    { key: 'created', label: 'Asked', type: 'date' },
+                  ]}
+                  rows={r.items.map((d) => ({
+                    name: d.member?.name ?? '',
+                    email: d.member?.email ?? '',
+                    teen: d.member?.teen ?? null,
+                    kind: d.kind,
+                    reason: d.reason,
+                    status: d.status,
+                    days: d.ageDays,
+                    created: d.createdAt,
+                  }))}
+                />
+              }
+            />
             {r.items.length === 0 ? (
               <EmptyState title="No open requests" />
             ) : (

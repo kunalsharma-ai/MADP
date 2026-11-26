@@ -7,6 +7,8 @@ import { ReasonAction } from '@/components/reason-action';
 
 export const metadata: Metadata = { title: 'Teen registrations' };
 
+import { DownloadMenu } from '@/components/files';
+
 interface Registration {
   id: string;
   reference: string;
@@ -90,11 +92,42 @@ export default async function TeenRegistrationsPage({
                 title={status ? LABEL[status] : 'Open registrations'}
                 hint={status ? undefined : 'Everything not yet active, rejected or cancelled.'}
                 action={
-                  status ? (
-                    <a className="text-[12.5px] text-accent" href="/teens/registrations">
-                      Show open ones
-                    </a>
-                  ) : undefined
+                  <span className="flex flex-wrap items-center gap-3">
+                    {status ? (
+                      <a className="text-[12.5px] text-accent" href="/teens/registrations">
+                        Show open ones
+                      </a>
+                    ) : null}
+                    <DownloadMenu
+                      screen="teen_registrations"
+                      title="Teen registrations"
+                      subtitle={`Showing: ${status ? LABEL[status] : 'Open registrations'}`}
+                      columns={[
+                        { key: 'reference', label: 'Reference' },
+                        { key: 'teen', label: 'Teen' },
+                        { key: 'born', label: 'Born', type: 'number' },
+                        { key: 'status', label: 'Status' },
+                        { key: 'relation', label: 'Guardian' },
+                        { key: 'email', label: 'Guardian e-mail' },
+                        { key: 'expires', label: 'Expires', type: 'date' },
+                        { key: 'note', label: 'Last note' },
+                        { key: 'by', label: 'By' },
+                        { key: 'updated', label: 'Last change', type: 'date' },
+                      ]}
+                      rows={r.items.map((x) => ({
+                        reference: x.reference,
+                        teen: x.teen,
+                        born: x.birthYear,
+                        status: LABEL[x.status] ?? x.status,
+                        relation: x.guardian.relation,
+                        email: x.guardian.email,
+                        expires: x.expiresAt,
+                        note: x.lastNote,
+                        by: x.lastBy,
+                        updated: x.updatedAt,
+                      }))}
+                    />
+                  </span>
                 }
               />
               {r.items.length === 0 ? (

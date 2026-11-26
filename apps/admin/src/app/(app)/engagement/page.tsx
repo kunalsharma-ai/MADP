@@ -3,6 +3,7 @@ import { api } from '@/lib/api';
 import { withPanel } from '@/lib/panel';
 import { Badge, Card, CardHeader, EmptyState, PageHeader, Stat, Table, fmt, fmtDate } from '@/components/ui';
 import { IdeaButtons, PollForm, PublishToggle, StoryForm } from './forms';
+import { DownloadMenu } from '@/components/files';
 
 export const metadata: Metadata = { title: 'Engagement' };
 
@@ -104,7 +105,35 @@ export default async function EngagementPage() {
             </Card>
             <PollForm />
             <Card>
-              <CardHeader title={`Tasks (${fmt(tasks.length)})`} />
+              <CardHeader
+                title={`Tasks (${fmt(tasks.length)})`}
+                action={
+                  <DownloadMenu
+                    screen="engagement"
+                    title="Engagement tasks"
+                    columns={[
+                      { key: 'title', label: 'Task' },
+                      { key: 'kind', label: 'Kind' },
+                      { key: 'for', label: 'For' },
+                      { key: 'when', label: 'When' },
+                      { key: 'points', label: 'Points', type: 'number' },
+                      { key: 'entries', label: 'Answers', type: 'number' },
+                      { key: 'waiting', label: 'Waiting', type: 'number' },
+                      { key: 'active', label: 'Active' },
+                    ]}
+                    rows={tasks.map((t) => ({
+                      title: t.title,
+                      kind: t.kind,
+                      for: t.audience.join(', '),
+                      when: t.day ?? t.month ?? '',
+                      points: t.points,
+                      entries: t.entries,
+                      waiting: t.waiting,
+                      active: t.active,
+                    }))}
+                  />
+                }
+              />
               {tasks.length === 0 ? (
                 <EmptyState title="No tasks yet">
                   Daily polls come from the built-in rotation until you schedule one.
@@ -135,6 +164,26 @@ export default async function EngagementPage() {
               <CardHeader
                 title="Stories and insights"
                 hint="An insight needs at least 30 respondents behind it."
+                action={
+                  <DownloadMenu
+                    screen="engagement"
+                    title="Stories and insights"
+                    columns={[
+                      { key: 'title', label: 'Story' },
+                      { key: 'type', label: 'Type' },
+                      { key: 'summary', label: 'Summary' },
+                      { key: 'published', label: 'Published' },
+                      { key: 'at', label: 'Published at', type: 'date' },
+                    ]}
+                    rows={stories.map((s) => ({
+                      title: s.title,
+                      type: s.type,
+                      summary: s.summary,
+                      published: s.published,
+                      at: s.publishedAt,
+                    }))}
+                  />
+                }
               />
               {stories.length === 0 ? (
                 <EmptyState title="No stories yet" />

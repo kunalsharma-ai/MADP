@@ -5,6 +5,8 @@ import { withPanel } from '@/lib/panel';
 import { Badge, Card, CardHeader, EmptyState, PageHeader, Table, btn, fmt, input } from '@/components/ui';
 import { NewSurvey } from './new-survey';
 import { SURVEY_TONE, type SurveyRow } from './shared';
+import { DownloadMenu } from '@/components/files';
+import { scopeText } from '@/lib/export-scope';
 
 export const metadata: Metadata = { title: 'Surveys' };
 
@@ -50,7 +52,47 @@ export default async function SurveysPage({
               </form>
             </Card>
             <Card>
-              <CardHeader title={`${fmt(rows.length)} surveys`} />
+              <CardHeader
+                title={`${fmt(rows.length)} surveys`}
+                action={
+                  <DownloadMenu
+                    screen="surveys"
+                    title="Surveys"
+                    subtitle={scopeText({ search: sp.q, status: sp.status, segment: sp.category })}
+                    columns={[
+                      { key: 'name', label: 'Survey' },
+                      { key: 'slug', label: 'Slug' },
+                      { key: 'segment', label: 'Segment' },
+                      { key: 'status', label: 'Status' },
+                      { key: 'points', label: 'Points', type: 'number' },
+                      { key: 'loi', label: 'LOI (min)', type: 'number' },
+                      { key: 'minQuality', label: 'Min quality', type: 'number' },
+                      { key: 'invited', label: 'Invited', type: 'number' },
+                      { key: 'complete', label: 'Complete', type: 'number' },
+                      { key: 'screened', label: 'Screened out', type: 'number' },
+                      { key: 'rejected', label: 'Rejected', type: 'number' },
+                      { key: 'created', label: 'Created', type: 'date' },
+                    ]}
+                    rows={rows.map((s) => {
+                      const c = s.counts ?? {};
+                      return {
+                        name: s.name,
+                        slug: s.slug,
+                        segment: s.category,
+                        status: s.status === 'active' ? 'live' : s.status,
+                        points: s.points,
+                        loi: s.loi,
+                        minQuality: s.minQualityScore,
+                        invited: Object.values(c).reduce((a, b) => a + b, 0),
+                        complete: c.complete ?? 0,
+                        screened: (c.terminate ?? 0) + (c.overquota ?? 0),
+                        rejected: c.rejected ?? 0,
+                        created: s.createdAt,
+                      };
+                    })}
+                  />
+                }
+              />
               {rows.length === 0 ? (
                 <EmptyState title="No surveys yet">Create the first one below.</EmptyState>
               ) : (

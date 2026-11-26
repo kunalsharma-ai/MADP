@@ -4,15 +4,36 @@ import type { Metadata } from 'next';
 import { type DataMode, type PanelCode, type SessionUser } from '@madp/contracts';
 import { api } from '@/lib/api';
 import { PANEL_TONES } from '@/lib/panel-tones';
-import { Badge, Card, CardHeader, DataModeBadge, DemoBanner, EmptyState, PageHeader, PanelChip, Table, fmt, fmtDate } from '@/components/ui';
+import {
+  Badge,
+  Card,
+  CardHeader,
+  DataModeBadge,
+  DemoBanner,
+  EmptyState,
+  PageHeader,
+  PanelChip,
+  Table,
+  fmt,
+  fmtDate,
+} from '@/components/ui';
 import { PreferenceForm } from './consent-forms';
+import { DownloadMenu } from '@/components/files';
 
 export const metadata: Metadata = { title: 'Consent & preferences' };
 
 interface PanelConsent {
   panel: PanelCode;
   purposes: Record<string, Record<string, number>>;
-  contactable: { memberships: number; active: number; adults: number; termsAccepted: number; usableAddress: number; notOptedOut: number; reachable: number };
+  contactable: {
+    memberships: number;
+    active: number;
+    adults: number;
+    termsAccepted: number;
+    usableAddress: number;
+    notOptedOut: number;
+    reachable: number;
+  };
   madpOptOuts: Record<string, number>;
   gaps: string[];
 }
@@ -78,7 +99,10 @@ export default async function ConsentPage() {
       <div className="grid gap-4 xl:grid-cols-3">
         {s.panels.map((p) => (
           <Card key={p.panel}>
-            <CardHeader title={panelName(p.panel, panelList)} hint="Who MADP may e-mail today, step by step" />
+            <CardHeader
+              title={panelName(p.panel, panelList)}
+              hint="Who MADP may e-mail today, step by step"
+            />
             <ol className="space-y-2 px-5 py-4 text-[13px]">
               {FUNNEL.map(([k, label], i) => {
                 const top = Math.max(1, p.contactable.memberships);
@@ -135,7 +159,34 @@ export default async function ConsentPage() {
       {canManage ? <PreferenceForm panels={s.panels.map((p) => p.panel)} /> : null}
       <div className="mt-4 grid gap-4 2xl:grid-cols-2">
         <Card>
-          <CardHeader title="Recent consent changes" hint="Append-only history, written on every change the panel reports" />
+          <CardHeader
+            title="Recent consent changes"
+            hint="Append-only history, written on every change the panel reports"
+            action={
+              <DownloadMenu
+                screen="consent"
+                title="Recent consent changes"
+                columns={[
+                  { key: 'at', label: 'When', type: 'date' },
+                  { key: 'panel', label: 'Panel' },
+                  { key: 'purpose', label: 'Purpose' },
+                  { key: 'before', label: 'Was' },
+                  { key: 'status', label: 'Now' },
+                  { key: 'source', label: 'Source' },
+                  { key: 'person', label: 'Person id' },
+                ]}
+                rows={events.map((e) => ({
+                  at: e.at,
+                  panel: e.panel.toUpperCase(),
+                  purpose: purposeLabel(e.purpose),
+                  before: e.previousStatus,
+                  status: e.status,
+                  source: e.source,
+                  person: e.personId,
+                }))}
+              />
+            }
+          />
           {events.length === 0 ? (
             <EmptyState title="No consent recorded yet" />
           ) : (
@@ -143,7 +194,9 @@ export default async function ConsentPage() {
               {events.map((e) => (
                 <tr key={e.id}>
                   <td className="px-5 py-2 text-fg-3">{fmtDate(e.at)}</td>
-                  <td className="px-5 py-2"><PanelChip panel={e.panel} /></td>
+                  <td className="px-5 py-2">
+                    <PanelChip panel={e.panel} />
+                  </td>
                   <td className="px-5 py-2 text-[12.5px]">{purposeLabel(e.purpose)}</td>
                   <td className="px-5 py-2">
                     {e.previousStatus ? `${e.previousStatus} → ` : ''}
@@ -158,7 +211,34 @@ export default async function ConsentPage() {
           )}
         </Card>
         <Card>
-          <CardHeader title="Channel opt-outs recorded in MADP" hint="Each line is kept; lifting an opt-out adds a new line" />
+          <CardHeader
+            title="Channel opt-outs recorded in MADP"
+            hint="Each line is kept; lifting an opt-out adds a new line"
+            action={
+              <DownloadMenu
+                screen="consent"
+                title="Channel opt-outs"
+                columns={[
+                  { key: 'at', label: 'When', type: 'date' },
+                  { key: 'panel', label: 'Panel' },
+                  { key: 'channel', label: 'Channel' },
+                  { key: 'status', label: 'Status' },
+                  { key: 'source', label: 'Source' },
+                  { key: 'reason', label: 'Reason' },
+                  { key: 'person', label: 'Person id' },
+                ]}
+                rows={prefs.map((r) => ({
+                  at: r.recordedAt,
+                  panel: r.panel.toUpperCase(),
+                  channel: r.channel,
+                  status: r.status,
+                  source: r.source.replace('_', ' '),
+                  reason: r.reason,
+                  person: r.personId,
+                }))}
+              />
+            }
+          />
           {prefs.length === 0 ? (
             <EmptyState title="No opt-outs recorded" />
           ) : (
@@ -166,10 +246,16 @@ export default async function ConsentPage() {
               {prefs.map((r) => (
                 <tr key={r.id}>
                   <td className="px-5 py-2 text-fg-3">{fmtDate(r.recordedAt)}</td>
-                  <td className="px-5 py-2"><PanelChip panel={r.panel} /></td>
+                  <td className="px-5 py-2">
+                    <PanelChip panel={r.panel} />
+                  </td>
                   <td className="px-5 py-2">{r.channel}</td>
-                  <td className="px-5 py-2"><Badge tone={r.status === 'opted_out' ? 'warn' : 'teal'}>{r.status}</Badge></td>
-                  <td className="px-5 py-2 text-[12px] text-fg-2">{r.source.replace('_', ' ')}: {r.reason}</td>
+                  <td className="px-5 py-2">
+                    <Badge tone={r.status === 'opted_out' ? 'warn' : 'teal'}>{r.status}</Badge>
+                  </td>
+                  <td className="px-5 py-2 text-[12px] text-fg-2">
+                    {r.source.replace('_', ' ')}: {r.reason}
+                  </td>
                 </tr>
               ))}
             </Table>

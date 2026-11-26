@@ -3,6 +3,7 @@ import type { RoleGrant } from '@madp/contracts';
 import { api } from '@/lib/api';
 import { Badge, Card, CardHeader, PageHeader, Table, fmtDate } from '@/components/ui';
 import { AdminRowActions, CreateAdmin, RoleEditor } from './admin-forms';
+import { DownloadMenu } from '@/components/files';
 
 export const metadata: Metadata = { title: 'Admins & roles' };
 
@@ -41,7 +42,32 @@ export default async function AdminsPage() {
       />
       <div className="grid gap-4 xl:grid-cols-[2fr_1fr]">
         <Card>
-          <CardHeader title="Admins" hint={`${admins.length} accounts`} />
+          <CardHeader
+            title="Admins"
+            hint={`${admins.length} accounts`}
+            action={
+              <DownloadMenu
+                screen="admins"
+                title="Admins"
+                columns={[
+                  { key: 'name', label: 'Name' },
+                  { key: 'email', label: 'E-mail' },
+                  { key: 'roles', label: 'Roles and brands' },
+                  { key: 'mfa', label: 'Two-factor' },
+                  { key: 'last', label: 'Last sign-in', type: 'date' },
+                  { key: 'status', label: 'Status' },
+                ]}
+                rows={admins.map((a) => ({
+                  name: a.displayName,
+                  email: a.email,
+                  roles: a.grants.map((g) => `${g.role} (${brandText(g.brands)})`).join('; '),
+                  mfa: a.mfaEnabled ? 'On' : 'Off',
+                  last: a.lastLoginAt,
+                  status: a.isActive ? 'Active' : 'Disabled',
+                }))}
+              />
+            }
+          />
           <Table head={['Admin', 'Roles and brands', 'Two-factor', 'Last sign-in', 'Status', '']}>
             {admins.map((a) => (
               <tr key={a.id} className="align-top">

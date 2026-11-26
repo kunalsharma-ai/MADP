@@ -54,6 +54,7 @@ import { VerificationService } from './verification/verification.service.js';
 import { VerificationController } from './verification/verification.controller.js';
 import { ReportsService } from './reports/reports.service.js';
 import { ReportsController } from './reports/reports.controller.js';
+import { FilesController } from './exports/files.controller.js';
 import { InsightsService } from './insights/insights.service.js';
 import { InsightsController } from './insights/insights.controller.js';
 import { MailersService } from './mailers/mailers.service.js';
@@ -87,7 +88,9 @@ export class AppModule {
   static forRoot(env: ApiEnv): DynamicModule {
     return {
       module: AppModule,
-      imports: [ThrottlerModule.forRoot([{ name: 'default', ttl: 60_000, limit: env.RATE_LIMIT_PER_MINUTE ?? 300 }])],
+      imports: [
+        ThrottlerModule.forRoot([{ name: 'default', ttl: 60_000, limit: env.RATE_LIMIT_PER_MINUTE ?? 300 }]),
+      ],
       controllers: [
         HealthController,
         MetaController,
@@ -126,6 +129,7 @@ export class AppModule {
         FreshnessController,
         VerificationController,
         ReportsController,
+        FilesController,
         InsightsController,
         MailersController,
         PanelConnectionsController,
