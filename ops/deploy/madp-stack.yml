@@ -25,6 +25,15 @@ x-api-env: &api-env
   T2O_ADMIN_API_BASE_URL: ${T2O_ADMIN_API_BASE_URL:-https://www.turn2opinion.com}
   MFR_ADMIN_API_BASE_URL: ${MFR_ADMIN_API_BASE_URL:-https://www.myfrequentrewards.com}
   MHO_ADMIN_API_BASE_URL: ${MHO_ADMIN_API_BASE_URL:-https://www.myhealthopinions.com}
+  # Sync reads the panel's /api/v1/changes/* feeds over HTTPS with an admin token per brand (never the panel database).
+  T2O_API_BASE_URL: ${T2O_API_BASE_URL:-https://www.turn2opinion.com}
+  MFR_API_BASE_URL: ${MFR_API_BASE_URL:-https://www.myfrequentrewards.com}
+  MHO_API_BASE_URL: ${MHO_API_BASE_URL:-https://www.myhealthopinions.com}
+  T2O_API_TOKEN_FILE: /run/secrets/madp_t2o_api_token
+  MFR_API_TOKEN_FILE: /run/secrets/madp_mfr_api_token
+  MHO_API_TOKEN_FILE: /run/secrets/madp_mho_api_token
+  # 0 keeps the schedule off. Sync only runs for panels listed in LIVE_SOURCE_APPROVED_PANELS.
+  SYNC_INTERVAL_MINUTES: ${SYNC_INTERVAL_MINUTES:-0}
   DATABASE_URL_FILE: /run/secrets/madp_database_url
   MONGODB_URL_FILE: /run/secrets/madp_mongodb_url
   AUTH_JWT_SECRET_FILE: /run/secrets/madp_auth_jwt_secret
@@ -39,6 +48,9 @@ x-api-secrets: &api-secrets
   - madp_field_encryption_key
   - madp_pii_hash_key
   - madp_panel_admin_api_secret
+  - madp_t2o_api_token
+  - madp_mfr_api_token
+  - madp_mho_api_token
 
 services:
   gateway:
@@ -161,6 +173,9 @@ secrets:
   madp_field_encryption_key: { external: true }
   madp_pii_hash_key: { external: true }
   madp_panel_admin_api_secret: { external: true }
+  madp_t2o_api_token: { external: true }
+  madp_mfr_api_token: { external: true }
+  madp_mho_api_token: { external: true }
   madp_postgres_password: { external: true }
   madp_mongodb_password: { external: true }
 

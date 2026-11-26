@@ -71,7 +71,14 @@ First deploy, on a manager node:
    openssl rand -base64 32 | docker secret create madp_field_encryption_key -
    openssl rand -hex 32    | docker secret create madp_pii_hash_key -
    printf '%s' "<the same value as the panel backend's MADP_ADMIN_API_SECRETS>" | docker secret create madp_panel_admin_api_secret -
+   printf '%s' "<T2O admin integration token>" | docker secret create madp_t2o_api_token -
+   printf '%s' "<MFR admin integration token>" | docker secret create madp_mfr_api_token -
+   printf '%s' "<MHO admin integration token>" | docker secret create madp_mho_api_token -
    ```
+
+   MADP reaches the panels only over HTTPS, never through their database. The three tokens are for an admin
+   integration account on each brand; sync reads `/api/v1/changes/*` with them. Until a brand has its token, create
+   its secret with `printf 'none'` and leave that brand out of `LIVE_SOURCE_APPROVED_PANELS`.
 
    Back up `madp_field_encryption_key` and `madp_pii_hash_key` apart from the database: losing either loses or unlinks
    personal data.
@@ -88,6 +95,8 @@ First deploy, on a manager node:
 5. Deploy: `MADP_HOST=<host> MADP_REGISTRY=<registry> MADP_VERSION=<version> docker stack deploy -c
    ops/deploy/madp-stack.yml madp`. The `migrate` job runs the migrations once and exits; check it with `docker service
    ps madp_migrate`. The api replicas never migrate.
+   For real sync, add `LIVE_SOURCE_APPROVED_PANELS=t2o,mfr,mho SYNC_INTERVAL_MINUTES=15` to the same command (only with
+   Kunal's approval, and only for brands whose token secret is real). Without them MADP reads no panel data.
 6. Create the first admin: `docker exec -it $(docker ps -q -f name=madp_api | head -1) node dist/scripts/create-admin.js
    --email <e-mail> --name <name> --role super_admin`, with `MADP_ADMIN_PASSWORD` set for that one command.
 7. Add MADP to the proxy manager (below), then check `https://<host>/api/v1/health` and sign in with MFA.
