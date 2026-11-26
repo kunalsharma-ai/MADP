@@ -11,6 +11,8 @@ WORKDIR /app
 ENV NODE_ENV=production NEXT_TELEMETRY_DISABLED=1 PORT=3000 HOSTNAME=0.0.0.0
 COPY --from=build /repo/apps/admin/.next/standalone ./
 COPY --from=build /repo/apps/admin/.next/static ./apps/admin/.next/static
+# Standalone output leaves out public/, so the brand logos and mailer images are copied in on their own.
+COPY --from=build /repo/apps/admin/public ./apps/admin/public
 USER node
 EXPOSE 3000
 CMD ["node", "apps/admin/server.js"]

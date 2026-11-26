@@ -4,6 +4,7 @@ import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 import { api, apiPublic, SESSION_COOKIE } from '@/lib/api';
+import { attempt } from '@/lib/attempt';
 
 const cookieOpts = {
   httpOnly: true,
@@ -292,13 +293,17 @@ export async function evidenceStepAction(id: string, step: 'verified' | 'rejecte
 }
 
 export async function refreshInsightsAction() {
-  const r = await api<{ raised: number; updated: number; resolved: number }>('/insights/refresh', { method: 'POST', json: {} });
-  revalidatePath('/insights');
-  return `${r.raised} new, ${r.updated} still true, ${r.resolved} resolved`;
+  return attempt(async () => {
+    const r = await api<{ raised: number; updated: number; resolved: number }>('/insights/refresh', { method: 'POST', json: {} });
+    revalidatePath('/insights');
+    return `Checked again: ${r.raised} new, ${r.updated} still open, ${r.resolved} solved`;
+  });
 }
 
 export async function decideInsightAction(id: string, decision: 'accepted' | 'dismissed', note: string) {
-  await api(`/insights/${encodeURIComponent(id)}/decision`, { method: 'POST', json: { decision, note } });
-  revalidatePath('/insights');
-  return decision === 'accepted' ? 'Accepted. Follow the recommendation from its screen.' : 'Dismissed for at least 7 days.';
+  return attempt(async () => {
+    await api(`/insights/${encodeURIComponent(id)}/decision`, { method: 'POST', json: { decision, note } });
+    revalidatePath('/insights');
+    return decision === 'accepted' ? 'Marked as being handled.' : 'Hidden for at least 7 days.';
+  });
 }
