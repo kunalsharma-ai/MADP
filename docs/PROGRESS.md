@@ -817,3 +817,15 @@ verified.
   them yet answers 400; the alert then leaves those counts out rather than calling the panel unreachable, and the
   Duplicates screen says the panel does not record them yet. Accounts from before the change never match.
 - Tests: `apps/api/test/fraud-alerts.test.ts` (2).
+
+## Win-back for quiet members (2026-11-26)
+
+- Lifecycle automations has a "Win back quiet members" card per panel (T2O, MFR, MHO alike): how many members had no
+  activity for 30, 60 and 90 days (the panel's own member search with `inactiveSince`, teens left out, cached 10
+  minutes, totals only, needs members.read on that panel). Each count opens that list on Members.
+- "Draft the 3 mailers" makes re-engagement templates `win-back-30/60/90` with ready copy, the legal footer and the
+  unsubscribe and preference links, as drafts only. No points are promised and nothing hints at health.
+- "Set up" builds the Win-back journey (an inactivity automation, steps 30/60/90, at least 25 days apart) from the
+  approved versions and sends it to a second admin. Runs stay dry runs; nothing is sent while sending is off.
+- Routes: `GET /communications/automations/win-back`, `POST .../win-back/drafts`, `POST .../win-back`.
+- Tests: `apps/api/test/win-back.test.ts` (3). Screenshots: `madp/preview-madp/win-back/`.

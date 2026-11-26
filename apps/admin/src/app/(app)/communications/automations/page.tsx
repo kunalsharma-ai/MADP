@@ -15,7 +15,8 @@ import {
   type TemplateOption,
 } from './automation-forms';
 import { WelcomeJourney } from './welcome-journey';
-import type { SessionUser, WelcomeJourneyPanel } from '@madp/contracts';
+import { WinBack } from './win-back';
+import type { SessionUser, WelcomeJourneyPanel, WinBackPanel } from '@madp/contracts';
 
 export const metadata: Metadata = { title: 'Lifecycle automations' };
 
@@ -132,13 +133,14 @@ export default async function AutomationsPage({ searchParams }: { searchParams: 
   const sp = await searchParams;
   const panel = panelList.map((x) => x.code).includes(sp.panel ?? '') ? (sp.panel as PanelCode) : undefined;
   const qs = panel ? `?panel=${panel}` : '';
-  const [cal, auto, tpl, journey, me] = await Promise.all([
+  const [cal, auto, tpl, journey, winBack, me] = await Promise.all([
     api<{ items: Celebration[]; rule: string }>(`/communications/calendar${qs}`),
     api<{ dataMode: DataMode; qualifyingActivity: string[]; items: Automation[] }>(`/communications/automations${qs}`),
     api<{ items: { id: string; panel: PanelCode; name: string; kind: string; versions: { id: string; version: number; status: string }[] }[] }>(
       '/communications/templates',
     ),
     api<WelcomeJourneyPanel[]>('/communications/automations/welcome-journey'),
+    api<WinBackPanel[]>('/communications/automations/win-back'),
     api<SessionUser>('/auth/me'),
   ]);
   const options: TemplateOption[] = tpl.items.flatMap((t) =>
@@ -172,6 +174,7 @@ export default async function AutomationsPage({ searchParams }: { searchParams: 
         ]}
       />
       <WelcomeJourney panels={journey} canManage={me.permissions.includes('communications.manage')} />
+      <WinBack panels={winBack} canManage={me.permissions.includes('communications.manage')} />
       <p className="mb-4 rounded-xl bg-surface-2 px-3 py-2 text-[13px] text-fg-2">
         Activity that counts for inactivity: {auto.qualifyingActivity.map((a) => a.replaceAll('_', ' ')).join(', ')}. The panels do
         not export logins, so those cannot count until they do.

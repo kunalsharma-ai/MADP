@@ -20,6 +20,9 @@ import {
   WELCOME_JOURNEY_NAME,
   WELCOME_JOURNEY_STEPS,
   type WelcomeJourneyPanel,
+  WIN_BACK_JOURNEY_NAME,
+  WIN_BACK_STEPS,
+  type WinBackPanel,
   type CampaignKind,
   type CelebrationCreate,
   type DataMode,
@@ -42,6 +45,7 @@ import { Mongo } from '../mongo/mongo.js';
 import { EngagementService } from './engagement.service.js';
 import { CONTACT_STATES, audienceFilter, contactColumns, gate, type GateRow } from './gate.js';
 import { isBirthday, localDate, nextSendTime } from './schedule.js';
+import { winBackDraft } from './win-back-drafts.js';
 
 interface Actor {
   id: string;
@@ -431,6 +435,113 @@ export class AutomationService {
           templateVersionId: s.template!.versionId,
           onlyIfIncomplete: WELCOME_JOURNEY_STEPS[i]!.onlyIfIncomplete,
         })),
+      },
+      actor,
+    );
+    await this.submit(created.versions[0]!.id, actor);
+    return this.get(created.id);
+  }
+
+  // --- win-back journey ----------------------------------------------------------------------------------------
+
+  /** The panel's journey automation with this trigger and name, if not archived, and its newest version's status. */
+  private async journey(mode: DataMode, panel: PanelCode, trigger: AutomationTrigger, name: string) {
+    const a = await this.db.query.automations.findFirst({
+      where: and(
+        eq(automations.dataMode, mode),
+        eq(automations.panel, panel),
+        eq(automations.trigger, trigger),
+        eq(automations.name, name),
+        sql`${automations.status} <> 'archived'`,
+      ),
+    });
+    if (!a) return null;
+    const latest = await this.db.query.automationVersions.findFirst({
+      where: eq(automationVersions.automationId, a.id),
+      orderBy: desc(automationVersions.version),
+    });
+    return { id: a.id, status: a.status, versionStatus: latest?.status ?? null };
+  }
+
+  /** Each panel's win-back journey and its three templates. Inactive counts are added by the controller. */
+  async winBack(mode: DataMode, panels: PanelCode[]): Promise<Omit<WinBackPanel, 'inactive' | 'since'>[]> {
+    const out: Omit<WinBackPanel, 'inactive' | 'since'>[] = [];
+    for (const panel of panels) {
+      const templates = await this.db
+        .select({ id: messageTemplates.id, key: messageTemplates.key, name: messageTemplates.name })
+        .from(messageTemplates)
+        .where(and(eq(messageTemplates.panel, panel), inArray(messageTemplates.key, WIN_BACK_STEPS.map((s) => s.key))));
+      const versions = templates.length
+        ? await this.db
+            .select({
+              id: messageTemplateVersions.id,
+              templateId: messageTemplateVersions.templateId,
+              version: messageTemplateVersions.version,
+              status: messageTemplateVersions.status,
+            })
+            .from(messageTemplateVersions)
+            .where(inArray(messageTemplateVersions.templateId, templates.map((t) => t.id)))
+            .orderBy(desc(messageTemplateVersions.version))
+        : [];
+      out.push({
+        panel,
+        automation: await this.journey(mode, panel, 'inactivity', WIN_BACK_JOURNEY_NAME),
+        steps: WIN_BACK_STEPS.map((s) => {
+          const t = templates.find((x) => x.key === s.key);
+          const mine = t ? versions.filter((v) => v.templateId === t.id) : [];
+          const ok = mine.find((v) => v.status === 'approved');
+          return {
+            atDays: s.atDays,
+            key: s.key,
+            label: s.label,
+            template: t ? { id: t.id, name: t.name } : null,
+            approved: ok ? { versionId: ok.id, version: ok.version } : null,
+            latestStatus: mine[0]?.status ?? null,
+          };
+        }),
+      });
+    }
+    return out;
+  }
+
+  /**
+   * One click: drafts the panel's missing win-back mailers (re-engagement templates with ready copy and the
+   * unsubscribe and preference links). Drafts only: an admin edits them on Messages and a second admin approves them.
+   */
+  async draftWinBack(mode: DataMode, panel: PanelCode, actor: Actor) {
+    const [status] = await this.winBack(mode, [panel]);
+    const created: string[] = [];
+    for (const s of WIN_BACK_STEPS) {
+      if (status!.steps.find((x) => x.key === s.key)?.template) continue;
+      const t = await this.engagement.createTemplate(
+        { panel, key: s.key, name: `Win-back day ${s.atDays}: ${s.label}`, kind: 'reengagement' },
+        actor,
+      );
+      await this.engagement.addVersion(t.id, { language: 'en', ...winBackDraft(s.atDays) }, actor);
+      created.push(s.key);
+    }
+    await this.log(actor, 'automation.win_back_drafted', 'panel', panel, { created });
+    return { panel, created };
+  }
+
+  /** Sets up the win-back journey from the three approved templates and sends it to a second admin for review. */
+  async startWinBack(mode: DataMode, panel: PanelCode, actor: Actor) {
+    const [status] = await this.winBack(mode, [panel]);
+    if (status!.automation) throw new ConflictException('This panel already has a win-back journey');
+    const missing = status!.steps.filter((s) => !s.approved);
+    if (missing.length)
+      throw new BadRequestException({
+        message: 'Approve these templates first (Messages, Templates)',
+        problems: missing.map((s) => `Day ${s.atDays}: "${s.label}" for ${panel.toUpperCase()}`),
+      });
+    const created = await this.create(
+      mode,
+      {
+        panel,
+        name: WIN_BACK_JOURNEY_NAME,
+        trigger: 'inactivity',
+        config: AutomationConfig.parse({ minDaysBetween: 25 }),
+        steps: status!.steps.map((s) => ({ atDays: s.atDays, templateVersionId: s.approved!.versionId, onlyIfIncomplete: false })),
       },
       actor,
     );
