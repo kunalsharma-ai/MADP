@@ -23,7 +23,7 @@ export function PanelButtons({ panel, canRun }: { panel: string; canRun: boolean
   const { pending, act } = useAct();
   if (!canRun) return null;
   return (
-    <span className="flex gap-1">
+    <span className="flex flex-wrap gap-1 whitespace-nowrap">
       <button className={btn.ghost} disabled={pending} onClick={() => act(() => loyaltyAction(panel, 'sync'))}>
         Update mirror
       </button>

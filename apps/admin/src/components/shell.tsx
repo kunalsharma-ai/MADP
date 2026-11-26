@@ -5,51 +5,8 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState, type ReactNode } from 'react';
 import { Command } from 'cmdk';
 import { useTheme } from 'next-themes';
-import {
-  Scale,
-  GitCompareArrows,
-  UserRoundCheck,
-  Dices,
-  Mail,
-  Workflow,
-  Coins,
-  Network,
-  BadgeCheck,
-  FileLock2,
-  Hourglass,
-  ScanSearch,
-  FileSpreadsheet,
-  Sparkles,
-  Map as MapIcon,
-  Globe2,
-  LayoutDashboard,
-  ListTree,
-  LogOut,
-  Menu,
-  Moon,
-  PlugZap,
-  Cable,
-  Layers,
-  Search,
-  ShieldCheck,
-  Sun,
-  Users,
-  ListChecks,
-  LayoutList,
-  IdCard,
-  UserCog,
-  Building2,
-  ClipboardList,
-  Gauge,
-  LifeBuoy,
-  MessageSquare,
-  BookOpen,
-  Gift,
-  Flame,
-  Sprout,
-  FileX2,
-  ToggleRight,
-} from 'lucide-react';
+import { LogOut, Menu, Moon, Search, Sun } from 'lucide-react';
+import { ICONS, tintFor } from './nav-icons';
 import type { PanelInfo, SessionUser } from '@madp/contracts';
 import { NAV, PLANNED } from './nav';
 import { cn } from '@/lib/cn';
@@ -57,64 +14,6 @@ import { setBrand } from '@/app/super-admin-actions';
 import { BrandLogo } from './brand-logo';
 import { PanelsProvider } from './panels-context';
 
-const ICONS = {
-  LayoutDashboard,
-  Globe2,
-  Users,
-  ListChecks,
-  LayoutList,
-  IdCard,
-  ListTree,
-  GitCompareArrows,
-  PlugZap,
-  Cable,
-  Layers,
-  ShieldCheck,
-  Dices,
-  UserRoundCheck,
-  Mail,
-  Workflow,
-  Coins,
-  Network,
-  BadgeCheck,
-  FileLock2,
-  Hourglass,
-  ScanSearch,
-  FileSpreadsheet,
-  Sparkles,
-  Map: MapIcon,
-  UserCog,
-  Building2,
-  ClipboardList,
-  Gauge,
-  LifeBuoy,
-  MessageSquare,
-  BookOpen,
-  Gift,
-  Flame,
-  Sprout,
-  FileX2,
-  ToggleRight,
-  Scale,
-} as const;
-/** One colour pair per screen, so every menu icon has its own tile. Picked from the menu order, stable across renders. */
-const TINTS: [string, string][] = [
-  ['#6366f1', '#8b5cf6'],
-  ['#ec4899', '#f43f5e'],
-  ['#f97316', '#f59e0b'],
-  ['#10b981', '#14b8a6'],
-  ['#0ea5e9', '#3b82f6'],
-  ['#a855f7', '#d946ef'],
-  ['#eab308', '#f97316'],
-  ['#06b6d4', '#10b981'],
-  ['#ef4444', '#f97316'],
-  ['#3b82f6', '#6366f1'],
-];
-const ORDER = NAV.flatMap((g) => g.items.map((i) => i.href));
-function tintFor(href: string): [string, string] {
-  const i = ORDER.indexOf(href);
-  return TINTS[(i < 0 ? 0 : i) % TINTS.length]!;
-}
 
 const BRAND_LABEL: Record<string, string> = {
   all: 'All brands',

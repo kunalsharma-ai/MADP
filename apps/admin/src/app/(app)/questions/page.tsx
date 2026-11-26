@@ -17,6 +17,7 @@ import {
   btn,
   fmt,
   input,
+  Pager,
 } from '@/components/ui';
 
 export const metadata: Metadata = { title: 'Question registry' };
@@ -24,7 +25,7 @@ export const metadata: Metadata = { title: 'Question registry' };
 export default async function QuestionsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ panel?: string; search?: string }>;
+  searchParams: Promise<{ panel?: string; search?: string; page?: string }>;
 }) {
   const panelList = await getPanels();
   const sp = await searchParams;
@@ -32,6 +33,10 @@ export default async function QuestionsPage({
   if (sp.panel && panelList.map((x) => x.code).includes(sp.panel)) qs.set('panel', sp.panel);
   if (sp.search) qs.set('search', sp.search.slice(0, 100));
   const data = await api<{ dataMode: DataMode; items: QuestionRow[] }>(`/questions?${qs}`);
+  const SIZE = 50;
+  const pages = Math.max(1, Math.ceil(data.items.length / SIZE));
+  const page = Math.min(pages, Math.max(1, Number(sp.page) || 1));
+  const shown = data.items.slice((page - 1) * SIZE, page * SIZE);
   return (
     <>
       <PageHeader
@@ -81,7 +86,7 @@ export default async function QuestionsPage({
               'Mapping',
             ]}
           >
-            {data.items.map((q) => (
+            {shown.map((q) => (
               <tr key={`${q.panel}-${q.sourceQuestionId}`} className="align-top">
                 <td className="px-5 py-2.5">
                   <PanelChip panel={q.panel} />
@@ -122,6 +127,7 @@ export default async function QuestionsPage({
             ))}
           </Table>
         )}
+        <Pager total={data.items.length} page={page} size={SIZE} path="/questions" params={sp} />
       </Card>
     </>
   );
