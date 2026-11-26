@@ -9,6 +9,11 @@ export interface MemberRow {
   status: 'active' | 'suspended' | 'banned' | 'archived';
   country: string | null;
   birthYear: number | null;
+  /** From the panel since MFR#103; older panel builds leave these out. */
+  gender?: string | null;
+  age?: number | null;
+  /** The Type column: question-bank answers for this member's segment (designation, HCP type, condition...). */
+  typeValues?: { label: string; values: string[] }[];
   qualityScore: number;
   emailVerified: string;
   signedUpAt: string;
@@ -30,3 +35,12 @@ export const STATUS_TONE = {
   banned: 'danger',
   archived: 'neutral',
 } as const;
+
+export const GENDER_TONE: Record<string, string> = { Female: '#ec4899', Male: '#3b82f6', Other: '#a855f7' };
+
+/** One panel category value for the Segment filter, with the MADP segments it joins. */
+export interface PanelCategory {
+  value: string;
+  segments: string[];
+  minor: boolean;
+}
