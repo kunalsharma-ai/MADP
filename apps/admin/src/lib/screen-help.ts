@@ -161,9 +161,13 @@ export const SCREEN_HELP: Record<string, ScreenHelp> = {
     how: ['Open a page and edit the draft.', 'Publish (or ask a second admin for a legal page).'],
   },
   '/questions': {
-    why: 'See every source question from every panel, with its version history.',
-    where: 'MADP’s question registry, filled by sync. Nothing is merged across panels without an approved mapping.',
-    how: ['Search by text or panel.', 'Open a question to see its versions and mapping.'],
+    why: 'See every question from every panel by segment and profile, and add or change profile questions.',
+    where: 'MADP’s question registry, filled by sync. Edits go to each panel’s question bank through its admin API; nothing is merged across panels without an approved mapping.',
+    how: [
+      'Search by text or panel, or open a segment and a profile.',
+      'Press Edit on a question, or Add a question.',
+      'Tick the panels and segments, pick the kind of question, its answers, its rules and what it depends on, then save.',
+    ],
   },
   '/mappings': {
     why: 'Link each panel’s question to one MADP attribute, so answers can be compared across panels.',

@@ -5,7 +5,8 @@ import Link from 'next/link';
 import { type DataMode, type SegmentRuleInfo } from '@madp/contracts';
 import { api } from '@/lib/api';
 import type { Attribute, QuestionRow } from '@/lib/types';
-import { AttributeMatrix, GroupedQuestions } from './grouped';
+import { AttributeMatrix, EditLink, GroupedQuestions } from './grouped';
+import { Plus } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import {
   Badge,
@@ -50,8 +51,15 @@ export default async function QuestionsPage({
       <PageHeader
         eyebrow="Data"
         title="Question registry"
-        description="Every question each panel asks, grouped by segment and profile. The coloured chip on each question shows the shared attribute it feeds: green is linked, purple is a suggestion waiting for approval."
-        actions={<DataModeBadge mode={data.dataMode} />}
+        description="Every question each panel asks, grouped by segment and profile. Press Edit on a question to change it, or Add a question to ask a new one on T2O, MFR or MHO. The coloured chip shows the shared attribute it feeds: green is linked, purple is a suggestion waiting for approval."
+        actions={
+          <>
+            <DataModeBadge mode={data.dataMode} />
+            <Link href={`/questions/edit${sp.panel ? `?panel=${sp.panel}` : ''}`} className={btn.primary}>
+              <Plus className="size-4" aria-hidden /> Add a question
+            </Link>
+          </>
+        }
       />
       <DemoBanner mode={data.dataMode} />
       <form method="get" className="mb-4 flex flex-wrap items-center gap-2">
@@ -120,6 +128,7 @@ export default async function QuestionsPage({
               'Version',
               'Sensitivity',
               'Mapping',
+              '',
             ]}
           >
             {shown.map((q) => (
@@ -158,6 +167,9 @@ export default async function QuestionsPage({
                   ) : (
                     '—'
                   )}
+                </td>
+                <td className="px-5 py-2.5">
+                  <EditLink q={q} />
                 </td>
               </tr>
             ))}

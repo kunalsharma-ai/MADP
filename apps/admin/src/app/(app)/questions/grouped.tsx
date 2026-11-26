@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { ChevronRight, FolderOpen, Link2, Sparkles, Unlink } from 'lucide-react';
+import { ChevronRight, FolderOpen, Link2, Pencil, Sparkles, Unlink } from 'lucide-react';
 import type { SegmentRuleInfo } from '@madp/contracts';
 import type { Attribute, QuestionRow } from '@/lib/types';
 import { Badge, PanelChip, fmt } from '@/components/ui';
@@ -108,6 +108,7 @@ export function GroupedQuestions({
                             </p>
                           </div>
                           <AttributeChip q={q} label={attrLabel} />
+                          <EditLink q={q} />
                         </li>
                       ))}
                     </ul>
@@ -119,6 +120,17 @@ export function GroupedQuestions({
         );
       })}
     </div>
+  );
+}
+
+export function EditLink({ q }: { q: Pick<QuestionRow, 'panel' | 'sourceQuestionId'> }) {
+  return (
+    <Link
+      href={`/questions/edit?${new URLSearchParams({ name: q.sourceQuestionId, panel: q.panel })}`}
+      className="inline-flex items-center gap-1 rounded-full border border-border bg-surface px-2.5 py-1 text-[12px] font-semibold text-fg-2 transition hover:border-accent hover:text-accent"
+    >
+      <Pencil className="size-3.5" aria-hidden /> Edit
+    </Link>
   );
 }
 
