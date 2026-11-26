@@ -134,6 +134,7 @@ describe('Members bulk actions and export', () => {
     const lines = csv.text.trim().split('\r\n');
     expect(lines).toHaveLength(3);
     expect(lines[0]).toContain('E-mail (masked)');
+    expect(lines[0]).toContain('Health score');
     expect(csv.text).toContain("'=HYPERLINK"); // formula injection is neutralised
     expect(csv.text).toContain('payout');
     expect(csv.text).not.toContain('Full Secret Name');

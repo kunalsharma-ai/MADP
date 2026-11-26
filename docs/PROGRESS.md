@@ -829,3 +829,12 @@ verified.
   approved versions and sends it to a second admin. Runs stay dry runs; nothing is sent while sending is off.
 - Routes: `GET /communications/automations/win-back`, `POST .../win-back/drafts`, `POST .../win-back`.
 - Tests: `apps/api/test/win-back.test.ts` (3). Screenshots: `madp/preview-madp/win-back/`.
+
+## Member health score (2026-11-26)
+
+- Every member gets a 0 to 100 health score from what the panel's member list already shows, the same on every
+  panel: recent activity 40, answer quality 30, verified e-mail and phone 15, account standing 15. Bands: Healthy 75+,
+  Okay 50+, At risk 25+, Critical (and always Critical when suspended or banned). Nothing health-related is used.
+- Shown as a ring in a Health column on Members (hover for each part), as a breakdown on the member page, and as two
+  columns in the Members Excel/CSV download. `packages/contracts/src/member-health.ts`, tests in
+  `member-health.test.ts` (4).

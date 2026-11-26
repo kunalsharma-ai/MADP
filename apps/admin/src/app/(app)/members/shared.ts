@@ -18,6 +18,7 @@ export interface MemberRow {
   tags?: string[];
   qualityScore: number;
   emailVerified: string;
+  phoneVerified?: string;
   signedUpAt: string;
   lastActivityAt: string | null;
   /** Marketing e-mail opt-in from the panel (MFR#54). Older panel builds leave it out: show it as not asked. */

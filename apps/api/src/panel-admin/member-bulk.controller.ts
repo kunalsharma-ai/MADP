@@ -9,6 +9,7 @@ import {
   type ReportResult,
 } from '@madp/contracts';
 import { PANEL_ADMIN_ROUTES as R } from '@madp/connectors';
+import { HEALTH_BANDS, memberHealth, type MemberHealthInput } from '@madp/contracts';
 import type { Request, Response } from 'express';
 import { BrandScoped, CurrentBrand, CurrentPrincipal, RequirePermissions } from '../auth/decorators.js';
 import type { Principal } from '../auth/auth.types.js';
@@ -176,6 +177,8 @@ export class MemberBulkController {
         { key: 'age', label: 'Age', type: 'number' },
         { key: 'birthYear', label: 'Born', type: 'number' },
         { key: 'qualityScore', label: 'Quality', type: 'number' },
+        { key: 'health', label: 'Health score', type: 'number' },
+        { key: 'healthBand', label: 'Health', type: 'text' },
         { key: 'status', label: 'Status', type: 'text' },
         { key: 'marketing', label: 'Marketing e-mails', type: 'text' },
         { key: 'signedUpAt', label: 'Signed up', type: 'text' },
@@ -185,6 +188,7 @@ export class MemberBulkController {
       rows: rows.map((r) => {
         const mk = r.marketingOptIn as { granted?: boolean; asked?: boolean } | undefined;
         const v = (k: string) => (r[k] === undefined || r[k] === null ? null : (r[k] as string | number));
+        const h = memberHealth(r as unknown as MemberHealthInput);
         return {
           memberId: v('memberId') ?? r.id,
           name: v('name'),
@@ -196,6 +200,8 @@ export class MemberBulkController {
           age: v('age'),
           birthYear: v('birthYear'),
           qualityScore: v('qualityScore'),
+          health: h.score,
+          healthBand: HEALTH_BANDS[h.band].label,
           status: v('status'),
           marketing: !mk?.asked ? 'Not asked' : mk.granted ? 'Opted in' : 'No',
           signedUpAt: typeof r.signedUpAt === 'string' ? r.signedUpAt.slice(0, 10) : null,

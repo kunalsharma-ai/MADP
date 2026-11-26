@@ -11,6 +11,7 @@ import { SortHead, sortPage, SORT_COLUMNS, type SortDir } from './sort';
 import { SavedViews } from './saved-views';
 import { TypeColumns } from './type-columns';
 import { BulkBar } from './bulk-bar';
+import { HealthBadge } from './health-badge';
 import { MemberViewParams, type MemberTypeRule, type MemberView, type SessionUser } from '@madp/contracts';
 import { GENDER_TONE, STATUS_TONE, marketingLabel, tagTint, type MemberRow, type PanelCategory } from './shared';
 
@@ -230,6 +231,9 @@ export default async function MembersPage({
                       {head('gender', 'Gender')}
                       {head('age', 'Age')}
                       {head('quality', 'Quality')}
+                      <th scope="col" className="px-5 py-3 font-semibold" title="Member health score, 0 to 100: recent activity 40, answer quality 30, verified e-mail and phone 15, account standing 15. Hover a score for its parts.">
+                        Health
+                      </th>
                       {head('status', 'Status')}
                       {head('marketing', 'Marketing')}
                       {head('signedUp', 'Signed up')}
@@ -285,6 +289,7 @@ export default async function MembersPage({
                           <input form={FORM} name="qualityMax" inputMode="numeric" pattern="[0-9]{1,3}" defaultValue={sp.qualityMax} placeholder="max" aria-label="Quality up to" className={f('!w-14')} />
                         </div>
                       </th>
+                      <th />
                       <th className="px-3 py-2">
                         <select form={FORM} name="status" defaultValue={sp.status ?? ''} aria-label="Filter by status" className={f('min-w-24')}>
                           <option value="">Any</option>
@@ -317,7 +322,7 @@ export default async function MembersPage({
                   <tbody className="divide-y divide-border [&>tr]:transition-colors [&>tr:hover]:bg-accent-soft/40">
                     {items.length === 0 ? (
                       <tr>
-                        <td colSpan={14}>
+                        <td colSpan={15}>
                           <EmptyState title="No members match">Change the filters or clear them.</EmptyState>
                         </td>
                       </tr>
@@ -378,6 +383,9 @@ export default async function MembersPage({
                         {m.age != null ? <span className="font-semibold">{m.age} yr</span> : m.birthYear ? <span className="text-fg-3">b. {m.birthYear}</span> : '—'}
                       </td>
                       <td className="num px-5 py-2.5">{m.qualityScore}</td>
+                      <td className="px-5 py-2.5">
+                        <HealthBadge member={m} />
+                      </td>
                       <td className="px-5 py-2.5">
                         <Badge tone={STATUS_TONE[m.status]}>{m.status}</Badge>
                       </td>

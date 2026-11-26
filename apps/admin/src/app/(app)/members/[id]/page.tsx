@@ -6,6 +6,7 @@ import { STATUS_TONE, marketingLabel, type MemberRow } from '../shared';
 import { MemberAccess } from './member-access';
 import { MemberActions } from './member-actions';
 import { PointsQuality } from './points-quality';
+import { HealthBreakdown } from '../health-badge';
 import { TagsNotes } from './tags-notes';
 import type { MemberTagsNotes } from '@madp/contracts';
 import { MemberEngagement, type Engagement, type Responses } from './engagement';
@@ -117,6 +118,12 @@ export default async function MemberPage({
               {row('E-mail check', m.emailVerified)}
               {row('Phone check', m.phoneVerified)}
               {row('Quality score', m.qualityScore)}
+              <div className="col-span-2 row-span-2 md:col-span-2">
+                <dt className="mb-1 text-fg-3">Health score</dt>
+                <dd>
+                  <HealthBreakdown member={m} />
+                </dd>
+              </div>
               {row('Registration', m.registrationStatus)}
               {row('Signed up', fmtDate(m.signedUpAt))}
               {row('Last activity', fmtDate(m.lastActivityAt))}
