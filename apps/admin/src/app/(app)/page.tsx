@@ -2,7 +2,8 @@ import { panelName, panelShort } from '@/lib/panel-names';
 import { getPanels } from '@/lib/panels';
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { AUDIENCE_CATEGORY_LABELS, type AudienceCategory, type PanelCode, type SessionUser } from '@madp/contracts';
+import { type AudienceCategory, type PanelCode, type SessionUser } from '@madp/contracts';
+import { getSegments } from '@/lib/segments';
 import { api } from '@/lib/api';
 import type { DashboardSummary } from '@/lib/types';
 import {
@@ -22,6 +23,9 @@ import { RegistrationsChart } from '@/components/charts';
 export const metadata: Metadata = { title: 'Executive dashboard' };
 
 export default async function Dashboard() {
+  const segmentList = await getSegments();
+  const SEG_KEYS = segmentList.map((s) => s.key);
+  const SEG_LABEL: Record<string, string> = Object.fromEntries(segmentList.map((s) => [s.key, s.label]));
   const panelList = await getPanels();
   const me = await api<SessionUser>('/auth/me');
   // The executive dashboard spans every brand. Admins limited to some brands start on their brand's screens instead.
@@ -157,7 +161,7 @@ export default async function Dashboard() {
           <CardHeader title="By audience category" hint="Overlapping: a person may be in several" />
           <Bars
             rows={c.byCategory.map((x) => ({
-              label: AUDIENCE_CATEGORY_LABELS[x.key as AudienceCategory] ?? x.key,
+              label: (SEG_LABEL[x.key as AudienceCategory] ?? x.key as AudienceCategory) ?? x.key,
               value: x.value,
               suppressed: x.suppressed,
             }))}

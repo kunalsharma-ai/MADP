@@ -27,6 +27,7 @@ export const NAV: NavGroup[] = [
     label: 'Audience',
     items: [
       { href: '/audience', label: 'Audience explorer', icon: 'Globe2', permission: 'audience.counts.read' },
+      { href: '/audience-segments', label: 'Audience segments', icon: 'LayoutList', permission: 'connectors.read' },
       { href: '/geo', label: 'Geography & overlap', icon: 'Map', permission: 'audience.counts.read' },
       { href: '/panellists', label: 'Panellist directory', icon: 'Users', permission: 'panellists.read' },
       { href: '/identity', label: 'Identity review', icon: 'UserRoundCheck', permission: 'identity.review' },

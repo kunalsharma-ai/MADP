@@ -23,13 +23,6 @@ import {
  * Every row that can hold panel data carries data_mode so DEMO fixtures can never mix with live data.
  */
 export const dataMode = pgEnum('data_mode', ['demo', 'live']);
-export const audienceCategory = pgEnum('audience_category', [
-  'consumer',
-  'business_professional',
-  'healthcare_professional',
-  'patient',
-  'caregiver',
-]);
 export const reviewStatus = pgEnum('review_status', ['pending', 'approved', 'rejected', 'needs_info']);
 export const jobStatus = pgEnum('job_status', ['queued', 'running', 'succeeded', 'failed', 'cancelled']);
 export const consentStatus = pgEnum('consent_status', ['granted', 'denied', 'withdrawn', 'unknown']);
@@ -63,6 +56,50 @@ export const panels = pgTable('panel', {
   createdAt: created(),
   updatedAt: updated(),
 });
+
+/**
+ * MADP's audience segments (consumer, professionals, patients, caregivers, teens, and any a Super Admin adds). A
+ * person may hold several. Built-in segments can be renamed but not deleted, and Teens always stays a minors segment.
+ */
+export const audienceSegments = pgTable('audience_segment', {
+  key: text('key').primaryKey(),
+  label: text('label').notNull(),
+  description: text('description').notNull().default(''),
+  /** Every member is a minor: minor protections always apply. */
+  minors: boolean('minors').notNull().default(false),
+  builtIn: boolean('built_in').notNull().default(false),
+  /** 'active' or 'archived'. An archived segment gets no new members and is hidden from filters. */
+  status: text('status').notNull().default('active'),
+  sort: smallint('sort').notNull().default(100),
+  archivedAt: timestamp('archived_at', { withTimezone: true }),
+  archivedBy: uuid('archived_by'),
+  createdBy: uuid('created_by'),
+  createdAt: created(),
+  updatedAt: updated(),
+});
+
+/** A panel's own category value (User.category) and the MADP segment it joins. One value may join several. */
+export const segmentRules = pgTable(
+  'segment_rule',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    panel: text('panel')
+      .notNull()
+      .references(() => panels.code),
+    /** Lower case, as the panel stores it (e.g. "b2c", "minor patient"). */
+    sourceValue: text('source_value').notNull(),
+    segment: text('segment')
+      .notNull()
+      .references(() => audienceSegments.key),
+    minor: boolean('minor').notNull().default(false),
+    evidence: text('evidence').notNull().default(''),
+    status: text('status').notNull().default('active'),
+    createdBy: uuid('created_by'),
+    createdAt: created(),
+    updatedAt: updated(),
+  },
+  (t) => [uniqueIndex('segment_rule_key').on(t.panel, t.sourceValue, t.segment)],
+);
 
 export const masterPersons = pgTable(
   'master_person',
@@ -162,7 +199,9 @@ export const categoryMemberships = pgTable(
     masterPersonId: uuid('master_person_id')
       .notNull()
       .references(() => masterPersons.id),
-    category: audienceCategory('category').notNull(),
+    category: text('category')
+      .notNull()
+      .references(() => audienceSegments.key),
     panel: text('panel').notNull().references(() => panels.code),
     /** How the membership was derived, e.g. "source_category:b2c". */
     basis: text('basis').notNull(),
@@ -243,7 +282,7 @@ export const consentRecords = pgTable(
 export const attributeDefinitions = pgTable('attribute_definition', {
   key: text('key').primaryKey(),
   label: text('label').notNull(),
-  category: audienceCategory('category'),
+  category: text('category').references(() => audienceSegments.key),
   valueType: text('value_type').notNull(),
   sensitivity: sensitivity('sensitivity').notNull().default('standard'),
   description: text('description').notNull().default(''),

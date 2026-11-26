@@ -1,4 +1,5 @@
 import { randomBytes, createHash } from 'node:crypto';
+import { SegmentDirectory } from '../segments/segment-directory.js';
 import {
   BadRequestException,
   ConflictException,
@@ -10,7 +11,6 @@ import {
 import { and, desc, eq, sql } from 'drizzle-orm';
 import type { ApiEnv } from '@madp/config';
 import {
-  AUDIENCE_CATEGORIES,
   type ConsentCheck,
   type InvitationAuthorize,
   type MatchRequest,
@@ -60,6 +60,7 @@ export class Supply360Service {
     private readonly audit: AuditService,
     private readonly audience: AudienceService,
     private readonly engagement: EngagementService,
+    private readonly segments: SegmentDirectory,
   ) {}
 
   private get db() {
@@ -181,7 +182,7 @@ export class Supply360Service {
     const rows = await this.db.query.attributeDefinitions.findMany({ orderBy: (a, { asc }) => [asc(a.key)] });
     const health = svc.scopes.includes('health.aggregate');
     return {
-      categories: AUDIENCE_CATEGORIES,
+      categories: this.segments.keys(),
       attributes: rows
         .filter((a) => health || a.sensitivity !== 'special_category')
         .map((a) => ({ key: a.key, label: a.label, sensitivity: a.sensitivity })),

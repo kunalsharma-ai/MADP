@@ -1,7 +1,8 @@
 import { panelName, panelShort } from '@/lib/panel-names';
 import { getPanels } from '@/lib/panels';
 import type { Metadata } from 'next';
-import { AUDIENCE_CATEGORIES, AUDIENCE_CATEGORY_LABELS, HEALTH_ACCESS_PURPOSE_LABELS, HealthAccessPurpose, type AudienceCategory, type CountsResponse, type PanelCode } from '@madp/contracts';
+import { HEALTH_ACCESS_PURPOSE_LABELS, HealthAccessPurpose, type AudienceCategory, type CountsResponse, type PanelCode } from '@madp/contracts';
+import { getSegments } from '@/lib/segments';
 import { api, ApiError } from '@/lib/api';
 import { Country } from '@/components/country';
 import type { Attribute } from '@/lib/types';
@@ -25,11 +26,14 @@ type SP = Promise<Record<string, string | string[] | undefined>>;
 const arr = (v: string | string[] | undefined) => (v === undefined ? [] : ([] as string[]).concat(v));
 
 export default async function AudiencePage({ searchParams }: { searchParams: SP }) {
+  const segmentList = await getSegments();
+  const SEG_KEYS = segmentList.map((s) => s.key);
+  const SEG_LABEL: Record<string, string> = Object.fromEntries(segmentList.map((s) => [s.key, s.label]));
   const panelList = await getPanels();
   const sp = await searchParams;
   const panels = arr(sp.panel).filter((p): p is PanelCode => panelList.map((x) => x.code).includes(p));
   const categories = arr(sp.category).filter((c): c is AudienceCategory =>
-    (AUDIENCE_CATEGORIES as readonly string[]).includes(c),
+    SEG_KEYS.includes(c),
   );
   const countries = arr(sp.country)
     .map((c) => c.toLowerCase())
@@ -96,7 +100,7 @@ export default async function AudiencePage({ searchParams }: { searchParams: SP 
         <fieldset>
           <legend className="mb-2 text-xs font-medium text-fg-3">Categories</legend>
           <div className="flex flex-wrap gap-3">
-            {AUDIENCE_CATEGORIES.map((k) => (
+            {SEG_KEYS.map((k) => (
               <label key={k} className="flex items-center gap-1.5 text-[13px]">
                 <input
                   type="checkbox"
@@ -105,7 +109,7 @@ export default async function AudiencePage({ searchParams }: { searchParams: SP 
                   defaultChecked={categories.includes(k)}
                   className="accent-[var(--accent)]"
                 />{' '}
-                {AUDIENCE_CATEGORY_LABELS[k]}
+                {(SEG_LABEL[k] ?? k)}
               </label>
             ))}
           </div>
@@ -213,7 +217,7 @@ export default async function AudiencePage({ searchParams }: { searchParams: SP 
           <ul className="divide-y divide-border text-[13px]">
             {c.byCategory.map((x) => (
               <li key={x.key} className="flex justify-between px-5 py-2.5">
-                <span>{AUDIENCE_CATEGORY_LABELS[x.key as AudienceCategory]}</span>
+                <span>{(SEG_LABEL[x.key as AudienceCategory] ?? x.key as AudienceCategory)}</span>
                 <Cell v={x.value} s={x.suppressed} />
               </li>
             ))}

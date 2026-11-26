@@ -2,7 +2,8 @@ import { panelName, panelShort } from '@/lib/panel-names';
 import { getPanels } from '@/lib/panels';
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { AUDIENCE_CATEGORIES, AUDIENCE_CATEGORY_LABELS, type AudienceCategory, type GeoResponse, type OverlapResponse, type PanelCode } from '@madp/contracts';
+import { type AudienceCategory, type GeoResponse, type OverlapResponse, type PanelCode } from '@madp/contracts';
+import { getSegments } from '@/lib/segments';
 import { api } from '@/lib/api';
 import { Card, CardHeader, DataModeBadge, DemoBanner, EmptyState, PageHeader, PanelChip, Stat, Table, btn, fmt, fmtDate } from '@/components/ui';
 import { cn } from '@/lib/cn';
@@ -17,10 +18,13 @@ const place = (k: string) => (k === 'unknown' ? 'Not given' : k);
 const n = (v: number | null) => (v === null ? <span className="text-fg-3" title="Hidden: below the minimum cell size">hidden</span> : fmt(v));
 
 export default async function GeoPage({ searchParams }: { searchParams: SP }) {
+  const segmentList = await getSegments();
+  const SEG_KEYS = segmentList.map((s) => s.key);
+  const SEG_LABEL: Record<string, string> = Object.fromEntries(segmentList.map((s) => [s.key, s.label]));
   const panelList = await getPanels();
   const sp = await searchParams;
   const panels = arr(sp.panel).filter((p): p is PanelCode => panelList.map((x) => x.code).includes(p));
-  const categories = arr(sp.category).filter((c): c is AudienceCategory => (AUDIENCE_CATEGORIES as readonly string[]).includes(c));
+  const categories = arr(sp.category).filter((c): c is AudienceCategory => SEG_KEYS.includes(c));
   const country = typeof sp.country === 'string' && /^[a-z]{2}$/i.test(sp.country) ? sp.country.toLowerCase() : undefined;
   const state = country && typeof sp.state === 'string' && sp.state.length <= 120 ? sp.state : undefined;
   const filters = { panels, categories };
@@ -43,7 +47,7 @@ export default async function GeoPage({ searchParams }: { searchParams: SP }) {
   const mapValues = Object.fromEntries(world.rows.filter((r) => r.key !== 'unknown').map((r) => [r.key, r.uniquePeople]));
   const maxCombo = Math.max(1, ...overlap.panelCombinations.map((c) => c.people ?? 0));
   const cat = (a: string, b: string) => overlap.categoryMatrix.find((m) => m.a === a && m.b === b);
-  const usedCats = AUDIENCE_CATEGORIES.filter((c) => cat(c, c));
+  const usedCats = SEG_KEYS.filter((c) => cat(c, c));
   return (
     <>
       <PageHeader
@@ -67,10 +71,10 @@ export default async function GeoPage({ searchParams }: { searchParams: SP }) {
         </fieldset>
         <fieldset className="flex flex-wrap items-center gap-3">
           <legend className="mb-1 text-[12px] text-fg-3">Categories</legend>
-          {AUDIENCE_CATEGORIES.map((c) => (
+          {SEG_KEYS.map((c) => (
             <label key={c} className="flex items-center gap-1.5">
               <input type="checkbox" name="category" value={c} defaultChecked={categories.includes(c)} />
-              {AUDIENCE_CATEGORY_LABELS[c]}
+              {(SEG_LABEL[c] ?? c)}
             </label>
           ))}
         </fieldset>
@@ -214,11 +218,11 @@ export default async function GeoPage({ searchParams }: { searchParams: SP }) {
         {usedCats.length === 0 ? (
           <EmptyState title="No category memberships yet" />
         ) : (
-          <Table head={['', ...usedCats.map((c) => AUDIENCE_CATEGORY_LABELS[c])]}>
+          <Table head={['', ...usedCats.map((c) => (SEG_LABEL[c] ?? c))]}>
             {usedCats.map((a) => (
               <tr key={a}>
                 <th scope="row" className="px-5 py-1.5 text-left font-medium">
-                  {AUDIENCE_CATEGORY_LABELS[a]}
+                  {(SEG_LABEL[a] ?? a)}
                 </th>
                 {usedCats.map((b) => {
                   const x = cat(a, b);

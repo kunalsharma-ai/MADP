@@ -11,7 +11,14 @@ describe('panel registry', () => {
       SOURCE_CATEGORY_PROPOSALS.filter((p) => p.minor)
         .map((p) => p.sourceValue)
         .sort(),
-    ).toEqual(['minor', 'minor', 'minor patient']);
+    ).toEqual(['minor', 'minor', 'minor', 'minor', 'minor patient', 'minor patient']);
+    // Every minor source value also joins the Teens segment.
+    for (const p of SOURCE_CATEGORY_PROPOSALS.filter((x) => x.minor && x.proposed !== 'teen'))
+      expect(
+        SOURCE_CATEGORY_PROPOSALS.some(
+          (x) => x.panel === p.panel && x.sourceValue === p.sourceValue && x.proposed === 'teen',
+        ),
+      ).toBe(true);
     for (const panel of BUILT_IN_PANEL_CODES)
       expect(SOURCE_CATEGORY_PROPOSALS.some((p) => p.panel === panel)).toBe(true);
   });

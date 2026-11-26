@@ -14,6 +14,8 @@ import { AuthGuard } from './auth/auth.guard.js';
 import { ConnectorRegistry } from './connectors/connector-registry.js';
 import { PanelDirectory } from './panels/panel-directory.js';
 import { PanelsController } from './panels/panels.controller.js';
+import { SegmentDirectory } from './segments/segment-directory.js';
+import { AudienceSegmentsController } from './segments/segments.controller.js';
 import { PanelConnectionsController } from './connectors/panel-connections.controller.js';
 import { ConnectorsController } from './connectors/connectors.controller.js';
 import { IngestionService } from './ingestion/ingestion.service.js';
@@ -116,11 +118,13 @@ export class AppModule {
         MailersController,
         PanelConnectionsController,
         PanelsController,
+        AudienceSegmentsController,
       ],
       providers: [
         { provide: API_ENV, useValue: env },
         Database,
         PanelDirectory,
+        SegmentDirectory,
         Mongo,
         FieldCrypto,
         AuditService,
