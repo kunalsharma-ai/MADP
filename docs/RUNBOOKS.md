@@ -112,6 +112,18 @@ First deploy, on a manager node:
    segments**. A rule there links a panel's own category value (for example `b2c` on MFR) to a segment; sync applies
    the active rules to new and updated members. A minor joins the adult segment and Teens. Archiving a segment hides
    it from filters and stops new members joining; a segment with members can't be deleted, only archived.
+11. **A network on other software** (not the shared panel backend):
+    - On **Panels**, add it and choose "another network". Then approve live sync for it on **Panel connections**.
+      Uploads and pushes are refused until you do, because they hold real personal data.
+    - On **Networks**, either upload a CSV or Excel file (members, questions or answers) after a dry-run check, or
+      make a push key so the network's system can call `POST /api/v1/networks/<code>/push`.
+    - Push requests carry the headers `x-madp-batch`, `x-madp-timestamp` and `x-madp-signature: v1=<HMAC-SHA256 of
+      "timestamp.batch.body">`.
+    - Everything lands in the panel's encrypted inbox (`network_record`), and the normal sync reads it.
+    - Add a rule on **Audience segments** for each network category value (for example `b2c`), so members join
+      segments.
+    - A batch id is stored once, so a retried push is safe. The push key is shown once. Replacing it stops the old
+      key at once.
 
 Each later release: steps 4 and 5 with the new version. Swarm replaces the api and admin replicas (each new api
 replica migrates first) one at a time, starting the new one first and rolling back if it fails. A stack deployed

@@ -15,6 +15,8 @@ import { ConnectorRegistry } from './connectors/connector-registry.js';
 import { PanelDirectory } from './panels/panel-directory.js';
 import { PanelsController } from './panels/panels.controller.js';
 import { SegmentDirectory } from './segments/segment-directory.js';
+import { InboxService } from './networks/inbox.service.js';
+import { NetworksController } from './networks/networks.controller.js';
 import { AudienceSegmentsController } from './segments/segments.controller.js';
 import { PanelConnectionsController } from './connectors/panel-connections.controller.js';
 import { ConnectorsController } from './connectors/connectors.controller.js';
@@ -119,12 +121,14 @@ export class AppModule {
         PanelConnectionsController,
         PanelsController,
         AudienceSegmentsController,
+        NetworksController,
       ],
       providers: [
         { provide: API_ENV, useValue: env },
         Database,
         PanelDirectory,
         SegmentDirectory,
+        InboxService,
         Mongo,
         FieldCrypto,
         AuditService,

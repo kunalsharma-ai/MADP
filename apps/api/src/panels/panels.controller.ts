@@ -20,7 +20,14 @@ import { CurrentPrincipal, RequirePermissions } from '../auth/decorators.js';
 import type { Principal } from '../auth/auth.types.js';
 import { ZodPipe } from '../common/zod.pipe.js';
 import { Database } from '../db/database.js';
-import { brandSettings, panelConnections, panels, segmentRules } from '../db/schema.js';
+import {
+  brandSettings,
+  networkBatches,
+  networkPushKeys,
+  panelConnections,
+  panels,
+  segmentRules,
+} from '../db/schema.js';
 import { AuditService } from '../audit/audit.service.js';
 import { ConnectorRegistry } from '../connectors/connector-registry.js';
 import { PanelDirectory } from './panel-directory.js';
@@ -38,6 +45,7 @@ const DATA_TABLES = [
   'communication_event',
   'reward_ledger',
   'import_job',
+  'network_record',
 ] as const;
 
 /**
@@ -91,6 +99,7 @@ export class PanelsController {
         siteUrl: body.siteUrl ?? null,
         description: body.description ?? '',
         sensitive: body.sensitive,
+        sourceType: body.sourceType,
         builtIn: false,
         status: 'active',
         sort: maxSort + 1,
@@ -105,7 +114,13 @@ export class PanelsController {
     });
     await this.refresh();
     await this.record(req, body.code, 'panels.create', body.reason, {
-      after: { name: body.name, shortName: body.shortName, sensitive: body.sensitive, origins: body.origins },
+      after: {
+        name: body.name,
+        shortName: body.shortName,
+        sensitive: body.sensitive,
+        sourceType: body.sourceType,
+        origins: body.origins,
+      },
     });
     return this.directory.get(body.code);
   }
@@ -220,6 +235,8 @@ export class PanelsController {
         );
         await tx.delete(panelConnections).where(eq(panelConnections.panel, code));
         await tx.delete(segmentRules).where(eq(segmentRules.panel, code));
+        await tx.delete(networkPushKeys).where(eq(networkPushKeys.panel, code));
+        await tx.delete(networkBatches).where(eq(networkBatches.panel, code));
         await tx.delete(brandSettings).where(eq(brandSettings.panel, code));
         await tx.delete(panels).where(eq(panels.code, code));
       });

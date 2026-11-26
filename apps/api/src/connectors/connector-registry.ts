@@ -7,6 +7,8 @@ import { Database } from '../db/database.js';
 import { panelConnections } from '../db/schema.js';
 import { FieldCrypto } from '../crypto/field-crypto.js';
 import { PanelDirectory } from '../panels/panel-directory.js';
+import { InboxConnector } from '../networks/inbox-connector.js';
+import { InboxService } from '../networks/inbox.service.js';
 
 export interface ConnectorSlot {
   panel: PanelCode;
@@ -73,6 +75,7 @@ export class ConnectorRegistry implements OnModuleInit {
     private readonly database: Database,
     private readonly crypto: FieldCrypto,
     private readonly panels: PanelDirectory,
+    private readonly inbox: InboxService,
   ) {
     this.apply(new Map(), false);
   }
@@ -160,9 +163,13 @@ export class ConnectorRegistry implements OnModuleInit {
       if (archived) eff.liveApproved = false;
       const prev = this.effective.get(panel);
       this.effective.set(panel, eff);
-      const live = Boolean(eff.liveApproved && eff.syncBaseUrl && eff.syncToken);
+      // A network on other software has no API to call: it sends data to its inbox (upload or push).
+      const inbox = this.panels.isInbox(panel);
+      const live = Boolean(eff.liveApproved && (inbox || (eff.syncBaseUrl && eff.syncToken)));
       const reason = live
-        ? 'Live read-only access approved and configured'
+        ? inbox
+          ? 'Live: reads the uploads and pushes this network sent'
+          : 'Live read-only access approved and configured'
         : archived
           ? 'Panel archived: not synced'
           : !eff.liveApproved
@@ -173,14 +180,16 @@ export class ConnectorRegistry implements OnModuleInit {
         old &&
         prev &&
         old.reason === reason &&
-        (!live || (prev.syncBaseUrl === eff.syncBaseUrl && prev.syncToken === eff.syncToken));
+        (!live || inbox || (prev.syncBaseUrl === eff.syncBaseUrl && prev.syncToken === eff.syncToken));
       if (unchanged) continue;
       this.slots.set(panel, {
         panel,
         dataMode: live ? 'live' : 'demo',
         reason,
         connector: live
-          ? this.liveConnector(panel, eff.syncBaseUrl!, eff.syncToken!)
+          ? inbox
+            ? new InboxConnector(panel, this.inbox)
+            : this.liveConnector(panel, eff.syncBaseUrl!, eff.syncToken!)
           : // Keep the same DEMO connector when the panel stays on DEMO, so its fixtures don't change.
             old?.dataMode === 'demo'
             ? old.connector

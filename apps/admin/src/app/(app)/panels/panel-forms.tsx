@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 import type { PanelInfo } from '@madp/contracts';
 import { btn, input } from '@/components/ui';
 import { createPanelAction, panelStateAction, updatePanelAction } from './actions';
+import { unwrap } from '@/lib/result';
 
 const str = (f: FormData, k: string) => String(f.get(k) ?? '').trim();
 
@@ -30,17 +31,23 @@ export function CreatePanel() {
               .split(/[\s,]+/)
               .map((o) => o.replace(/^https?:\/\//, '').replace(/\/.*$/, ''))
               .filter(Boolean);
-            const r = await createPanelAction({
+            const r = await unwrap(createPanelAction({
               code: str(f, 'code').toLowerCase(),
               name: str(f, 'name'),
               shortName: str(f, 'shortName'),
               ...(str(f, 'siteUrl') ? { siteUrl: str(f, 'siteUrl') } : {}),
               ...(str(f, 'description') ? { description: str(f, 'description') } : {}),
               sensitive: f.get('sensitive') === 'on',
+              sourceType: str(f, 'sourceType') || 'panel_api',
               origins,
               reason: str(f, 'reason'),
-            });
-            toast.success(`Panel ${r.code} added. Set its connection next.`);
+            }));
+            const inbox = str(f, 'sourceType') === 'inbox';
+            toast.success(
+              inbox
+                ? `Network ${r.code} added. Approve live sync on Panel connections, then send its data on Networks.`
+                : `Panel ${r.code} added. Set its connection next.`,
+            );
             setOpen(false);
             router.push('/panel-connections');
           } catch (e) {
@@ -68,6 +75,17 @@ export function CreatePanel() {
       <label className="grid gap-1">
         <span className="text-fg-2">Website (optional)</span>
         <input name="siteUrl" type="url" placeholder="https://www.example.com" className={input} />
+      </label>
+      <label className="grid gap-1 md:col-span-2">
+        <span className="text-fg-2">How MADP gets its data</span>
+        <select name="sourceType" className={input} defaultValue="panel_api">
+          <option value="panel_api">It runs on the shared panel backend (like T2O, MFR and MHO)</option>
+          <option value="inbox">It is another network on different software (file upload or push API)</option>
+        </select>
+        <span className="text-[11px] text-fg-3">
+          The shared backend is read through its API with an address and token. A network on other software sends
+          its members to MADP instead, from the Networks screen. This can&apos;t be changed later.
+        </span>
       </label>
       <label className="grid gap-1 md:col-span-2">
         <span className="text-fg-2">Site hostnames</span>
@@ -116,7 +134,7 @@ export function PanelActions({ panel: p, hasData }: { panel: PanelInfo; hasData:
     if (!reason) return;
     start(async () => {
       try {
-        await panelStateAction(p.code, action, reason);
+        await unwrap(panelStateAction(p.code, action, reason));
         toast.success(action === 'delete' ? 'Panel deleted' : action === 'archive' ? 'Panel archived' : 'Panel restored');
       } catch (e) {
         toast.error((e as Error).message);
@@ -143,7 +161,7 @@ export function PanelActions({ panel: p, hasData }: { panel: PanelInfo; hasData:
               return;
             }
             try {
-              await updatePanelAction(p.code, { ...patch, reason: str(f, 'reason') });
+              await unwrap(updatePanelAction(p.code, { ...patch, reason: str(f, 'reason') }));
               toast.success('Saved');
               setEditing(false);
             } catch (e) {
