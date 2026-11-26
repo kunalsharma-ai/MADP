@@ -1448,3 +1448,18 @@ export const memberNotes = pgTable(
   },
   (t) => [index('member_note_member_idx').on(t.panel, t.dataMode, t.memberId)],
 );
+
+/** When each admin last looked at the possible-duplicate alerts of a panel. Settings only, no panel data. */
+export const adminFraudSeen = pgTable(
+  'admin_fraud_seen',
+  {
+    adminUserId: uuid('admin_user_id')
+      .notNull()
+      .references(() => adminUsers.id, { onDelete: 'cascade' }),
+    panel: text('panel')
+      .notNull()
+      .references(() => panels.code),
+    seenAt: timestamp('seen_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [primaryKey({ columns: [t.adminUserId, t.panel] })],
+);

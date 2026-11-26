@@ -14,6 +14,7 @@ import { setBrand } from '@/app/super-admin-actions';
 import { BrandLogo } from './brand-logo';
 import { PanelsProvider } from './panels-context';
 import { NewMembersBell, NewMembersNavBadge, NewMembersProvider } from './new-members';
+import { FraudAlert } from './fraud-alert';
 
 
 const BRAND_LABEL: Record<string, string> = {
@@ -171,7 +172,7 @@ export function Shell({
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col overflow-x-clip">
-        <header className="sticky top-0 z-30 flex h-16 items-center gap-2 sm:gap-3 border-b border-border/70 bg-bg/70 px-4 backdrop-blur-xl sm:px-8">
+        <header className="sticky top-0 z-30 flex h-16 items-center gap-1.5 sm:gap-3 border-b border-border/70 bg-bg/70 px-4 backdrop-blur-xl sm:px-8">
           <nav aria-label="Breadcrumb" className="min-w-0 flex-1 truncate text-[13px] text-fg-3">
             <Link href="/" className="hover:text-fg">
               MADP
@@ -197,7 +198,7 @@ export function Shell({
                 const next = e.target.value;
                 void setBrand(next).then(() => router.refresh());
               }}
-              className="max-w-[8.5rem] rounded-xl border border-border bg-surface px-2.5 py-1.5 text-[13px] font-medium text-fg shadow-soft sm:max-w-none"
+              className="max-w-[7rem] rounded-xl border border-border bg-surface px-2.5 py-1.5 text-[13px] font-medium text-fg shadow-soft sm:max-w-none"
             >
               {allowAll ? <option value="all">{BRAND_LABEL.all}</option> : null}
               {user.brands.map((b) => (
@@ -222,6 +223,7 @@ export function Shell({
           >
             <Menu className="size-4" aria-hidden />
           </button>
+          <FraudAlert />
           <NewMembersBell />
           <ThemeToggle />
           <form action={signOut}>

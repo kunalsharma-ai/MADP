@@ -105,3 +105,22 @@ export interface ActivityFeed {
   /** Panels whose admin API did not answer: their tickets are missing this round. */
   unreachable: string[];
 }
+
+/** Possible duplicate accounts (same phone, e-mail, or name and birth date) per panel, for the red alert. */
+export interface FraudAlertPanel {
+  panel: string;
+  /** Groups of two or more accounts that share a value, per rule. */
+  groups: Partial<Record<'phone' | 'email' | 'name_dob', number>>;
+  /** Groups with an account that signed up since the admin last looked. */
+  fresh: number;
+  /** The newest sign-up in a group, if any. */
+  latestAt: string | null;
+  /** True when the panel found more groups than it listed. */
+  more: boolean;
+}
+export interface FraudAlerts {
+  checkedAt: string;
+  total: number;
+  panels: FraudAlertPanel[];
+  unreachable: string[];
+}

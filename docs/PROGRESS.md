@@ -804,3 +804,14 @@ verified.
 - Downloads hold masked e-mail and phone only, never the member page's full name; formula cells are neutralised;
   DEMO files are named `-DEMO` and carry a data_mode column.
 - Tests: `apps/api/test/member-bulk.test.ts` (3). Screenshots: `/mnt/project-files/madp/preview-madp/tags-bulk/`.
+
+## Duplicate and fraud alert (2026-11-26)
+
+- A red shield next to the bell shows possible duplicate accounts per panel: same phone, same e-mail, or same name
+  and birth date (the panel's duplicate finder, MFR#68). It turns red while a group has an account that signed up
+  since the admin last looked; each panel row opens the Duplicates screen for that rule. T2O, MFR, MHO alike.
+- `GET /fraud-alerts` returns counts and times only; each panel and rule is scanned at most every 10 minutes.
+  `POST /fraud-alerts/seen` (table `admin_fraud_seen`, migration 0029). Admins without members.read see nothing.
+- Same device or IP: the panels do not store either today; asked Kunal to approve a panel change that stores a
+  one-way hash at sign-up.
+- Tests: `apps/api/test/fraud-alerts.test.ts` (2).
