@@ -182,12 +182,12 @@ export default async function ConnectorsPage() {
               <ul className="mt-2 space-y-1.5">
                 {c.capabilities.map((cap) => (
                   <li key={cap.capability} className="flex gap-2">
-                    <Badge tone={statusTone[cap.status]} className="w-16 justify-center">
+                    <Badge tone={statusTone[cap.status]} className="w-16 shrink-0 justify-center">
                       {cap.status}
                     </Badge>
-                    <span>
+                    <span className="min-w-0">
                       <span className="font-mono">{cap.capability}</span>
-                      <span className="block text-fg-3">{cap.evidence}</span>
+                      <span className="block break-words text-fg-3 [overflow-wrap:anywhere]">{cap.evidence}</span>
                     </span>
                   </li>
                 ))}

@@ -178,7 +178,7 @@ export default async function AudiencePage({ searchParams }: { searchParams: SP 
         </span>
         <div>
           <p className="text-[13px] font-medium text-fg-2">People who match</p>
-          <p className="text-[40px] font-bold leading-none text-fg">
+          <p className="mt-1 text-[40px] font-bold leading-none text-fg">
             <CountUp value={c.uniquePeople} />
           </p>
         </div>

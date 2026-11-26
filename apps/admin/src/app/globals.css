@@ -211,3 +211,14 @@ body {
     radial-gradient(60rem 40rem at 100% -10%, rgba(79, 91, 213, 0.16), transparent 70%),
     radial-gradient(50rem 36rem at -10% 110%, rgba(20, 184, 166, 0.1), transparent 70%);
 }
+
+/*
+ * Grid items default to min-width: auto, so one wide child (a table, a long id) stretches its whole column past the
+ * screen, and the shell clips it. Letting grid items shrink keeps every card inside the page; wide tables scroll
+ * inside their own box instead.
+ */
+@layer base {
+  .grid > * {
+    min-width: 0;
+  }
+}

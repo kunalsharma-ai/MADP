@@ -56,12 +56,12 @@ export default async function QuestionBankPage({
         title="Question bank"
         description="One question library for the brand picked at the top. Questions are keyed by name, so answers stay linked when wording changes. Teen guardrails are enforced on the server: tobacco, nicotine, alcohol, health, cosmetic and vehicle questions can never reach a teen profile."
       />
-      <nav className="mb-4 flex gap-1 border-b border-border text-[13px]">
+      <nav className="mb-4 flex gap-1 flex-wrap border-b border-border text-[13px]">
         {TABS.map(([k, label]) => (
           <Link
             key={k}
             href={`/question-bank?tab=${k}`}
-            className={`-mb-px border-b-2 px-3 py-2 font-medium ${tab === k ? 'border-accent text-fg' : 'border-transparent text-fg-3 hover:text-fg'}`}
+            className={`-mb-px shrink-0 whitespace-nowrap border-b-2 px-3 py-2 font-medium ${tab === k ? 'border-accent text-fg' : 'border-transparent text-fg-3 hover:text-fg'}`}
           >
             {label}
           </Link>
