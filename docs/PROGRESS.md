@@ -717,3 +717,20 @@ verified.
   MHO's `healthcare professional` category as Professional; it was treated as Consumer before.
 - **Tests.** MFR `tests/admin.experts.test.mjs` (3) and the cross-brand test, and MADP `panel-admin-step4.test.ts` (10).
 - **Previews.** `/mnt/project-files/madp/preview-console/expert-verification/`.
+
+## Question registry editor (2026-11-26)
+
+- **What.** The Question registry now has **Add a question** and an **Edit** button on every question
+  (`/questions/edit`). One editor writes to any of T2O, MFR and MHO: tick the panels, pick the segments (turned into
+  each panel's own category words by the segment rules), pick the kind of question from a catalogue of 12 kinds in 5
+  groups, add answers, set the rules (required, member can edit, Other / None / Prefer not to say, money, width,
+  exclusive answers, countries), set what it depends on (parent question, and for answer lists which parent answers),
+  and link the registry copy to an attribute.
+- **How it writes.** Through the existing question bank routes, once per ticked panel (brand picked per request), so
+  `qb.edit` is checked and every write is audited per panel. No new panel endpoints; the panel repos are unchanged.
+  Profile pages still go through the Questionnaire builder (second admin's review).
+- **Type words.** `packages/contracts/src/question-types.ts` maps each kind to the word each panel already stores (MFR's
+  short text is `open end single line`). A kind a panel has never stored is flagged "New on …".
+- **Not built.** Extra checks (min/max length, number range, pattern) need new fields in the shared panel backend.
+- **Tests.** `question-types.test.ts` (7). Preview against a local stand-in panel:
+  `/mnt/project-files/madp/preview-madp/question-editor/`. No live panel test yet.
