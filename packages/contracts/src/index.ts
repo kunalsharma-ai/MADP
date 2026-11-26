@@ -18,3 +18,4 @@ export * from './reports.js';
 export * from './insights.js';
 export * from './mailers.js';
 export * from './questionnaire.js';
+export * from './panel-connections.js';

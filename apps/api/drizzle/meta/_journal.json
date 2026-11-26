@@ -148,6 +148,13 @@
       "when": 1795595669013,
       "tag": "0020_brand_mho_privacy",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1795697578113,
+      "tag": "0021_panel_connection",
+      "breakpoints": true
     }
   ]
 }

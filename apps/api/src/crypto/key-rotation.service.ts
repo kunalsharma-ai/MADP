@@ -9,6 +9,7 @@ export const ENCRYPTED_COLUMNS: Record<string, string[]> = {
   source_identity: ['email_enc', 'phone_enc', 'first_name_enc', 'last_name_enc', 'date_of_birth_enc'],
   admin_user: ['totp_secret_enc'],
   service_client: ['secret_enc'],
+  panel_connection: ['sync_token_enc', 'admin_secret_enc', 'pending_enc'],
 };
 
 export interface RotationReport {

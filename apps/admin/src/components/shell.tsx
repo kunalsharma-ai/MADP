@@ -28,6 +28,7 @@ import {
   Menu,
   Moon,
   PlugZap,
+  Cable,
   Search,
   ShieldCheck,
   Sun,
@@ -64,6 +65,7 @@ const ICONS = {
   ListTree,
   GitCompareArrows,
   PlugZap,
+  Cable,
   ShieldCheck,
   Dices,
   UserRoundCheck,
@@ -190,22 +192,22 @@ export function Shell({
               </div>
             ))}
             {PLANNED.length ? (
-            <div>
-              <p className="px-2 pb-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-nav-text/45">
-                Coming next
-              </p>
-              <ul className="space-y-0.5">
-                {PLANNED.map((p) => (
-                  <li
-                    key={p.label}
-                    className="flex items-center justify-between px-2 py-1 text-[12px] text-nav-text/45"
-                  >
-                    {p.label}
-                    <span className="rounded bg-nav-2 px-1 text-[10px]">{p.milestone}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
+              <div>
+                <p className="px-2 pb-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-nav-text/45">
+                  Coming next
+                </p>
+                <ul className="space-y-0.5">
+                  {PLANNED.map((p) => (
+                    <li
+                      key={p.label}
+                      className="flex items-center justify-between px-2 py-1 text-[12px] text-nav-text/45"
+                    >
+                      {p.label}
+                      <span className="rounded bg-nav-2 px-1 text-[10px]">{p.milestone}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
             ) : null}
           </nav>
           <div className="border-t border-white/5 px-4 py-3">

@@ -262,6 +262,13 @@ export class AuthService {
     return { token: await this.sign(full), user: this.toSessionUser({ ...user, mfaEnabled: true }, full) };
   }
 
+  /** Step-up check for a sensitive change: the signed-in admin's current authenticator code, used up once. */
+  async confirmCode(adminId: string, code: string): Promise<boolean> {
+    const user = await this.database.db.query.adminUsers.findFirst({ where: eq(adminUsers.id, adminId) });
+    if (!user?.isActive || !user.mfaEnabled) return false;
+    return this.useTotp(user, code);
+  }
+
   /**
    * Checks an authenticator code and uses it up: a code (and any older one) is accepted once, so a code seen over
    * someone's shoulder or copied from a captured sign-in can't be used again in the same 90 seconds.

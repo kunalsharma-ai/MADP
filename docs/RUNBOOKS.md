@@ -31,7 +31,10 @@ Ask Kunal first. Then:
 3. Load the secrets from the secrets manager, never from a file in the repository: `AUTH_JWT_SECRET`,
    `FIELD_ENCRYPTION_KEY(S)`, `PII_HASH_KEY`, `PANEL_ADMIN_API_SECRET`, `WEBHOOK_SECRETS_<PANEL>`, panel API tokens.
    Production must set `NODE_ENV=production`, `REQUIRE_MFA=true` and the real `ADMIN_ORIGIN`.
-4. Leave `LIVE_SOURCE_APPROVED_PANELS` empty unless Kunal has approved live read-only access for that panel.
+4. Leave `LIVE_SOURCE_APPROVED_PANELS` empty unless Kunal has approved live read-only access for that panel. Panel
+   addresses, tokens, the admin API secret, the sync interval and the live switch are normally set on the console's
+   **Panel connections** screen instead (Super Admin, authenticator code, four eyes when a second Super Admin exists).
+   Values saved there win over the environment; environment values stay as a fallback.
 5. Run migrations: `pnpm db:migrate` (on Swarm, each api replica does this as it starts). Migrations only add; an applied
    migration is never edited.
 6. Start the API, then the admin app (`MADP_API_URL` pointing at the API).
@@ -93,6 +96,9 @@ First deploy, on a manager node:
    --email <e-mail> --name <name> --role super_admin`, with `MADP_ADMIN_PASSWORD` set for that one command. It
    applies any pending migrations first, so it also works on a database nothing has migrated yet.
 7. Add MADP to the proxy manager (below), then check `https://<host>/api/v1/health` and sign in with MFA.
+8. Connect the panels on **Panel connections**: for each brand enter the sync address and token, press *Test
+   connection*, enter the admin API address and secret, and turn on live sync when Kunal approves it. No restart is
+   needed; the sync schedule picks up the change within a minute.
 
 Each later release: steps 4 and 5 with the new version. Swarm replaces the api and admin replicas (each new api
 replica migrates first) one at a time, starting the new one first and rolling back if it fails. A stack deployed
