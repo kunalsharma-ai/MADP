@@ -3,6 +3,8 @@ import { z } from 'zod';
 import {
   ArchiveRun,
   MemberActionReason,
+  MemberAlertsChange,
+  MemberResponsesQuery,
   type MemberAdminSessions,
   type MemberEmailResult,
   type MemberLoginAs,
@@ -416,6 +418,112 @@ export class MembersController {
       targetType: 'member',
       targetId: id,
       metadata: { sessionId: sid },
+    });
+    return r;
+  }
+
+  // --- member engagement (MFR#101): what the member sees in their member area ---------------------------------------
+
+  /** Survey names on the health panel can name a condition, so they are hidden without health access. */
+  private maskHealth<T extends { survey: string | null; slug: string | null }>(p: Principal, brand: PanelCode, rows: T[]): T[] {
+    if (brand !== 'mho' || hasOn(p, brand, ['health.sensitive.read'])) return rows;
+    return rows.map((r) => ({ ...r, survey: r.survey === null ? null : 'Health survey (name hidden)', slug: null }));
+  }
+
+  @RequirePermissions('members.read')
+  @Get(':id/engagement')
+  async engagement(
+    @Param('id', new ZodPipe(MemberId)) id: string,
+    @CurrentBrand() b: BrandSelection,
+    @CurrentPrincipal() p: Principal,
+    @Req() req: Request,
+  ) {
+    const brand = b as PanelCode;
+    await this.guardTeen(p, brand, id, req);
+    const data = await this.panel.call<unknown>(brand, p.id, 'GET', R.memberEngagement(id));
+    await this.audit.record({
+      ...AuditService.fromRequest(req),
+      action: 'members.engagement.view',
+      panel: brand,
+      targetType: 'member',
+      targetId: id,
+    });
+    return data;
+  }
+
+  @RequirePermissions('members.read')
+  @Get(':id/responses')
+  async responses(
+    @Param('id', new ZodPipe(MemberId)) id: string,
+    @Query(new ZodPipe(MemberResponsesQuery)) q: MemberResponsesQuery,
+    @CurrentBrand() b: BrandSelection,
+    @CurrentPrincipal() p: Principal,
+    @Req() req: Request,
+  ) {
+    const brand = b as PanelCode;
+    await this.guardTeen(p, brand, id, req);
+    const data = await this.panel.call<{
+      total: number;
+      page: number;
+      size: number;
+      items: { survey: string | null; slug: string | null }[];
+    }>(brand, p.id, 'GET', R.memberResponses(id), q);
+    await this.audit.record({
+      ...AuditService.fromRequest(req),
+      action: 'members.responses.view',
+      panel: brand,
+      targetType: 'member',
+      targetId: id,
+      metadata: { status: q.status ?? null, page: q.page, total: data.total },
+    });
+    return { ...data, items: this.maskHealth(p, brand, data.items) };
+  }
+
+  @RequirePermissions('members.edit')
+  @Put(':id/alerts')
+  async alerts(
+    @Param('id', new ZodPipe(MemberId)) id: string,
+    @Body(new ZodPipe(MemberAlertsChange)) body: MemberAlertsChange,
+    @CurrentBrand() b: BrandSelection,
+    @CurrentPrincipal() p: Principal,
+    @Req() req: Request,
+  ) {
+    const brand = b as PanelCode;
+    await this.guardTeen(p, brand, id, req);
+    const r = await this.panel.call<unknown>(brand, p.id, 'PUT', R.memberAlerts(id), undefined, body);
+    await this.audit.record({
+      ...AuditService.fromRequest(req),
+      action: 'members.alerts.change',
+      panel: brand,
+      targetType: 'member',
+      targetId: id,
+      after: { notifications: body.notifications ?? null, survey: body.survey ?? null },
+      reason: body.reason,
+    });
+    return r;
+  }
+
+  @RequirePermissions('members.edit')
+  @Post(':id/payout/clear')
+  async clearPayout(
+    @Param('id', new ZodPipe(MemberId)) id: string,
+    @Body(new ZodPipe(MemberActionReason)) body: MemberActionReason,
+    @CurrentBrand() b: BrandSelection,
+    @CurrentPrincipal() p: Principal,
+    @Req() req: Request,
+  ) {
+    const brand = b as PanelCode;
+    await this.guardTeen(p, brand, id, req);
+    const r = await this.panel.call<{ cleared: boolean; was: string | null }>(brand, p.id, 'POST', R.memberPayoutClear(id), undefined, body);
+    await this.audit.record({
+      ...AuditService.fromRequest(req),
+      action: 'members.payout.clear',
+      panel: brand,
+      targetType: 'member',
+      targetId: id,
+      before: { method: r.was },
+      after: { method: null },
+      reason: body.reason,
     });
     return r;
   }

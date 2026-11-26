@@ -407,6 +407,11 @@ export const PANEL_ADMIN_ROUTES = {
   memberAdminSessions: (id: string) => `/api/v1/admin/members/${encodeURIComponent(id)}/admin-sessions`,
   memberAdminSessionEnd: (id: string, sid: string) =>
     `/api/v1/admin/members/${encodeURIComponent(id)}/admin-sessions/${encodeURIComponent(sid)}/end`,
+  // Member engagement (MFR#101, Project/api/app/admin/memberengagement.js): what the member sees, alerts, payout method
+  memberEngagement: (id: string) => `/api/v1/admin/members/${encodeURIComponent(id)}/engagement`,
+  memberResponses: (id: string) => `/api/v1/admin/members/${encodeURIComponent(id)}/responses`,
+  memberAlerts: (id: string) => `/api/v1/admin/members/${encodeURIComponent(id)}/alerts`,
+  memberPayoutClear: (id: string) => `/api/v1/admin/members/${encodeURIComponent(id)}/payout/clear`,
   // Duplicate accounts (MFR#68, Project/api/app/admin/merge.js): find, merge (dry run unless ?dryRun=0), list, undo
   duplicates: '/api/v1/admin/members/duplicates',
   merge: '/api/v1/admin/members/merge',
