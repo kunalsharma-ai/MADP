@@ -7,6 +7,8 @@ import { api } from '@/lib/api';
 import type { Attribute, QuestionRow } from '@/lib/types';
 import { AttributeMatrix, EditLink, GroupedQuestions } from './grouped';
 import { Plus } from 'lucide-react';
+import { TopicInfo } from '@/components/screen-info';
+import { REGISTRY_HELP } from '@/lib/question-editor-help';
 import { cn } from '@/lib/cn';
 import {
   Badge,
@@ -58,6 +60,7 @@ export default async function QuestionsPage({
             <Link href={`/questions/edit${sp.panel ? `?panel=${sp.panel}` : ''}`} className={btn.primary}>
               <Plus className="size-4" aria-hidden /> Add a question
             </Link>
+            <TopicInfo title="Add or edit a question" help={REGISTRY_HELP.addEdit} />
           </>
         }
       />
@@ -97,6 +100,7 @@ export default async function QuestionsPage({
             </Link>
           ))}
         </nav>
+        <TopicInfo title="Three ways to view" help={REGISTRY_HELP.views} />
         <span className="ml-auto text-xs text-fg-3">{fmt(data.items.length)} questions</span>
       </form>
       {view === 'attributes' && data.items.length ? (

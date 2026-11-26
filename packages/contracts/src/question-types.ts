@@ -5,10 +5,12 @@ import type { SegmentRuleInfo, AudienceSegmentInfo } from './panels.js';
  * type word each panel already stores (from the real Question exports in the project's question-bank folder:
  * T2O 819, MFR 961, MHO 600 questions). A panel that has never stored a type gets the fallback word and the editor
  * warns that its member app may not show it yet. Nothing here is a new panel field: the settings map to the
- * panel's existing Question fields (isRequired, isEditable, hasOthers, hasNone, hasSkip, isMoney, size, parent).
+ * panel's existing Question fields (isRequired, isEditable, hasOthers, hasNone, hasSkip, isMoney, parent).
+ * Layout fields (size, icon, sortOrder) are never written here, so a member site's design never changes; and a kind
+ * a panel has never stored can't be saved to it (`nativeType(...).known`).
  */
 export type QuestionTypeGroup = 'choice' | 'text' | 'contact' | 'number_date' | 'upload';
-export type QuestionSetting = 'isRequired' | 'isEditable' | 'hasOthers' | 'hasNone' | 'hasSkip' | 'isMoney' | 'size';
+export type QuestionSetting = 'isRequired' | 'isEditable' | 'hasOthers' | 'hasNone' | 'hasSkip' | 'isMoney';
 
 export interface QuestionTypeInfo {
   key: string;
@@ -30,12 +32,12 @@ export interface QuestionTypeInfo {
 export const QUESTION_TYPE_GROUPS: { key: QuestionTypeGroup; label: string; hint: string }[] = [
   { key: 'choice', label: 'Pick from answers', hint: 'The member picks one or more answers from your list.' },
   { key: 'text', label: 'Type an answer', hint: 'The member writes the answer in a box.' },
-  { key: 'contact', label: 'Contact details', hint: 'E-mail, phone or postcode, kept in the panel’s own format.' },
+  { key: 'contact', label: 'Contact details', hint: 'E-mail or phone, kept in the panel’s own format.' },
   { key: 'number_date', label: 'Number and date', hint: 'A number or a date.' },
   { key: 'upload', label: 'File upload', hint: 'The member uploads a document.' },
 ];
 
-const BASE: QuestionSetting[] = ['isRequired', 'isEditable', 'size'];
+const BASE: QuestionSetting[] = ['isRequired', 'isEditable'];
 const CHOICE: QuestionSetting[] = [...BASE, 'hasOthers', 'hasNone', 'hasSkip', 'isMoney'];
 
 export const QUESTION_TYPES: QuestionTypeInfo[] = [
@@ -136,18 +138,6 @@ export const QUESTION_TYPES: QuestionTypeInfo[] = [
     settings: BASE,
   },
   {
-    key: 'zipcode',
-    label: 'Postcode / PIN code',
-    group: 'contact',
-    hint: 'A postcode box.',
-    expects: 'A postcode',
-    choice: false,
-    multi: false,
-    native: {},
-    fallback: 'zipcode',
-    settings: BASE,
-  },
-  {
     key: 'number',
     label: 'Number',
     group: 'number_date',
@@ -192,10 +182,9 @@ export const QUESTION_SETTINGS: Record<QuestionSetting, { label: string; hint: s
   hasNone: { label: 'Add “None of these”', hint: 'Adds a None answer.' },
   hasSkip: { label: 'Add “Prefer not to say”', hint: 'Lets the member skip without answering.' },
   isMoney: { label: 'Money question', hint: 'Marks an income or spend question, so amounts show in the member’s currency.' },
-  size: { label: 'Width on the page', hint: 'How wide the field is, out of 12 columns (6 is half the row).' },
 };
 
-export const DEFAULT_SETTINGS = { isRequired: true, isEditable: true, hasOthers: false, hasNone: false, hasSkip: false, isMoney: false, size: '6' };
+export const DEFAULT_SETTINGS = { isRequired: true, isEditable: true, hasOthers: false, hasNone: false, hasSkip: false, isMoney: false };
 
 /** The catalogue entry for a stored type word, from any panel (e.g. MFR's "open end single line" is short text). */
 export function typeInfo(stored: string | null | undefined): QuestionTypeInfo | undefined {
