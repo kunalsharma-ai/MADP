@@ -7,6 +7,7 @@ import {
   type PanelCode,
 } from '@madp/contracts';
 import { cn } from '@/lib/cn';
+import { ScreenInfo } from './screen-info';
 
 export function Card({ className, children }: { className?: string; children: ReactNode }) {
   return (
@@ -50,7 +51,10 @@ export function PageHeader({
         {eyebrow ? (
           <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-fg-3">{eyebrow}</p>
         ) : null}
-        <h1 className="mt-1 text-2xl font-semibold tracking-tight text-fg">{title}</h1>
+        <h1 className="mt-1 text-2xl font-semibold tracking-tight text-fg">
+          {title}
+          <ScreenInfo />
+        </h1>
         {description ? <p className="mt-1.5 max-w-3xl text-sm text-fg-2">{description}</p> : null}
       </div>
       {actions ? <div className="flex items-center gap-2">{actions}</div> : null}
