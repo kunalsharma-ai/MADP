@@ -1,15 +1,7 @@
+import { panelName, panelShort } from '@/lib/panel-names';
+import { getPanels } from '@/lib/panels';
 import type { Metadata } from 'next';
-import {
-  AUDIENCE_CATEGORIES,
-  AUDIENCE_CATEGORY_LABELS,
-  HEALTH_ACCESS_PURPOSE_LABELS,
-  HealthAccessPurpose,
-  PANEL_CODES,
-  PANELS,
-  type AudienceCategory,
-  type CountsResponse,
-  type PanelCode,
-} from '@madp/contracts';
+import { AUDIENCE_CATEGORIES, AUDIENCE_CATEGORY_LABELS, HEALTH_ACCESS_PURPOSE_LABELS, HealthAccessPurpose, type AudienceCategory, type CountsResponse, type PanelCode } from '@madp/contracts';
 import { api, ApiError } from '@/lib/api';
 import { Country } from '@/components/country';
 import type { Attribute } from '@/lib/types';
@@ -33,8 +25,9 @@ type SP = Promise<Record<string, string | string[] | undefined>>;
 const arr = (v: string | string[] | undefined) => (v === undefined ? [] : ([] as string[]).concat(v));
 
 export default async function AudiencePage({ searchParams }: { searchParams: SP }) {
+  const panelList = await getPanels();
   const sp = await searchParams;
-  const panels = arr(sp.panel).filter((p): p is PanelCode => (PANEL_CODES as readonly string[]).includes(p));
+  const panels = arr(sp.panel).filter((p): p is PanelCode => panelList.map((x) => x.code).includes(p));
   const categories = arr(sp.category).filter((c): c is AudienceCategory =>
     (AUDIENCE_CATEGORIES as readonly string[]).includes(c),
   );
@@ -86,7 +79,7 @@ export default async function AudiencePage({ searchParams }: { searchParams: SP 
         <fieldset>
           <legend className="mb-2 text-xs font-medium text-fg-3">Panels</legend>
           <div className="flex flex-wrap gap-3">
-            {PANEL_CODES.map((p) => (
+            {panelList.map((x) => x.code).map((p) => (
               <label key={p} className="flex items-center gap-1.5 text-[13px]">
                 <input
                   type="checkbox"
@@ -95,7 +88,7 @@ export default async function AudiencePage({ searchParams }: { searchParams: SP 
                   defaultChecked={panels.includes(p)}
                   className="accent-[var(--accent)]"
                 />{' '}
-                {PANELS[p].shortName}
+                {panelShort(p, panelList)}
               </label>
             ))}
           </div>
@@ -193,7 +186,7 @@ export default async function AudiencePage({ searchParams }: { searchParams: SP 
           {resolved.approvedMappings === 0
             ? `No approved mapping for ${resolved.key} yet, so no one can match. Approve mappings in the mapping workbench.`
             : `${resolved.key}: ${resolved.approvedMappings} approved mapping(s) from ${resolved.panels
-                .map((p) => PANELS[p].shortName)
+                .map((p) => panelShort(p, panelList))
                 .join(', ')}. Members of other panels match only through a linked identity.`}
         </p>
       ) : null}

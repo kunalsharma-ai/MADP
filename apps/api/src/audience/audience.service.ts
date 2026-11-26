@@ -2,7 +2,6 @@ import { ForbiddenException, Inject, Injectable, NotFoundException } from '@nest
 import { and, eq, inArray, sql, type SQL } from 'drizzle-orm';
 import type { ApiEnv } from '@madp/config';
 import {
-  PANEL_CODES,
   type AttributeFilter,
   type CountCell,
   type CountsRequest,
@@ -182,7 +181,7 @@ export class AudienceService {
     const byPanel = part('panel').sort(byKey);
     const byCountry = part('country').sort((a, b) => Number(b.n) - Number(a.n) || byKey(a, b));
     const byCategory = part('category').sort(byKey);
-    const panels = f.panels?.length ? f.panels : [...PANEL_CODES];
+    const panels = f.panels?.length ? f.panels : this.registry.all().map((x) => x.panel);
     const sync = await db.execute<{ min: Date | null; max: Date | null }>(sql`
       select min(last_success_at) as min, max(last_success_at) as max from sync_checkpoint
       where data_mode = ${mode} and stream = 'respondents' and panel::text in (${sql.join(

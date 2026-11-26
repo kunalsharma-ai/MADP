@@ -1,5 +1,7 @@
+import { panelName, panelShort } from '@/lib/panel-names';
+import { getPanels } from '@/lib/panels';
 import type { Metadata } from 'next';
-import { PANEL_CODES, type PanelCode, type SessionUser } from '@madp/contracts';
+import { type PanelCode, type SessionUser } from '@madp/contracts';
 import { api } from '@/lib/api';
 import { Badge, Card, CardHeader, EmptyState, PageHeader, PanelChip, Table, fmt, fmtDate } from '@/components/ui';
 import { CreateClient, RevokeClient } from './supply360-forms';
@@ -21,6 +23,7 @@ interface ServiceClient {
 }
 
 export default async function Supply360Page() {
+  const panelList = await getPanels();
   const [me, clients] = await Promise.all([api<SessionUser>('/auth/me'), api<ServiceClient[]>('/service-clients')]);
   const canManage = me.permissions.includes('service_clients.manage');
   return (
@@ -30,7 +33,7 @@ export default async function Supply360Page() {
         title="Supply360 console"
         description="Supply360 calls MADP as a signed service client. It gets counts, eligibility and pseudonymous references only, never names, addresses, answers or health data. MADP alone contacts members."
       />
-      {canManage ? <CreateClient panels={[...PANEL_CODES]} /> : null}
+      {canManage ? <CreateClient panels={panelList.map((x) => x.code)} /> : null}
       <Card className="mt-4">
         <CardHeader title="Service clients" hint="Each client signs every request with its own secret. A secret is shown once, when the client is created." />
         {clients.length === 0 ? (

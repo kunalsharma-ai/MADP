@@ -1,4 +1,4 @@
-import type { CapabilityFinding, PanelCode } from '@madp/contracts';
+import { isBuiltInPanel, type BuiltInPanelCode, type CapabilityFinding, type PanelCode } from '@madp/contracts';
 
 /**
  * Capability findings from the read-only audits (docs/REPOSITORY_AUDIT_*.md), for the backend each panel
@@ -95,8 +95,13 @@ const onT2oBackend = (panel: string): CapabilityFinding[] =>
     evidence: `${panel} production runs the T2O backend: ${f.evidence}`,
   }));
 
-export const AUDITED_CAPABILITIES: Record<PanelCode, CapabilityFinding[]> = {
+export const AUDITED_CAPABILITIES: Record<BuiltInPanelCode, CapabilityFinding[]> = {
   t2o: T2O_BACKEND,
   mfr: onT2oBackend('MFR'),
   mho: onT2oBackend('MHO'),
 };
+
+/** Audit findings for a panel. A panel added in the console has not been audited, so it has none. */
+export function capabilitiesFor(panel: PanelCode): CapabilityFinding[] {
+  return isBuiltInPanel(panel) ? AUDITED_CAPABILITIES[panel] : [];
+}

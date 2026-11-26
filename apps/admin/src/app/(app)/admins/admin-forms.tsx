@@ -1,22 +1,29 @@
 'use client';
 
+import type { PanelInfo } from '@madp/contracts';
+import { usePanels } from '@/components/panels-context';
 import { useState, useTransition } from 'react';
 import { toast } from 'sonner';
 import { createAdminAction, saveRoleAction, updateAdminAction } from '@/app/super-admin-actions';
 import { Badge, Card, CardHeader, btn, input } from '@/components/ui';
 
-const BRANDS = ['t2o', 'mfr', 'mho'] as const;
 type Grant = { role: string; brands: string[] | null };
 
-function readGrant(f: FormData): Grant {
+/**
+ * All brands ticked (or none) is saved as "every brand". The exception: when a sensitive panel added in the console
+ * is ticked, the brands are saved by name, because an all-brands grant doesn't open that panel's health data.
+ */
+function readGrant(f: FormData, panels: PanelInfo[]): Grant {
   const brands = f.getAll('brands').map(String);
+  const named = panels.some((p) => p.sensitive && !p.builtIn && brands.includes(p.code));
   return {
     role: String(f.get('role')),
-    brands: brands.length === BRANDS.length || brands.length === 0 ? null : brands,
+    brands: brands.length === 0 || (brands.length === panels.length && !named) ? null : brands,
   };
 }
 
 function GrantFields({ roles }: { roles: { key: string; name: string }[] }) {
+  const panels = usePanels();
   return (
     <>
       <label className="text-[13px]">
@@ -30,11 +37,11 @@ function GrantFields({ roles }: { roles: { key: string; name: string }[] }) {
         </select>
       </label>
       <fieldset className="text-[13px]">
-        <legend className="mb-1">Brands (all ticked = every brand)</legend>
-        <div className="flex gap-3">
-          {BRANDS.map((b) => (
-            <label key={b} className="flex items-center gap-1">
-              <input type="checkbox" name="brands" value={b} defaultChecked /> {b.toUpperCase()}
+        <legend className="mb-1">Brands (all ticked = every brand, including panels added later)</legend>
+        <div className="flex flex-wrap gap-3">
+          {panels.map((b) => (
+            <label key={b.code} className="flex items-center gap-1">
+              <input type="checkbox" name="brands" value={b.code} defaultChecked /> {b.shortName}
             </label>
           ))}
         </div>
@@ -46,6 +53,7 @@ function GrantFields({ roles }: { roles: { key: string; name: string }[] }) {
 export function CreateAdmin({ roles }: { roles: { key: string; name: string }[] }) {
   const [pending, start] = useTransition();
   const [issued, setIssued] = useState<{ email: string; oneTimePassword: string } | null>(null);
+  const panelList = usePanels();
   return (
     <Card>
       <CardHeader
@@ -61,7 +69,7 @@ export function CreateAdmin({ roles }: { roles: { key: string; name: string }[] 
               const r = await createAdminAction({
                 email,
                 displayName: String(f.get('displayName')),
-                grants: [readGrant(f)],
+                grants: [readGrant(f, panelList)],
               });
               setIssued({ email, oneTimePassword: r.oneTimePassword });
               toast.success('Admin created');
@@ -114,6 +122,7 @@ export function AdminRowActions({
   roles: { key: string; name: string }[];
 }) {
   const [pending, start] = useTransition();
+  const panelList = usePanels();
   const [open, setOpen] = useState(false);
   const run = (input: { isActive?: boolean; grants?: Grant[] }) => {
     const reason = window.prompt('Reason for this change (kept in the audit log)');
@@ -142,7 +151,7 @@ export function AdminRowActions({
         <form
           className="grid w-64 gap-2 rounded-lg border border-border p-3"
           action={(f) =>
-            run({ grants: [...grants.filter((g) => g.role !== String(f.get('role'))), readGrant(f)] })
+            run({ grants: [...grants.filter((g) => g.role !== String(f.get('role'))), readGrant(f, panelList)] })
           }
         >
           <p className="text-[12px] text-fg-3">

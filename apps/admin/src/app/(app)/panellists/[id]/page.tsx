@@ -1,6 +1,8 @@
+import { panelName, panelShort } from '@/lib/panel-names';
+import { getPanels } from '@/lib/panels';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import { HEALTH_ACCESS_PURPOSE_LABELS, HealthAccessPurpose, PANELS } from '@madp/contracts';
+import { HEALTH_ACCESS_PURPOSE_LABELS, HealthAccessPurpose } from '@madp/contracts';
 import { api, ApiError } from '@/lib/api';
 import type { PanellistDetail } from '@/lib/types';
 import {
@@ -35,6 +37,7 @@ export default async function PanellistPage({
   params: Promise<{ id: string }>;
   searchParams: Promise<{ purpose?: string }>;
 }) {
+  const panelList = await getPanels();
   const { id } = await params;
   const sp = await searchParams;
   const purpose = HealthAccessPurpose.safeParse(sp.purpose).data;
@@ -49,14 +52,14 @@ export default async function PanellistPage({
   }
   const byPanel = Object.groupBy(d.answers, (a) => a.panel);
   type Timeline = {
-    items: { id: string; panel: keyof typeof PANELS; state: string; reason: string | null; dryRun: boolean; plannedFor: string | null; occurredAt: string; campaign: string | null; automation?: string | null; step?: number | null }[];
-    fatigue: { panel: keyof typeof PANELS; score: number | null; band: string; factors: { factor: string; value: number; points: number }[] }[];
+    items: { id: string; panel: string; state: string; reason: string | null; dryRun: boolean; plannedFor: string | null; occurredAt: string; campaign: string | null; automation?: string | null; step?: number | null }[];
+    fatigue: { panel: string; score: number | null; band: string; factors: { factor: string; value: number; points: number }[] }[];
   };
   // Only roles with communications.read see the timeline; others get the profile without it.
   const timeline = await api<Timeline>(`/communications/timeline/${encodeURIComponent(id)}?limit=50`).catch(() => null);
   type Wallets = {
     accounts: {
-      panel: keyof typeof PANELS;
+      panel: string;
       membershipStatus: string;
       balances: { approved: number; pending: number; reversed: number; redeemed: number };
       surveys: Record<string, number>;
@@ -128,7 +131,7 @@ export default async function PanellistPage({
               <li key={`${c.panel}-${c.category}`} className="flex items-center justify-between gap-2">
                 <CategoryChip category={c.category} />
                 <span className="text-xs text-fg-3">
-                  {PANELS[c.panel].shortName} · {c.basis}
+                  {panelShort(c.panel, panelList)} · {c.basis}
                   {c.isMinor ? ' · minor' : ''}
                 </span>
               </li>
@@ -206,7 +209,7 @@ export default async function PanellistPage({
         ) : null}
         {Object.entries(byPanel).map(([panel, answers]) => (
           <div key={panel} className="px-5 py-4">
-            <p className="mb-2 text-xs font-medium text-fg-3">{PANELS[panel as keyof typeof PANELS].name}</p>
+            <p className="mb-2 text-xs font-medium text-fg-3">{panelName(panel as string, panelList)}</p>
             <dl className="grid gap-x-6 gap-y-2 sm:grid-cols-2 xl:grid-cols-3">
               {answers!.map((a) => (
                 <div key={a.sourceQuestionId} className="rounded-lg border border-border px-3 py-2">
@@ -231,7 +234,7 @@ export default async function PanellistPage({
             <div className="flex flex-wrap gap-4 px-5 pt-4 text-[12px] text-fg-2">
               {timeline.fatigue.map((f) => (
                 <div key={f.panel}>
-                  <span className="font-medium">{PANELS[f.panel].shortName} contact load: {f.band}</span>
+                  <span className="font-medium">{panelShort(f.panel, panelList)} contact load: {f.band}</span>
                   {f.score !== null ? ` (${f.score})` : ''}
                   <span className="text-fg-3"> · {f.factors.map((x) => `${x.factor}: ${x.value}`).join(' · ')}</span>
                 </div>

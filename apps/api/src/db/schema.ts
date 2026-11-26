@@ -23,7 +23,6 @@ import {
  * Every row that can hold panel data carries data_mode so DEMO fixtures can never mix with live data.
  */
 export const dataMode = pgEnum('data_mode', ['demo', 'live']);
-export const panelCode = pgEnum('panel_code', ['t2o', 'mfr', 'mho']);
 export const audienceCategory = pgEnum('audience_category', [
   'consumer',
   'business_professional',
@@ -40,11 +39,29 @@ export const sensitivity = pgEnum('sensitivity', ['standard', 'personal', 'speci
 const created = () => timestamp('created_at', { withTimezone: true }).notNull().defaultNow();
 const updated = () => timestamp('updated_at', { withTimezone: true }).notNull().defaultNow();
 
+/**
+ * The panels MADP serves. T2O, MFR and MHO are built in (mandatory: they can't be archived or deleted); a Super
+ * Admin adds others on the Panels screen. `sensitive` panels hold special-category (health) data and get the
+ * enhanced controls: purpose-limited access, cell size 10, minors locked until guardian consent. It can't be turned
+ * off on a panel that already holds data, and MHO's is fixed on.
+ */
 export const panels = pgTable('panel', {
-  code: panelCode('code').primaryKey(),
+  /** Short lower-case key used everywhere (a, then letters, digits or _; 2 to 16 characters). */
+  code: text('code').primaryKey(),
   name: text('name').notNull(),
+  shortName: text('short_name').notNull(),
+  siteUrl: text('site_url'),
+  description: text('description').notNull().default(''),
   sensitive: boolean('sensitive').notNull().default(false),
+  builtIn: boolean('built_in').notNull().default(false),
+  /** 'active' or 'archived'. An archived panel isn't synced and its console screens are hidden. */
+  status: text('status').notNull().default('active'),
+  sort: smallint('sort').notNull().default(100),
+  archivedAt: timestamp('archived_at', { withTimezone: true }),
+  archivedBy: uuid('archived_by'),
+  createdBy: uuid('created_by'),
   createdAt: created(),
+  updatedAt: updated(),
 });
 
 export const masterPersons = pgTable(
@@ -74,7 +91,7 @@ export const sourceIdentities = pgTable(
   {
     id: uuid('id').primaryKey().defaultRandom(),
     dataMode: dataMode('data_mode').notNull(),
-    panel: panelCode('panel').notNull(),
+    panel: text('panel').notNull().references(() => panels.code),
     sourceMemberId: text('source_member_id').notNull(),
     sourceRespondentRef: text('source_respondent_ref'),
     masterPersonId: uuid('master_person_id')
@@ -122,7 +139,7 @@ export const panelMemberships = pgTable(
     masterPersonId: uuid('master_person_id')
       .notNull()
       .references(() => masterPersons.id),
-    panel: panelCode('panel').notNull(),
+    panel: text('panel').notNull().references(() => panels.code),
     sourceIdentityId: uuid('source_identity_id')
       .notNull()
       .references(() => sourceIdentities.id),
@@ -146,7 +163,7 @@ export const categoryMemberships = pgTable(
       .notNull()
       .references(() => masterPersons.id),
     category: audienceCategory('category').notNull(),
-    panel: panelCode('panel').notNull(),
+    panel: text('panel').notNull().references(() => panels.code),
     /** How the membership was derived, e.g. "source_category:b2c". */
     basis: text('basis').notNull(),
     isMinor: boolean('is_minor').notNull().default(false),
@@ -208,7 +225,7 @@ export const consentRecords = pgTable(
     masterPersonId: uuid('master_person_id')
       .notNull()
       .references(() => masterPersons.id),
-    panel: panelCode('panel').notNull(),
+    panel: text('panel').notNull().references(() => panels.code),
     purpose: text('purpose').notNull(),
     channel: text('channel'),
     status: consentStatus('status').notNull(),
@@ -239,7 +256,7 @@ export const sourceQuestionMappings = pgTable(
   {
     id: uuid('id').primaryKey().defaultRandom(),
     dataMode: dataMode('data_mode').notNull(),
-    panel: panelCode('panel').notNull(),
+    panel: text('panel').notNull().references(() => panels.code),
     sourceQuestionId: text('source_question_id').notNull(),
     questionVersion: integer('question_version').notNull(),
     suggestedAttributeKey: text('suggested_attribute_key').references(() => attributeDefinitions.key),
@@ -265,7 +282,7 @@ export const sourceQuestionMappings = pgTable(
 export const importJobs = pgTable('import_job', {
   id: uuid('id').primaryKey().defaultRandom(),
   dataMode: dataMode('data_mode').notNull(),
-  panel: panelCode('panel').notNull(),
+  panel: text('panel').notNull().references(() => panels.code),
   kind: text('kind').notNull(),
   dryRun: boolean('dry_run').notNull().default(false),
   status: jobStatus('status').notNull().default('queued'),
@@ -289,7 +306,7 @@ export const deadLetters = pgTable(
   {
     id: uuid('id').primaryKey().defaultRandom(),
     dataMode: dataMode('data_mode').notNull(),
-    panel: panelCode('panel').notNull(),
+    panel: text('panel').notNull().references(() => panels.code),
     importJobId: uuid('import_job_id').references(() => importJobs.id),
     stream: text('stream').notNull(),
     sourceMemberIds: jsonb('source_member_ids').$type<string[]>().notNull(),
@@ -309,7 +326,7 @@ export const syncCheckpoints = pgTable(
   {
     id: uuid('id').primaryKey().defaultRandom(),
     dataMode: dataMode('data_mode').notNull(),
-    panel: panelCode('panel').notNull(),
+    panel: text('panel').notNull().references(() => panels.code),
     stream: text('stream').notNull(),
     cursor: text('cursor'),
     lastSuccessAt: timestamp('last_success_at', { withTimezone: true }),
@@ -324,7 +341,7 @@ export const webhookInbox = pgTable(
   'webhook_inbox',
   {
     id: uuid('id').primaryKey().defaultRandom(),
-    panel: panelCode('panel').notNull(),
+    panel: text('panel').notNull().references(() => panels.code),
     idempotencyKey: text('idempotency_key').notNull(),
     eventType: text('event_type').notNull(),
     receivedAt: timestamp('received_at', { withTimezone: true }).notNull().defaultNow(),
@@ -390,7 +407,7 @@ export const adminRoleGrants = pgTable(
     roleKey: text('role_key')
       .notNull()
       .references(() => adminRoles.key),
-    brands: panelCode('brands').array(),
+    brands: text('brands').array(),
     createdAt: created(),
   },
   (t) => [
@@ -421,7 +438,7 @@ export const adminSessions = pgTable(
  * `origins` lists the hostnames that belong to the brand. Money values are settings, not code.
  */
 export const brandSettings = pgTable('brand_setting', {
-  panel: panelCode('panel').primaryKey(),
+  panel: text('panel').primaryKey().references(() => panels.code),
   displayName: text('display_name').notNull(),
   origins: text('origins').array().notNull(),
   languages: text('languages')
@@ -458,7 +475,7 @@ export const brandSettings = pgTable('brand_setting', {
  * suffices). Turning live sync on is the owner's approval to read that panel's production personal data.
  */
 export const panelConnections = pgTable('panel_connection', {
-  panel: panelCode('panel').primaryKey(),
+  panel: text('panel').primaryKey().references(() => panels.code),
   /** Changes feeds (`/api/v1/changes/*`), read with `sync_token_enc`. */
   syncBaseUrl: text('sync_base_url'),
   syncTokenEnc: text('sync_token_enc'),
@@ -501,8 +518,11 @@ export const auditEvents = pgTable(
     actorType: text('actor_type').notNull(),
     /** Roles the actor held at the time, comma-separated. */
     actorRole: text('actor_role'),
-    /** Brand the action was taken in; null for cross-brand or platform actions. */
-    panel: panelCode('panel'),
+    /**
+     * Brand the action was taken in; null for cross-brand or platform actions. No foreign key: the audit trail is
+     * append-only and outlives a deleted panel.
+     */
+    panel: text('panel'),
     action: text('action').notNull(),
     targetType: text('target_type'),
     targetId: text('target_id'),
@@ -540,7 +560,7 @@ export const messageTemplates = pgTable(
   'message_template',
   {
     id: uuid('id').primaryKey().defaultRandom(),
-    panel: panelCode('panel').notNull(),
+    panel: text('panel').notNull().references(() => panels.code),
     key: text('key').notNull(),
     name: text('name').notNull(),
     /** welcome, newsletter, birthday, festival, reengagement, profile_recovery, survey_reminder, service. */
@@ -579,7 +599,7 @@ export const messageTemplateVersions = pgTable(
 
 /** Per-panel contact rules. Frequency caps and quiet hours apply to every non-service message of that panel. */
 export const fatiguePolicies = pgTable('fatigue_policy', {
-  panel: panelCode('panel').primaryKey(),
+  panel: text('panel').primaryKey().references(() => panels.code),
   maxPerWeek: integer('max_per_week').notNull().default(2),
   maxPerMonth: integer('max_per_month').notNull().default(6),
   /** Local hours (0-23) in the member's time zone when nothing is scheduled. */
@@ -598,7 +618,7 @@ export const campaigns = pgTable(
   {
     id: uuid('id').primaryKey().defaultRandom(),
     dataMode: dataMode('data_mode').notNull(),
-    panel: panelCode('panel').notNull(),
+    panel: text('panel').notNull().references(() => panels.code),
     name: text('name').notNull(),
     kind: text('kind').notNull(),
     templateVersionId: uuid('template_version_id')
@@ -641,7 +661,7 @@ export const communicationEvents = pgTable(
     masterPersonId: uuid('master_person_id')
       .notNull()
       .references(() => masterPersons.id),
-    panel: panelCode('panel').notNull(),
+    panel: text('panel').notNull().references(() => panels.code),
     campaignId: uuid('campaign_id').references(() => campaigns.id),
     runId: uuid('run_id').references(() => campaignRuns.id),
     automationId: uuid('automation_id').references(() => automations.id),
@@ -674,7 +694,7 @@ export const celebrationDates = pgTable(
   'celebration_date',
   {
     id: uuid('id').primaryKey().defaultRandom(),
-    panel: panelCode('panel').notNull(),
+    panel: text('panel').notNull().references(() => panels.code),
     name: text('name').notNull(),
     observance: text('observance').notNull(),
     onDate: date('on_date').notNull(),
@@ -697,7 +717,7 @@ export const automations = pgTable(
   {
     id: uuid('id').primaryKey().defaultRandom(),
     dataMode: dataMode('data_mode').notNull(),
-    panel: panelCode('panel').notNull(),
+    panel: text('panel').notNull().references(() => panels.code),
     name: text('name').notNull(),
     trigger: text('trigger').notNull(),
     /** draft (nothing approved yet) -> active <-> paused; any -> archived. */
@@ -760,7 +780,7 @@ export const loyaltyAccounts = pgTable(
   {
     id: uuid('id').primaryKey().defaultRandom(),
     dataMode: dataMode('data_mode').notNull(),
-    panel: panelCode('panel').notNull(),
+    panel: text('panel').notNull().references(() => panels.code),
     panelMembershipId: uuid('panel_membership_id')
       .notNull()
       .references(() => panelMemberships.id),
@@ -784,7 +804,7 @@ export const rewardLedger = pgTable(
   {
     id: bigserial('id', { mode: 'number' }).primaryKey(),
     dataMode: dataMode('data_mode').notNull(),
-    panel: panelCode('panel').notNull(),
+    panel: text('panel').notNull().references(() => panels.code),
     accountId: uuid('account_id')
       .notNull()
       .references(() => loyaltyAccounts.id),
@@ -819,7 +839,7 @@ export const surveyParticipations = pgTable(
   {
     id: uuid('id').primaryKey().defaultRandom(),
     dataMode: dataMode('data_mode').notNull(),
-    panel: panelCode('panel').notNull(),
+    panel: text('panel').notNull().references(() => panels.code),
     panelMembershipId: uuid('panel_membership_id')
       .notNull()
       .references(() => panelMemberships.id),
@@ -844,7 +864,7 @@ export const surveyParticipations = pgTable(
 export const loyaltyReconciliations = pgTable('loyalty_reconciliation', {
   id: uuid('id').primaryKey().defaultRandom(),
   dataMode: dataMode('data_mode').notNull(),
-  panel: panelCode('panel').notNull(),
+  panel: text('panel').notNull().references(() => panels.code),
   repaired: boolean('repaired').notNull(),
   report: jsonb('report').notNull(),
   requestedBy: uuid('requested_by'),
@@ -970,7 +990,7 @@ export const surveyInvitations = pgTable(
   {
     id: uuid('id').primaryKey().defaultRandom(),
     dataMode: dataMode('data_mode').notNull(),
-    panel: panelCode('panel').notNull(),
+    panel: text('panel').notNull().references(() => panels.code),
     panelMembershipId: uuid('panel_membership_id')
       .notNull()
       .references(() => panelMemberships.id),
@@ -1028,7 +1048,7 @@ export const consentEvents = pgTable(
     dataMode: dataMode('data_mode').notNull(),
     /** No foreign key: the history is kept as evidence even if the person is later merged or erased. */
     masterPersonId: uuid('master_person_id').notNull(),
-    panel: panelCode('panel').notNull(),
+    panel: text('panel').notNull().references(() => panels.code),
     purpose: text('purpose').notNull(),
     previousStatus: consentStatus('previous_status'),
     status: consentStatus('status').notNull(),
@@ -1051,7 +1071,7 @@ export const contactPreferences = pgTable(
     panelMembershipId: uuid('panel_membership_id')
       .notNull()
       .references(() => panelMemberships.id),
-    panel: panelCode('panel').notNull(),
+    panel: text('panel').notNull().references(() => panels.code),
     /** email, sms, push, whatsapp, or all. */
     channel: text('channel').notNull(),
     /** opted_out, or resumed (lifts an earlier MADP opt-out only; it never grants panel consent). */
@@ -1121,7 +1141,7 @@ export const erasureHolds = pgTable(
   'erasure_hold',
   {
     dataMode: dataMode('data_mode').notNull(),
-    panel: panelCode('panel').notNull(),
+    panel: text('panel').notNull().references(() => panels.code),
     sourceMemberId: text('source_member_id').notNull(),
     requestId: uuid('request_id')
       .notNull()
@@ -1145,7 +1165,7 @@ export const verificationEvidence = pgTable(
     panelMembershipId: uuid('panel_membership_id')
       .notNull()
       .references(() => panelMemberships.id),
-    panel: panelCode('panel').notNull(),
+    panel: text('panel').notNull().references(() => panels.code),
     /** identity, age, hcp_licence, employment. */
     claim: text('claim').notNull(),
     method: text('method').notNull(),
@@ -1175,7 +1195,7 @@ export const insights = pgTable(
   {
     id: uuid('id').primaryKey().defaultRandom(),
     dataMode: dataMode('data_mode').notNull(),
-    panel: panelCode('panel').notNull(),
+    panel: text('panel').notNull().references(() => panels.code),
     rule: text('rule').notNull(),
     /** info, warning, critical. */
     severity: text('severity').notNull(),
@@ -1212,7 +1232,7 @@ export const questionnaireDrafts = pgTable(
   {
     id: uuid('id').primaryKey().defaultRandom(),
     dataMode: dataMode('data_mode').notNull(),
-    panel: panelCode('panel').notNull(),
+    panel: text('panel').notNull().references(() => panels.code),
     category: text('category').notNull(),
     slug: text('slug').notNull(),
     profileId: text('profile_id').notNull(),

@@ -250,7 +250,7 @@ export class PrivacyService implements OnModuleInit {
       select si.panel, si.source_member_id, si.email_enc, si.phone_enc, si.first_name_enc, si.last_name_enc, si.date_of_birth_enc,
         si.country, si.state, si.city, si.gender, si.timezone, pm.status as membership_status, pm.joined_at
       from source_identity si join panel_membership pm on pm.source_identity_id = si.id
-      where pm.master_person_id = ${personId} and pm.data_mode = ${mode} and si.panel = any(${list}::panel_code[])`)
+      where pm.master_person_id = ${personId} and pm.data_mode = ${mode} and si.panel = any(${list}::text[])`)
     ).rows.map((i) => ({
       panel: i.panel,
       memberId: i.source_member_id,
@@ -274,26 +274,26 @@ export class PrivacyService implements OnModuleInit {
     return {
       identities,
       categories: await q(sql`select panel, category, is_minor as "isMinor" from category_membership
-        where master_person_id = ${personId} and panel = any(${list}::panel_code[])`),
+        where master_person_id = ${personId} and panel = any(${list}::text[])`),
       consents: await q(sql`select panel, purpose, status, captured_at as "capturedAt" from consent_record
-        where master_person_id = ${personId} and data_mode = ${mode} and panel = any(${list}::panel_code[])`),
+        where master_person_id = ${personId} and data_mode = ${mode} and panel = any(${list}::text[])`),
       consentHistory: await q(sql`select panel, purpose, previous_status as "previousStatus", status, at from consent_event
-        where master_person_id = ${personId} and data_mode = ${mode} and panel = any(${list}::panel_code[]) order by at`),
+        where master_person_id = ${personId} and data_mode = ${mode} and panel = any(${list}::text[]) order by at`),
       contactPreferences: await q(sql`select cp.panel, cp.channel, cp.status, cp.recorded_at as "recordedAt" from contact_preference cp
-        join panel_membership pm on pm.id = cp.panel_membership_id where pm.master_person_id = ${personId} and cp.panel = any(${list}::panel_code[])`),
+        join panel_membership pm on pm.id = cp.panel_membership_id where pm.master_person_id = ${personId} and cp.panel = any(${list}::text[])`),
       verificationEvidence: await q(sql`select ve.panel, ve.claim, ve.method, ve.status, ve.expires_on as "expiresOn",
         ve.created_at as "recordedAt", ve.decided_at as "decidedAt" from verification_evidence ve
         join panel_membership pm on pm.id = ve.panel_membership_id
-        where pm.master_person_id = ${personId} and ve.data_mode = ${mode} and ve.panel = any(${list}::panel_code[])`),
+        where pm.master_person_id = ${personId} and ve.data_mode = ${mode} and ve.panel = any(${list}::text[])`),
       answers,
       communications: await q(sql`select panel, channel, state, occurred_at as "occurredAt" from communication_event
-        where master_person_id = ${personId} and data_mode = ${mode} and not dry_run and panel = any(${list}::panel_code[]) order by occurred_at`),
+        where master_person_id = ${personId} and data_mode = ${mode} and not dry_run and panel = any(${list}::text[]) order by occurred_at`),
       surveyParticipation: await q(sql`select sp.panel, sp.survey_slug as survey, sp.status, sp.points, sp.ended_at as "endedAt"
         from survey_participation sp join panel_membership pm on pm.id = sp.panel_membership_id
-        where pm.master_person_id = ${personId} and sp.panel = any(${list}::panel_code[])`),
+        where pm.master_person_id = ${personId} and sp.panel = any(${list}::text[])`),
       rewards: await q(sql`select rl.panel, rl.bucket, rl.points, rl.entry_kind as kind, rl.category, rl.recorded_at as at
         from reward_ledger rl join loyalty_account la on la.id = rl.account_id join panel_membership pm on pm.id = la.panel_membership_id
-        where pm.master_person_id = ${personId} and rl.panel = any(${list}::panel_code[]) order by rl.recorded_at, rl.seq`),
+        where pm.master_person_id = ${personId} and rl.panel = any(${list}::text[]) order by rl.recorded_at, rl.seq`),
     };
   }
 

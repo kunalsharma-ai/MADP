@@ -99,6 +99,14 @@ First deploy, on a manager node:
 8. Connect the panels on **Panel connections**: for each brand enter the sync address and token, press *Test
    connection*, enter the admin API address and secret, and turn on live sync when Kunal approves it. No restart is
    needed; the sync schedule picks up the change within a minute.
+9. **Add a panel** (a new brand on the shared panel backend): a Super Admin on every brand opens **Panels**, presses
+   *Add a panel*, and enters a code, names, the site hostnames and a reason. The panel starts on DEMO. Then connect it
+   on **Panel connections** (step 8). On the shared panel backend, add the new site's hostname to
+   `MADP_ADMIN_API_ORIGINS` at its next deploy, or the backend refuses MADP's admin calls for that brand. Grants with
+   *all brands* cover the new panel at once; admins limited to some brands get it only when it is added to their
+   grant. On a panel marked sensitive, an all-brands grant opens no health data (Super Admin excepted): give the role
+   with the panel ticked by name. Archive stops the panel's sync and hides it; Restore brings it back. Delete works only while the panel
+   holds no data. The three built-in panels can't be archived or deleted, and MHO always stays sensitive.
 
 Each later release: steps 4 and 5 with the new version. Swarm replaces the api and admin replicas (each new api
 replica migrates first) one at a time, starting the new one first and rolling back if it fails. A stack deployed

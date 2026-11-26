@@ -1,4 +1,4 @@
-import type { PanelCode, SourceAnswer, SourceConsent, SourceRespondent } from '@madp/contracts';
+import type { BuiltInPanelCode, SourceAnswer, SourceConsent, SourceRespondent } from '@madp/contracts';
 import { PANELS } from '@madp/contracts';
 import { loadSourceSample } from './samples.js';
 import { pick, rng } from './random.js';
@@ -38,7 +38,7 @@ const COUNTRIES = [
   { code: 'DE', states: ['bavaria', 'berlin'], cities: ['munich', 'berlin'], tz: 'Europe/Berlin' },
 ] as const;
 
-const SOURCE_CATEGORIES: Record<PanelCode, string[]> = {
+const SOURCE_CATEGORIES: Record<BuiltInPanelCode, string[]> = {
   t2o: ['b2c', 'b2c', 'b2c', 'b2b', 'b2c', 'b2c', 'b2b', 'b2c', 'b2c', 'minor'],
   mfr: ['b2c', 'b2c', 'b2b'],
   mho: ['healthcare professional', 'patient', 'patient', 'care giver'],
@@ -117,9 +117,9 @@ export function generateDemoPopulation({
   const rm = rng(seed + 1);
   const respondents: SourceRespondent[] = [];
   const answers: SourceAnswer[] = [];
-  const panels: PanelCode[] = ['t2o', 'mfr', 'mho'];
+  const panels: BuiltInPanelCode[] = ['t2o', 'mfr', 'mho'];
   const samples = Object.fromEntries(panels.map((p) => [p, loadSourceSample(p)])) as Record<
-    PanelCode,
+    BuiltInPanelCode,
     ReturnType<typeof loadSourceSample>
   >;
   // Pre-index each sample once: options by question, and questions by questionnaire.
@@ -136,7 +136,7 @@ export function generateDemoPopulation({
       return [p, { optionsByQuestion, questionByName }];
     }),
   ) as Record<
-    PanelCode,
+    BuiltInPanelCode,
     {
       optionsByQuestion: Map<string, ReturnType<typeof loadSourceSample>['options']>;
       questionByName: Map<string, ReturnType<typeof loadSourceSample>['questions'][number]>;
@@ -146,7 +146,7 @@ export function generateDemoPopulation({
   for (let i = 1; i <= people; i++) {
     const n = String(i).padStart(5, '0');
     const home = pick(r, panels);
-    const memberOf = new Set<PanelCode>([home]);
+    const memberOf = new Set<BuiltInPanelCode>([home]);
     if (r() < overlapRate)
       memberOf.add(
         pick(

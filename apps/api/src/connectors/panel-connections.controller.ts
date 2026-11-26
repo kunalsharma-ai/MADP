@@ -16,9 +16,7 @@ import {
 import { and, eq, inArray } from 'drizzle-orm';
 import type { ApiEnv } from '@madp/config';
 import {
-  PANEL_CODES,
   PANEL_CONNECTION_FIELDS,
-  PANELS,
   PanelCode,
   PanelConnectionChange,
   PanelConnectionDecision,
@@ -37,6 +35,7 @@ import { adminRoleGrants, adminUsers, panelConnections } from '../db/schema.js';
 import { FieldCrypto } from '../crypto/field-crypto.js';
 import { AuditService } from '../audit/audit.service.js';
 import { ConnectorRegistry } from './connector-registry.js';
+import { PanelDirectory } from '../panels/panel-directory.js';
 
 type Patch = Omit<PanelConnectionChange, 'reason' | 'code'>;
 type Row = typeof panelConnections.$inferSelect;
@@ -66,6 +65,7 @@ export class PanelConnectionsController {
     private readonly registry: ConnectorRegistry,
     private readonly auth: AuthService,
     private readonly audit: AuditService,
+    private readonly panels: PanelDirectory,
   ) {}
 
   @RequirePermissions('connectors.read')
@@ -85,7 +85,7 @@ export class PanelConnectionsController {
         : [],
     );
     return {
-      panels: PANEL_CODES.map((panel) => this.view(panel, byPanel.get(panel), p, names)),
+      panels: this.panels.codes().map((panel) => this.view(panel, byPanel.get(panel), p, names)),
     };
   }
 
@@ -218,7 +218,7 @@ export class PanelConnectionsController {
     const envHint = (s: string | undefined) => (s ? hint(s) : null);
     return {
       panel,
-      name: PANELS[panel].name,
+      name: this.panels.name(panel),
       syncBaseUrl: { value: eff.syncBaseUrl ?? null, source: eff.source.syncBaseUrl },
       syncToken: {
         set: Boolean(eff.syncToken),

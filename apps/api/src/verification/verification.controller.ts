@@ -14,6 +14,7 @@ import { ZodPipe } from '../common/zod.pipe.js';
 import { AuditService } from '../audit/audit.service.js';
 import { AudienceService } from '../audience/audience.service.js';
 import { VerificationService } from './verification.service.js';
+import { PanelDirectory } from '../panels/panel-directory.js';
 
 /**
  * Verification and data quality center (screen 8). Works in the brand picked in the brand switcher, or every brand
@@ -22,6 +23,7 @@ import { VerificationService } from './verification.service.js';
 @Controller('verification')
 export class VerificationController {
   constructor(
+    private readonly panelDirectory: PanelDirectory,
     private readonly verification: VerificationService,
     private readonly audience: AudienceService,
   ) {}
@@ -30,7 +32,7 @@ export class VerificationController {
   @BrandScoped({ allowAll: true })
   @Get('summary')
   summary(@Query(new ZodPipe(QualityQuery)) q: QualityQuery, @CurrentBrand() brand: BrandSelection) {
-    return this.verification.summary(this.audience.defaultMode(), VerificationService.panelsFor(brand, q.panel));
+    return this.verification.summary(this.audience.defaultMode(), this.panelDirectory.forBrand(brand, q.panel));
   }
 
   /** The members failing one check: person ids and masked panel ids, so it also needs panellists.read. */
@@ -38,7 +40,7 @@ export class VerificationController {
   @BrandScoped({ allowAll: true })
   @Get('checks')
   drill(@Query(new ZodPipe(QualityDrillQuery)) q: QualityDrillQuery, @CurrentBrand() brand: BrandSelection) {
-    VerificationService.panelsFor(brand, q.panel);
+    this.panelDirectory.forBrand(brand, q.panel);
     return this.verification.drill(this.audience.defaultMode(), q.panel, q.check, q.limit);
   }
 
@@ -46,14 +48,14 @@ export class VerificationController {
   @BrandScoped({ allowAll: true })
   @Get('evidence')
   list(@Query(new ZodPipe(EvidenceQuery)) q: EvidenceQuery, @CurrentBrand() brand: BrandSelection) {
-    return this.verification.list(this.audience.defaultMode(), VerificationService.panelsFor(brand, q.panel), q);
+    return this.verification.list(this.audience.defaultMode(), this.panelDirectory.forBrand(brand, q.panel), q);
   }
 
   @RequirePermissions('verification.review')
   @BrandScoped({ allowAll: true })
   @Post('evidence')
   create(@Body(new ZodPipe(EvidenceCreate)) b: EvidenceCreate, @CurrentBrand() brand: BrandSelection, @Req() req: Request) {
-    VerificationService.panelsFor(brand, b.panel);
+    this.panelDirectory.forBrand(brand, b.panel);
     return this.verification.create(this.audience.defaultMode(), b, actor(req));
   }
 
@@ -67,7 +69,7 @@ export class VerificationController {
     @CurrentBrand() brand: BrandSelection,
     @Req() req: Request,
   ) {
-    return this.verification.decide(id, VerificationService.panelsFor(brand), b, actor(req));
+    return this.verification.decide(id, this.panelDirectory.forBrand(brand), b, actor(req));
   }
 
   @RequirePermissions('verification.review')
@@ -80,7 +82,7 @@ export class VerificationController {
     @CurrentBrand() brand: BrandSelection,
     @Req() req: Request,
   ) {
-    return this.verification.revoke(id, VerificationService.panelsFor(brand), b.note, actor(req));
+    return this.verification.revoke(id, this.panelDirectory.forBrand(brand), b.note, actor(req));
   }
 }
 

@@ -1,6 +1,6 @@
+import { panelShort } from '@/lib/panel-names';
 import type { ReactNode } from 'react';
 import {
-  PANELS,
   AUDIENCE_CATEGORY_LABELS,
   type AudienceCategory,
   type DataMode,
@@ -89,11 +89,15 @@ export function Badge({
   );
 }
 
-export function PanelChip({ panel }: { panel: PanelCode }) {
+export function PanelChip({ panel, label }: { panel: PanelCode; label?: string }) {
   return (
     <span className="inline-flex items-center gap-1.5 rounded-md border border-border px-1.5 py-0.5 text-[11px] font-medium text-fg-2">
-      <span className="size-1.5 rounded-full" style={{ background: `var(--panel-${panel})` }} aria-hidden />
-      {PANELS[panel].shortName}
+      <span
+        className="size-1.5 rounded-full"
+        style={{ background: `var(--panel-${panel}, var(--text-3))` }}
+        aria-hidden
+      />
+      {label ?? panelShort(panel)}
     </span>
   );
 }

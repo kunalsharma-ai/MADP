@@ -1,7 +1,7 @@
 import request from 'supertest';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { sql } from 'drizzle-orm';
-import { PANEL_CODES, type PanelCode, type SourceAnswer, type SourceRespondent } from '@madp/contracts';
+import { BUILT_IN_PANEL_CODES, type PanelCode, type SourceAnswer, type SourceRespondent } from '@madp/contracts';
 import { ConnectorError, type PanelConnector } from '@madp/connectors';
 import { ConnectorRegistry } from '../src/connectors/connector-registry.js';
 import { Database } from '../src/db/database.js';
@@ -43,7 +43,7 @@ function script(c: PanelConnector, m: Feed<SourceRespondent>, a: Feed<SourceAnsw
   c.deletions = page(d as Feed<never>);
 }
 
-describe.each(PANEL_CODES)('automatic sync [%s]', (panel: PanelCode) => {
+describe.each(BUILT_IN_PANEL_CODES)('automatic sync [%s]', (panel: PanelCode) => {
   const q = async <R extends Record<string, unknown>>(query: ReturnType<typeof sql>) =>
     (await t.app.get(Database).db.execute<R>(query)).rows;
 

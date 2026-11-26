@@ -1,10 +1,10 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import type { PanelCode } from '@madp/contracts';
+import type { BuiltInPanelCode } from '@madp/contracts';
 
 export interface RawSample {
-  panel: PanelCode;
+  panel: BuiltInPanelCode;
   /** false = synthetic placeholder (MFR); true/undefined = extracted from a source repository export. */
   verified?: boolean;
   source: string;
@@ -23,7 +23,7 @@ export interface RawSample {
 const here = path.dirname(fileURLToPath(import.meta.url));
 
 /** Questionnaire definitions sample for a panel (no personal data). */
-export function loadSourceSample(panel: PanelCode): RawSample {
+export function loadSourceSample(panel: BuiltInPanelCode): RawSample {
   const file = path.join(here, 'fixtures', `${panel}.source-sample.json`);
   return JSON.parse(fs.readFileSync(file, 'utf8')) as RawSample;
 }

@@ -41,7 +41,7 @@ export default async function PanelConnectionsPage() {
             <CardHeader
               title={
                 <span className="flex items-center gap-2.5">
-                  <BrandLogo panel={c.panel as 't2o' | 'mfr' | 'mho'} size={36} />
+                  <BrandLogo panel={c.panel} size={36} />
                   {c.name}
                 </span>
               }
@@ -49,7 +49,7 @@ export default async function PanelConnectionsPage() {
               action={
                 <span className="flex items-center gap-1.5">
                   <DataModeBadge mode={c.dataMode} />
-                  <PanelChip panel={c.panel as 't2o' | 'mfr' | 'mho'} />
+                  <PanelChip panel={c.panel} />
                 </span>
               }
             />

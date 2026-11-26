@@ -155,6 +155,13 @@
       "when": 1795697578113,
       "tag": "0021_panel_connection",
       "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1795698969863,
+      "tag": "0022_panels_as_data",
+      "breakpoints": true
     }
   ]
 }

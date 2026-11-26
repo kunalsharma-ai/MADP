@@ -1,6 +1,8 @@
+import { panelName, panelShort } from '@/lib/panel-names';
+import { getPanels } from '@/lib/panels';
 import Link from 'next/link';
 import type { Metadata } from 'next';
-import { PANEL_CODES, PANELS, brandKitGaps, SUPPRESSION_REASONS, type BrandKit, type DataMode, type PanelCode } from '@madp/contracts';
+import { brandKitGaps, SUPPRESSION_REASONS, type BrandKit, type DataMode, type PanelCode } from '@madp/contracts';
 import { api, currentBrand } from '@/lib/api';
 import { Badge, Card, CardHeader, DataModeBadge, DemoBanner, EmptyState, PageHeader, PanelChip, fmt, fmtDate } from '@/components/ui';
 import { CampaignButtons, NewCampaign, NewTemplate, NewVersion, VersionButtons } from './studio-forms';
@@ -57,11 +59,12 @@ const TONE: Record<string, 'teal' | 'warn' | 'danger' | 'neutral'> = {
 };
 
 export default async function CommunicationsPage({ searchParams }: { searchParams: Promise<{ panel?: string }> }) {
+  const panelList = await getPanels();
   const sp = await searchParams;
   // The brand switcher narrows the studio to one panel, like every other screen; ?panel= still picks one under "All".
   const brand = await currentBrand();
   const picked = sp.panel ?? (brand && brand !== 'all' ? brand : undefined);
-  const panel = (PANEL_CODES as readonly string[]).includes(picked ?? '') ? (picked as PanelCode) : undefined;
+  const panel = panelList.map((x) => x.code).includes(picked ?? '') ? (picked as PanelCode) : undefined;
   const qs = panel ? `?panel=${panel}` : '';
   const [tpl, camp] = await Promise.all([
     api<{ brandKits: Record<PanelCode, BrandKit>; items: Template[] }>(`/communications/templates${qs}`),
@@ -87,19 +90,19 @@ export default async function CommunicationsPage({ searchParams }: { searchParam
       <form method="get" className="mb-4 flex items-center gap-2">
         <select name="panel" defaultValue={panel ?? ''} aria-label="Panel" className="rounded-lg border border-border bg-surface px-3 py-2 text-sm">
           <option value="">All panels</option>
-          {PANEL_CODES.map((p) => (
+          {panelList.map((x) => x.code).map((p) => (
             <option key={p} value={p}>
-              {PANELS[p].name}
+              {panelName(p, panelList)}
             </option>
           ))}
         </select>
         <button className="rounded-lg border border-border bg-surface px-3 py-2 text-sm">Show</button>
       </form>
-      {PANEL_CODES.some((p) => brandKitGaps(tpl.brandKits[p]).length) ? (
+      {panelList.map((x) => x.code).some((p) => brandKitGaps(tpl.brandKits[p]).length) ? (
         <p className="mb-4 rounded-lg bg-surface-2 px-3 py-2 text-[13px] text-fg-2">
           Still to set in Brands &amp; settings:{' '}
-          {PANEL_CODES.filter((p) => brandKitGaps(tpl.brandKits[p]).length)
-            .map((p) => `${PANELS[p].shortName} (${brandKitGaps(tpl.brandKits[p]).join(', ')})`)
+          {panelList.map((x) => x.code).filter((p) => brandKitGaps(tpl.brandKits[p]).length)
+            .map((p) => `${panelShort(p, panelList)} (${brandKitGaps(tpl.brandKits[p]).join(', ')})`)
             .join('; ')}
           . Previews show a placeholder until then. Nothing is sent from this screen.
         </p>

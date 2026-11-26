@@ -1,11 +1,12 @@
 import { Inject, Injectable, Logger, type OnModuleInit } from '@nestjs/common';
 import type { ApiEnv } from '@madp/config';
-import { PANEL_CODES, PANELS, type DataMode, type PanelCode } from '@madp/contracts';
+import { isBuiltInPanel, type BuiltInPanelCode, type DataMode, type PanelCode } from '@madp/contracts';
 import { DemoConnector, PanelApiConnector, type PanelConnector } from '@madp/connectors';
 import { API_ENV } from '../common/tokens.js';
 import { Database } from '../db/database.js';
 import { panelConnections } from '../db/schema.js';
 import { FieldCrypto } from '../crypto/field-crypto.js';
+import { PanelDirectory } from '../panels/panel-directory.js';
 
 export interface ConnectorSlot {
   panel: PanelCode;
@@ -44,7 +45,10 @@ const ENV_KEYS = {
   t2o: { url: 'T2O_API_BASE_URL', token: 'T2O_API_TOKEN', admin: 'T2O_ADMIN_API_BASE_URL' },
   mfr: { url: 'MFR_API_BASE_URL', token: 'MFR_API_TOKEN', admin: 'MFR_ADMIN_API_BASE_URL' },
   mho: { url: 'MHO_API_BASE_URL', token: 'MHO_API_TOKEN', admin: 'MHO_ADMIN_API_BASE_URL' },
-} as const satisfies Record<PanelCode, { url: keyof ApiEnv; token: keyof ApiEnv; admin: keyof ApiEnv }>;
+} as const satisfies Record<
+  BuiltInPanelCode,
+  { url: keyof ApiEnv; token: keyof ApiEnv; admin: keyof ApiEnv }
+>;
 
 function pick<T>(console: T | null | undefined, env: T | undefined): [T | undefined, ConfigSource] {
   if (console !== null && console !== undefined && console !== '') return [console, 'console'];
@@ -68,6 +72,7 @@ export class ConnectorRegistry implements OnModuleInit {
     @Inject(API_ENV) private readonly env: ApiEnv,
     private readonly database: Database,
     private readonly crypto: FieldCrypto,
+    private readonly panels: PanelDirectory,
   ) {
     this.apply(new Map(), false);
   }
@@ -78,6 +83,7 @@ export class ConnectorRegistry implements OnModuleInit {
 
   /** Re-reads the Panel connections rows and rebuilds every connector whose settings changed. */
   async reload() {
+    await this.panels.reload();
     let rows: Row[] = [];
     try {
       rows = await this.database.db.select().from(panelConnections);
@@ -90,7 +96,7 @@ export class ConnectorRegistry implements OnModuleInit {
 
   /** The combined settings for a panel. Holds secrets: never return it from a route. */
   connection(panel: PanelCode): EffectiveConnection {
-    return this.effective.get(panel)!;
+    return this.effective.get(panel) ?? this.combine(panel, undefined);
   }
 
   /** Signed admin API settings for a brand, or null while its URL or secret is missing. */
@@ -105,20 +111,22 @@ export class ConnectorRegistry implements OnModuleInit {
     row: Partial<Row> | undefined,
     decrypted?: { syncToken?: string; adminSecret?: string },
   ) {
-    const k = ENV_KEYS[panel];
+    // Environment fallbacks exist only for the built-in panels; a panel added in the console is set there.
+    const k = isBuiltInPanel(panel) ? ENV_KEYS[panel] : null;
     const env = this.env as unknown as Record<string, string | undefined>;
-    const [syncBaseUrl, s1] = pick(row?.syncBaseUrl, env[k.url]);
+    const [syncBaseUrl, s1] = pick(row?.syncBaseUrl, k ? env[k.url] : undefined);
     const [syncToken, s2] = pick(
       decrypted?.syncToken ?? (row?.syncTokenEnc ? this.crypto.decrypt(row.syncTokenEnc) : null),
-      env[k.token],
+      k ? env[k.token] : undefined,
     );
-    const [adminBaseUrl, s3] = pick(row?.adminBaseUrl, env[k.admin]);
+    const [adminBaseUrl, s3] = pick(row?.adminBaseUrl, k ? env[k.admin] : undefined);
     const [adminSecret, s4] = pick(
       decrypted?.adminSecret ?? (row?.adminSecretEnc ? this.crypto.decrypt(row.adminSecretEnc) : null),
+      // The shared panel backend has one admin API secret, so it applies to every brand on it.
       this.env.PANEL_ADMIN_API_SECRET,
     );
     const [interval, s5] = pick(row?.syncIntervalMinutes, this.env.SYNC_INTERVAL_MINUTES || undefined);
-    const envLive = this.env.LIVE_SOURCE_APPROVED_PANELS.includes(panel);
+    const envLive = (this.env.LIVE_SOURCE_APPROVED_PANELS as readonly string[]).includes(panel);
     const liveApproved = Boolean(row?.liveApproved) || envLive;
     const eff: EffectiveConnection = {
       panel,
@@ -146,51 +154,62 @@ export class ConnectorRegistry implements OnModuleInit {
   }
 
   private apply(rows: Map<PanelCode, Row>, logChanges: boolean) {
-    for (const panel of PANEL_CODES) {
+    for (const panel of this.panels.allCodes()) {
+      const archived = !this.panels.isActive(panel);
       const eff = this.combine(panel, rows.get(panel));
+      if (archived) eff.liveApproved = false;
       const prev = this.effective.get(panel);
       this.effective.set(panel, eff);
-      const same =
+      const live = Boolean(eff.liveApproved && eff.syncBaseUrl && eff.syncToken);
+      const reason = live
+        ? 'Live read-only access approved and configured'
+        : archived
+          ? 'Panel archived: not synced'
+          : !eff.liveApproved
+            ? 'Live access to production personal data not yet approved'
+            : 'Approved, but base URL or integration credential is not configured';
+      const old = this.slots.get(panel);
+      const unchanged =
+        old &&
         prev &&
-        prev.liveApproved === eff.liveApproved &&
-        prev.syncBaseUrl === eff.syncBaseUrl &&
-        prev.syncToken === eff.syncToken;
-      if (same && this.slots.has(panel)) continue;
-      if (eff.liveApproved && eff.syncBaseUrl && eff.syncToken) {
-        this.slots.set(panel, {
-          panel,
-          dataMode: 'live',
-          reason: 'Live read-only access approved and configured',
-          connector: this.liveConnector(panel, eff.syncBaseUrl, eff.syncToken),
-        });
-      } else {
-        const reason = !eff.liveApproved
-          ? 'Live access to production personal data not yet approved'
-          : 'Approved, but base URL or integration credential is not configured';
-        // Keep the same DEMO connector when the panel stays on DEMO, so its fixtures don't change.
-        const old = this.slots.get(panel);
-        this.slots.set(panel, {
-          panel,
-          dataMode: 'demo',
-          reason,
-          connector:
+        old.reason === reason &&
+        (!live || (prev.syncBaseUrl === eff.syncBaseUrl && prev.syncToken === eff.syncToken));
+      if (unchanged) continue;
+      this.slots.set(panel, {
+        panel,
+        dataMode: live ? 'live' : 'demo',
+        reason,
+        connector: live
+          ? this.liveConnector(panel, eff.syncBaseUrl!, eff.syncToken!)
+          : // Keep the same DEMO connector when the panel stays on DEMO, so its fixtures don't change.
             old?.dataMode === 'demo'
-              ? old.connector
-              : new DemoConnector(panel, this.env.DEMO_POPULATION_SIZE),
-        });
-      }
+            ? old.connector
+            : new DemoConnector(panel, this.env.DEMO_POPULATION_SIZE),
+      });
       if (logChanges || !prev)
         this.log.log(
-          `${PANELS[panel].shortName}: ${this.slots.get(panel)!.dataMode.toUpperCase()} (${this.slots.get(panel)!.reason})`,
+          `${this.panels.shortName(panel)}: ${this.slots.get(panel)!.dataMode.toUpperCase()} (${this.slots.get(panel)!.reason})`,
         );
     }
   }
 
+  /** The connector of a panel. An unknown code gets a DEMO connector with no fixtures. */
   get(panel: PanelCode): ConnectorSlot {
-    return this.slots.get(panel)!;
+    let slot = this.slots.get(panel);
+    if (!slot) {
+      slot = {
+        panel,
+        dataMode: 'demo',
+        reason: 'Unknown panel',
+        connector: new DemoConnector(panel, this.env.DEMO_POPULATION_SIZE),
+      };
+      this.slots.set(panel, slot);
+    }
+    return slot;
   }
 
+  /** Connectors of the active panels. Archived panels are left out (never synced). */
   all(): ConnectorSlot[] {
-    return PANEL_CODES.map((p) => this.get(p));
+    return this.panels.codes().map((p) => this.get(p));
   }
 }

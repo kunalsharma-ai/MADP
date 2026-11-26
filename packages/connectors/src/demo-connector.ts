@@ -11,7 +11,8 @@ import type {
   SourceReward,
 } from '@madp/contracts';
 import { generateDemoLoyalty, generateDemoPopulation, loadSourceSample, type DemoPopulation } from '@madp/testing';
-import { AUDITED_CAPABILITIES } from './capabilities.js';
+import { isBuiltInPanel } from '@madp/contracts';
+import { capabilitiesFor } from './capabilities.js';
 import { mapOption, mapQuestion, mapQuestionnaire } from './mapping.js';
 import type { PanelConnector } from './types.js';
 
@@ -52,7 +53,7 @@ export class DemoConnector implements PanelConnector {
   }
 
   capabilities() {
-    return AUDITED_CAPABILITIES[this.panel];
+    return capabilitiesFor(this.panel);
   }
 
   async health(): Promise<ConnectorHealth> {
@@ -66,14 +67,19 @@ export class DemoConnector implements PanelConnector {
     };
   }
 
+  /** Sample bank of a built-in panel; a panel added in the console has no DEMO fixtures. */
+  private get sample() {
+    return isBuiltInPanel(this.panel) ? loadSourceSample(this.panel) : { profiles: [], questions: [], options: [] };
+  }
+
   async listQuestionnaires() {
-    return loadSourceSample(this.panel).profiles.map((p) =>
+    return this.sample.profiles.map((p) =>
       mapQuestionnaire(this.panel, { ...p, category: p.sourceCategory }),
     );
   }
 
   async listQuestions() {
-    return loadSourceSample(this.panel).questions.map((q) =>
+    return this.sample.questions.map((q) =>
       mapQuestion(this.panel, {
         ...q,
         ...(q.type ? { type: q.type } : {}),
@@ -83,7 +89,7 @@ export class DemoConnector implements PanelConnector {
   }
 
   async listOptions(sourceQuestionId: string) {
-    return loadSourceSample(this.panel)
+    return this.sample
       .options.filter((o) => o.question === sourceQuestionId)
       .map((o) => mapOption(this.panel, o));
   }

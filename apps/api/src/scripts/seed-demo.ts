@@ -1,5 +1,5 @@
 import { loadApiEnv } from '@madp/config';
-import { PANEL_CODES } from '@madp/contracts';
+import { BUILT_IN_PANEL_CODES } from '@madp/contracts';
 import { createApp } from '../bootstrap.js';
 import { IngestionService } from '../ingestion/ingestion.service.js';
 import { ConnectorRegistry } from '../connectors/connector-registry.js';
@@ -8,7 +8,8 @@ import { ConnectorRegistry } from '../connectors/connector-registry.js';
 const app = await createApp(loadApiEnv(), { logger: false });
 const registry = app.get(ConnectorRegistry);
 const ingestion = app.get(IngestionService);
-for (const panel of PANEL_CODES) {
+// DEMO fixtures exist for the built-in panels only.
+for (const panel of BUILT_IN_PANEL_CODES) {
   if (registry.get(panel).dataMode !== 'demo') {
     console.log(`${panel}: LIVE connector - skipped`);
     continue;

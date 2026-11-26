@@ -2,7 +2,7 @@ import pg from 'pg';
 import * as OTPAuth from 'otpauth';
 import request from 'supertest';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { PANEL_CODES } from '@madp/contracts';
+import { BUILT_IN_PANEL_CODES } from '@madp/contracts';
 import { IngestionService } from '../src/ingestion/ingestion.service.js';
 import { startTestApp } from './helpers.js';
 
@@ -108,7 +108,7 @@ describe('DEMO ingestion pipeline for all three panels', () => {
   });
 
   it('imports every panel independently', async () => {
-    for (const panel of PANEL_CODES) {
+    for (const panel of BUILT_IN_PANEL_CODES) {
       const r = await request(t.server)
         .post(`/api/v1/connectors/${panel}/import`)
         .set(bearer(superToken))

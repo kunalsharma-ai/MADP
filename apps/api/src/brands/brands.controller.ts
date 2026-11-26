@@ -17,7 +17,7 @@ import type { Principal } from '../auth/auth.types.js';
 import { hasOn } from '../auth/access.js';
 import { ZodPipe } from '../common/zod.pipe.js';
 import { Database } from '../db/database.js';
-import { brandSettings } from '../db/schema.js';
+import { brandSettings, panels } from '../db/schema.js';
 import { AuditService } from '../audit/audit.service.js';
 import { changed } from '../audit/mask.js';
 
@@ -68,7 +68,15 @@ export class BrandsController {
 
   @Get()
   async list(@CurrentPrincipal() p: Principal) {
-    const rows = await this.database.db.select().from(brandSettings).orderBy(asc(brandSettings.panel));
+    // Screen order and active panels only: an archived panel drops out of the brand switcher.
+    const rows = (
+      await this.database.db
+        .select({ b: brandSettings })
+        .from(brandSettings)
+        .innerJoin(panels, eq(panels.code, brandSettings.panel))
+        .where(eq(panels.status, 'active'))
+        .orderBy(asc(panels.sort), asc(panels.code))
+    ).map((r) => r.b);
     return {
       brands: rows
         .filter((r) => p.brands.includes(r.panel))

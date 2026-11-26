@@ -42,7 +42,9 @@ export function RegistrationsChart({
   label: string;
 }) {
   const months = [...new Set(rows.map((r) => r.month))].sort().slice(-18);
-  const panels = ['t2o', 'mfr', 'mho'];
+  // Every panel in the data, built-in ones first in their usual order.
+  const order = ['t2o', 'mfr', 'mho'];
+  const panels = [...new Set([...order, ...rows.map((r) => r.panel)])].filter((p) => order.includes(p) || rows.some((r) => r.panel === p));
   const ref = useChart((dark) => ({
     aria: { enabled: true, label: { description: label } },
     grid: { left: 36, right: 8, top: 28, bottom: 24 },
@@ -61,7 +63,7 @@ export function RegistrationsChart({
       type: 'bar',
       stack: 'r',
       barMaxWidth: 18,
-      itemStyle: { color: PANEL_COLORS[p], borderRadius: p === 'mho' ? [3, 3, 0, 0] : 0 },
+      itemStyle: { color: PANEL_COLORS[p] ?? '#8a94a8', borderRadius: p === panels[panels.length - 1] ? [3, 3, 0, 0] : 0 },
       data: months.map((m) => rows.find((r) => r.month === m && r.panel === p)?.n ?? 0),
     })),
   }));

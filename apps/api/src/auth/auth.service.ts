@@ -11,6 +11,7 @@ import { adminRoleGrants, adminRoles, adminSessions, adminUsers } from '../db/sc
 import { FieldCrypto } from '../crypto/field-crypto.js';
 import { AuditService } from '../audit/audit.service.js';
 import { computeAccess, type Access } from './access.js';
+import { PanelDirectory } from '../panels/panel-directory.js';
 import type { Principal } from './auth.types.js';
 
 const MAX_FAILED = 5;
@@ -29,6 +30,7 @@ export class AuthService {
     private readonly database: Database,
     private readonly crypto: FieldCrypto,
     private readonly audit: AuditService,
+    private readonly panels: PanelDirectory,
   ) {
     this.secret = new TextEncoder().encode(env.AUTH_JWT_SECRET);
   }
@@ -68,7 +70,7 @@ export class AuthService {
     const grants: RoleGrant[] = rows.map((r) => ({ role: r.role, brands: r.brands?.length ? r.brands : null }));
     const known = new Set<string>(Permission.options);
     const map = new Map(rows.map((r) => [r.role, r.permissions.filter((p): p is Permission => known.has(p))]));
-    return { grants, roles: grants.map((g) => g.role), ...computeAccess(grants, map) };
+    return { grants, roles: grants.map((g) => g.role), ...computeAccess(grants, map, this.panels.codes(), this.panels.explicitGrantCodes()) };
   }
 
   async login(

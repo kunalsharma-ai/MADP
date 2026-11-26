@@ -1,15 +1,8 @@
+import { panelName, panelShort } from '@/lib/panel-names';
+import { getPanels } from '@/lib/panels';
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import {
-  AUDIENCE_CATEGORIES,
-  AUDIENCE_CATEGORY_LABELS,
-  PANEL_CODES,
-  PANELS,
-  type AudienceCategory,
-  type GeoResponse,
-  type OverlapResponse,
-  type PanelCode,
-} from '@madp/contracts';
+import { AUDIENCE_CATEGORIES, AUDIENCE_CATEGORY_LABELS, type AudienceCategory, type GeoResponse, type OverlapResponse, type PanelCode } from '@madp/contracts';
 import { api } from '@/lib/api';
 import { Card, CardHeader, DataModeBadge, DemoBanner, EmptyState, PageHeader, PanelChip, Stat, Table, btn, fmt, fmtDate } from '@/components/ui';
 import { cn } from '@/lib/cn';
@@ -24,8 +17,9 @@ const place = (k: string) => (k === 'unknown' ? 'Not given' : k);
 const n = (v: number | null) => (v === null ? <span className="text-fg-3" title="Hidden: below the minimum cell size">hidden</span> : fmt(v));
 
 export default async function GeoPage({ searchParams }: { searchParams: SP }) {
+  const panelList = await getPanels();
   const sp = await searchParams;
-  const panels = arr(sp.panel).filter((p): p is PanelCode => (PANEL_CODES as readonly string[]).includes(p));
+  const panels = arr(sp.panel).filter((p): p is PanelCode => panelList.map((x) => x.code).includes(p));
   const categories = arr(sp.category).filter((c): c is AudienceCategory => (AUDIENCE_CATEGORIES as readonly string[]).includes(c));
   const country = typeof sp.country === 'string' && /^[a-z]{2}$/i.test(sp.country) ? sp.country.toLowerCase() : undefined;
   const state = country && typeof sp.state === 'string' && sp.state.length <= 120 ? sp.state : undefined;
@@ -64,10 +58,10 @@ export default async function GeoPage({ searchParams }: { searchParams: SP }) {
         {state ? <input type="hidden" name="state" value={state} /> : null}
         <fieldset className="flex items-center gap-3">
           <legend className="mb-1 text-[12px] text-fg-3">Panels</legend>
-          {PANEL_CODES.map((p) => (
+          {panelList.map((x) => x.code).map((p) => (
             <label key={p} className="flex items-center gap-1.5">
               <input type="checkbox" name="panel" value={p} defaultChecked={panels.includes(p)} />
-              {PANELS[p].shortName}
+              {panelShort(p, panelList)}
             </label>
           ))}
         </fieldset>
@@ -88,10 +82,10 @@ export default async function GeoPage({ searchParams }: { searchParams: SP }) {
 
       <div className="mb-4 grid grid-cols-2 gap-3 md:grid-cols-4">
         <Stat label={country ? `Unique people in ${state ? place(state) : countryName(country)}` : 'Unique people'} value={fmt(view.uniquePeople)} tone="accent" />
-        {PANEL_CODES.map((p) => (
+        {panelList.map((x) => x.code).map((p) => (
           <Stat
             key={p}
-            label={`${PANELS[p].shortName} members`}
+            label={`${panelShort(p, panelList)} members`}
             value={n(view.rows.reduce<number | null>((a, r) => (a === null || r.byPanel[p] === null ? null : a + (r.byPanel[p] ?? 0)), 0))}
           />
         ))}
@@ -167,7 +161,7 @@ export default async function GeoPage({ searchParams }: { searchParams: SP }) {
                     )}
                   </td>
                   <td className="px-5 py-1.5 font-mono text-[12px]">{n(r.uniquePeople)}</td>
-                  {PANEL_CODES.map((p) => (
+                  {panelList.map((x) => x.code).map((p) => (
                     <td key={p} className="px-5 py-1.5 font-mono text-[12px]">
                       {n(r.byPanel[p] ?? 0)}
                     </td>

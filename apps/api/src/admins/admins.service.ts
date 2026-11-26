@@ -21,6 +21,7 @@ import { adminRoleGrants, adminRoles, adminUsers } from '../db/schema.js';
 import { AuditService } from '../audit/audit.service.js';
 import { AuthService } from '../auth/auth.service.js';
 import { computeAccess, covers } from '../auth/access.js';
+import { PanelDirectory } from '../panels/panel-directory.js';
 import type { Principal } from '../auth/auth.types.js';
 
 const KNOWN = new Set<string>(Permission.options);
@@ -32,6 +33,7 @@ export class AdminsService {
     private readonly database: Database,
     private readonly audit: AuditService,
     private readonly auth: AuthService,
+    private readonly panels: PanelDirectory,
   ) {}
 
   async listRoles(): Promise<(RoleDefinition & { holders: number })[]> {
@@ -67,12 +69,15 @@ export class AdminsService {
     if (unknown.length) throw new BadRequestException(`Unknown role: ${unknown.join(', ')}`);
     if (new Set(grants.map((g) => g.role)).size !== grants.length)
       throw new BadRequestException('Each role once');
-    if (!covers(actor, computeAccess(grants, map)))
+    const known = new Set(this.panels.codes());
+    const stray = grants.flatMap((g) => g.brands ?? []).filter((b) => !known.has(b));
+    if (stray.length) throw new BadRequestException(`Unknown or archived panel: ${[...new Set(stray)].join(', ')}`);
+    if (!covers(actor, computeAccess(grants, map, this.panels.codes(), this.panels.explicitGrantCodes())))
       throw new ForbiddenException('You cannot grant permissions or brands you do not hold');
   }
 
   async createRole(actor: Principal, key: string, body: RoleUpsert, req: Request) {
-    if (!covers(actor, computeAccess([{ role: key, brands: null }], new Map([[key, body.permissions]]))))
+    if (!covers(actor, computeAccess([{ role: key, brands: null }], new Map([[key, body.permissions]]), this.panels.codes(), this.panels.explicitGrantCodes())))
       throw new ForbiddenException('You cannot create a role with permissions you do not hold');
     const exists = await this.database.db.query.adminRoles.findFirst({ where: eq(adminRoles.key, key) });
     if (exists) throw new ConflictException('A role with this key exists');
@@ -95,7 +100,7 @@ export class AdminsService {
     if (!role) throw new NotFoundException();
     if (key === 'super_admin')
       throw new ForbiddenException('The Super Admin role always holds every permission');
-    if (!covers(actor, computeAccess([{ role: key, brands: null }], new Map([[key, body.permissions]]))))
+    if (!covers(actor, computeAccess([{ role: key, brands: null }], new Map([[key, body.permissions]]), this.panels.codes(), this.panels.explicitGrantCodes())))
       throw new ForbiddenException('You cannot give a role permissions you do not hold');
     const permissions = [...new Set(body.permissions)].sort();
     await this.database.db

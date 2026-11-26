@@ -1,6 +1,8 @@
+import { panelName, panelShort } from '@/lib/panel-names';
+import { getPanels } from '@/lib/panels';
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { PANEL_CODES, PANELS, type MailerPack, type MailerTemplate, type PanelCode } from '@madp/contracts';
+import { type MailerPack, type MailerTemplate, type PanelCode } from '@madp/contracts';
 import { api } from '@/lib/api';
 import { Badge, Card, CardHeader, CategoryChip, EmptyState, PageHeader, PanelChip, Table } from '@/components/ui';
 import { cn } from '@/lib/cn';
@@ -11,8 +13,9 @@ type Row = MailerTemplate & { unmappedFields: string[] };
 type List = { importedAt: string; packs: (Omit<MailerPack, 'templates'> & { templates: Row[] })[] };
 
 export default async function MailersPage({ searchParams }: { searchParams: Promise<{ panel?: string; sent?: string }> }) {
+  const panelList = await getPanels();
   const sp = await searchParams;
-  const panel = (PANEL_CODES as readonly string[]).includes(sp.panel ?? '') ? (sp.panel as PanelCode) : undefined;
+  const panel = panelList.map((x) => x.code).includes(sp.panel ?? '') ? (sp.panel as PanelCode) : undefined;
   const sent = sp.sent === 'panel' || sp.sent === 'madp' ? sp.sent : undefined;
   const data = await api<List>(`/communications/mailers${panel ? `?panel=${panel}` : ''}`);
   const keep = (o: Record<string, string | undefined>) => {
@@ -30,13 +33,13 @@ export default async function MailersPage({ searchParams }: { searchParams: Prom
         description={`The panels' own email templates from your mailer packs: ${total} templates in ${data.packs.length} packs, imported ${data.importedAt}. ${forMadp} can be used for MADP campaigns; the rest are system emails the panel sends when something happens (sign-up, password, support). Nothing is sent from this screen.`}
       />
       <nav aria-label="Filter" className="mb-4 flex flex-wrap gap-1.5 text-[13px]">
-        {[undefined, ...PANEL_CODES].map((p) => (
+        {[undefined, ...panelList.map((x) => x.code)].map((p) => (
           <Link
             key={p ?? 'all'}
             href={keep({ panel: p })}
             className={cn('rounded-full border border-border px-3 py-1', panel === p && 'border-accent bg-accent-soft text-accent')}
           >
-            {p ? PANELS[p].shortName : 'Every panel'}
+            {p ? panelShort(p, panelList) : 'Every panel'}
           </Link>
         ))}
         <span className="mx-2 text-fg-3">·</span>

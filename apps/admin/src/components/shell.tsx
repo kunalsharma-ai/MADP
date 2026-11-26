@@ -29,6 +29,7 @@ import {
   Moon,
   PlugZap,
   Cable,
+  Layers,
   Search,
   ShieldCheck,
   Sun,
@@ -49,11 +50,12 @@ import {
   FileX2,
   ToggleRight,
 } from 'lucide-react';
-import type { SessionUser } from '@madp/contracts';
+import type { PanelInfo, SessionUser } from '@madp/contracts';
 import { NAV, PLANNED } from './nav';
 import { cn } from '@/lib/cn';
 import { setBrand } from '@/app/super-admin-actions';
 import { BrandLogo } from './brand-logo';
+import { PanelsProvider } from './panels-context';
 
 const ICONS = {
   LayoutDashboard,
@@ -66,6 +68,7 @@ const ICONS = {
   GitCompareArrows,
   PlugZap,
   Cable,
+  Layers,
   ShieldCheck,
   Dices,
   UserRoundCheck,
@@ -107,8 +110,11 @@ export function Shell({
   signOut,
   brand,
   allowAll,
+  panels,
 }: {
   user: SessionUser;
+  /** Active panels, for the brand switcher and client components (usePanels). */
+  panels: PanelInfo[];
   children: ReactNode;
   signOut: () => Promise<void>;
   /** Brand picked in the switcher: t2o, mfr, mho or all. */
@@ -256,7 +262,7 @@ export function Shell({
               {allowAll ? <option value="all">{BRAND_LABEL.all}</option> : null}
               {user.brands.map((b) => (
                 <option key={b} value={b}>
-                  {BRAND_LABEL[b]}
+                  {BRAND_LABEL[b] ?? panels.find((p) => p.code === b)?.name ?? b.toUpperCase()}
                 </option>
               ))}
             </select>
@@ -286,7 +292,7 @@ export function Shell({
             </button>
           </form>
         </header>
-        <main className="mx-auto w-full max-w-[1400px] flex-1 px-4 py-7 sm:px-8">{children}</main>
+        <main className="mx-auto w-full max-w-[1400px] flex-1 px-4 py-7 sm:px-8"><PanelsProvider panels={panels}>{children}</PanelsProvider></main>
       </div>
 
       <Command.Dialog

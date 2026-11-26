@@ -5,7 +5,7 @@ import { drizzle } from 'drizzle-orm/node-postgres';
 import { migrate } from 'drizzle-orm/node-postgres/migrator';
 import pg from 'pg';
 import { withSecretFiles } from '@madp/config';
-import { PANELS, PANEL_CODES } from '@madp/contracts';
+import { PANELS, BUILT_IN_PANEL_CODES } from '@madp/contracts';
 import { attributeDefinitions, panels } from '../db/schema.js';
 import { SEED_ATTRIBUTES } from '../ingestion/canonical.js';
 
@@ -68,10 +68,21 @@ export async function runMigrations(databaseUrl: string, options: MigrateOptions
         const db = drizzle(client);
         const folder = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../drizzle');
         await migrate(db, { migrationsFolder: folder });
-        for (const code of PANEL_CODES) {
+        // The built-in panels are seeded by migration 0022; this keeps an older database in step. Panels added on
+        // the Panels screen are never touched here.
+        for (const [i, code] of BUILT_IN_PANEL_CODES.entries()) {
+          const d = PANELS[code];
           await db
             .insert(panels)
-            .values({ code, name: PANELS[code].name, sensitive: PANELS[code].sensitive })
+            .values({
+              code,
+              name: d.name,
+              shortName: d.shortName,
+              siteUrl: d.siteUrl,
+              sensitive: d.sensitive,
+              builtIn: true,
+              sort: i + 1,
+            })
             .onConflictDoNothing();
         }
         for (const a of SEED_ATTRIBUTES)
