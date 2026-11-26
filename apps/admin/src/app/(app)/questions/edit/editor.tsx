@@ -17,7 +17,6 @@ import {
   ListChecks,
   ListFilter,
   Mail,
-  MapPin,
   Phone,
   Plus,
   Save,
@@ -63,7 +62,6 @@ const ICONS: Record<string, LucideIcon> = {
   textarea: AlignLeft,
   email: Mail,
   phone: Phone,
-  zipcode: MapPin,
   number: Hash,
   date: Calendar,
   document: Upload,
@@ -178,7 +176,6 @@ export function RegistryEditor({
     hasNone: q?.hasNone ?? DEFAULT_SETTINGS.hasNone,
     hasSkip: q?.hasSkip ?? DEFAULT_SETTINGS.hasSkip,
     isMoney: q?.isMoney ?? DEFAULT_SETTINGS.isMoney,
-    size: (q as { size?: string } | undefined)?.size ?? DEFAULT_SETTINGS.size,
   });
   const set = <K extends keyof SaveInput['fields']>(k: K, v: SaveInput['fields'][K]) => setF((x) => ({ ...x, [k]: v }));
 
@@ -285,6 +282,8 @@ export function RegistryEditor({
   if (!targets.length) problems.push('Tick at least one panel');
   for (const t of targets) if (!t.category.length) problems.push(`Pick a segment that ${panelName(panels, t.panel)} has`);
   if (info.choice && opts.length < 2) problems.push('Add at least two answers');
+  const unshown = targets.filter((t) => !nativeType(typeKey, t.panel).known).map((t) => panelName(panels, t.panel));
+  if (unshown.length) problems.push(`${unshown.join(', ')} doesn’t show “${info.label}”: pick another kind`);
   if (f.parent && f.parent === key) problems.push('A question can’t depend on itself');
   const save = () =>
     start(async () => {
@@ -455,9 +454,12 @@ export function RegistryEditor({
                       type="button"
                       onClick={() => setTypeKey(t.key)}
                       aria-pressed={on}
+                      disabled={fresh.length > 0}
+                      title={fresh.length ? `The ${fresh.join(', ')} member site doesn’t show this kind of question, so it can’t be added there` : undefined}
                       className={cn(
                         'flex items-start gap-3 rounded-xl border-2 p-3 text-left transition hover:-translate-y-0.5',
                         on ? 'shadow-soft' : 'border-border bg-surface',
+                        fresh.length > 0 && 'cursor-not-allowed opacity-45 hover:translate-y-0',
                       )}
                       style={on ? { borderColor: tint, background: `${tint}10` } : undefined}
                     >
@@ -467,7 +469,7 @@ export function RegistryEditor({
                       <span className="min-w-0">
                         <span className="block font-semibold text-fg">{t.label}</span>
                         <span className="block text-[12px] text-fg-3">{t.hint}</span>
-                        {fresh.length ? <span className="mt-0.5 block text-[11px] text-[#b45309]">New on {fresh.join(', ')}</span> : null}
+                        {fresh.length ? <span className="mt-0.5 block text-[11px] text-[#b45309]">Not shown on {fresh.join(', ')}</span> : null}
                       </span>
                     </button>
                   );
@@ -603,22 +605,9 @@ export function RegistryEditor({
           </span>
         </p>
         <div className="grid gap-2 md:grid-cols-2">
-          {info.settings
-            .filter((s) => s !== 'size')
-            .map((s) => (
+          {info.settings.map((s) => (
               <Toggle key={s} checked={!!f[s]} onChange={(v) => set(s, v)} label={QUESTION_SETTINGS[s].label} hint={QUESTION_SETTINGS[s].hint} />
             ))}
-          <label className="rounded-xl border border-border px-3 py-2.5">
-            <span className="block font-semibold text-fg">{QUESTION_SETTINGS.size.label}</span>
-            <span className="block text-[12px] text-fg-3">{QUESTION_SETTINGS.size.hint}</span>
-            <select className={`${input} mt-1.5`} value={f.size} onChange={(e) => set('size', e.target.value)}>
-              {[...new Set(['3', '4', '6', '8', '12', f.size])].map((s) => (
-                <option key={s} value={s}>
-                  {s === '12' ? '12 (full row)' : s === '6' ? '6 (half row)' : s}
-                </option>
-              ))}
-            </select>
-          </label>
         </div>
         {teen ? (
           <div className="mt-3 grid gap-3 rounded-xl bg-[#f5f3ff] p-3 md:grid-cols-2 dark:bg-[#2e1065]/40">
@@ -646,7 +635,7 @@ export function RegistryEditor({
           </div>
         ) : null}
         <p className="mt-3 text-[12px] text-fg-3">
-          Extra checks such as a minimum or maximum length, a number range or a custom pattern aren’t stored by the panels today.
+          Only content changes here. Each member site keeps its own design: the layout and width of a question aren’t changed, and only the kinds a site already shows can be picked for it.
         </p>
       </Section>
 

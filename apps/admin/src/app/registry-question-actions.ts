@@ -78,7 +78,6 @@ export interface SaveInput {
     hasNone: boolean;
     hasSkip: boolean;
     isMoney: boolean;
-    size: string;
   };
   /** Per panel: create it there or update it, with the panel's own category words. */
   targets: { panel: string; create: boolean; category: string[] }[];
@@ -102,6 +101,11 @@ export async function saveAcrossPanels(input: SaveInput): Promise<SaveOutcome[]>
       continue;
     }
     const { type, known } = nativeType(info.key, t.panel);
+    // Questions never change a member site's design: only kinds the site already shows, and no layout fields.
+    if (!known) {
+      out.push({ panel: t.panel, ok: false, message: `this site doesn’t show “${info.label}” questions, so nothing was saved` });
+      continue;
+    }
     const body: Record<string, unknown> = {
       label: f.label.trim(),
       type,
@@ -109,7 +113,6 @@ export async function saveAcrossPanels(input: SaveInput): Promise<SaveOutcome[]>
       parent: f.parent.trim().toLowerCase(),
       description: f.description,
       adminLabel: f.adminLabel,
-      size: f.size,
       isRequired: f.isRequired,
       isEditable: f.isEditable,
       isMoney: info.settings.includes('isMoney') && f.isMoney,
@@ -135,7 +138,7 @@ export async function saveAcrossPanels(input: SaveInput): Promise<SaveOutcome[]>
       out.push({
         panel: t.panel,
         ok: true,
-        message: `${t.create ? 'created' : 'saved'}${extra}${known ? '' : ` (first “${type}” question on this panel: check the member app shows it)`}`,
+        message: `${t.create ? 'created' : 'saved'}${extra}`,
       });
     } catch (e) {
       unstable_rethrow(e);

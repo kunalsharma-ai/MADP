@@ -25,6 +25,10 @@ describe('question type catalogue', () => {
     for (const t of QUESTION_TYPES) {
       expect(groups.has(t.group)).toBe(true);
       expect(t.settings).toContain('isRequired');
+      // Layout stays with each member site: no setting may change a question's width or look.
+      expect(t.settings as string[]).not.toContain('size');
+      // Every kind is shown by at least one member site.
+      expect(Object.keys(t.native).length, t.key).toBeGreaterThan(0);
       // Other / None / Skip only make sense with an answer list.
       if (!t.choice) expect(t.settings.some((s) => s === 'hasOthers' || s === 'hasNone' || s === 'hasSkip')).toBe(false);
     }
