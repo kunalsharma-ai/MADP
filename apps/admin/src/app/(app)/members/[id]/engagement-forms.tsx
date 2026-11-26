@@ -4,6 +4,7 @@ import { useState, useTransition } from 'react';
 import { toast } from 'sonner';
 import { memberAlertsAction, memberPayoutClearAction, type MemberAlerts } from '@/app/panel-actions';
 import { Card, CardHeader, btn, input } from '@/components/ui';
+import { HELP, Titled } from '../../participation/help';
 
 const SWITCHES = [
   ['email', 'E-mail alerts'],
@@ -53,7 +54,7 @@ export function AlertsForm({
     });
   return (
     <Card>
-      <CardHeader title="Alerts and contact" hint={`${alerts.pushDevices} device(s) with push turned on`} />
+      <CardHeader title={<Titled title="Alerts and contact" help={HELP.memberAlerts} />} hint={`${alerts.pushDevices} device(s) with push turned on`} />
       <div className="grid gap-3 px-5 py-4 text-[13px]">
         <ul className="grid grid-cols-1 gap-1.5 sm:grid-cols-2">
           {SWITCHES.map(([k, label]) => {

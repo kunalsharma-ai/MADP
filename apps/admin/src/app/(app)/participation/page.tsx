@@ -27,6 +27,8 @@ import {
   input,
 } from '@/components/ui';
 import { STATUS_LABEL, STATUS_TONE, statusLabel } from './status';
+import { HELP, Titled } from './help';
+import { TopicInfo } from '@/components/screen-info';
 
 export const metadata: Metadata = { title: 'Survey participation' };
 
@@ -122,7 +124,9 @@ export default async function ParticipationPage({
               <Card key={p.panel} className="p-5">
                 <div className="flex items-center gap-2.5">
                   <BrandLogo panel={p.panel} size={30} />
-                  <h2 className="text-[15px] font-bold text-fg">{panelName(p.panel, panelList)}</h2>
+                  <h2 className="text-[15px] font-bold text-fg">
+                    <Titled title={panelName(p.panel, panelList)} help={HELP.panelCard} />
+                  </h2>
                 </div>
                 <div className="mt-4 flex items-center gap-5">
                   <Ring value={rate ?? 0} max={100} size={96} stroke={10} from={from} to={to} label={`Complete rate ${rate ?? 0}%`}>
@@ -163,11 +167,12 @@ export default async function ParticipationPage({
           />
           <button className={btn.secondary}>Find</button>
         </form>
+        <TopicInfo title="Filters" help={HELP.filters} align="right" />
       </div>
 
       <div className="grid gap-4 xl:grid-cols-[1fr_320px]">
         <Card>
-          <CardHeader title="Survey records" hint={`${fmt(list.total)} records, newest first`} />
+          <CardHeader title={<Titled title="Survey records" help={HELP.records} />} hint={`${fmt(list.total)} records, newest first`} />
           {list.items.length === 0 ? (
             <EmptyState title="Nothing matches">Try another panel, result or survey name.</EmptyState>
           ) : (
@@ -203,7 +208,7 @@ export default async function ParticipationPage({
         </Card>
         <div className="grid content-start gap-4">
           <Card>
-            <CardHeader title="Most taken surveys" hint="Attempts, for the filters above" />
+            <CardHeader title={<Titled title="Most taken surveys" help={HELP.topSurveys} align="right" />} hint="Attempts, for the filters above" />
             <BarList
               rows={sum.topSurveys.map((t) => ({
                 key: `${t.panel}:${t.surveySlug}`,

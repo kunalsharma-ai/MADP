@@ -5,6 +5,8 @@ import { Badge, Card, CardHeader, EmptyState, Pager, Table, fmt, fmtDate } from 
 import { PANEL_TONES } from '@/lib/panel-tones';
 import { STATUS_TONE, statusLabel } from '../../participation/status';
 import { AlertsForm, PayoutClear } from './engagement-forms';
+import { HELP, Titled } from '../../participation/help';
+import type { TopicHelp } from '@/components/screen-info';
 
 export interface Engagement {
   member: { id: string; type: string; teen: boolean; status: string; joinedAt: string | null; lastActivityAt: string | null };
@@ -71,7 +73,9 @@ export function MemberEngagement({
             </span>
           </Ring>
           <div className="text-[12px]">
-            <p className="text-[13px] font-semibold text-fg">Surveys</p>
+            <div className="text-[13px] font-semibold text-fg">
+              <Titled title="Surveys" help={HELP.memberSurveys} />
+            </div>
             <p className="mt-1 flex items-center gap-1 text-fg-2">
               <CheckCircle2 className="size-3.5 text-teal" aria-hidden /> {fmt(completes)} complete
             </p>
@@ -81,10 +85,10 @@ export function MemberEngagement({
             <p className="text-fg-3">{fmt(e.surveys.points)} points from surveys</p>
           </div>
         </Card>
-        <Tile icon={Coins} tint="from-amber-400 to-orange-500" title="Points" big={fmt(e.points.available)} sub="available to redeem">
+        <Tile icon={Coins} tint="from-amber-400 to-orange-500" title="Points" help={HELP.memberPoints} big={fmt(e.points.available)} sub="available to redeem">
           {fmt(e.points.pending)} pending · {fmt(e.points.onHold)} on hold · {fmt(e.points.spent)} spent
         </Tile>
-        <Tile icon={Flame} tint="from-pink-500 to-rose-500" title="Streak" big={`${e.streak.current} days`} sub={`best ${e.streak.best} days`}>
+        <Tile icon={Flame} tint="from-pink-500 to-rose-500" title="Streak" help={HELP.memberStreak} big={`${e.streak.current} days`} sub={`best ${e.streak.best} days`}>
           <span className="mt-1 flex gap-[3px]" aria-label="Last 28 days">
             {e.streak.strip.map((d) => (
               <span
@@ -104,6 +108,8 @@ export function MemberEngagement({
           icon={UserPlus}
           tint="from-teal-400 to-emerald-500"
           title="Referrals"
+        help={HELP.memberReferrals}
+        align="right"
           big={e.referrals ? fmt(e.referrals.joined) : '—'}
           sub={e.referrals ? 'friends joined' : 'not for teens'}
         >
@@ -115,7 +121,7 @@ export function MemberEngagement({
       </div>
 
       <Card>
-        <CardHeader title="Survey records" hint={r ? `${fmt(r.total)} surveys on this panel, newest first` : 'Not available'} />
+        <CardHeader title={<Titled title="Survey records" help={HELP.memberRecords} />} hint={r ? `${fmt(r.total)} surveys on this panel, newest first` : 'Not available'} />
         {!r || r.items.length === 0 ? (
           <EmptyState title="No surveys yet" />
         ) : (
@@ -140,7 +146,7 @@ export function MemberEngagement({
       <div className="grid gap-4 xl:grid-cols-3">
         <AlertsForm member={member} alerts={e.alerts} canEdit={canEdit && !e.member.teen} />
         <Card>
-          <CardHeader title="Payout method" hint="Only the method name and masked destinations leave the panel" />
+          <CardHeader title={<Titled title="Payout method" help={HELP.memberPayout} />} hint="Only the method name and masked destinations leave the panel" />
           <div className="grid gap-3 px-5 py-4 text-[13px]">
             {e.payout === null ? (
               <p className="text-fg-3">Teen accounts have no payout method.</p>
@@ -168,7 +174,7 @@ export function MemberEngagement({
           </div>
         </Card>
         <Card>
-          <CardHeader title="Referred friends" hint="Who joined with this member's link" />
+          <CardHeader title={<Titled title="Referred friends" help={HELP.memberFriends} align="right" />} hint="Who joined with this member's link" />
           {!e.referrals || e.referrals.people.length === 0 ? (
             <EmptyState title={e.referrals ? 'Nobody yet' : 'Not for teens'} />
           ) : (
@@ -196,6 +202,8 @@ function Tile({
   icon: Icon,
   tint,
   title,
+  help,
+  align,
   big,
   sub,
   children,
@@ -203,6 +211,8 @@ function Tile({
   icon: typeof Coins;
   tint: string;
   title: string;
+  help: TopicHelp;
+  align?: 'left' | 'right';
   big: string;
   sub: string;
   children?: React.ReactNode;
@@ -213,7 +223,9 @@ function Tile({
         <span className={`grid size-9 place-items-center rounded-xl bg-gradient-to-br text-white shadow-sm ${tint}`} aria-hidden>
           <Icon className="size-4.5" />
         </span>
-        <p className="text-[13px] font-semibold text-fg">{title}</p>
+        <div className="text-[13px] font-semibold text-fg">
+          <Titled title={title} help={help} align={align} />
+        </div>
       </div>
       <p className="num mt-3 text-[24px] font-bold leading-none text-fg">{big}</p>
       <p className="text-[11.5px] text-fg-3">{sub}</p>
