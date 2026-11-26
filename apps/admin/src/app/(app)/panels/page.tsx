@@ -33,7 +33,7 @@ export default async function PanelsPage() {
           </>
         }
       />
-      <p className="mb-4 rounded-lg border border-border bg-surface-2 px-4 py-3 text-[13px] text-fg-2">
+      <p className="mb-4 rounded-xl border border-border bg-surface-2 px-4 py-3 text-[13px] text-fg-2">
         After adding a panel, the shared panel backend must also let MADP manage the new site. When the backend is
         next deployed, add the new site&apos;s hostname to its{' '}
         <code className="font-mono">MADP_ADMIN_API_ORIGINS</code> setting; until then, sync works but admin actions

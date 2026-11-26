@@ -1,3 +1,5 @@
+import { cn } from '@/lib/cn';
+import Link from 'next/link';
 import { panelName, panelShort } from '@/lib/panel-names';
 import { getPanels } from '@/lib/panels';
 import type { Metadata } from 'next';
@@ -31,34 +33,40 @@ export default async function IdentityPage({
         actions={<DataModeBadge mode={queue.dataMode} />}
       />
       <DemoBanner mode={queue.dataMode} />
-      <form method="get" className="mb-4 flex flex-wrap items-center gap-2">
-        <select
-          name="panel"
-          defaultValue={sp.panel ?? ''}
-          className="rounded-lg border border-border bg-surface px-3 py-2 text-sm"
-          aria-label="Panel"
-        >
-          <option value="">All panels</option>
-          {panelList.map((x) => x.code).map((p) => (
-            <option key={p} value={p}>
-              {panelName(p, panelList)}
-            </option>
-          ))}
-        </select>
-        <select
-          name="status"
-          defaultValue={status}
-          className="rounded-lg border border-border bg-surface px-3 py-2 text-sm"
-          aria-label="Status"
-        >
+      <div className="mb-4 flex flex-wrap items-center gap-3">
+        <nav aria-label="Status" className="inline-flex flex-wrap gap-1 rounded-xl bg-surface-2 p-1 text-[13px]">
           {STATUSES.map((s) => (
-            <option key={s} value={s}>
-              {s} ({fmt(queue.totals[s] ?? 0)})
-            </option>
+            <Link
+              key={s}
+              href={`/identity?status=${s}${sp.panel ? `&panel=${sp.panel}` : ''}`}
+              aria-current={status === s ? 'page' : undefined}
+              className={cn(
+                'rounded-lg px-3.5 py-1.5 font-semibold capitalize transition',
+                status === s ? 'bg-surface text-fg shadow-soft' : 'text-fg-2 hover:text-fg',
+              )}
+            >
+              {s} <span className="ml-1 rounded-full bg-accent-soft px-1.5 text-[11px] text-accent">{fmt(queue.totals[s] ?? 0)}</span>
+            </Link>
           ))}
-        </select>
-        <button className={btn.secondary}>Show</button>
-      </form>
+        </nav>
+        <nav aria-label="Panel" className="flex flex-wrap gap-1.5 text-[13px]">
+          {[{ code: '', name: 'All panels' }, ...panelList].map((x) => (
+            <Link
+              key={x.code || 'all'}
+              href={`/identity?status=${status}${x.code ? `&panel=${x.code}` : ''}`}
+              aria-current={(sp.panel ?? '') === x.code ? 'page' : undefined}
+              className={cn(
+                'rounded-full border px-3 py-1 font-medium transition',
+                (sp.panel ?? '') === x.code
+                  ? 'border-transparent bg-gradient-to-r from-[#4f5bd5] to-[#8b5cf6] text-white'
+                  : 'border-border bg-surface text-fg-2 hover:border-accent/50',
+              )}
+            >
+              {x.code ? panelName(x.code, panelList) : x.name}
+            </Link>
+          ))}
+        </nav>
+      </div>
       <Card>
         {queue.items.length === 0 ? (
           <EmptyState title={`No ${status} matches`}>The queue is clear for this filter.</EmptyState>
