@@ -838,3 +838,21 @@ verified.
 - Shown as a ring in a Health column on Members (hover for each part), as a breakdown on the member page, and as two
   columns in the Members Excel/CSV download. `packages/contracts/src/member-health.ts`, tests in
   `member-health.test.ts` (4).
+
+## Auto reminders and message channels (2026-11-26)
+
+- New screen **Communications → Auto reminders** (`/communications/reminders`), for one brand at a time (T2O, MFR or
+  MHO). Admins pick which reminders are on (password not set, terms not accepted, no profile yet, profiles still open,
+  surveys waiting, first survey, points to redeem, streak about to break), every how many days, at most how many times,
+  and the gap between any two reminders to one member. A reason is required and every change is audited with a diff
+  (`reminders.settings_changed`). "Who is due now?" asks the panel for a dry run: counts only, nothing is sent.
+- **Message channels** on the same screen: Super Admin (brands.manage) enters the WhatsApp (Twilio or Meta Cloud API)
+  and SMS (Twilio or MSG91) provider keys, sender and template ids per reminder. Keys go straight to the panel, which
+  stores them encrypted (AES-256-GCM) and shows only the last four characters. "Check connection" sends no message.
+  Audit entries never hold a key (`channels.provider_saved/checked/removed`).
+- Panel side is MFR#105 (the shared panel backend): reminder rules, branded mailers with each brand's logo, the
+  dashboard notice that always goes out, and e-mail, push, WhatsApp and SMS by the member's own choice. Sending stays
+  behind the `email_reminders`, `push`, `whatsapp` and `sms` switches, all off by default. Teens are never included.
+- Tests: `apps/api/test/reminders.test.ts` (3, a stand-in panel for all three brands); MFR `tests/reminders.test.mjs`
+  (6). The screen was checked against the real MFR#105 code with DEMO data on all routes (save, dry run, provider
+  save). Real WhatsApp/SMS sending is not verified: it needs Kunal's provider accounts.

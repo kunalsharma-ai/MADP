@@ -483,6 +483,13 @@ export const PANEL_ADMIN_ROUTES = {
   // step 4 (MFR backend app/admin/routes.js)
   switches: '/api/v1/admin/switches',
   switch: (key: string) => `/api/v1/admin/switches/${encodeURIComponent(key)}`,
+  // auto reminders and WhatsApp / SMS providers (MFR#105, app/admin/reminders.js)
+  reminders: '/api/v1/admin/reminders',
+  remindersPreview: '/api/v1/admin/reminders/preview',
+  channels: '/api/v1/admin/channels',
+  channel: (c: string) => `/api/v1/admin/channels/${encodeURIComponent(c)}`,
+  channelCheck: (c: string) => `/api/v1/admin/channels/${encodeURIComponent(c)}/check`,
+  channelRemove: (c: string) => `/api/v1/admin/channels/${encodeURIComponent(c)}/remove`,
   // prize machines, one per segment (MFR#56)
   prizeMachines: '/api/v1/admin/prize-machines',
   // step 5 reports, aggregate counts per brand (MFR#58)

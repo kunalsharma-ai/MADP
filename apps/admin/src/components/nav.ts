@@ -208,6 +208,13 @@ export const NAV: NavGroup[] = [
         icon: 'Workflow',
         permission: 'communications.read',
       },
+      {
+        href: '/communications/reminders',
+        label: 'Auto reminders',
+        icon: 'BellRing',
+        permission: 'communications.read',
+        brandScoped: true,
+      },
     ],
   },
   {
