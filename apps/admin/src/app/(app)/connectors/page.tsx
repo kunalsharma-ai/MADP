@@ -13,6 +13,7 @@ import {
   fmt,
   fmtDate,
 } from '@/components/ui';
+import { BrandLogo } from '@/components/brand-logo';
 import { ImportButtons, RetryDeadLettersButton, SyncNowButton } from './import-buttons';
 
 export const metadata: Metadata = { title: 'Connectors & sync' };
@@ -43,7 +44,12 @@ export default async function ConnectorsPage() {
         {rows.map((c) => (
           <Card key={c.panel}>
             <CardHeader
-              title={c.name}
+              title={
+                <span className="flex items-center gap-2.5">
+                  <BrandLogo panel={c.panel} size={32} />
+                  {c.name}
+                </span>
+              }
               hint={c.sourceRepository}
               action={
                 <div className="flex items-center gap-1.5">
@@ -235,7 +241,7 @@ export default async function ConnectorsPage() {
                 <td className="num px-5 py-2.5">
                   {fmt(n.identitiesCreated)} / {fmt(n.identitiesUpdated)}
                 </td>
-                <td className="num px-5 py-2.5">
+                <td className="num whitespace-nowrap px-5 py-2.5">
                   {fmt(n.autoLinked)} auto · {fmt(n.matchCandidates)} review
                 </td>
                 <td className="num px-5 py-2.5">{fmt(n.answersChanged)}</td>
