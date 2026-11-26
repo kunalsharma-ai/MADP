@@ -1,5 +1,9 @@
 # MADP on Docker Swarm (Kunal's hosting, 25 Nov 2026). Deploy:
 #   docker stack deploy -c ops/deploy/madp-stack.yml madp
+# Build and push the images with the same file (issue #65). Compose builds api and admin from the repository root and
+# tags them with the image names below; Swarm ignores `build:` and pulls those images from the registry:
+#   MADP_HOST=<host> MADP_REGISTRY=<registry> MADP_VERSION=<version> docker compose -f ops/deploy/madp-stack.yml build
+#   MADP_HOST=<host> MADP_REGISTRY=<registry> MADP_VERSION=<version> docker compose -f ops/deploy/madp-stack.yml push api admin
 # See docs/RUNBOOKS.md section "Docker Swarm" for the secrets to create first and the migration job.
 #
 # Rules this file keeps:
@@ -64,6 +68,8 @@ services:
 
   api:
     image: ${MADP_REGISTRY:-madp}/api:${MADP_VERSION:?set MADP_VERSION}
+    # Paths are relative to this file, so the context is the repository root (the Dockerfiles copy the workspace).
+    build: { context: ../.., dockerfile: apps/api/Dockerfile }
     command: ['node', 'dist/main.js']
     environment: *api-env
     secrets: *api-secrets
@@ -84,7 +90,8 @@ services:
       update_config: { order: start-first, failure_action: rollback }
 
   # Database migrations, once per release, before the new api starts: docker service scale madp_migrate=1 (see the
-  # runbook). Kept apart from api so two api replicas never migrate at the same time.
+  # runbook). Kept apart from api so two api replicas never migrate at the same time. It runs the api image, which the
+  # api service builds, so it has no build section of its own.
   migrate:
     image: ${MADP_REGISTRY:-madp}/api:${MADP_VERSION:?set MADP_VERSION}
     command: ['node', 'dist/scripts/migrate.js']
@@ -97,6 +104,7 @@ services:
 
   admin:
     image: ${MADP_REGISTRY:-madp}/admin:${MADP_VERSION:?set MADP_VERSION}
+    build: { context: ../.., dockerfile: apps/admin/Dockerfile }
     environment:
       MADP_API_URL: http://api:4000/api/v1
     networks: [madp]
