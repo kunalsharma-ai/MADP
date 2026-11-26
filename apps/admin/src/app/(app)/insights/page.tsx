@@ -172,7 +172,7 @@ export default async function InsightsPage({ searchParams }: { searchParams: Pro
                     {Object.keys(i.evidence).length ? (
                       <div className="mt-3 flex flex-wrap gap-2">
                         {Object.entries(i.evidence).map(([k, v]) => (
-                          <span key={k} className="rounded-lg border border-border bg-surface-2/60 px-2.5 py-1 text-[12px] text-fg-2">
+                          <span key={k} className="rounded-xl border border-border bg-surface-2/60 px-2.5 py-1 text-[12px] text-fg-2">
                             {human(k)}: <strong className="text-fg">{typeof v === 'number' ? nf.format(v) : (v ?? '—')}</strong>
                           </span>
                         ))}

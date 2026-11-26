@@ -1,11 +1,12 @@
 import { panelName, panelShort } from '@/lib/panel-names';
 import { getPanels } from '@/lib/panels';
 import type { Metadata } from 'next';
+import { PANEL_TONES } from '@/lib/panel-tones';
 import Link from 'next/link';
 import { type AudienceCategory, type GeoResponse, type OverlapResponse, type PanelCode } from '@madp/contracts';
 import { getSegments } from '@/lib/segments';
 import { api } from '@/lib/api';
-import { Card, CardHeader, DataModeBadge, DemoBanner, EmptyState, PageHeader, PanelChip, Stat, Table, btn, fmt, fmtDate } from '@/components/ui';
+import { Card, CardHeader, DataModeBadge, DemoBanner, EmptyState, PageHeader, PanelChip, Stat, Table, btn, fmt, fmtDate, ChipCheck } from '@/components/ui';
 import { cn } from '@/lib/cn';
 import { Country, countryName } from '@/components/country';
 import { WorldMap } from './world-map';
@@ -57,28 +58,22 @@ export default async function GeoPage({ searchParams }: { searchParams: SP }) {
         actions={<DataModeBadge mode={world.dataMode} />}
       />
       <DemoBanner mode={world.dataMode} />
-      <form className="mb-4 flex flex-wrap items-end gap-4 rounded-xl border border-border bg-surface px-5 py-3 text-[13px]">
+      <form className="mb-4 flex flex-wrap items-end gap-5 rounded-2xl border border-border/80 bg-surface px-5 py-4 text-[13px] shadow-soft">
         {country ? <input type="hidden" name="country" value={country} /> : null}
         {state ? <input type="hidden" name="state" value={state} /> : null}
-        <fieldset className="flex items-center gap-3">
-          <legend className="mb-1 text-[12px] text-fg-3">Panels</legend>
+        <fieldset className="flex flex-wrap items-center gap-2">
+          <legend className="mb-1.5 text-[12px] font-bold uppercase tracking-wider text-fg-3">Panels</legend>
           {panelList.map((x) => x.code).map((p) => (
-            <label key={p} className="flex items-center gap-1.5">
-              <input type="checkbox" name="panel" value={p} defaultChecked={panels.includes(p)} />
-              {panelShort(p, panelList)}
-            </label>
+            <ChipCheck key={p} name="panel" value={p} label={panelShort(p, panelList)} defaultChecked={panels.includes(p)} dot={PANEL_TONES[p]?.[1]} />
           ))}
         </fieldset>
-        <fieldset className="flex flex-wrap items-center gap-3">
-          <legend className="mb-1 text-[12px] text-fg-3">Categories</legend>
+        <fieldset className="flex flex-wrap items-center gap-2">
+          <legend className="mb-1.5 text-[12px] font-bold uppercase tracking-wider text-fg-3">Segments</legend>
           {SEG_KEYS.map((c) => (
-            <label key={c} className="flex items-center gap-1.5">
-              <input type="checkbox" name="category" value={c} defaultChecked={categories.includes(c)} />
-              {(SEG_LABEL[c] ?? c)}
-            </label>
+            <ChipCheck key={c} name="category" value={c} label={SEG_LABEL[c] ?? c} defaultChecked={categories.includes(c)} />
           ))}
         </fieldset>
-        <button className={btn.secondary}>Apply</button>
+        <button className={btn.primary}>Show</button>
         <span className="ml-auto text-[12px] text-fg-3">
           Computed {fmtDate(world.computedAt)} · cells under {world.minimumCellSize} hidden
         </span>

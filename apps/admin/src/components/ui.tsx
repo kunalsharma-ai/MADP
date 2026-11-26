@@ -283,3 +283,62 @@ export function Pager({
     </nav>
   );
 }
+
+/** A checkbox drawn as a pill that lights up when ticked. Works in plain GET forms, no script needed. */
+export function ChipCheck({
+  name,
+  value,
+  label,
+  defaultChecked,
+  dot,
+}: {
+  name: string;
+  value: string;
+  label: ReactNode;
+  defaultChecked?: boolean;
+  /** Optional colour dot, e.g. a panel colour. */
+  dot?: string;
+}) {
+  return (
+    <label className="inline-flex cursor-pointer select-none items-center gap-1.5 rounded-full border border-border bg-surface px-3 py-1.5 text-[13px] font-medium text-fg-2 transition hover:border-accent/50 has-[:checked]:border-transparent has-[:checked]:bg-gradient-to-r has-[:checked]:from-[#4f5bd5] has-[:checked]:to-[#8b5cf6] has-[:checked]:text-white has-[:checked]:shadow-soft has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-accent">
+      <input type="checkbox" name={name} value={value} defaultChecked={defaultChecked} className="sr-only" />
+      {dot ? <span className="size-2 rounded-full ring-2 ring-white/60" style={{ background: dot }} aria-hidden /> : null}
+      {label}
+    </label>
+  );
+}
+
+/** A list of named counts with a coloured bar each. Suppressed cells say so instead of a number. */
+export function BarList({
+  rows,
+  empty = 'No data yet.',
+}: {
+  rows: { key: string; label: ReactNode; value: number | null; suppressed?: boolean }[];
+  empty?: string;
+}) {
+  if (!rows.length) return <p className="px-5 py-6 text-sm text-fg-3">{empty}</p>;
+  const max = Math.max(1, ...rows.map((r) => r.value ?? 0));
+  const tints = ['#6366f1', '#ec4899', '#f97316', '#10b981', '#0ea5e9', '#a855f7', '#eab308'];
+  return (
+    <ul className="space-y-3 px-5 py-4">
+      {rows.map((r, i) => (
+        <li key={r.key} className="text-[13px]">
+          <div className="flex items-center justify-between gap-2">
+            <span className="min-w-0 truncate text-fg">{r.label}</span>
+            <span className="num font-semibold text-fg">{r.suppressed ? <Badge>too few to show</Badge> : fmt(r.value)}</span>
+          </div>
+          <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-surface-2">
+            <div
+              className="grow-x h-full rounded-full"
+              style={{
+                width: `${((r.value ?? 0) / max) * 100}%`,
+                backgroundImage: `linear-gradient(90deg, ${tints[i % tints.length]}99, ${tints[i % tints.length]})`,
+                animationDelay: `${i * 60}ms`,
+              }}
+            />
+          </div>
+        </li>
+      ))}
+    </ul>
+  );
+}

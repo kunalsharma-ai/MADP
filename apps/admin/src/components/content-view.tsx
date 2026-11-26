@@ -29,7 +29,7 @@ export function ContentView({ title, body }: { title: string; body: unknown[] })
         if ('h3' in o) return <h3 key={i} className="font-semibold">{String(o.h3)}</h3>;
         if ('note' in o)
           return (
-            <p key={i} className="rounded-lg border border-border bg-surface-2 px-3 py-2 whitespace-pre-line">
+            <p key={i} className="rounded-xl border border-border bg-surface-2 px-3 py-2 whitespace-pre-line">
               {linked(String(o.note))}
             </p>
           );

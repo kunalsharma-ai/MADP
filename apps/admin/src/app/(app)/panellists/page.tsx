@@ -63,7 +63,7 @@ export default async function PanellistsPage({
         <select
           name="panel"
           defaultValue={sp.panel ?? ''}
-          className="rounded-lg border border-border bg-surface px-3 py-2 text-sm"
+          className="rounded-xl border border-border bg-surface px-3 py-2 text-sm"
           aria-label="Panel"
         >
           <option value="">All panels</option>
@@ -76,7 +76,7 @@ export default async function PanellistsPage({
         <select
           name="category"
           defaultValue={sp.category ?? ''}
-          className="rounded-lg border border-border bg-surface px-3 py-2 text-sm"
+          className="rounded-xl border border-border bg-surface px-3 py-2 text-sm"
           aria-label="Category"
         >
           <option value="">All categories</option>
@@ -89,7 +89,7 @@ export default async function PanellistsPage({
         <select
           name="membership"
           defaultValue={sp.membership ?? ''}
-          className="rounded-lg border border-border bg-surface px-3 py-2 text-sm"
+          className="rounded-xl border border-border bg-surface px-3 py-2 text-sm"
           aria-label="Membership"
         >
           <option value="">Any membership</option>
@@ -100,7 +100,7 @@ export default async function PanellistsPage({
         <select
           name="guardian"
           defaultValue={sp.guardian ?? ''}
-          className="rounded-lg border border-border bg-surface px-3 py-2 text-sm"
+          className="rounded-xl border border-border bg-surface px-3 py-2 text-sm"
           aria-label="Guardian consent"
         >
           <option value="">Any guardian consent</option>
