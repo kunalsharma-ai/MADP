@@ -79,29 +79,33 @@ export async function decideMapping(
   notes?: string,
   valueMap?: Record<string, string>,
 ) {
-  const map = valueMap && Object.keys(valueMap).length ? valueMap : undefined;
-  await api(`/mappings/${id}/decision`, {
-    method: 'POST',
-    json: {
-      decision,
-      ...(attributeKey ? { attributeKey } : {}),
-      ...(notes ? { notes } : {}),
-      ...(map ? { valueMap: map } : {}),
-    },
+  return attempt(async () => {
+    const map = valueMap && Object.keys(valueMap).length ? valueMap : undefined;
+    await api(`/mappings/${id}/decision`, {
+      method: 'POST',
+      json: {
+        decision,
+        ...(attributeKey ? { attributeKey } : {}),
+        ...(notes ? { notes } : {}),
+        ...(map ? { valueMap: map } : {}),
+      },
+    });
+    revalidatePath('/mappings');
   });
-  revalidatePath('/mappings');
 }
 
 /** All options of one question version, for the value map editor. */
 export async function questionOptions(panel: string, sourceQuestionId: string, version: number) {
-  const r = await api<{ versions: { version: number; options: { value: string; label: string }[] }[] }>(
-    `/questions/${encodeURIComponent(panel)}/${encodeURIComponent(sourceQuestionId)}`,
-  );
-  // Options repeat once per parent value (cascading questions); the value map needs each value once.
-  const seen = new Set<string>();
-  return (r.versions.find((v) => v.version === version)?.options ?? []).filter(
-    (o) => !seen.has(o.value) && seen.add(o.value),
-  );
+  return attempt(async () => {
+    const r = await api<{ versions: { version: number; options: { value: string; label: string }[] }[] }>(
+      `/questions/${encodeURIComponent(panel)}/${encodeURIComponent(sourceQuestionId)}`,
+    );
+    // Options repeat once per parent value (cascading questions); the value map needs each value once.
+    const seen = new Set<string>();
+    return (r.versions.find((v) => v.version === version)?.options ?? []).filter(
+      (o) => !seen.has(o.value) && seen.add(o.value),
+    );
+  });
 }
 
 export async function retryDeadLetters(panel: string) {

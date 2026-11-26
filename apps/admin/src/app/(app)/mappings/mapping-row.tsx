@@ -4,6 +4,8 @@ import { useState, useTransition } from 'react';
 import { toast } from 'sonner';
 import type { Attribute, MappingRow } from '@/lib/types';
 import { decideMapping, questionOptions } from '../../actions';
+import { Check, HelpCircle, Sparkles, X } from 'lucide-react';
+import { unwrap } from '@/lib/result';
 import { Badge, PanelChip, btn } from '@/components/ui';
 
 export function MappingRowView({ m, attributes }: { m: MappingRow; attributes: Attribute[] }) {
@@ -14,7 +16,7 @@ export function MappingRowView({ m, attributes }: { m: MappingRow; attributes: A
   const openValueMap = () =>
     start(async () => {
       try {
-        const opts = await questionOptions(m.panel, m.sourceQuestionId, m.questionVersion);
+        const opts = await unwrap(questionOptions(m.panel, m.sourceQuestionId, m.questionVersion));
         setOptions(opts);
         // Start from a lower-case, trimmed copy of each source value; the steward edits from there.
         setValueMap((cur) =>
@@ -30,14 +32,14 @@ export function MappingRowView({ m, attributes }: { m: MappingRow; attributes: A
     start(async () => {
       try {
         const map = Object.fromEntries(Object.entries(valueMap).filter(([, v]) => v.trim() !== ''));
-        await decideMapping(
+        await unwrap(decideMapping(
           m.id,
           decision,
           decision === 'approve' ? attr : undefined,
           undefined,
           decision === 'approve' && options ? map : undefined,
-        );
-        toast.success(`${m.sourceQuestionId}: ${decision.replace('_', ' ')}`);
+        ));
+        toast.success(decision === 'approve' ? 'Approved and linked' : decision === 'reject' ? 'Marked as not mappable' : 'Marked as needing info');
       } catch (e) {
         toast.error((e as Error).message);
       }
@@ -46,15 +48,16 @@ export function MappingRowView({ m, attributes }: { m: MappingRow; attributes: A
   return (
     <li className="grid gap-3 px-5 py-4 lg:grid-cols-[1.4fr_1fr_auto] lg:items-center">
       <div className="min-w-0">
-        <div className="flex flex-wrap items-center gap-2">
+        <p className="text-[14px] font-semibold text-fg">{m.label ?? m.sourceQuestionId}</p>
+        <div className="mt-1 flex flex-wrap items-center gap-2">
           <PanelChip panel={m.panel} />
-          <span className="font-mono text-xs">{m.sourceQuestionId}</span>
-          <span className="text-[11px] text-fg-3">v{m.questionVersion}</span>
+          <span className="font-mono text-[11px] text-fg-3">
+            {m.sourceQuestionId} · v{m.questionVersion}
+          </span>
           {m.sensitivity === 'special_category' ? (
-            <Badge tone="danger">{m.panel === 'mho' ? 'health / special' : 'special category'}</Badge>
+            <Badge tone="danger">{m.panel === 'mho' ? 'health, sensitive' : 'sensitive'}</Badge>
           ) : null}
         </div>
-        <p className="mt-1 text-[13px]">{m.label ?? '—'}</p>
         {m.sampleOptions.length ? (
           <p className="mt-0.5 truncate text-[11px] text-fg-3">
             Options: {m.sampleOptions.map((o) => o.label).join(' · ')}
@@ -70,18 +73,18 @@ export function MappingRowView({ m, attributes }: { m: MappingRow; attributes: A
           value={attr}
           onChange={(e) => setAttr(e.target.value)}
           disabled={!editable || pending}
-          className="w-full rounded-lg border border-border bg-surface px-2.5 py-1.5 text-[13px]"
+          className="w-full rounded-xl border border-border bg-surface px-2.5 py-2 text-[13px]"
         >
-          <option value="">Choose canonical attribute…</option>
+          <option value="">Pick the shared question…</option>
           {attributes.map((a) => (
             <option key={a.key} value={a.key}>
-              {a.key} — {a.label}
+              {a.label} ({a.key})
             </option>
           ))}
         </select>
         {m.suggestedAttributeKey && editable ? (
-          <p className="mt-1 text-[11px] text-fg-3">
-            Suggested: {m.suggestedAttributeKey} ({m.suggestionBasis})
+          <p className="mt-1 inline-flex items-center gap-1 text-[11.5px] text-[#7c3aed]">
+            <Sparkles className="size-3" aria-hidden /> We suggest {attributes.find((a) => a.key === m.suggestedAttributeKey)?.label ?? m.suggestedAttributeKey}
           </p>
         ) : null}
       </div>
@@ -89,13 +92,13 @@ export function MappingRowView({ m, attributes }: { m: MappingRow; attributes: A
         {editable ? (
           <>
             <button className={btn.primary} disabled={!attr || pending} onClick={() => act('approve')}>
-              Approve
+              <Check className="size-4" aria-hidden /> Approve
             </button>
-            <button className={btn.secondary} disabled={pending} onClick={() => act('needs_info')}>
-              Needs info
+            <button className={btn.secondary} disabled={pending} onClick={() => act('needs_info')} title="Park it until someone can check">
+              <HelpCircle className="size-4" aria-hidden /> Needs info
             </button>
-            <button className={btn.ghost} disabled={pending} onClick={() => act('reject')}>
-              Not mappable
+            <button className={btn.ghost} disabled={pending} onClick={() => act('reject')} title="This question has no shared equivalent">
+              <X className="size-4" aria-hidden /> Can&apos;t map
             </button>
           </>
         ) : (
@@ -109,7 +112,7 @@ export function MappingRowView({ m, attributes }: { m: MappingRow; attributes: A
         <div className="lg:col-span-3">
           {options === null ? (
             <button className={btn.ghost} disabled={pending} onClick={openValueMap}>
-              Map option values…
+              Match the answer options too (optional)…
             </button>
           ) : options.length === 0 ? (
             <p className="text-[12px] text-fg-3">This question version has no stored options to map.</p>
