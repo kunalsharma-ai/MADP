@@ -11,6 +11,23 @@ const day = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'YYYY-MM-DD');
 export const MemberStatus = z.enum(['active', 'suspended', 'banned', 'archived']);
 export type MemberStatus = z.infer<typeof MemberStatus>;
 
+/** Columns of the Members table that can be sorted. */
+export const MemberSortKey = z.enum([
+  'name',
+  'memberId',
+  'email',
+  'phone',
+  'segment',
+  'country',
+  'born',
+  'quality',
+  'status',
+  'marketing',
+  'signedUp',
+  'lastActivity',
+]);
+export type MemberSortKey = z.infer<typeof MemberSortKey>;
+
 export const MemberSearch = z.object({
   q: z.string().trim().max(100).optional(),
   category: z.string().trim().max(40).optional(),
@@ -29,6 +46,12 @@ export const MemberSearch = z.object({
   qualityMax: z.coerce.number().int().min(0).max(200).optional(),
   inactiveSince: day.optional(),
   dueBefore: day.optional(),
+  /** Birth year range (the Born column). Needs a panel build that supports it; older builds ignore it. */
+  bornFrom: z.coerce.number().int().min(1900).max(2100).optional(),
+  bornTo: z.coerce.number().int().min(1900).max(2100).optional(),
+  /** Column to sort the whole list by. Older panel builds ignore it and keep newest sign-ups first. */
+  sort: MemberSortKey.optional(),
+  dir: z.enum(['asc', 'desc']).optional(),
   page: z.coerce.number().int().min(1).max(10_000).default(1),
 });
 export type MemberSearch = z.infer<typeof MemberSearch>;

@@ -26,6 +26,9 @@ import { AudienceService } from './audience/audience.service.js';
 import { AudienceController } from './audience/audience.controller.js';
 import { RegistryController } from './registry/registry.controller.js';
 import { PanellistsController } from './panellists/panellists.controller.js';
+import { NewMembersController } from './new-members/new-members.controller.js';
+import { MemberViewsController } from './new-members/member-views.controller.js';
+import { ActivityController } from './new-members/activity.controller.js';
 import { DashboardController } from './dashboard/dashboard.controller.js';
 import { IdentityService } from './identity/identity.service.js';
 import { IdentityController } from './identity/identity.controller.js';
@@ -92,6 +95,9 @@ export class AppModule {
         ConnectorsController,
         RegistryController,
         PanellistsController,
+        NewMembersController,
+        MemberViewsController,
+        ActivityController,
         DashboardController,
         AuditController,
         AdminsController,

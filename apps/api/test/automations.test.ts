@@ -370,3 +370,38 @@ describe('automations', () => {
     expect(line).toMatchObject({ trigger: 'inactivity', dryRun: true });
   });
 });
+
+describe('welcome journey', () => {
+  it('sets up day 1, 3 and 7 on each panel from approved templates, and waits for a second admin', async () => {
+    const before = (await request(t.server).get('/api/v1/communications/automations/welcome-journey').set(as('data_steward')).expect(200)).body;
+    expect(before.map((p: { panel: string }) => p.panel).sort()).toEqual(['mfr', 'mho', 't2o']);
+    for (const panel of ['t2o', 'mfr', 'mho']) {
+      // Without an approved survey reminder the journey can't start, and says what is missing.
+      await template(panel, 'welcome');
+      await template(panel, 'profile_recovery');
+      const missing = await request(t.server).post('/api/v1/communications/automations/welcome-journey').set(as('data_steward')).send({ panel });
+      if (missing.status === 400) {
+        expect(missing.body.problems.join(' ')).toMatch(/Day 7: a survey reminder template/);
+        await template(panel, 'survey_reminder');
+      } else expect(missing.status, JSON.stringify(missing.body)).toBe(409);
+      const made = await request(t.server).post('/api/v1/communications/automations/welcome-journey').set(as('data_steward')).send({ panel });
+      if (made.status === 409) continue;
+      expect(made.status, JSON.stringify(made.body)).toBe(201);
+      expect(made.body).toMatchObject({ panel, trigger: 'registration', name: 'Welcome journey', status: 'draft' });
+      const v = made.body.versions[0];
+      expect(v.status).toBe('in_review');
+      expect(v.steps.map((s: { atDays: number; onlyIfIncomplete: boolean }) => `${s.atDays}:${s.onlyIfIncomplete}`)).toEqual(['1:false', '3:true', '7:false']);
+      // The author can't approve their own journey; a second admin does.
+      await request(t.server).post(`/api/v1/communications/automation-versions/${v.id}/review`).set(as('data_steward')).send({ decision: 'approve' }).expect(403);
+      await request(t.server).post(`/api/v1/communications/automation-versions/${v.id}/review`).set(as('privacy_officer')).send({ decision: 'approve' }).expect(200);
+      // One journey per panel, and it never sends.
+      await request(t.server).post('/api/v1/communications/automations/welcome-journey').set(as('data_steward')).send({ panel }).expect(409);
+      await request(t.server).post(`/api/v1/communications/automations/${made.body.id}/run`).set(as('data_steward')).send({ dryRun: false }).expect(403);
+    }
+    const after = (await request(t.server).get('/api/v1/communications/automations/welcome-journey').set(as('data_steward')).expect(200)).body;
+    for (const p of after) {
+      expect(p.automation).toMatchObject({ status: 'active', versionStatus: 'approved' });
+      expect(p.steps.every((s: { template: unknown }) => s.template)).toBe(true);
+    }
+  });
+});

@@ -736,3 +736,32 @@ verified.
 - **Not built, by choice.** Extra checks (min/max length, number range, pattern): Kunal declined panel changes.
 - **Tests.** `question-types.test.ts` (7). Preview against a local stand-in panel:
   `/mnt/project-files/madp/preview-madp/question-editor/`. No live panel test yet.
+
+## New-member alerts and Members table sort and filter (2026-11-26)
+
+- **What.** A new sign-up on T2O, MFR or MHO shows in MADP with a chime and a pop-up, in the bell at the top (count per
+  panel and per segment: Consumers, Teens, Patients and the rest, plus the latest sign-ups), as a badge on Members, and
+  as big tiles on the dashboard and the Members screen. "Seen" per panel resets its count for that admin.
+- **Where the numbers come from.** MADP's synced `panel_membership` (counts, segment, country and time only, nothing
+  personal), so a sign-up shows after the next panel sync. Members who signed up more than 7 days ago never count, so a
+  first import of an old panel doesn't ring. Teens are left out for admins without `teen.read`. Seen marks live in
+  `admin_new_member_seen`. Routes: `GET /new-members`, `POST /new-members/seen`.
+- **Members table.** Every column sorts (click the heading) and has its own filter under the heading, including a new
+  birth-year range. The whole list is sorted by the panel backend once kunalsharma-ai/MFR#102 is deployed; until then
+  MADP sorts the page shown and says so.
+- **Tests.** `test/new-members.test.ts` (all three panels, seen marks, brand scoping, teens hidden), MFR
+  `tests/admin.members.test.mjs` (sort and birth year). Preview: `/mnt/project-files/madp/preview-madp/new-members/`.
+  No live test yet: needs the real sync on Kunal's server.
+
+## Saved views, welcome journey and live activity (2026-11-26)
+
+- **Saved views** (Members): save the current filters and sort under a name, per brand, optionally shared with the
+  brand's admins; "last N days" keeps a rolling sign-up window. Filters only: a search for one person is never saved.
+  Table `member_saved_view`, routes `/member-views`. Test `test/member-views.test.ts`.
+- **Welcome journey** (Lifecycle automations): one click per panel sets up a New registration automation with day 1
+  welcome, day 3 "finish your profile" (only while incomplete) and day 7 "take your first survey" from the panel's
+  approved templates, and sends it to a second admin. Registration automations may now use survey-reminder
+  templates. Sending stays off; runs are dry runs. Test in `test/automations.test.ts`.
+- **Live activity** (`/activity`): sign-ups, survey completes, redemptions (MADP's synced copy) and new tickets (each
+  panel's admin API) in one list for all three panels, polled every 20 seconds with a chime for new lines. No names,
+  e-mails or ticket text; teens only with teen access. Test `test/activity.test.ts`.

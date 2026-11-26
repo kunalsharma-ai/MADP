@@ -44,6 +44,11 @@ const CHECKED_IN_HANDLER = new Set([
   'PUT /panel-connections/:panel',
   'POST /panel-connections/:panel/decision',
   'POST /panel-connections/:panel/test',
+  // New-member bell and the live activity feed: counts and events only for brands where the admin holds members.read
+  // (and points.read / support.read for redemptions / tickets), checked per brand in the handler.
+  'GET /new-members',
+  'POST /new-members/seen',
+  'GET /activity',
 ]);
 
 interface Route {

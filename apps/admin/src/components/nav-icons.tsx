@@ -1,4 +1,5 @@
 import {
+  Activity,
   Scale,
   GitCompareArrows,
   UserRoundCheck,
@@ -43,6 +44,7 @@ import { NAV } from './nav';
 
 /** The menu icon of each screen, by the name used in nav.ts. */
 export const ICONS = {
+  Activity,
   ClipboardCheck,
   LayoutDashboard,
   Globe2,

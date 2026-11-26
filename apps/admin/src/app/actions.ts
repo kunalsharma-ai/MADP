@@ -311,3 +311,12 @@ export async function decideInsightAction(id: string, decision: 'accepted' | 'di
     return decision === 'accepted' ? 'Marked as being handled.' : 'Hidden for at least 7 days.';
   });
 }
+
+/** Sets up a panel's ready-made welcome journey (day 1, 3 and 7) and sends it to a second admin for approval. */
+export async function startWelcomeJourneyAction(panel: string) {
+  return attempt(async () => {
+    await api('/communications/automations/welcome-journey', { method: 'POST', json: { panel } });
+    revalidatePath('/communications/automations');
+    return null;
+  });
+}

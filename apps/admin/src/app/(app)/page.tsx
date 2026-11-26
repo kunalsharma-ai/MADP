@@ -29,6 +29,7 @@ import { CountUp, Greeting, Ring, TiltCard } from '@/components/dashboard/fx';
 import { RegistrationsStudio, SegmentSwirl } from '@/components/dashboard/charts3d';
 import { PANEL_TONES } from '@/lib/panel-tones';
 import { SpinningGlobe } from '@/components/dashboard/globe';
+import { NewMembersStrip } from '@/components/new-members';
 
 export const metadata: Metadata = { title: 'Executive dashboard' };
 
@@ -49,6 +50,9 @@ export default async function Dashboard() {
             allow for the brand picked at the top. The cross-brand executive dashboard needs access to every brand.
           </div>
         </Card>
+        <div className="mt-6">
+          <NewMembersStrip />
+        </div>
       </>
     );
   }
@@ -118,6 +122,9 @@ export default async function Dashboard() {
       </section>
 
       <DemoBanner mode={d.dataMode} />
+      <div className="mb-6">
+        <NewMembersStrip />
+      </div>
       {empty ? (
         <Card className="mb-6 p-6 text-sm text-fg-2">
           No audience data yet. Run an import from{' '}
