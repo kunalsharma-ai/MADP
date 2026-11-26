@@ -222,3 +222,12 @@ body {
     min-width: 0;
   }
 }
+
+/*
+ * Cards animate in with a transform, which gives each card its own stacking layer, so a later card would paint over an
+ * "i" card opened inside an earlier one. The card holding an open "i" card is lifted above its neighbours.
+ */
+.rise:has([role='dialog']) {
+  position: relative;
+  z-index: 40;
+}

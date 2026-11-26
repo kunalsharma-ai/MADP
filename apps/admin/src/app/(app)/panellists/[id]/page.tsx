@@ -8,6 +8,7 @@ import Link from 'next/link';
 import { Ring } from '@/components/dashboard/fx';
 import { PANEL_TONES } from '@/lib/panel-tones';
 import { STATUS_TONE, statusLabel } from '../../participation/status';
+import { HELP, Titled } from '../../participation/help';
 import { api, ApiError } from '@/lib/api';
 import type { PanellistDetail } from '@/lib/types';
 import {
@@ -186,7 +187,7 @@ export default async function PanellistPage({
       {engagement?.panels.length ? (
         <Card className="mt-4">
           <CardHeader
-            title="Engagement & survey history"
+            title={<Titled title="Engagement & survey history" help={HELP.personEngagement} />}
             hint="Worked out from the surveys this person took on each panel. Each panel is scored on its own."
             action={
               <Link href="/participation" className="text-[12px] font-semibold text-accent hover:underline">
