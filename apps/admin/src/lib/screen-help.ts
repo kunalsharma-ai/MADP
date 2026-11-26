@@ -236,6 +236,16 @@ export const SCREEN_HELP: Record<string, ScreenHelp> = {
     where: 'The imported mailer packs. Nothing is sent from this screen.',
     how: ['Filter by panel or kind.', 'Open a template to preview it with sample values.'],
   },
+  '/communications/reminders': {
+    why: 'Bring members back to finish what they started: set a password, accept the terms, fill in the profile, take waiting surveys, redeem points or keep a streak. You only set the days; the system does the rest.',
+    where: 'The panel of the brand picked at the top checks every member with plain rules (no AI) and sends one reminder at a time on the dashboard, e-mail, and WhatsApp, SMS or push when the member chose them.',
+    how: [
+      'Turn a reminder on and set every how many days and at most how many times.',
+      'Press Preview to see how many members would get each one today. Nothing is sent.',
+      'Add a WhatsApp or SMS provider under Message channels if you want those too.',
+      'Sending starts only when a Super Admin turns on "Auto reminder e-mails" on Switches.',
+    ],
+  },
   '/communications/automations': {
     why: 'Set up lifecycle rules such as win-back, onboarding and birthdays.',
     where: 'MADP. A second person approves every version. Runs are dry runs; nothing is sent.',

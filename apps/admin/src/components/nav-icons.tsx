@@ -39,6 +39,7 @@ import {
   FileX2,
   ToggleRight,
   ClipboardCheck,
+  BellRing,
 } from 'lucide-react';
 import { NAV } from './nav';
 
@@ -84,6 +85,7 @@ export const ICONS = {
   FileX2,
   ToggleRight,
   Scale,
+  BellRing,
 } as const;
 
 /** One colour pair per screen, so every menu icon has its own tile. Picked from the menu order, stable across renders. */

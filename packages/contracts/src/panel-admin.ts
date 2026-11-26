@@ -697,6 +697,9 @@ export const SwitchKey = z.enum([
   'bonuses',
   'prize_machines',
   'whatsapp',
+  // auto reminders (MFR#105)
+  'email_reminders',
+  'sms',
 ]);
 export type SwitchKey = z.infer<typeof SwitchKey>;
 /** Segments a switch or prize machine can be narrowed to (the panel's member types). */
@@ -1214,3 +1217,110 @@ export const MemberExport = z
   })
   .strict();
 export type MemberExport = z.infer<typeof MemberExport>;
+
+// ---- auto reminders and message channels (MFR#105, Project/api/app/engagement/reminders.js and channels.js) -------
+/** The reminder cases the panel checks, in the order it picks them. */
+export const ReminderCaseKey = z.enum([
+  'password',
+  'terms',
+  'no_profiles',
+  'partial',
+  'surveys',
+  'first_survey',
+  'redeem',
+  'streak',
+]);
+export type ReminderCaseKey = z.infer<typeof ReminderCaseKey>;
+export const ReminderCaseSetting = z
+  .object({
+    enabled: z.boolean().optional(),
+    everyDays: z.number().int().min(1).max(90).optional(),
+    max: z.number().int().min(1).max(50).optional(),
+  })
+  .strict();
+export const RemindersSave = z
+  .object({
+    cases: z.partialRecord(ReminderCaseKey, ReminderCaseSetting).default({}),
+    minGapDays: z.number().int().min(1).max(30).optional(),
+    reason: Reason,
+  })
+  .strict();
+export type RemindersSave = z.infer<typeof RemindersSave>;
+export const RemindersPreview = z.object({ limit: z.number().int().min(1).max(20000).optional() }).strict();
+export type RemindersPreview = z.infer<typeof RemindersPreview>;
+
+export interface ReminderCaseView {
+  key: ReminderCaseKey;
+  group: 'signup' | 'profile' | 'surveys' | 'rewards';
+  label: string;
+  kind: 'account' | 'marketing';
+  enabled: boolean;
+  everyDays: number;
+  max: number;
+}
+export interface ChannelProviderField {
+  key: string;
+  label: string;
+  secret?: boolean;
+}
+export interface ChannelProviderSpec {
+  label: string;
+  fields: ChannelProviderField[];
+  sender: string;
+  templates: string | false;
+}
+export interface ChannelSetup {
+  channel: 'whatsapp' | 'sms';
+  provider: string;
+  providerLabel: string;
+  keyHint: string;
+  sender: string;
+  templates: Partial<Record<ReminderCaseKey, string>>;
+  language: string;
+  checkedAt: string | null;
+  checkOk: boolean | null;
+  checkMessage: string;
+  updatedAt: string;
+  updatedBy: string | null;
+}
+export interface RemindersView {
+  saved: boolean;
+  minGapDays: number;
+  updatedAt: string | null;
+  updatedBy: string | null;
+  cases: ReminderCaseView[];
+  switches: { email_reminders: boolean; push: boolean; whatsapp: boolean; sms: boolean };
+  channels: { channel: 'whatsapp' | 'sms'; setup: ChannelSetup | null }[];
+}
+export interface ChannelsView {
+  providers: Record<'whatsapp' | 'sms', Record<string, ChannelProviderSpec>>;
+  channels: { channel: 'whatsapp' | 'sms'; setup: ChannelSetup | null }[];
+}
+
+export const ChannelName = z.enum(['whatsapp', 'sms']);
+export type ChannelName = z.infer<typeof ChannelName>;
+export const ChannelSave = z
+  .object({
+    provider: z.enum(['twilio', 'msg91', 'meta']),
+    /** Leave a key out (or empty) to keep the saved one. */
+    credentials: z.record(z.string().regex(/^[a-zA-Z]{2,30}$/), z.string().trim().max(500)).optional(),
+    sender: z.string().trim().max(60).optional(),
+    templates: z
+      .partialRecord(
+        ReminderCaseKey,
+        z
+          .string()
+          .trim()
+          .regex(/^[\w.:-]{0,120}$/),
+      )
+      .optional(),
+    language: z
+      .string()
+      .regex(/^[a-z]{2}(_[A-Z]{2})?$/)
+      .optional(),
+    reason: Reason,
+  })
+  .strict();
+export type ChannelSave = z.infer<typeof ChannelSave>;
+export const ChannelAction = z.object({ reason: Reason }).strict();
+export type ChannelAction = z.infer<typeof ChannelAction>;
