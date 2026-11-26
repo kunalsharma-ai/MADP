@@ -88,7 +88,7 @@ export default async function CommunicationsPage({ searchParams }: { searchParam
       />
       <DemoBanner mode={camp.dataMode} />
       <form method="get" className="mb-4 flex items-center gap-2">
-        <select name="panel" defaultValue={panel ?? ''} aria-label="Panel" className="rounded-lg border border-border bg-surface px-3 py-2 text-sm">
+        <select name="panel" defaultValue={panel ?? ''} aria-label="Panel" className="rounded-xl border border-border bg-surface px-3 py-2 text-sm">
           <option value="">All panels</option>
           {panelList.map((x) => x.code).map((p) => (
             <option key={p} value={p}>
@@ -96,7 +96,7 @@ export default async function CommunicationsPage({ searchParams }: { searchParam
             </option>
           ))}
         </select>
-        <button className="rounded-lg border border-border bg-surface px-3 py-2 text-sm">Show</button>
+        <button className="rounded-xl border border-border bg-surface px-3 py-2 text-sm">Show</button>
       </form>
       {panelList.map((x) => x.code).some((p) => brandKitGaps(tpl.brandKits[p]).length) ? (
         <p className="mb-4 rounded-lg bg-surface-2 px-3 py-2 text-[13px] text-fg-2">

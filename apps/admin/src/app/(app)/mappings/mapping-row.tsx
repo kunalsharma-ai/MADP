@@ -70,7 +70,7 @@ export function MappingRowView({ m, attributes }: { m: MappingRow; attributes: A
           value={attr}
           onChange={(e) => setAttr(e.target.value)}
           disabled={!editable || pending}
-          className="w-full rounded-lg border border-border bg-surface px-2.5 py-1.5 text-[13px]"
+          className="w-full rounded-xl border border-border bg-surface px-2.5 py-1.5 text-[13px]"
         >
           <option value="">Choose canonical attribute…</option>
           {attributes.map((a) => (

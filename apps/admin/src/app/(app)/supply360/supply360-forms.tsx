@@ -68,7 +68,7 @@ export function CreateClient({ panels }: { panels: string[] }) {
         </div>
       </form>
       {issued ? (
-        <div className="mx-5 mb-4 rounded-lg border border-border bg-surface-2 px-3 py-2 text-[13px]" role="status">
+        <div className="mx-5 mb-4 rounded-xl border border-border bg-surface-2 px-3 py-2 text-[13px]" role="status">
           <p className="font-medium">Copy this secret now. It is not shown again.</p>
           <p className="mt-1">
             Client id <code className="font-mono">{issued.clientId}</code>

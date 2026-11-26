@@ -39,7 +39,7 @@ export default async function MappingsPage({
         <select
           name="panel"
           defaultValue={sp.panel ?? ''}
-          className="rounded-lg border border-border bg-surface px-3 py-2 text-sm"
+          className="rounded-xl border border-border bg-surface px-3 py-2 text-sm"
           aria-label="Panel"
         >
           <option value="">All panels</option>
@@ -52,7 +52,7 @@ export default async function MappingsPage({
         <select
           name="status"
           defaultValue={status}
-          className="rounded-lg border border-border bg-surface px-3 py-2 text-sm"
+          className="rounded-xl border border-border bg-surface px-3 py-2 text-sm"
           aria-label="Status"
         >
           {STATUSES.map((s) => (
