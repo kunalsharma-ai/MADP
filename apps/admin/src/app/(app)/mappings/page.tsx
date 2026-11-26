@@ -1,19 +1,25 @@
-import { panelName, panelShort } from '@/lib/panel-names';
 import { getPanels } from '@/lib/panels';
 import type { Metadata } from 'next';
 import { type DataMode } from '@madp/contracts';
 import { api } from '@/lib/api';
 import type { Attribute, MappingRow } from '@/lib/types';
-import { Card, DataModeBadge, DemoBanner, EmptyState, PageHeader, btn, fmt } from '@/components/ui';
+import { Card, DataModeBadge, DemoBanner, EmptyState, PageHeader, Pager } from '@/components/ui';
+import { PanelPills, StatusTabs } from '@/components/filters';
 import { MappingRowView } from './mapping-row';
 
 export const metadata: Metadata = { title: 'Mapping workbench' };
 const STATUSES = ['pending', 'needs_info', 'approved', 'rejected'] as const;
+const LABEL: Record<(typeof STATUSES)[number], string> = {
+  pending: 'To review',
+  needs_info: 'Needs info',
+  approved: 'Approved',
+  rejected: 'Not mappable',
+};
 
 export default async function MappingsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ panel?: string; status?: string }>;
+  searchParams: Promise<{ panel?: string; status?: string; page?: string }>;
 }) {
   const panelList = await getPanels();
   const sp = await searchParams;
@@ -26,55 +32,41 @@ export default async function MappingsPage({
     ),
     api<{ attributes: Attribute[] }>('/audience/attributes'),
   ]);
+  const SIZE = 25;
+  const pages = Math.max(1, Math.ceil(queue.items.length / SIZE));
+  const page = Math.min(pages, Math.max(1, Number(sp.page) || 1));
+  const shown = queue.items.slice((page - 1) * SIZE, page * SIZE);
   return (
     <>
       <PageHeader
         eyebrow="Data"
         title="Mapping workbench"
-        description="Map each panel's source question to a canonical attribute. Suggestions only match the source question name, so a person must confirm every one; questions with the same wording are never merged automatically."
+        description="Link each panel question to a shared profile question, so its answers can be used in audience counts. Check the suggestion, change it if needed, and press Approve. Nothing is linked until a person approves it."
         actions={<DataModeBadge mode={queue.dataMode} />}
       />
       <DemoBanner mode={queue.dataMode} />
-      <form method="get" className="mb-4 flex flex-wrap items-center gap-2">
-        <select
-          name="panel"
-          defaultValue={sp.panel ?? ''}
-          className="rounded-xl border border-border bg-surface px-3 py-2 text-sm"
-          aria-label="Panel"
-        >
-          <option value="">All panels</option>
-          {panelList.map((x) => x.code).map((p) => (
-            <option key={p} value={p}>
-              {panelName(p, panelList)}
-            </option>
-          ))}
-        </select>
-        <select
-          name="status"
-          defaultValue={status}
-          className="rounded-xl border border-border bg-surface px-3 py-2 text-sm"
-          aria-label="Status"
-        >
-          {STATUSES.map((s) => (
-            <option key={s} value={s}>
-              {s.replace('_', ' ')} ({fmt(queue.totals[s] ?? 0)})
-            </option>
-          ))}
-        </select>
-        <button className={btn.secondary}>Show</button>
-      </form>
+      <div className="mb-4 flex flex-wrap items-center gap-3">
+        <StatusTabs
+          path="/mappings"
+          current={status}
+          params={{ panel: sp.panel }}
+          tabs={STATUSES.map((k) => ({ key: k, label: LABEL[k], count: queue.totals[k] ?? 0 }))}
+        />
+        <PanelPills path="/mappings" current={sp.panel ?? ''} params={{ status }} panels={panelList} />
+      </div>
       <Card>
         {queue.items.length === 0 ? (
-          <EmptyState title={`Nothing ${status.replace('_', ' ')}`}>
-            The queue is clear for this filter.
+          <EmptyState title="All done here">
+            Nothing in this list for the panel you picked.
           </EmptyState>
         ) : (
           <ul className="divide-y divide-border">
-            {queue.items.map((m) => (
+            {shown.map((m) => (
               <MappingRowView key={m.id} m={m} attributes={attrs.attributes} />
             ))}
           </ul>
         )}
+        <Pager total={queue.items.length} page={page} size={SIZE} path="/mappings" params={sp} />
       </Card>
     </>
   );
