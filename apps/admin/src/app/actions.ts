@@ -312,6 +312,28 @@ export async function decideInsightAction(id: string, decision: 'accepted' | 'di
   });
 }
 
+/** Drafts a panel's three win-back mailers (30, 60 and 90 days quiet) for review on Messages. */
+export async function draftWinBackAction(panel: string) {
+  return attempt(async () => {
+    const r = await api<{ panel: string; created: string[] }>('/communications/automations/win-back/drafts', {
+      method: 'POST',
+      json: { panel },
+    });
+    revalidatePath('/communications/automations');
+    revalidatePath('/communications');
+    return r;
+  });
+}
+
+/** Sets up a panel's win-back journey from its approved mailers and sends it to a second admin for approval. */
+export async function startWinBackAction(panel: string) {
+  return attempt(async () => {
+    await api('/communications/automations/win-back', { method: 'POST', json: { panel } });
+    revalidatePath('/communications/automations');
+    return null;
+  });
+}
+
 /** Sets up a panel's ready-made welcome journey (day 1, 3 and 7) and sends it to a second admin for approval. */
 export async function startWelcomeJourneyAction(panel: string) {
   return attempt(async () => {

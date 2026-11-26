@@ -27,6 +27,7 @@ import { AudienceController } from './audience/audience.controller.js';
 import { RegistryController } from './registry/registry.controller.js';
 import { PanellistsController } from './panellists/panellists.controller.js';
 import { NewMembersController } from './new-members/new-members.controller.js';
+import { FraudAlertsController } from './new-members/fraud-alerts.controller.js';
 import { MemberViewsController } from './new-members/member-views.controller.js';
 import { ActivityController } from './new-members/activity.controller.js';
 import { DashboardController } from './dashboard/dashboard.controller.js';
@@ -67,6 +68,9 @@ import { AbuseService } from './common/abuse.service.js';
 import { PanelAdminService } from './panel-admin/panel-admin.service.js';
 import { MembersController } from './panel-admin/members.controller.js';
 import { MemberTypes } from './panel-admin/member-types.js';
+import { MemberTagStore } from './panel-admin/member-tags.js';
+import { MemberBulkController } from './panel-admin/member-bulk.controller.js';
+import { MemberNotesController, MemberTagsController } from './panel-admin/member-notes.controller.js';
 import { DuplicatesController } from './panel-admin/duplicates.controller.js';
 import { QuestionBankController } from './panel-admin/question-bank.controller.js';
 import { QuestionnaireController } from './panel-admin/questionnaire.controller.js';
@@ -97,6 +101,7 @@ export class AppModule {
         RegistryController,
         PanellistsController,
         NewMembersController,
+        FraudAlertsController,
         MemberViewsController,
         ActivityController,
         DashboardController,
@@ -104,6 +109,9 @@ export class AppModule {
         AdminsController,
         BrandsController,
         MembersController,
+        MemberNotesController,
+        MemberTagsController,
+        MemberBulkController,
         DuplicatesController,
         QuestionBankController,
         QuestionnaireController,
@@ -146,6 +154,7 @@ export class AppModule {
         AdminsService,
         PanelAdminService,
         MemberTypes,
+        MemberTagStore,
         AbuseService,
         QuestionnaireService,
         ConnectorRegistry,

@@ -44,20 +44,42 @@ export const MemberViewParams = z
     status: z.enum(['active', 'suspended', 'banned', 'archived']).optional(),
     category: z.string().trim().max(40).optional(),
     marketing: z.enum(['granted', 'withdrawn', 'unset']).optional(),
-    country: z.string().trim().regex(/^[a-zA-Z]{2}$/).optional(),
-    from: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
-    to: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+    country: z
+      .string()
+      .trim()
+      .regex(/^[a-zA-Z]{2}$/)
+      .optional(),
+    from: z
+      .string()
+      .regex(/^\d{4}-\d{2}-\d{2}$/)
+      .optional(),
+    to: z
+      .string()
+      .regex(/^\d{4}-\d{2}-\d{2}$/)
+      .optional(),
     /** Rolling sign-up window: the last N days, worked out when the view is opened ("new this week"). */
     lastDays: z.coerce.number().int().min(1).max(3650).optional(),
     qualityMin: z.coerce.number().int().min(0).max(200).optional(),
     qualityMax: z.coerce.number().int().min(0).max(200).optional(),
-    inactiveSince: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
-    dueBefore: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+    inactiveSince: z
+      .string()
+      .regex(/^\d{4}-\d{2}-\d{2}$/)
+      .optional(),
+    dueBefore: z
+      .string()
+      .regex(/^\d{4}-\d{2}-\d{2}$/)
+      .optional(),
     bornFrom: z.coerce.number().int().min(1900).max(2100).optional(),
     bornTo: z.coerce.number().int().min(1900).max(2100).optional(),
     gender: z.enum(['Male', 'Female', 'Other']).optional(),
     ageMin: z.coerce.number().int().min(0).max(120).optional(),
     ageMax: z.coerce.number().int().min(0).max(120).optional(),
+    tag: z
+      .string()
+      .trim()
+      .toLowerCase()
+      .regex(/^[a-z0-9][a-z0-9 _-]{0,29}$/)
+      .optional(),
     sort: z.string().trim().max(20).optional(),
     dir: z.enum(['asc', 'desc']).optional(),
   })
@@ -102,5 +124,24 @@ export interface ActivityFeed {
   checkedAt: string;
   items: ActivityItem[];
   /** Panels whose admin API did not answer: their tickets are missing this round. */
+  unreachable: string[];
+}
+
+/** Possible duplicate accounts (same phone, e-mail, name and birth date, sign-up IP or device) per panel, for the red alert. */
+export interface FraudAlertPanel {
+  panel: string;
+  /** Groups of two or more accounts that share a value, per rule. */
+  groups: Partial<Record<'phone' | 'email' | 'name_dob' | 'ip' | 'device', number>>;
+  /** Groups with an account that signed up since the admin last looked. */
+  fresh: number;
+  /** The newest sign-up in a group, if any. */
+  latestAt: string | null;
+  /** True when the panel found more groups than it listed. */
+  more: boolean;
+}
+export interface FraudAlerts {
+  checkedAt: string;
+  total: number;
+  panels: FraudAlertPanel[];
   unreachable: string[];
 }

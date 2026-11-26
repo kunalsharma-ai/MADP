@@ -783,3 +783,58 @@ verified.
   builds leave the new columns empty ("—") and show the birth year instead of the age.
 - Tests: `apps/api/test/member-types.test.ts` (4) and MFR `tests/admin.members.test.mjs`. Screenshots:
   `/mnt/project-files/madp/preview-madp/member-types/`.
+
+## Member tags and notes (2026-11-26)
+
+- Admins tag members ("vip", "check payout") and keep notes on them, per brand, for T2O, MFR, MHO and added panels.
+  Kept in MADP (`member_tag`, `member_note`, migration 0028, with data_mode), never sent to the panel.
+- Members table: tag chips under each name (click one to filter) and a Tag filter; tagged lists read each member's
+  list fields from the panel (never the member page's extra fields).
+- Member page: "Tags and notes" card. Reading notes is audited (`members.notes_read`); note text stays out of the
+  audit trail. Only the author deletes a note. Writes need `members.edit`; teen members need `teen.read`.
+- Tests: `apps/api/test/member-tags.test.ts` (3).
+
+## Members bulk actions and download (2026-11-26)
+
+- Tick members on the Members table (or the whole page), then: add a tag, remove a tag, change segment, or download
+  the ticked members or the whole filtered list (up to 2,000) as Excel or CSV. T2O, MFR, MHO and added panels alike.
+- Every action asks for a reason (audit log). Segment changes go to the panel one member at a time and are audited
+  per member as on the member page; teens and unknown ids are skipped and listed. `POST /member-bulk` (members.edit;
+  segment also segments.manage), `POST /member-bulk/export` (members.read + export.read).
+- Downloads hold masked e-mail and phone only, never the member page's full name; formula cells are neutralised;
+  DEMO files are named `-DEMO` and carry a data_mode column.
+- Tests: `apps/api/test/member-bulk.test.ts` (3). Screenshots: `/mnt/project-files/madp/preview-madp/tags-bulk/`.
+
+## Duplicate and fraud alert (2026-11-26)
+
+- A red shield next to the bell shows possible duplicate accounts per panel: same phone, same e-mail, or same name
+  and birth date (the panel's duplicate finder, MFR#68). It turns red while a group has an account that signed up
+  since the admin last looked; each panel row opens the Duplicates screen for that rule. T2O, MFR, MHO alike.
+- `GET /fraud-alerts` returns counts and times only; each panel and rule is scanned at most every 10 minutes.
+  `POST /fraud-alerts/seen` (table `admin_fraud_seen`, migration 0029). Admins without members.read see nothing.
+- Same sign-up IP and same device (Kunal approved, 2026-11-26): the panel keeps only one-way HMAC hashes of the
+  sign-up IP and device (MFR#104, not deployed yet). MADP asks for the `ip` and `device` rules too. A panel without
+  them yet answers 400; the alert then leaves those counts out rather than calling the panel unreachable, and the
+  Duplicates screen says the panel does not record them yet. Accounts from before the change never match.
+- Tests: `apps/api/test/fraud-alerts.test.ts` (2).
+
+## Win-back for quiet members (2026-11-26)
+
+- Lifecycle automations has a "Win back quiet members" card per panel (T2O, MFR, MHO alike): how many members had no
+  activity for 30, 60 and 90 days (the panel's own member search with `inactiveSince`, teens left out, cached 10
+  minutes, totals only, needs members.read on that panel). Each count opens that list on Members.
+- "Draft the 3 mailers" makes re-engagement templates `win-back-30/60/90` with ready copy, the legal footer and the
+  unsubscribe and preference links, as drafts only. No points are promised and nothing hints at health.
+- "Set up" builds the Win-back journey (an inactivity automation, steps 30/60/90, at least 25 days apart) from the
+  approved versions and sends it to a second admin. Runs stay dry runs; nothing is sent while sending is off.
+- Routes: `GET /communications/automations/win-back`, `POST .../win-back/drafts`, `POST .../win-back`.
+- Tests: `apps/api/test/win-back.test.ts` (3). Screenshots: `madp/preview-madp/win-back/`.
+
+## Member health score (2026-11-26)
+
+- Every member gets a 0 to 100 health score from what the panel's member list already shows, the same on every
+  panel: recent activity 40, answer quality 30, verified e-mail and phone 15, account standing 15. Bands: Healthy 75+,
+  Okay 50+, At risk 25+, Critical (and always Critical when suspended or banned). Nothing health-related is used.
+- Shown as a ring in a Health column on Members (hover for each part), as a breakdown on the member page, and as two
+  columns in the Members Excel/CSV download. `packages/contracts/src/member-health.ts`, tests in
+  `member-health.test.ts` (4).

@@ -139,3 +139,44 @@ export interface WelcomeJourneyPanel {
   /** Per step: the newest approved template of its kind on this panel, or null when one must be approved first. */
   steps: { atDays: number; kind: string; label: string; template: { versionId: string; name: string } | null }[];
 }
+
+/**
+ * The ready-made win-back journey for members who went quiet: a "we miss you" after 30 days without activity, "new
+ * surveys are waiting" at 60 and a last reminder at 90. Each step has its own re-engagement template on the panel
+ * (key `win-back-30`, `-60`, `-90`), which one click drafts and an admin edits and approves. It is an ordinary
+ * inactivity automation, so a second admin approves it before it is active, and nothing is sent while sending is off.
+ */
+export const WIN_BACK_JOURNEY_NAME = 'Win-back journey';
+export const WIN_BACK_STEPS = [
+  { atDays: 30, key: 'win-back-30', label: 'We miss you' },
+  { atDays: 60, key: 'win-back-60', label: 'New surveys are waiting' },
+  { atDays: 90, key: 'win-back-90', label: 'Last reminder' },
+] as const satisfies readonly { atDays: number; key: string; label: string }[];
+export type WinBackDays = (typeof WIN_BACK_STEPS)[number]['atDays'];
+
+export const WinBackStart = z.object({ panel: PanelCode }).strict();
+export type WinBackStart = z.infer<typeof WinBackStart>;
+
+export interface WinBackPanel {
+  panel: string;
+  /** The journey's automation, once set up. */
+  automation: { id: string; status: string; versionStatus: string | null } | null;
+  /**
+   * Members with no activity in the panel for at least 30, 60 and 90 days, from the panel's own last activity (teens
+   * left out). Null when the admin can't see this panel's members or the panel did not answer.
+   */
+  inactive: Record<'30' | '60' | '90', number> | null;
+  /** The date each list starts from (no activity since then), for the Members link. */
+  since: Record<'30' | '60' | '90', string>;
+  steps: {
+    atDays: number;
+    key: string;
+    label: string;
+    /** The template for this step, once drafted. */
+    template: { id: string; name: string } | null;
+    /** Its newest approved version, which the journey sends. */
+    approved: { versionId: string; version: number } | null;
+    /** Its newest version's status (draft, in_review, approved, ...). */
+    latestStatus: string | null;
+  }[];
+}

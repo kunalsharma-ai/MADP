@@ -6,6 +6,9 @@ import { STATUS_TONE, marketingLabel, type MemberRow } from '../shared';
 import { MemberAccess } from './member-access';
 import { MemberActions } from './member-actions';
 import { PointsQuality } from './points-quality';
+import { HealthBreakdown } from '../health-badge';
+import { TagsNotes } from './tags-notes';
+import type { MemberTagsNotes } from '@madp/contracts';
 import { MemberEngagement, type Engagement, type Responses } from './engagement';
 import Link from 'next/link';
 import { Fragment } from 'react';
@@ -71,6 +74,11 @@ export default async function MemberPage({
   const tab = sp.tab === 'engagement' ? 'engagement' : 'overview';
   return withPanel(async () => {
     const m = await api<Detail>(`/panel/members/${encodeURIComponent(id)}`);
+    const [tn, known, me] = await Promise.all([
+      api<MemberTagsNotes>(`/panel/members/${encodeURIComponent(id)}/notes`).catch(() => null),
+      api<{ tags: { tag: string }[] }>('/member-tags').catch(() => ({ tags: [] })),
+      api<{ permissions: string[] }>('/auth/me').catch(() => null),
+    ]);
     let ledger: Ledger | null = null;
     try {
       ledger = await api<Ledger>(`/panel/members/${encodeURIComponent(id)}/ledger`);
@@ -110,6 +118,12 @@ export default async function MemberPage({
               {row('E-mail check', m.emailVerified)}
               {row('Phone check', m.phoneVerified)}
               {row('Quality score', m.qualityScore)}
+              <div className="col-span-2 row-span-2 md:col-span-2">
+                <dt className="mb-1 text-fg-3">Health score</dt>
+                <dd>
+                  <HealthBreakdown member={m} />
+                </dd>
+              </div>
               {row('Registration', m.registrationStatus)}
               {row('Signed up', fmtDate(m.signedUpAt))}
               {row('Last activity', fmtDate(m.lastActivityAt))}
@@ -199,6 +213,15 @@ export default async function MemberPage({
             </Card>
           </div>
           <div className="grid content-start gap-4">
+            {tn ? (
+              <TagsNotes
+                member={m.id}
+                tags={tn.tags}
+                notes={tn.notes}
+                known={known.tags.map((t) => t.tag)}
+                canEdit={!!me?.permissions.includes('members.edit')}
+              />
+            ) : null}
             <MemberActions
               member={{
                 id: m.id,
