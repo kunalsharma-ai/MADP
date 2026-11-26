@@ -2,7 +2,8 @@ import { panelName, panelShort } from '@/lib/panel-names';
 import { getPanels } from '@/lib/panels';
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { AUDIENCE_CATEGORIES, AUDIENCE_CATEGORY_LABELS, type DataMode } from '@madp/contracts';
+import { type DataMode } from '@madp/contracts';
+import { getSegments } from '@/lib/segments';
 import { api } from '@/lib/api';
 import { Country } from '@/components/country';
 import type { PanellistRow } from '@/lib/types';
@@ -27,6 +28,9 @@ export default async function PanellistsPage({
 }: {
   searchParams: Promise<Record<string, string | undefined>>;
 }) {
+  const segmentList = await getSegments();
+  const SEG_KEYS = segmentList.map((s) => s.key);
+  const SEG_LABEL: Record<string, string> = Object.fromEntries(segmentList.map((s) => [s.key, s.label]));
   const panelList = await getPanels();
   const sp = await searchParams;
   const qs = new URLSearchParams();
@@ -76,9 +80,9 @@ export default async function PanellistsPage({
           aria-label="Category"
         >
           <option value="">All categories</option>
-          {AUDIENCE_CATEGORIES.map((c) => (
+          {SEG_KEYS.map((c) => (
             <option key={c} value={c}>
-              {AUDIENCE_CATEGORY_LABELS[c]}
+              {(SEG_LABEL[c] ?? c)}
             </option>
           ))}
         </select>
@@ -163,7 +167,7 @@ export default async function PanellistsPage({
                 <td className="px-5 py-2.5">
                   <div className="flex flex-wrap gap-1">
                     {p.categories.map((c) => (
-                      <CategoryChip key={c} category={c} />
+                      <CategoryChip key={c} category={c} label={SEG_LABEL[c]} />
                     ))}
                   </div>
                 </td>

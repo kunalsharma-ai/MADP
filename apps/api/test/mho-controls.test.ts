@@ -138,7 +138,11 @@ describe('purpose-limited access to health answers', () => {
       .get(`/api/v1/panellists/${id}?purpose=participant_support`)
       .set(as(superToken))
       .expect(200);
-    expect(locked.body.categories).toEqual([expect.objectContaining({ category: 'patient', isMinor: true })]);
+    // A minor patient is in Patients and, since 26 Nov 2026, in Teens too.
+    expect(locked.body.categories).toEqual([
+      expect.objectContaining({ category: 'patient', isMinor: true }),
+      expect.objectContaining({ category: 'teen', isMinor: true }),
+    ]);
     expect(locked.body.hiddenMinorAnswers).toBe(1);
     expect(locked.body.hiddenSensitiveAnswers).toBe(1);
     expect(locked.body.answers.some((a: { sourceQuestionId: string }) => a.sourceQuestionId === question)).toBe(false);

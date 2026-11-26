@@ -20,7 +20,7 @@ import { CurrentPrincipal, RequirePermissions } from '../auth/decorators.js';
 import type { Principal } from '../auth/auth.types.js';
 import { ZodPipe } from '../common/zod.pipe.js';
 import { Database } from '../db/database.js';
-import { brandSettings, panelConnections, panels } from '../db/schema.js';
+import { brandSettings, panelConnections, panels, segmentRules } from '../db/schema.js';
 import { AuditService } from '../audit/audit.service.js';
 import { ConnectorRegistry } from '../connectors/connector-registry.js';
 import { PanelDirectory } from './panel-directory.js';
@@ -219,6 +219,7 @@ export class PanelsController {
           sql`update admin_role_grant set brands = array_remove(brands, ${code}) where ${code} = any(brands)`,
         );
         await tx.delete(panelConnections).where(eq(panelConnections.panel, code));
+        await tx.delete(segmentRules).where(eq(segmentRules.panel, code));
         await tx.delete(brandSettings).where(eq(brandSettings.panel, code));
         await tx.delete(panels).where(eq(panels.code, code));
       });

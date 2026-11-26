@@ -107,6 +107,11 @@ First deploy, on a manager node:
    grant. On a panel marked sensitive, an all-brands grant opens no health data (Super Admin excepted): give the role
    with the panel ticked by name. Archive stops the panel's sync and hides it; Restore brings it back. Delete works only while the panel
    holds no data. The three built-in panels can't be archived or deleted, and MHO always stays sensitive.
+10. **Audience segments** (Consumers, Business Professionals, Healthcare Professionals, Patients, Caregivers, Teens
+   and any added later): a Super Admin on every brand adds, renames, archives, restores or deletes them on **Audience
+   segments**. A rule there links a panel's own category value (for example `b2c` on MFR) to a segment; sync applies
+   the active rules to new and updated members. A minor joins the adult segment and Teens. Archiving a segment hides
+   it from filters and stops new members joining; a segment with members can't be deleted, only archived.
 
 Each later release: steps 4 and 5 with the new version. Swarm replaces the api and admin replicas (each new api
 replica migrates first) one at a time, starting the new one first and rolling back if it fails. A stack deployed

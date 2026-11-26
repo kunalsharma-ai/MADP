@@ -102,8 +102,8 @@ export function PanelChip({ panel, label }: { panel: PanelCode; label?: string }
   );
 }
 
-export function CategoryChip({ category }: { category: AudienceCategory }) {
-  return <Badge tone="neutral">{AUDIENCE_CATEGORY_LABELS[category]}</Badge>;
+export function CategoryChip({ category, label }: { category: AudienceCategory; label?: string }) {
+  return <Badge tone="neutral">{label ?? AUDIENCE_CATEGORY_LABELS[category] ?? category}</Badge>;
 }
 
 export function DataModeBadge({ mode }: { mode: DataMode }) {

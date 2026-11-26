@@ -3,6 +3,7 @@ import { getPanels } from '@/lib/panels';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { HEALTH_ACCESS_PURPOSE_LABELS, HealthAccessPurpose } from '@madp/contracts';
+import { getSegments } from '@/lib/segments';
 import { api, ApiError } from '@/lib/api';
 import type { PanellistDetail } from '@/lib/types';
 import {
@@ -37,6 +38,9 @@ export default async function PanellistPage({
   params: Promise<{ id: string }>;
   searchParams: Promise<{ purpose?: string }>;
 }) {
+  const segmentList = await getSegments();
+  const SEG_KEYS = segmentList.map((s) => s.key);
+  const SEG_LABEL: Record<string, string> = Object.fromEntries(segmentList.map((s) => [s.key, s.label]));
   const panelList = await getPanels();
   const { id } = await params;
   const sp = await searchParams;
@@ -129,7 +133,7 @@ export default async function PanellistPage({
           <ul className="space-y-2 px-5 py-4 text-[13px]">
             {d.categories.map((c) => (
               <li key={`${c.panel}-${c.category}`} className="flex items-center justify-between gap-2">
-                <CategoryChip category={c.category} />
+                <CategoryChip category={c.category} label={SEG_LABEL[c.category]} />
                 <span className="text-xs text-fg-3">
                   {panelShort(c.panel, panelList)} · {c.basis}
                   {c.isMinor ? ' · minor' : ''}

@@ -61,29 +61,127 @@ export interface PanelDescriptor {
    */
   knownHosts: string[];
   /** Audience categories this panel is expected to recruit (canonical codes). */
-  expectedCategories: AudienceCategory[];
+  expectedCategories: BuiltInSegment[];
   /** Panel handles health data: enhanced, purpose-limited controls apply. */
   sensitive: boolean;
 }
 
-/** Canonical, overlapping audience categories. A person may hold several. */
-export const AudienceCategory = z.enum([
+/** Format of a segment key: a letter, then lowercase letters, digits or _ (2 to 32). */
+export const NewSegmentKey = z
+  .string()
+  .trim()
+  .toLowerCase()
+  .regex(/^[a-z][a-z0-9_]{1,31}$/, 'a segment key: a letter, then letters, digits or _ (2 to 32)');
+
+/** The segments MADP shipped with. Teens was added on 26 Nov 2026 at Kunal's request. */
+export const BuiltInSegment = z.enum([
   'consumer',
   'business_professional',
   'healthcare_professional',
   'patient',
   'caregiver',
+  'teen',
 ]);
-export type AudienceCategory = z.infer<typeof AudienceCategory>;
-export const AUDIENCE_CATEGORIES: readonly AudienceCategory[] = AudienceCategory.options;
+export type BuiltInSegment = z.infer<typeof BuiltInSegment>;
+export const BUILT_IN_SEGMENTS: readonly BuiltInSegment[] = BuiltInSegment.options;
 
-export const AUDIENCE_CATEGORY_LABELS: Record<AudienceCategory, string> = {
+const knownSegments = new Set<string>();
+/** Segment keys the running API knows (set by its segment directory). Empty means only the format is checked. */
+export function setKnownSegments(keys: Iterable<string>) {
+  knownSegments.clear();
+  for (const k of keys) knownSegments.add(k);
+}
+
+/**
+ * Canonical, overlapping audience segments ("categories" in the data). A person may hold several. They are data:
+ * a Super Admin adds, edits, archives and restores them on the Audience segments screen.
+ */
+export const AudienceCategory = NewSegmentKey.refine((k) => knownSegments.size === 0 || knownSegments.has(k), {
+  message: 'unknown segment',
+});
+export type AudienceCategory = string;
+/** The built-in segments, for code that runs before the segment list is read (seeding, fixtures). */
+export const AUDIENCE_CATEGORIES: readonly string[] = BUILT_IN_SEGMENTS;
+
+export const AUDIENCE_CATEGORY_LABELS: Record<string, string> = {
   consumer: 'Consumers',
   business_professional: 'Business Professionals',
   healthcare_professional: 'Healthcare Professionals',
   patient: 'Patients',
   caregiver: 'Caregivers',
+  teen: 'Teens',
 };
+
+export const BUILT_IN_SEGMENT_INFO: Record<BuiltInSegment, { description: string; minors: boolean }> = {
+  consumer: { description: 'Adults answering consumer surveys (source category b2c).', minors: false },
+  business_professional: { description: 'Working professionals (source category b2b).', minors: false },
+  healthcare_professional: { description: 'Doctors, nurses and other healthcare workers on MHO.', minors: false },
+  patient: { description: 'People answering about their own health on MHO.', minors: false },
+  caregiver: { description: 'People caring for a patient, on MHO.', minors: false },
+  teen: {
+    description: 'Members under 18 (source categories minor and minor patient). Minor rules always apply.',
+    minors: true,
+  },
+};
+
+export interface AudienceSegmentInfo {
+  key: string;
+  label: string;
+  description: string;
+  /** Every member of this segment is a minor: minor protections always apply. */
+  minors: boolean;
+  builtIn: boolean;
+  status: 'active' | 'archived';
+  sort: number;
+}
+
+/** How a panel's own category value becomes a MADP segment. */
+export interface SegmentRuleInfo {
+  id: string;
+  panel: PanelCode;
+  sourceValue: string;
+  segment: string;
+  minor: boolean;
+  evidence: string;
+  status: 'active' | 'archived';
+}
+
+const SegmentLabel = z.string().trim().min(2).max(60);
+const Reason = z.string().trim().min(5).max(500);
+
+export const AudienceSegmentCreate = z
+  .object({
+    key: NewSegmentKey,
+    label: SegmentLabel,
+    description: z.string().trim().max(1000).optional(),
+    minors: z.boolean().default(false),
+    reason: Reason,
+  })
+  .strict();
+export type AudienceSegmentCreate = z.infer<typeof AudienceSegmentCreate>;
+
+export const AudienceSegmentUpdate = z
+  .object({
+    label: SegmentLabel.optional(),
+    description: z.string().trim().max(1000).optional(),
+    minors: z.boolean().optional(),
+    sort: z.number().int().min(1).max(999).optional(),
+    reason: Reason,
+  })
+  .strict();
+export type AudienceSegmentUpdate = z.infer<typeof AudienceSegmentUpdate>;
+
+export const SegmentRuleCreate = z
+  .object({
+    panel: PanelCode,
+    sourceValue: z.string().trim().toLowerCase().min(1).max(80),
+    segment: AudienceCategory,
+    minor: z.boolean().default(false),
+    evidence: z.string().trim().max(500).optional(),
+    reason: Reason,
+  })
+  .strict();
+export type SegmentRuleCreate = z.infer<typeof SegmentRuleCreate>;
 
 /** Audited facts about the built-in panels. Panels added in the console are described by their `panel` row. */
 export const PANELS: Record<BuiltInPanelCode, PanelDescriptor> = {
@@ -133,7 +231,7 @@ export const PANELS: Record<BuiltInPanelCode, PanelDescriptor> = {
 export interface SourceCategoryProposal {
   panel: PanelCode;
   sourceValue: string;
-  proposed: AudienceCategory | null;
+  proposed: string | null;
   minor: boolean;
   evidence: string;
 }
@@ -208,6 +306,16 @@ export const SOURCE_CATEGORY_PROPOSALS: SourceCategoryProposal[] = [
     proposed: 'patient',
     minor: true,
     evidence: 'sections/hcp/data-source/*.Question.json category values',
+  },
+  // Teens (added 26 Nov 2026): a minor also joins the Teens segment, next to the adult segment above.
+  { panel: 't2o', sourceValue: 'minor', proposed: 'teen', minor: true, evidence: 'Teens segment (Kunal, 26 Nov 2026)' },
+  { panel: 'mfr', sourceValue: 'minor', proposed: 'teen', minor: true, evidence: 'Teens segment (Kunal, 26 Nov 2026)' },
+  {
+    panel: 'mho',
+    sourceValue: 'minor patient',
+    proposed: 'teen',
+    minor: true,
+    evidence: 'Teens segment (Kunal, 26 Nov 2026)',
   },
 ];
 

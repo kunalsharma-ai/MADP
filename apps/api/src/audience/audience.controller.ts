@@ -1,5 +1,6 @@
 import { Body, Controller, Get, HttpCode, Post, Query } from '@nestjs/common';
-import { CountsRequest, DataMode, GeoRequest, AUDIENCE_CATEGORIES, AUDIENCE_CATEGORY_LABELS } from '@madp/contracts';
+import { SegmentDirectory } from '../segments/segment-directory.js';
+import { CountsRequest, DataMode, GeoRequest, } from '@madp/contracts';
 import { AudienceService } from './audience.service.js';
 import { CurrentPrincipal, RequirePermissions } from '../auth/decorators.js';
 import type { Principal } from '../auth/auth.types.js';
@@ -13,6 +14,7 @@ export class AudienceController {
     private readonly audience: AudienceService,
     private readonly database: Database,
     private readonly audit: AuditService,
+    private readonly segments: SegmentDirectory,
   ) {}
 
   @RequirePermissions('audience.counts.read')
@@ -80,7 +82,7 @@ export class AudienceController {
       orderBy: (a, { asc }) => [asc(a.key)],
     });
     return {
-      categories: AUDIENCE_CATEGORIES.map((c) => ({ key: c, label: AUDIENCE_CATEGORY_LABELS[c] })),
+      categories: this.segments.keys().map((c) => ({ key: c, label: this.segments.label(c) })),
       attributes: rows,
     };
   }

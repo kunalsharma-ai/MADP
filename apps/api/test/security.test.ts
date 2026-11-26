@@ -30,6 +30,7 @@ const SESSION_ONLY = new Set([
   'POST /auth/mfa/confirm',
   // The active panels, for the brand switcher (archived ones need connectors.read).
   'GET /panels',
+  'GET /audience-segments',
 ]);
 /**
  * Signed-in only, with the permission checked in the handler per brand (brands.controller.ts; panel connections need

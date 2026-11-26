@@ -1,18 +1,37 @@
 import type { AudienceCategory, PanelCode } from '@madp/contracts';
 import { SOURCE_CATEGORY_PROPOSALS } from '@madp/contracts';
 
+export interface ActiveSegmentRule {
+  panel: PanelCode;
+  sourceValue: string;
+  segment: string;
+  minor: boolean;
+}
+
+/** The rules in force. Starts with the reviewed proposals; the segment directory replaces them with the saved ones. */
+let rules: ActiveSegmentRule[] = SOURCE_CATEGORY_PROPOSALS.filter((p) => p.proposed).map((p) => ({
+  panel: p.panel,
+  sourceValue: p.sourceValue,
+  segment: p.proposed!,
+  minor: p.minor,
+}));
+
+/** Called by the segment directory with the active rules of active segments. */
+export function setSegmentRules(next: ActiveSegmentRule[]) {
+  rules = next;
+}
+
 /**
- * Source category -> canonical category. Only the reviewed proposals in @madp/contracts are applied;
- * an unknown source category produces no category membership and is reported in the import counts.
+ * Source category -> MADP segments. Only rules saved on the Audience segments screen (seeded from the reviewed
+ * proposals) apply; a source value may join several segments (a minor joins its adult segment and Teens). An unknown
+ * source category produces no membership and is reported in the import counts.
  */
-export function categoryFor(
+export function categoriesFor(
   panel: PanelCode,
   sourceCategory: string,
-): { category: AudienceCategory; minor: boolean } | null {
-  const p = SOURCE_CATEGORY_PROPOSALS.find(
-    (x) => x.panel === panel && x.sourceValue === sourceCategory.trim().toLowerCase(),
-  );
-  return p?.proposed ? { category: p.proposed, minor: p.minor } : null;
+): { category: AudienceCategory; minor: boolean }[] {
+  const v = sourceCategory.trim().toLowerCase();
+  return rules.filter((x) => x.panel === panel && x.sourceValue === v).map((x) => ({ category: x.segment, minor: x.minor }));
 }
 
 /** Canonical attributes seeded in M1. Mapping source questions to them always goes through review. */

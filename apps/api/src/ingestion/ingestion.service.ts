@@ -39,7 +39,7 @@ import { FieldCrypto, maskEmail } from '../crypto/field-crypto.js';
 import { AuditService } from '../audit/audit.service.js';
 import { LoyaltyService, type LoyaltySyncCounts } from '../loyalty/loyalty.service.js';
 import { recomputePerson } from '../identity/precedence.js';
-import { DIRECT_IDENTIFIER_QUESTIONS, NAME_SUGGESTIONS, categoryFor, sensitivityFor } from './canonical.js';
+import { DIRECT_IDENTIFIER_QUESTIONS, NAME_SUGGESTIONS, categoriesFor, sensitivityFor } from './canonical.js';
 
 /** Location reference lists (tens of thousands of options) are not copied into the question registry. */
 const REFERENCE_LISTS = new Set([
@@ -264,7 +264,7 @@ export class IngestionService {
           await this.saveCheckpoint(dataMode, panel, page.nextCursor, jobId, false);
         } else {
           for (const r of page.items) {
-            if (!categoryFor(panel, r.sourceCategory))
+            if (!categoriesFor(panel, r.sourceCategory).length)
               counts.unknownCategories[r.sourceCategory] =
                 (counts.unknownCategories[r.sourceCategory] ?? 0) + 1;
           }
@@ -1152,18 +1152,20 @@ export class IngestionService {
         target: panelMemberships.sourceIdentityId,
         set: { status: r.isActive ? 'active' : 'inactive', updatedAt: new Date() },
       });
-    const cat = categoryFor(panel, r.sourceCategory);
-    if (cat) {
+    const cats = categoriesFor(panel, r.sourceCategory);
+    if (cats.length) {
       await tx
         .insert(categoryMemberships)
-        .values({
-          dataMode,
-          masterPersonId: personId,
-          category: cat.category,
-          panel,
-          basis: `source_category:${r.sourceCategory}`,
-          isMinor: cat.minor,
-        })
+        .values(
+          cats.map((cat) => ({
+            dataMode,
+            masterPersonId: personId,
+            category: cat.category,
+            panel,
+            basis: `source_category:${r.sourceCategory}`,
+            isMinor: cat.minor,
+          })),
+        )
         .onConflictDoNothing();
     } else {
       counts.unknownCategories[r.sourceCategory] = (counts.unknownCategories[r.sourceCategory] ?? 0) + 1;

@@ -162,6 +162,13 @@
       "when": 1795698969863,
       "tag": "0022_panels_as_data",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1795701758130,
+      "tag": "0023_segments_as_data",
+      "breakpoints": true
     }
   ]
 }
