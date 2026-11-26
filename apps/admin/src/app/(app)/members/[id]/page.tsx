@@ -6,6 +6,9 @@ import { STATUS_TONE, marketingLabel, type MemberRow } from '../shared';
 import { MemberAccess } from './member-access';
 import { MemberActions } from './member-actions';
 import { PointsQuality } from './points-quality';
+import { MemberEngagement, type Engagement, type Responses } from './engagement';
+import Link from 'next/link';
+import { Fragment } from 'react';
 
 export const metadata: Metadata = { title: 'Member' };
 
@@ -56,8 +59,16 @@ interface Ledger {
   }[];
 }
 
-export default async function MemberPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function MemberPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<{ tab?: string; page?: string }>;
+}) {
   const { id } = await params;
+  const sp = await searchParams;
+  const tab = sp.tab === 'engagement' ? 'engagement' : 'overview';
   return withPanel(async () => {
     const m = await api<Detail>(`/panel/members/${encodeURIComponent(id)}`);
     let ledger: Ledger | null = null;
@@ -67,10 +78,10 @@ export default async function MemberPage({ params }: { params: Promise<{ id: str
       if (!(e instanceof ApiError && e.status === 403)) throw e;
     }
     const row = (k: string, v: React.ReactNode) => (
-      <>
+      <Fragment key={k}>
         <dt className="text-fg-3">{k}</dt>
         <dd>{v ?? '—'}</dd>
-      </>
+      </Fragment>
     );
     return (
       <>
@@ -79,6 +90,11 @@ export default async function MemberPage({ params }: { params: Promise<{ id: str
           title={m.fullName || m.name}
           description={`Member ${m.memberId ?? m.id}. Masked values stay masked until someone with the PII permission unmasks them with a reason.`}
         />
+        <MemberTabs id={m.id} current={tab} />
+        {tab === 'engagement' ? (
+          await engagementTab(m.id, Number(sp.page) || 1)
+        ) : (
+        <>
         <div className="grid gap-4 xl:grid-cols-3">
           <Card className="xl:col-span-2">
             <CardHeader title="Overview" action={<Badge tone={STATUS_TONE[m.status]}>{m.status}</Badge>} />
@@ -204,7 +220,60 @@ export default async function MemberPage({ params }: { params: Promise<{ id: str
             <PointsQuality member={m.id} score={m.qualityScore ?? null} />
           </div>
         </div>
+        </>
+        )}
       </>
     );
   });
+}
+
+function MemberTabs({ id, current }: { id: string; current: string }) {
+  const tabs = [
+    ['overview', 'Overview & actions'],
+    ['engagement', 'Surveys, points & engagement'],
+  ] as const;
+  return (
+    <nav aria-label="Member sections" className="mb-4 inline-flex gap-1 rounded-xl bg-surface-2 p-1 text-[13px]">
+      {tabs.map(([k, label]) => (
+        <Link
+          key={k}
+          href={k === 'overview' ? `/members/${id}` : `/members/${id}?tab=${k}`}
+          aria-current={current === k ? 'page' : undefined}
+          className={`rounded-lg px-3.5 py-1.5 font-semibold transition ${current === k ? 'bg-surface text-fg shadow-soft' : 'text-fg-2 hover:text-fg'}`}
+        >
+          {label}
+        </Link>
+      ))}
+    </nav>
+  );
+}
+
+async function engagementTab(id: string, page: number) {
+  const q = encodeURIComponent(id);
+  const [e, r, me] = await Promise.all([
+    api<Engagement>(`/panel/members/${q}/engagement`).catch((err) => {
+      if (err instanceof ApiError && err.status === 404) return null;
+      throw err;
+    }),
+    api<Responses>(`/panel/members/${q}/responses?page=${Math.max(1, page)}`).catch(() => null),
+    api<{ permissions: string[] }>('/auth/me'),
+  ]);
+  if (!e)
+    return (
+      <Card>
+        <EmptyState title="Not available yet">
+          This panel does not have the member engagement routes yet. They arrive with the next panel backend update.
+        </EmptyState>
+      </Card>
+    );
+  return (
+    <MemberEngagement
+      e={e}
+      r={r}
+      brand={(await currentBrand()) ?? ''}
+      member={id}
+      canEdit={me.permissions.includes('members.edit')}
+      path={`/members/${id}`}
+    />
+  );
 }

@@ -42,6 +42,28 @@ export async function memberUnmaskAction(member: string, fields: string[], reaso
     }),
   );
 }
+export type MemberAlerts = {
+  notifications?: Partial<Record<'email' | 'push' | 'whatsapp' | 'weeklySummary' | 'expiryReminders' | 'newSurvey' | 'lifecycle' | 'birthday', boolean>> & {
+    quietHours?: { enabled?: boolean; start?: string; end?: string };
+  };
+  survey?: { invitesPerWeek?: number | null };
+};
+export async function memberAlertsAction(member: string, alerts: MemberAlerts, reason: string) {
+  return run(
+    () => api(`/panel/members/${id(member)}/alerts`, { method: 'PUT', json: { ...alerts, reason } }),
+    `/members/${member}`,
+  );
+}
+export async function memberPayoutClearAction(member: string, reason: string) {
+  return run(
+    () =>
+      api<{ cleared: boolean; was: string | null }>(`/panel/members/${id(member)}/payout/clear`, {
+        method: 'POST',
+        json: { reason },
+      }),
+    `/members/${member}`,
+  );
+}
 export type MemberEmailResult = {
   sent: boolean;
   switch: string;

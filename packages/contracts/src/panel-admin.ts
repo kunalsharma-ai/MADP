@@ -1021,3 +1021,31 @@ export const ContentUpdate = z
 export type ContentUpdate = z.infer<typeof ContentUpdate>;
 export const ContentAction = z.enum(['review', 'publish', 'discard']);
 export type ContentAction = z.infer<typeof ContentAction>;
+
+/** Member alert settings the console may change, the same fields the member can change (MFR#101). */
+const HHMM = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, 'a time like 22:00');
+export const MemberAlertsChange = z.object({
+  notifications: z
+    .object({
+      email: z.boolean(),
+      push: z.boolean(),
+      whatsapp: z.boolean(),
+      weeklySummary: z.boolean(),
+      expiryReminders: z.boolean(),
+      newSurvey: z.boolean(),
+      lifecycle: z.boolean(),
+      birthday: z.boolean(),
+      quietHours: z.object({ enabled: z.boolean(), start: HHMM, end: HHMM }).partial(),
+    })
+    .partial()
+    .optional(),
+  survey: z.object({ invitesPerWeek: z.number().int().min(0).max(50).nullable() }).partial().optional(),
+  reason: Reason,
+});
+export type MemberAlertsChange = z.infer<typeof MemberAlertsChange>;
+
+export const MemberResponsesQuery = z.object({
+  status: z.string().trim().regex(/^[a-z_]{1,40}$/).optional(),
+  page: z.coerce.number().int().min(1).max(10_000).default(1),
+});
+export type MemberResponsesQuery = z.infer<typeof MemberResponsesQuery>;
