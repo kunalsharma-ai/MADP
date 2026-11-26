@@ -144,7 +144,7 @@ describe('Members bulk actions and export', () => {
       .buffer(true).parse((res, cb) => { const c: Buffer[] = []; res.on('data', (d: Buffer) => c.push(d)); res.on('end', () => cb(null, Buffer.concat(c))); })
       .expect(200);
     const wb = new ExcelJS.Workbook();
-    await wb.xlsx.load(x.body as Buffer);
+    await wb.xlsx.load(x.body as never);
     expect(wb.worksheets[0]!.rowCount).toBe(1 + 61); // header + every page, teen included for super admin
     expect(await audit('members.export', 'mho')).toMatchObject({ metadata: { format: 'xlsx', rows: 61, filters: ['country', 'sort', 'dir'] } });
     await request(t.server).post('/api/v1/member-bulk/export').set(bearer(tok.super!, 'mho')).send({ format: 'csv', reason, filters: { gender: 'Nope' } }).expect(400);
