@@ -3,6 +3,8 @@ import { getPanels } from '@/lib/panels';
 import type { Metadata } from 'next';
 import { type DataMode, type PanelCode } from '@madp/contracts';
 import { api } from '@/lib/api';
+import { Ring } from '@/components/dashboard/fx';
+import { PANEL_TONES } from '@/lib/panel-tones';
 import { Card, CardHeader, DataModeBadge, DemoBanner, EmptyState, PageHeader, Stat, Table, btn, fmt, fmtDate, input } from '@/components/ui';
 
 export const metadata: Metadata = { title: 'Profile freshness' };
@@ -23,6 +25,26 @@ interface PanelFreshness {
 
 const pct = (x: number) => `${Math.round(x * 100)}%`;
 
+/**
+ * Share of active accounts with any answer. The answer count also includes people whose account is no
+ * longer active, so it can exceed the active count; the ring stops at 100%.
+ */
+const profiled = (p: PanelFreshness) =>
+  p.activeMemberships ? pct(Math.min(1, p.membersWithAnswers / p.activeMemberships)) : '0%';
+
+/** Coverage as a coloured bar: green from 60%, amber from 30%, red below. */
+function Cover({ x }: { x: number }) {
+  const tone = x >= 0.6 ? 'bg-teal' : x >= 0.3 ? 'bg-warn' : 'bg-danger';
+  return (
+    <span className="flex items-center gap-2">
+      <span className="h-2 w-20 rounded-full bg-surface-2">
+        <span className={`block h-2 rounded-full ${tone}`} style={{ width: `${Math.round(x * 100)}%` }} />
+      </span>
+      <span className="font-mono text-[11.5px]">{pct(x)}</span>
+    </span>
+  );
+}
+
 export default async function FreshnessPage({ searchParams }: { searchParams: Promise<{ staleDays?: string }> }) {
   const panelList = await getPanels();
   const sp = await searchParams;
@@ -33,14 +55,14 @@ export default async function FreshnessPage({ searchParams }: { searchParams: Pr
       <PageHeader
         eyebrow="Data"
         title="Profile freshness"
-        description="How complete and how recent each panel's profiles are, which members are due for their 6-month check, and which questions and attributes are answered least. Counts only, panel by panel."
+        description="How complete and how up to date each panel's profiles are. The ring shows the share of members who have answered anything. Red bars mark questions few people have answered, which are worth asking again."
         actions={<DataModeBadge mode={r.dataMode} />}
       />
       <DemoBanner mode={r.dataMode} />
       <form className="mb-4 flex items-end gap-2 text-[13px]">
         <label>
           An answer is stale after (days)
-          <input name="staleDays" type="number" min={7} max={730} defaultValue={r.staleDays} className={`${input} w-32`} />
+          <input name="staleDays" type="number" min={7} max={730} defaultValue={r.staleDays} className={input} style={{ width: '8rem' }} />
         </label>
         <button className={btn.secondary}>Apply</button>
         <span className="text-fg-3">The 6-month recheck rule uses 180 days.</span>
@@ -54,7 +76,23 @@ export default async function FreshnessPage({ searchParams }: { searchParams: Pr
                 title={panelName(p.panel, panelList)}
                 hint={`${fmt(p.questionBank)} questions in the bank · last import ${p.lastSync ? fmtDate(p.lastSync) : 'never'}`}
               />
-              <div className="grid grid-cols-2 gap-3 px-5 py-4 md:grid-cols-4">
+              <div className="grid grid-cols-2 items-center gap-3 px-5 py-4 md:grid-cols-[auto_repeat(4,1fr)]">
+                <Ring
+                  value={p.membersWithAnswers}
+                  max={p.activeMemberships}
+                  size={84}
+                  stroke={9}
+                  from={PANEL_TONES[p.panel]?.[0] ?? '#6366f1'}
+                  to={PANEL_TONES[p.panel]?.[1] ?? '#a855f7'}
+                  label={`${profiled(p)} of active accounts have answered at least one question`}
+                >
+                  <span className="text-center leading-tight">
+                    <span className="block text-[15px] font-bold">
+                      {profiled(p)}
+                    </span>
+                    <span className="text-[10px] text-fg-3">profiled</span>
+                  </span>
+                </Ring>
                 <Stat label="Active accounts" value={fmt(p.activeMemberships)} />
                 <Stat label="With any answer" value={fmt(p.membersWithAnswers)} />
                 <Stat label="Never profiled" value={fmt(p.neverProfiled)} />
@@ -87,7 +125,7 @@ export default async function FreshnessPage({ searchParams }: { searchParams: Pr
                             {a.label} <span className="font-mono text-[11px] text-fg-3">{a.key}</span>
                           </td>
                           <td className="px-5 py-1.5">{fmt(a.members)}</td>
-                          <td className="px-5 py-1.5">{pct(a.coverage)}</td>
+                          <td className="px-5 py-1.5"><Cover x={a.coverage} /></td>
                           <td className="px-5 py-1.5">{fmt(a.stale)}</td>
                         </tr>
                       ))}
@@ -103,7 +141,7 @@ export default async function FreshnessPage({ searchParams }: { searchParams: Pr
                         {q.label} <span className="font-mono text-[11px] text-fg-3">{q.sourceQuestionId}</span>
                       </td>
                       <td className="px-5 py-1.5">{fmt(q.answered)}</td>
-                      <td className="px-5 py-1.5">{pct(q.coverage)}</td>
+                      <td className="px-5 py-1.5"><Cover x={q.coverage} /></td>
                       <td className="px-5 py-1.5">{fmt(q.stale)}</td>
                     </tr>
                   ))}
