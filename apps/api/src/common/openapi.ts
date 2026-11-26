@@ -160,6 +160,13 @@ export function openApiDocument() {
       '/new-members/seen': {
         post: { security: secured, summary: "Mark a panel's new sign-ups as seen for this admin", responses: ok('Seen') },
       },
+      '/member-views': {
+        get: { security: secured, summary: "Saved Members-table views for the picked brand: the admin's own and shared ones", responses: ok('Views') },
+        post: { security: secured, summary: 'Save the current filters and sort under a name (filters only, no personal data)', responses: ok('Saved') },
+      },
+      '/member-views/{id}': {
+        delete: { security: secured, summary: 'Delete one of your saved views', responses: ok('Deleted') },
+      },
       '/dashboard/summary': {
         get: { security: secured, summary: 'Executive KPIs', responses: ok('Summary') },
       },

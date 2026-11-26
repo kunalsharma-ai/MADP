@@ -62,6 +62,15 @@ export const SCREEN_HELP: Record<string, ScreenHelp> = {
     where: 'MADP’s match suggestions. Merging joins people, never panels: each panel keeps its own membership, consent and rewards.',
     how: ['Compare the two records.', 'Merge or keep apart with a reason. Every merge can be undone.'],
   },
+  '/activity': {
+    why: 'See what is happening on T2O, MFR and MHO right now: sign-ups, survey completes, redemptions and new tickets in one list.',
+    where: 'Sign-ups, completes and redemptions come from MADP’s synced copy of each panel (after each sync). New tickets come straight from each panel’s admin API. Only panel, segment, country, survey, points and times are shown.',
+    how: [
+      'Leave the screen open: it checks every 20 seconds and plays a sound for new lines (turn it off with the speaker button).',
+      'Use the chips to show only some kinds or some panels.',
+      'Click a line to open the matching screen for that panel.',
+    ],
+  },
   '/members': {
     why: 'Look up and help a member of the brand picked at the top.',
     where: 'The panel itself, through its signed admin API. E-mail and phone stay masked unless you have the PII permission and give a reason.',

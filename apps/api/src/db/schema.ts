@@ -1372,3 +1372,25 @@ export const adminNewMemberSeen = pgTable(
   },
   (t) => [primaryKey({ columns: [t.adminUserId, t.panel] })],
 );
+
+/**
+ * Saved views of the Members table: a name plus list filters and sort, per brand. Filters only (never a search for one
+ * person), so no panel data is kept and there is no data_mode.
+ */
+export const memberSavedViews = pgTable(
+  'member_saved_view',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    panel: text('panel')
+      .notNull()
+      .references(() => panels.code),
+    adminUserId: uuid('admin_user_id')
+      .notNull()
+      .references(() => adminUsers.id, { onDelete: 'cascade' }),
+    name: text('name').notNull(),
+    params: jsonb('params').notNull(),
+    shared: boolean('shared').notNull().default(false),
+    createdAt: created(),
+  },
+  (t) => [index('member_saved_view_panel_idx').on(t.panel, t.adminUserId)],
+);

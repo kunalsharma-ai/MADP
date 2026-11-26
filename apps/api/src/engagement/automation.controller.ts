@@ -8,6 +8,7 @@ import {
   CelebrationCreate,
   CelebrationReview,
   PanelCode,
+  WelcomeJourneyStart,
 } from '@madp/contracts';
 import { z } from 'zod';
 import type { Request } from 'express';
@@ -16,6 +17,7 @@ import type { Principal } from '../auth/auth.types.js';
 import { ZodPipe } from '../common/zod.pipe.js';
 import { AudienceService } from '../audience/audience.service.js';
 import { AutomationService } from './automation.service.js';
+import { PanelDirectory } from '../panels/panel-directory.js';
 
 const PanelQuery = z.object({ panel: PanelCode.optional() });
 const actor = (p: Principal, req: Request) => ({ id: p.id, ip: req.ip ?? null });
@@ -26,6 +28,7 @@ export class AutomationController {
   constructor(
     private readonly automations: AutomationService,
     private readonly audience: AudienceService,
+    private readonly panels: PanelDirectory,
   ) {}
 
   @RequirePermissions('communications.read')
@@ -62,6 +65,19 @@ export class AutomationController {
   @Post('automations')
   create(@Body(new ZodPipe(AutomationCreate)) b: AutomationCreate, @CurrentPrincipal() p: Principal, @Req() req: Request) {
     return this.automations.create(this.audience.defaultMode(), b, actor(p, req));
+  }
+
+  /** The ready-made welcome journey (day 1, 3 and 7) for every active panel. */
+  @RequirePermissions('communications.read')
+  @Get('automations/welcome-journey')
+  welcomeJourney() {
+    return this.automations.welcomeJourney(this.audience.defaultMode(), this.panels.codes());
+  }
+
+  @RequirePermissions('communications.manage')
+  @Post('automations/welcome-journey')
+  startWelcomeJourney(@Body(new ZodPipe(WelcomeJourneyStart)) b: WelcomeJourneyStart, @CurrentPrincipal() p: Principal, @Req() req: Request) {
+    return this.automations.startWelcomeJourney(this.audience.defaultMode(), b.panel, actor(p, req));
   }
 
   @RequirePermissions('communications.read')

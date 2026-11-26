@@ -8,6 +8,8 @@ import { NewMembersStrip } from '@/components/new-members';
 import { TopicInfo } from '@/components/screen-info';
 import { ArchiveCheck } from './archive-check';
 import { SortHead, sortPage, SORT_COLUMNS, type SortDir } from './sort';
+import { SavedViews } from './saved-views';
+import { MemberViewParams, type MemberView } from '@madp/contracts';
 import { STATUS_TONE, marketingLabel, type MemberRow } from './shared';
 
 export const metadata: Metadata = { title: 'Members' };
@@ -44,6 +46,17 @@ export default async function MembersPage({
   const sp = await searchParams;
   const qs = new URLSearchParams();
   for (const k of FILTERS) if (sp[k]) qs.set(k, sp[k]!);
+  // A saved view with a rolling window ("last 7 days") turns into a sign-up date when it is opened.
+  const lastDays = Number(sp.lastDays);
+  if (!sp.from && Number.isInteger(lastDays) && lastDays > 0 && lastDays <= 3650)
+    qs.set('from', new Date(Date.now() - lastDays * 86_400_000).toISOString().slice(0, 10));
+  const viewParams = MemberViewParams.catch({}).parse(
+    Object.fromEntries(
+      Object.keys(MemberViewParams.shape)
+        .filter((k) => sp[k])
+        .map((k) => [k, sp[k]]),
+    ),
+  );
   const columnSearch = SEARCH_COLUMNS.map((k) => sp[k]?.trim()).find(Boolean);
   if (!sp.q && columnSearch) qs.set('q', columnSearch);
   const sortKey = SORT_COLUMNS.find((c) => c === sp.sort);
@@ -61,7 +74,7 @@ export default async function MembersPage({
         }
       />
       {await withPanel(async (brand) => {
-        const data = await api<{
+        const [data, { views }] = await Promise.all([api<{
           items: MemberRow[];
           total: number;
           page: number;
@@ -69,7 +82,7 @@ export default async function MembersPage({
           teensHidden: boolean;
           /** Present when the panel sorted the whole list (panel build with column sorting). */
           sort?: { by: string; dir: SortDir };
-        }>(`/panel/members?${qs}`);
+        }>(`/panel/members?${qs}`), api<{ views: MemberView[] }>('/member-views').catch(() => ({ views: [] as MemberView[] }))]);
         const page = data.page;
         const pages = Math.max(1, Math.ceil(data.total / data.pageSize));
         const wholeList = !!sortKey && data.sort?.by === sortKey;
@@ -89,6 +102,7 @@ export default async function MembersPage({
         return (
           <div className="grid gap-4">
             <NewMembersStrip only={brand} />
+            <SavedViews views={views} current={viewParams} searching={!!(sp.q || columnSearch)} />
             <Card>
               <form id={FORM} className="grid gap-3 px-5 py-4 text-[13px] md:grid-cols-6" method="get">
                 <label className="md:col-span-3">
@@ -104,6 +118,7 @@ export default async function MembersPage({
                   Due for 6-month check by
                   <input name="dueBefore" type="date" defaultValue={sp.dueBefore} className={input} />
                 </label>
+                {sp.lastDays && !sp.from ? <input type="hidden" name="lastDays" value={sp.lastDays} /> : null}
                 {sortKey ? <input type="hidden" name="sort" value={sortKey} /> : null}
                 {sortKey ? <input type="hidden" name="dir" value={dir} /> : null}
                 <div className="flex flex-wrap items-end gap-2 md:col-span-2">

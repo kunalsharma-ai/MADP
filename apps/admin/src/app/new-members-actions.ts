@@ -1,7 +1,7 @@
 'use server';
 
 import { unstable_rethrow } from 'next/navigation';
-import type { NewMembersSummary } from '@madp/contracts';
+import type { ActivityFeed, NewMembersSummary } from '@madp/contracts';
 import { api } from '@/lib/api';
 import { getSegments } from '@/lib/segments';
 import { setBrand } from './super-admin-actions';
@@ -30,4 +30,14 @@ export async function markNewMembersSeenAction(panel?: string) {
 /** "See them": picks the panel's brand, then the Members screen lists the newest sign-ups first. */
 export async function openNewMembersAction(panel: string) {
   await setBrand(panel);
+}
+
+/** The live activity feed: sign-ups, survey completes, redemptions and new tickets on every panel the admin sees. */
+export async function activityAction(): Promise<ActivityFeed | null> {
+  try {
+    return await api<ActivityFeed>('/activity?limit=60');
+  } catch (e) {
+    unstable_rethrow(e);
+    return null;
+  }
 }

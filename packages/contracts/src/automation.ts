@@ -14,7 +14,8 @@ export type AutomationTrigger = z.infer<typeof AutomationTrigger>;
 export const TRIGGER_KINDS: Record<AutomationTrigger, CampaignKind[]> = {
   inactivity: ['reengagement'],
   incomplete_profile: ['profile_recovery'],
-  registration: ['welcome', 'profile_recovery'],
+  // survey_reminder: the welcome journey's day-7 nudge to take a first survey.
+  registration: ['welcome', 'profile_recovery', 'survey_reminder'],
   birthday: ['birthday'],
   festival: ['festival'],
 };
@@ -115,3 +116,26 @@ export type CelebrationCreate = z.infer<typeof CelebrationCreate>;
 
 export const CelebrationReview = AutomationReview;
 export type CelebrationReview = AutomationReview;
+
+/**
+ * The ready-made welcome journey for a new member: a welcome on day 1, a profile reminder on day 3 (only while the
+ * profile is incomplete) and a first-survey nudge on day 7. It is an ordinary registration automation, so a second
+ * admin approves it before it is active, and nothing is sent while sending is off.
+ */
+export const WELCOME_JOURNEY_NAME = 'Welcome journey';
+export const WELCOME_JOURNEY_STEPS = [
+  { atDays: 1, kind: 'welcome', onlyIfIncomplete: false, label: 'Welcome' },
+  { atDays: 3, kind: 'profile_recovery', onlyIfIncomplete: true, label: 'Finish your profile' },
+  { atDays: 7, kind: 'survey_reminder', onlyIfIncomplete: false, label: 'Take your first survey' },
+] as const satisfies readonly { atDays: number; kind: CampaignKind; onlyIfIncomplete: boolean; label: string }[];
+
+export const WelcomeJourneyStart = z.object({ panel: PanelCode }).strict();
+export type WelcomeJourneyStart = z.infer<typeof WelcomeJourneyStart>;
+
+export interface WelcomeJourneyPanel {
+  panel: string;
+  /** The journey's automation, once set up. */
+  automation: { id: string; status: string; versionStatus: string | null } | null;
+  /** Per step: the newest approved template of its kind on this panel, or null when one must be approved first. */
+  steps: { atDays: number; kind: string; label: string; template: { versionId: string; name: string } | null }[];
+}

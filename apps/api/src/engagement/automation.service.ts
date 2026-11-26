@@ -12,11 +12,14 @@ import {
   QUALIFYING_ACTIVITY,
   TRIGGER_KINDS,
   type AUTOMATION_REASONS,
-  type AutomationConfig,
+  AutomationConfig,
   type AutomationCreate,
   type AutomationStep,
   type AutomationTrigger,
   type AutomationVersionCreate,
+  WELCOME_JOURNEY_NAME,
+  WELCOME_JOURNEY_STEPS,
+  type WelcomeJourneyPanel,
   type CampaignKind,
   type CelebrationCreate,
   type DataMode,
@@ -347,6 +350,92 @@ export class AutomationService {
       else if (strict && c.status !== 'approved') problems.push(`The calendar entry is ${c.status}, not approved`);
     } else if (body.config.celebrationId) problems.push('Only festival automations use a calendar entry');
     if (problems.length) throw new BadRequestException({ message: 'Fix these first', problems });
+  }
+
+  // --- welcome journey ------------------------------------------------------------------------------------------
+
+  /** Newest approved template version per kind on a panel. */
+  private async approvedTemplates(panel: PanelCode) {
+    const rows = await this.db
+      .select({
+        versionId: messageTemplateVersions.id,
+        name: messageTemplates.name,
+        kind: messageTemplates.kind,
+        version: messageTemplateVersions.version,
+      })
+      .from(messageTemplateVersions)
+      .innerJoin(messageTemplates, eq(messageTemplates.id, messageTemplateVersions.templateId))
+      .where(and(eq(messageTemplates.panel, panel), eq(messageTemplateVersions.status, 'approved')))
+      .orderBy(desc(messageTemplateVersions.version));
+    const byKind = new Map<string, { versionId: string; name: string }>();
+    for (const r of rows) if (!byKind.has(r.kind)) byKind.set(r.kind, { versionId: r.versionId, name: r.name });
+    return byKind;
+  }
+
+  /** Where each panel's welcome journey stands: set up or not, and which step still needs an approved template. */
+  async welcomeJourney(mode: DataMode, panels: PanelCode[]): Promise<WelcomeJourneyPanel[]> {
+    const out: WelcomeJourneyPanel[] = [];
+    for (const panel of panels) {
+      const templates = await this.approvedTemplates(panel);
+      const a = await this.db.query.automations.findFirst({
+        where: and(
+          eq(automations.dataMode, mode),
+          eq(automations.panel, panel),
+          eq(automations.trigger, 'registration'),
+          eq(automations.name, WELCOME_JOURNEY_NAME),
+          sql`${automations.status} <> 'archived'`,
+        ),
+      });
+      const latest = a
+        ? await this.db.query.automationVersions.findFirst({
+            where: eq(automationVersions.automationId, a.id),
+            orderBy: desc(automationVersions.version),
+          })
+        : null;
+      out.push({
+        panel,
+        automation: a ? { id: a.id, status: a.status, versionStatus: latest?.status ?? null } : null,
+        steps: WELCOME_JOURNEY_STEPS.map((s) => ({
+          atDays: s.atDays,
+          kind: s.kind,
+          label: s.label,
+          template: templates.get(s.kind) ?? null,
+        })),
+      });
+    }
+    return out;
+  }
+
+  /**
+   * Sets up a panel's welcome journey from its approved templates and sends it for review: a second admin approves it
+   * before it is active. Nothing is sent while sending is off; runs stay dry runs.
+   */
+  async startWelcomeJourney(mode: DataMode, panel: PanelCode, actor: Actor) {
+    const [status] = await this.welcomeJourney(mode, [panel]);
+    if (status!.automation) throw new ConflictException('This panel already has a welcome journey');
+    const missing = status!.steps.filter((s) => !s.template);
+    if (missing.length)
+      throw new BadRequestException({
+        message: 'Approve these templates first (Messages, Templates)',
+        problems: missing.map((s) => `Day ${s.atDays}: a ${s.kind.replace('_', ' ')} template for ${panel.toUpperCase()}`),
+      });
+    const created = await this.create(
+      mode,
+      {
+        panel,
+        name: WELCOME_JOURNEY_NAME,
+        trigger: 'registration',
+        config: AutomationConfig.parse({ minDaysBetween: 1 }),
+        steps: status!.steps.map((s, i) => ({
+          atDays: s.atDays,
+          templateVersionId: s.template!.versionId,
+          onlyIfIncomplete: WELCOME_JOURNEY_STEPS[i]!.onlyIfIncomplete,
+        })),
+      },
+      actor,
+    );
+    await this.submit(created.versions[0]!.id, actor);
+    return this.get(created.id);
   }
 
   // --- dry runs -----------------------------------------------------------------------------------------------

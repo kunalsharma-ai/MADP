@@ -89,6 +89,8 @@ interface Ctx {
   markSeen: (panel?: string) => Promise<void>;
   refresh: () => Promise<void>;
   countFor: (panel: string) => number;
+  /** Plays the chime when sound is on (and the browser allows it). For other live screens. */
+  ping: () => void;
 }
 
 const NewMembersContext = createContext<Ctx | null>(null);
@@ -196,6 +198,10 @@ export function NewMembersProvider({ children }: { children: ReactNode }) {
     [refresh],
   );
 
+  const ping = useCallback(() => {
+    if (soundRef.current && audio.current?.state === 'running') chime(audio.current);
+  }, []);
+
   const countFor = useCallback(
     (panel: string) => data?.panels.find((p) => p.panel === panel)?.total ?? 0,
     [data],
@@ -208,7 +214,7 @@ export function NewMembersProvider({ children }: { children: ReactNode }) {
   }, [toasts]);
 
   return (
-    <NewMembersContext.Provider value={{ data, sound, setSound, markSeen, refresh, countFor }}>
+    <NewMembersContext.Provider value={{ data, sound, setSound, markSeen, refresh, countFor, ping }}>
       {children}
       <Toasts
         toasts={toasts}
