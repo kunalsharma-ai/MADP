@@ -12,7 +12,13 @@ import { usePanels } from './panels-context';
 import { TopicInfo } from './screen-info';
 
 const POLL_MS = 120_000;
-const RULE_LABEL = { phone: 'same phone', email: 'same e-mail', name_dob: 'same name and birth date' } as const;
+const RULE_LABEL = {
+  phone: 'same phone',
+  email: 'same e-mail',
+  name_dob: 'same name and birth date',
+  ip: 'same sign-up IP',
+  device: 'same device',
+} as const;
 
 /**
  * The red shield next to the bell: accounts on a panel that share a phone, an e-mail, or a name with a birth date.
@@ -36,7 +42,8 @@ export function FraudAlert() {
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setOpen(false);
-    const onClick = (e: MouseEvent) => box.current && !box.current.contains(e.target as Node) && setOpen(false);
+    const onClick = (e: MouseEvent) =>
+      box.current && !box.current.contains(e.target as Node) && setOpen(false);
     document.addEventListener('keydown', onKey);
     document.addEventListener('mousedown', onClick);
     return () => {
@@ -47,7 +54,8 @@ export function FraudAlert() {
 
   if (!data || (!data.panels.length && !data.unreachable.length)) return null;
   const total = data.total;
-  const groups = (p: FraudAlerts['panels'][number]) => Object.values(p.groups).reduce((n, x) => n + (x ?? 0), 0);
+  const groups = (p: FraudAlerts['panels'][number]) =>
+    Object.values(p.groups).reduce((n, x) => n + (x ?? 0), 0);
   const go = (panel: string, by: string) =>
     start(async () => {
       await Promise.all([openNewMembersAction(panel), markFraudSeenAction(panel)]);
@@ -70,7 +78,9 @@ export function FraudAlert() {
         onClick={() => setOpen((o) => !o)}
         aria-expanded={open}
         aria-controls={id}
-        aria-label={total ? `${total} new possible duplicate accounts` : 'Possible duplicate accounts: nothing new'}
+        aria-label={
+          total ? `${total} new possible duplicate accounts` : 'Possible duplicate accounts: nothing new'
+        }
         title="Possible duplicate accounts"
         className={cn(
           'relative grid size-9 place-items-center rounded-xl border bg-surface shadow-soft transition hover:-translate-y-px',
@@ -85,7 +95,12 @@ export function FraudAlert() {
         ) : null}
       </button>
       {open ? (
-        <div id={id} role="dialog" aria-label="Possible duplicate accounts" className="pop-in fixed inset-x-4 top-16 z-40 overflow-hidden sm:absolute sm:inset-x-auto sm:right-0 sm:top-11 sm:w-[22rem] rounded-2xl border border-border bg-surface shadow-2xl">
+        <div
+          id={id}
+          role="dialog"
+          aria-label="Possible duplicate accounts"
+          className="pop-in fixed inset-x-4 top-16 z-40 overflow-hidden sm:absolute sm:inset-x-auto sm:right-0 sm:top-11 sm:w-[22rem] rounded-2xl border border-border bg-surface shadow-2xl"
+        >
           <div className="flex items-center gap-2 bg-gradient-to-r from-[#ef4444] to-[#f97316] px-4 py-2.5 text-white">
             <ShieldAlert className="size-4" aria-hidden />
             <p className="text-[13px] font-bold">Possible duplicate accounts</p>
@@ -93,7 +108,8 @@ export function FraudAlert() {
               title="Duplicate and fraud alert"
               help={{
                 why: 'Two accounts with the same phone, e-mail, or name and birth date are often one person collecting rewards twice.',
-                where: 'Each panel checks its own members every 10 minutes. Only counts come here; the Duplicates screen shows the masked accounts.',
+                where:
+                  'Each panel checks its own members every 10 minutes. Only counts come here; the Duplicates screen shows the masked accounts.',
                 how: [
                   'Red means a matching account signed up since you last looked.',
                   'Open a panel to compare the accounts, then merge them or leave them.',
@@ -111,7 +127,12 @@ export function FraudAlert() {
                   <div className="mt-0.5 flex flex-wrap gap-1">
                     {(Object.keys(RULE_LABEL) as (keyof typeof RULE_LABEL)[]).map((k) =>
                       p.groups[k] ? (
-                        <button key={k} type="button" onClick={() => go(p.panel, k)} className="rounded-full bg-[color-mix(in_oklab,#ef4444_10%,transparent)] px-2 py-0.5 text-[11px] font-medium text-[#b91c1c] hover:underline dark:text-[#fca5a5]">
+                        <button
+                          key={k}
+                          type="button"
+                          onClick={() => go(p.panel, k)}
+                          className="rounded-full bg-[color-mix(in_oklab,#ef4444_10%,transparent)] px-2 py-0.5 text-[11px] font-medium text-[#b91c1c] hover:underline dark:text-[#fca5a5]"
+                        >
                           {p.groups[k]}
                           {p.more ? '+' : ''} {RULE_LABEL[k]}
                         </button>
@@ -120,17 +141,26 @@ export function FraudAlert() {
                     {!groups(p) ? <span className="text-[11px] text-fg-3">No duplicates found</span> : null}
                   </div>
                 </div>
-                {p.fresh ? <span className="rounded-full bg-[#ef4444] px-2 py-0.5 text-[11px] font-bold text-white">{p.fresh} new</span> : null}
+                {p.fresh ? (
+                  <span className="rounded-full bg-[#ef4444] px-2 py-0.5 text-[11px] font-bold text-white">
+                    {p.fresh} new
+                  </span>
+                ) : null}
               </li>
             ))}
             {data.unreachable.length ? (
               <li className="px-4 py-2.5 text-[12px] text-fg-3">
-                Not checked: {data.unreachable.map((p) => panelShort(p, panels)).join(', ')} (panel admin API not answering).
+                Not checked: {data.unreachable.map((p) => panelShort(p, panels)).join(', ')} (panel admin API
+                not answering).
               </li>
             ) : null}
           </ul>
           {total ? (
-            <button type="button" onClick={seenAll} className="flex w-full items-center justify-center gap-1.5 border-t border-border px-4 py-2.5 text-[12px] font-semibold text-fg-2 hover:bg-surface-2">
+            <button
+              type="button"
+              onClick={seenAll}
+              className="flex w-full items-center justify-center gap-1.5 border-t border-border px-4 py-2.5 text-[12px] font-semibold text-fg-2 hover:bg-surface-2"
+            >
               <Check className="size-3.5" aria-hidden /> Mark all as seen
             </button>
           ) : null}

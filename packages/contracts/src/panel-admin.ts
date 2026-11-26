@@ -98,10 +98,15 @@ export type MemberTypeRule = z.infer<typeof MemberTypeRule>;
 export const MemberTypeRules = z
   .object({ rules: z.array(MemberTypeRule).max(12) })
   .strict()
-  .refine((v) => new Set(v.rules.flatMap((r) => r.questions)).size <= 8, { message: 'At most 8 different questions in all' })
-  .refine((v) => new Set(v.rules.map((r) => `${r.category}|${r.label.toLowerCase()}`)).size === v.rules.length, {
-    message: 'Each segment can use a label once',
-  });
+  .refine((v) => new Set(v.rules.flatMap((r) => r.questions)).size <= 8, {
+    message: 'At most 8 different questions in all',
+  })
+  .refine(
+    (v) => new Set(v.rules.map((r) => `${r.category}|${r.label.toLowerCase()}`)).size === v.rules.length,
+    {
+      message: 'Each segment can use a label once',
+    },
+  );
 export type MemberTypeRules = z.infer<typeof MemberTypeRules>;
 
 /** What the Members table shows in its Type column for one member. */
@@ -194,7 +199,7 @@ export const MemberRestore = z.object({ ids: z.array(ObjectId).min(1).max(1000),
 export type MemberRestore = z.infer<typeof MemberRestore>;
 
 // ---- duplicate accounts (MFR#68, Project/api/app/admin/merge.js) -------------------------------------------------
-export const DuplicateRule = z.enum(['email', 'phone', 'name_dob']);
+export const DuplicateRule = z.enum(['email', 'phone', 'name_dob', 'ip', 'device']);
 export const DuplicateSearch = z.object({
   by: DuplicateRule.default('email'),
   limit: z.coerce.number().int().min(1).max(200).default(50),
@@ -203,7 +208,12 @@ export type DuplicateSearch = z.infer<typeof DuplicateSearch>;
 
 /** A merge is a dry run unless `apply` is true; applying needs a reason. */
 export const MemberMergeRequest = z
-  .object({ keep: ObjectId, duplicate: ObjectId, apply: z.boolean().default(false), reason: Reason.optional() })
+  .object({
+    keep: ObjectId,
+    duplicate: ObjectId,
+    apply: z.boolean().default(false),
+    reason: Reason.optional(),
+  })
   .strict()
   .refine((m) => m.keep !== m.duplicate, { message: 'Choose two different accounts', path: ['duplicate'] })
   .refine((m) => !m.apply || Boolean(m.reason), { message: 'A merge needs a reason', path: ['reason'] });
@@ -305,7 +315,10 @@ const Lang = z
   .trim()
   .regex(/^[a-z]{2}(-[A-Z]{2})?$/, 'a language code like hi or pt-BR');
 /** A translation's language: any code but English, which is the question's own wording (the panel refuses `en`). */
-const TranslationLang = Lang.refine((l) => l !== 'en', 'English is the question itself; pick another language');
+const TranslationLang = Lang.refine(
+  (l) => l !== 'en',
+  'English is the question itself; pick another language',
+);
 export const TranslationSet = z.object({
   lang: TranslationLang,
   label: z.string().trim().max(500).optional(),
@@ -318,7 +331,12 @@ export const TranslationSet = z.object({
 export type TranslationSet = z.infer<typeof TranslationSet>;
 export const MissingTranslations = z.object({
   lang: TranslationLang,
-  category: z.string().trim().toLowerCase().regex(/^[a-z0-9_-]{1,60}$/, 'a segment category').optional(),
+  category: z
+    .string()
+    .trim()
+    .toLowerCase()
+    .regex(/^[a-z0-9_-]{1,60}$/, 'a segment category')
+    .optional(),
 });
 export type MissingTranslations = z.infer<typeof MissingTranslations>;
 /**
@@ -1042,12 +1060,7 @@ export const LEGAL_CONTENT_KEYS = ['privacy', 'terms', 'gdpr', 'cookies'] as con
 export const ContentKind = z.enum(['legal', 'page']);
 export type ContentKind = z.infer<typeof ContentKind>;
 export const ContentState = z.enum(['editing', 'review', 'published', 'unpublished']);
-const ContentText = (max: number) =>
-  z
-    .string()
-    .trim()
-    .min(1)
-    .max(max);
+const ContentText = (max: number) => z.string().trim().min(1).max(max);
 const ContentList = z.array(ContentText(5000)).min(1).max(100);
 /**
  * One block of a page body, exactly as the panel accepts it: text, { h2 }, { h3 }, { ul }, { ol }, { note } or
@@ -1065,7 +1078,10 @@ export const ContentBlock = z.union([
       table: z
         .object({
           head: z.array(ContentText(5000)).min(1).max(12),
-          rows: z.array(z.array(z.string().trim().max(1000))).min(1).max(300),
+          rows: z
+            .array(z.array(z.string().trim().max(1000)))
+            .min(1)
+            .max(300),
         })
         .strict()
         .refine((t) => t.rows.every((r) => r.length === t.head.length), 'every row has one cell per column'),
@@ -1088,7 +1104,13 @@ export const ContentListQuery = z.object({
 });
 export type ContentListQuery = z.infer<typeof ContentListQuery>;
 export const ContentCreate = z
-  .object({ key: ContentKey, kind: ContentKind.optional(), lang: ContentLang.optional(), title: ContentText(200), body: ContentBody })
+  .object({
+    key: ContentKey,
+    kind: ContentKind.optional(),
+    lang: ContentLang.optional(),
+    title: ContentText(200),
+    body: ContentBody,
+  })
   .strict();
 export type ContentCreate = z.infer<typeof ContentCreate>;
 export const ContentUpdate = z
@@ -1116,13 +1138,20 @@ export const MemberAlertsChange = z.object({
     })
     .partial()
     .optional(),
-  survey: z.object({ invitesPerWeek: z.number().int().min(0).max(50).nullable() }).partial().optional(),
+  survey: z
+    .object({ invitesPerWeek: z.number().int().min(0).max(50).nullable() })
+    .partial()
+    .optional(),
   reason: Reason,
 });
 export type MemberAlertsChange = z.infer<typeof MemberAlertsChange>;
 
 export const MemberResponsesQuery = z.object({
-  status: z.string().trim().regex(/^[a-z_]{1,40}$/).optional(),
+  status: z
+    .string()
+    .trim()
+    .regex(/^[a-z_]{1,40}$/)
+    .optional(),
   page: z.coerce.number().int().min(1).max(10_000).default(1),
 });
 export type MemberResponsesQuery = z.infer<typeof MemberResponsesQuery>;
@@ -1137,7 +1166,9 @@ export const MemberTag = z
 export type MemberTag = z.infer<typeof MemberTag>;
 export const MemberTagsSet = z.object({ tags: z.array(MemberTag).max(10) }).strict();
 export type MemberTagsSet = z.infer<typeof MemberTagsSet>;
-export const MemberNoteCreate = z.object({ body: z.string().trim().min(2).max(2000), pinned: z.boolean().default(false) }).strict();
+export const MemberNoteCreate = z
+  .object({ body: z.string().trim().min(2).max(2000), pinned: z.boolean().default(false) })
+  .strict();
 export type MemberNoteCreate = z.infer<typeof MemberNoteCreate>;
 export interface MemberNote {
   id: string;
@@ -1157,7 +1188,14 @@ const BulkIds = z.array(ObjectId).min(1).max(100);
 export const MemberBulkAction = z.discriminatedUnion('action', [
   z.object({ action: z.literal('tag_add'), ids: BulkIds, tag: MemberTag, reason: Reason }).strict(),
   z.object({ action: z.literal('tag_remove'), ids: BulkIds, tag: MemberTag, reason: Reason }).strict(),
-  z.object({ action: z.literal('segment'), ids: BulkIds, category: z.string().trim().min(1).max(40), reason: Reason }).strict(),
+  z
+    .object({
+      action: z.literal('segment'),
+      ids: BulkIds,
+      category: z.string().trim().min(1).max(40),
+      reason: Reason,
+    })
+    .strict(),
 ]);
 export type MemberBulkAction = z.infer<typeof MemberBulkAction>;
 export interface MemberBulkResult {

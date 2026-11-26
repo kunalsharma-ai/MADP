@@ -812,6 +812,8 @@ verified.
   since the admin last looked; each panel row opens the Duplicates screen for that rule. T2O, MFR, MHO alike.
 - `GET /fraud-alerts` returns counts and times only; each panel and rule is scanned at most every 10 minutes.
   `POST /fraud-alerts/seen` (table `admin_fraud_seen`, migration 0029). Admins without members.read see nothing.
-- Same device or IP: the panels do not store either today; asked Kunal to approve a panel change that stores a
-  one-way hash at sign-up.
+- Same sign-up IP and same device (Kunal approved, 2026-11-26): the panel keeps only one-way HMAC hashes of the
+  sign-up IP and device (MFR#104, not deployed yet). MADP asks for the `ip` and `device` rules too. A panel without
+  them yet answers 400; the alert then leaves those counts out rather than calling the panel unreachable, and the
+  Duplicates screen says the panel does not record them yet. Accounts from before the change never match.
 - Tests: `apps/api/test/fraud-alerts.test.ts` (2).
