@@ -1,5 +1,6 @@
 'use client';
 
+import type { PanelInfo } from '@madp/contracts';
 import { usePanels } from '@/components/panels-context';
 import { useState, useTransition } from 'react';
 import { toast } from 'sonner';
@@ -8,12 +9,16 @@ import { Badge, Card, CardHeader, btn, input } from '@/components/ui';
 
 type Grant = { role: string; brands: string[] | null };
 
-/** All brands ticked means every brand, panels added later included (stored as null). */
-function readGrant(f: FormData, all: number): Grant {
+/**
+ * All brands ticked (or none) is saved as "every brand". The exception: when a sensitive panel added in the console
+ * is ticked, the brands are saved by name, because an all-brands grant doesn't open that panel's health data.
+ */
+function readGrant(f: FormData, panels: PanelInfo[]): Grant {
   const brands = f.getAll('brands').map(String);
+  const named = panels.some((p) => p.sensitive && !p.builtIn && brands.includes(p.code));
   return {
     role: String(f.get('role')),
-    brands: brands.length === all || brands.length === 0 ? null : brands,
+    brands: brands.length === 0 || (brands.length === panels.length && !named) ? null : brands,
   };
 }
 
@@ -48,7 +53,7 @@ function GrantFields({ roles }: { roles: { key: string; name: string }[] }) {
 export function CreateAdmin({ roles }: { roles: { key: string; name: string }[] }) {
   const [pending, start] = useTransition();
   const [issued, setIssued] = useState<{ email: string; oneTimePassword: string } | null>(null);
-  const panelCount = usePanels().length;
+  const panelList = usePanels();
   return (
     <Card>
       <CardHeader
@@ -64,7 +69,7 @@ export function CreateAdmin({ roles }: { roles: { key: string; name: string }[] 
               const r = await createAdminAction({
                 email,
                 displayName: String(f.get('displayName')),
-                grants: [readGrant(f, panelCount)],
+                grants: [readGrant(f, panelList)],
               });
               setIssued({ email, oneTimePassword: r.oneTimePassword });
               toast.success('Admin created');
@@ -117,7 +122,7 @@ export function AdminRowActions({
   roles: { key: string; name: string }[];
 }) {
   const [pending, start] = useTransition();
-  const panelCount = usePanels().length;
+  const panelList = usePanels();
   const [open, setOpen] = useState(false);
   const run = (input: { isActive?: boolean; grants?: Grant[] }) => {
     const reason = window.prompt('Reason for this change (kept in the audit log)');
@@ -146,7 +151,7 @@ export function AdminRowActions({
         <form
           className="grid w-64 gap-2 rounded-lg border border-border p-3"
           action={(f) =>
-            run({ grants: [...grants.filter((g) => g.role !== String(f.get('role'))), readGrant(f, panelCount)] })
+            run({ grants: [...grants.filter((g) => g.role !== String(f.get('role'))), readGrant(f, panelList)] })
           }
         >
           <p className="text-[12px] text-fg-3">

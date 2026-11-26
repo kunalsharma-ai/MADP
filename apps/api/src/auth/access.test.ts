@@ -45,3 +45,27 @@ describe('computeAccess', () => {
     expect(covers(sup, computeAccess([{ role: 'brand_admin', brands: ['mfr'] }], roles))).toBe(true);
   });
 });
+
+describe('sensitive panels added in the console', () => {
+  const r = new Map<string, Permission[]>([
+    ['dpo', ['members.read', 'health.sensitive.read']],
+    ['super_admin', ['members.read', 'health.sensitive.read']],
+  ]);
+  const panels = ['t2o', 'mfr', 'mho', 'kidz'];
+
+  it('an all-brands grant opens no health data there, except for super_admin', () => {
+    const a = computeAccess([{ role: 'dpo', brands: null }], r, panels, ['kidz']);
+    expect(hasOn(a, 'mho', ['health.sensitive.read'])).toBe(true);
+    expect(hasOn(a, 'kidz', ['health.sensitive.read'])).toBe(false);
+    expect(hasOn(a, 'kidz', ['members.read'])).toBe(true);
+    expect(a.permissions).toEqual(['members.read']);
+    const sup = computeAccess([{ role: 'super_admin', brands: null }], r, panels, ['kidz']);
+    expect(hasOn(sup, 'kidz', ['health.sensitive.read'])).toBe(true);
+  });
+
+  it('a grant that names the panel opens it', () => {
+    const a = computeAccess([{ role: 'dpo', brands: panels }], r, panels, ['kidz']);
+    expect(hasOn(a, 'kidz', ['health.sensitive.read'])).toBe(true);
+    expect(a.permissions).toContain('health.sensitive.read');
+  });
+});

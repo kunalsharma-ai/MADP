@@ -70,7 +70,7 @@ export class AuthService {
     const grants: RoleGrant[] = rows.map((r) => ({ role: r.role, brands: r.brands?.length ? r.brands : null }));
     const known = new Set<string>(Permission.options);
     const map = new Map(rows.map((r) => [r.role, r.permissions.filter((p): p is Permission => known.has(p))]));
-    return { grants, roles: grants.map((g) => g.role), ...computeAccess(grants, map, this.panels.codes()) };
+    return { grants, roles: grants.map((g) => g.role), ...computeAccess(grants, map, this.panels.codes(), this.panels.explicitGrantCodes()) };
   }
 
   async login(

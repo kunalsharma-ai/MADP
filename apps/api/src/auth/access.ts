@@ -1,5 +1,8 @@
 import { BUILT_IN_PANEL_CODES, type PanelCode, type Permission, type RoleGrant } from '@madp/contracts';
 
+/** Permissions that open special-category (health) data. */
+export const SPECIAL_CATEGORY_PERMISSIONS: readonly Permission[] = ['health.sensitive.read'];
+
 export interface Access {
   permissions: Permission[];
   brandPermissions: Partial<Record<PanelCode, Permission[]>>;
@@ -16,11 +19,20 @@ export function computeAccess(
   rolePermissions: ReadonlyMap<string, readonly Permission[]>,
   /** Every active panel. `brands: null` grants cover all of them, panels added later included. */
   panels: readonly PanelCode[] = BUILT_IN_PANEL_CODES,
+  /**
+   * Sensitive panels added in the console. On these, an all-brands grant gives no special-category permission
+   * (except to super_admin): health screens need a grant that names the panel, as MHO's purpose-limited access does.
+   */
+  explicitOnly: readonly PanelCode[] = [],
 ): Access {
   const per = new Map<PanelCode, Set<Permission>>(panels.map((p) => [p, new Set()]));
+  const restricted = new Set(explicitOnly);
   for (const g of grants) {
     const perms = rolePermissions.get(g.role) ?? [];
-    for (const b of g.brands ?? panels) for (const p of perms) per.get(b)?.add(p);
+    for (const b of g.brands ?? panels) {
+      const skipSensitive = g.brands === null && g.role !== 'super_admin' && restricted.has(b);
+      for (const p of perms) if (!(skipSensitive && SPECIAL_CATEGORY_PERMISSIONS.includes(p))) per.get(b)?.add(p);
+    }
   }
   const brandPermissions: Partial<Record<PanelCode, Permission[]>> = {};
   const brands: PanelCode[] = [];

@@ -104,7 +104,8 @@ First deploy, on a manager node:
    on **Panel connections** (step 8). On the shared panel backend, add the new site's hostname to
    `MADP_ADMIN_API_ORIGINS` at its next deploy, or the backend refuses MADP's admin calls for that brand. Grants with
    *all brands* cover the new panel at once; admins limited to some brands get it only when it is added to their
-   grant. Archive stops the panel's sync and hides it; Restore brings it back. Delete works only while the panel
+   grant. On a panel marked sensitive, an all-brands grant opens no health data (Super Admin excepted): give the role
+   with the panel ticked by name. Archive stops the panel's sync and hides it; Restore brings it back. Delete works only while the panel
    holds no data. The three built-in panels can't be archived or deleted, and MHO always stays sensitive.
 
 Each later release: steps 4 and 5 with the new version. Swarm replaces the api and admin replicas (each new api

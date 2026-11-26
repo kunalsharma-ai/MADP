@@ -66,6 +66,11 @@ export class PanelDirectory implements OnModuleInit {
     return this.list.filter((p) => p.status === 'active').map((p) => p.code);
   }
 
+  /** Active sensitive panels added in the console: their health data needs a grant that names them. */
+  explicitGrantCodes(): PanelCode[] {
+    return this.list.filter((p) => p.status === 'active' && p.sensitive && !p.builtIn).map((p) => p.code);
+  }
+
   /** Codes of every panel, archived ones included (for reading old rows). */
   allCodes(): PanelCode[] {
     return this.list.map((p) => p.code);

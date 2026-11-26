@@ -56,7 +56,7 @@ export async function startTestApp(overrides: Partial<Record<string, string>> = 
   async function adminToken(
     role: Parameters<AuthService['createAdmin']>[3],
     email = `${role}@example.invalid`,
-    brands: ('t2o' | 'mfr' | 'mho')[] | null = null,
+    brands: string[] | null = null,
   ) {
     const password = 'correct horse battery staple';
     await auth.createAdminWithGrants(email, role, password, [{ role, brands }]);

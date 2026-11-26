@@ -102,6 +102,35 @@ describe('panels', () => {
     expect(t.app.get(ConnectorRegistry).all().map((s) => s.panel)).toContain('kidz');
   });
 
+  it('opens a sensitive added panel\'s health data only to a grant that names it (or a Super Admin)', async () => {
+    await request(t.server)
+      .post('/api/v1/panels')
+      .set(as(boss))
+      .send({
+        code: 'carez',
+        name: 'Demo Care Panel',
+        shortName: 'CRZ',
+        sensitive: true,
+        origins: ['www.carez.example.invalid'],
+        reason: 'health brand on the shared backend',
+      })
+      .expect(201);
+    const health = 'health.sensitive.read';
+    const all = (await t.adminToken('privacy_officer', 'dpo-all@example.invalid')).token;
+    const me = await request(t.server).get('/api/v1/auth/me').set(as(all)).expect(200);
+    expect(me.body.brandPermissions.mho).toContain(health);
+    expect(me.body.brandPermissions.carez).not.toContain(health);
+    expect(me.body.brandPermissions.carez.length).toBeGreaterThan(0);
+    const named = (
+      await t.adminToken('privacy_officer', 'dpo-named@example.invalid', ['t2o', 'mfr', 'mho', 'kidz', 'carez'])
+    ).token;
+    const me2 = await request(t.server).get('/api/v1/auth/me').set(as(named)).expect(200);
+    expect(me2.body.brandPermissions.carez).toContain(health);
+    const sup = await request(t.server).get('/api/v1/auth/me').set(as(boss)).expect(200);
+    expect(sup.body.brandPermissions.carez).toContain(health);
+    await request(t.server).delete('/api/v1/panels/carez').set(as(boss)).send({ reason: 'test panel done' }).expect(200);
+  });
+
   it('deletes a panel that holds no data', async () => {
     await request(t.server).delete('/api/v1/panels/kidz').set(as(brandAdmin)).send({ reason: 'remove it' }).expect(403);
     await request(t.server).delete('/api/v1/panels/kidz').set(as(boss)).send({ reason: 'created by mistake' }).expect(200);

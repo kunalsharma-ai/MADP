@@ -85,7 +85,8 @@ export function CreatePanel() {
         <input type="checkbox" name="sensitive" className="mt-0.5" />
         <span>
           Holds health or other special-category data. MADP then applies the same extra controls as MHO (masked
-          answers, purpose checks, stricter exports). Once the panel holds data this can&apos;t be turned off.
+          answers, purpose checks, stricter exports), and only a Super Admin or a role granted for this panel by name sees its health data;
+          an all-brands role doesn&apos;t. Once the panel holds data this can&apos;t be turned off.
         </span>
       </label>
       <label className="grid gap-1 md:col-span-2">
