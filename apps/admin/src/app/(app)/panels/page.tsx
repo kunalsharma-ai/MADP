@@ -69,6 +69,8 @@ export default async function PanelsPage() {
               <dd>{p.shortName}</dd>
               <dt className="text-fg-3">Website</dt>
               <dd className="min-w-0 break-all">{p.siteUrl ?? '—'}</dd>
+              <dt className="text-fg-3">Data from</dt>
+              <dd>{p.sourceType === 'inbox' ? 'Uploads and push API (Networks)' : 'Shared panel backend API'}</dd>
               <dt className="text-fg-3">Holds data</dt>
               <dd>{p.hasData ? 'Yes' : 'Not yet'}</dd>
               <dt className="text-fg-3">Order</dt>

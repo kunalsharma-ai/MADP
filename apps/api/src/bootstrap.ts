@@ -42,6 +42,8 @@ export async function createApp(env: ApiEnv, opts: { logger?: boolean } = {}) {
   });
   // Question bank imports are files of several MB; every other route keeps the default 100 kB JSON limit.
   app.use('/api/v1/panel/qb/import', largeJson(25 * 1024 * 1024));
+  // Network uploads (CSV or Excel, base64) and pushes are large too; the push signature needs the raw body.
+  app.use('/api/v1/networks', largeJson(35 * 1024 * 1024));
   app.enableCors({ origin: env.ADMIN_ORIGIN, credentials: true });
   app.setGlobalPrefix('api/v1');
   app.enableShutdownHooks();

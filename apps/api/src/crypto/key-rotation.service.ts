@@ -10,10 +10,12 @@ export const ENCRYPTED_COLUMNS: Record<string, string[]> = {
   admin_user: ['totp_secret_enc'],
   service_client: ['secret_enc'],
   panel_connection: ['sync_token_enc', 'admin_secret_enc', 'pending_enc'],
+  network_record: ['payload_enc'],
+  network_push_key: ['secret_enc'],
 };
 
 /** Primary key column of each table above, when it isn't `id`. */
-const KEY_COLUMN: Record<string, string> = { panel_connection: 'panel' };
+const KEY_COLUMN: Record<string, string> = { panel_connection: 'panel', network_push_key: 'panel' };
 
 export interface RotationReport {
   activeKeyId: string;

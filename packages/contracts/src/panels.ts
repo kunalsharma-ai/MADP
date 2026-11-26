@@ -44,7 +44,15 @@ export interface PanelInfo {
   builtIn: boolean;
   status: 'active' | 'archived';
   sort: number;
+  /**
+   * How MADP gets the panel's data. `panel_api`: the shared panel backend's read-only API. `inbox`: a network on
+   * other software, which sends members by file upload on the Networks screen or by the signed push API.
+   */
+  sourceType: PanelSourceType;
 }
+
+export const PanelSourceType = z.enum(['panel_api', 'inbox']);
+export type PanelSourceType = z.infer<typeof PanelSourceType>;
 
 export interface PanelDescriptor {
   code: BuiltInPanelCode;
@@ -335,6 +343,7 @@ export const PanelCreate = z
     description: z.string().trim().max(1000).optional(),
     /** Holds special-category (health) data: enhanced controls apply. */
     sensitive: z.boolean().default(false),
+    sourceType: PanelSourceType.default('panel_api'),
     origins: z.array(PanelHost).min(1).max(10),
     reason: z.string().trim().min(5).max(500),
   })

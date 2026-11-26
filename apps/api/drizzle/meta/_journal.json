@@ -169,6 +169,13 @@
       "when": 1795701758130,
       "tag": "0023_segments_as_data",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1795702861435,
+      "tag": "0024_network_inbox",
+      "breakpoints": true
     }
   ]
 }

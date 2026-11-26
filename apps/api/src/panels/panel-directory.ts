@@ -14,6 +14,7 @@ const BUILT_IN: PanelInfo[] = BUILT_IN_PANEL_CODES.map((code, i) => ({
   builtIn: true,
   status: 'active',
   sort: i + 1,
+  sourceType: 'panel_api',
 }));
 
 /**
@@ -48,6 +49,7 @@ export class PanelDirectory implements OnModuleInit {
           builtIn: r.builtIn,
           status: r.status === 'archived' ? 'archived' : 'active',
           sort: r.sort,
+          sourceType: r.sourceType === 'inbox' ? 'inbox' : 'panel_api',
         }));
       // Archived panels stay known, so their old rows can still be read; writes check isActive().
       setKnownPanels(this.list.map((p) => p.code));
@@ -87,6 +89,11 @@ export class PanelDirectory implements OnModuleInit {
 
   get(code: PanelCode): PanelInfo | undefined {
     return this.list.find((p) => p.code === code);
+  }
+
+  /** A network on other software: its data arrives by upload or the push API. */
+  isInbox(code: PanelCode): boolean {
+    return this.get(code)?.sourceType === 'inbox';
   }
 
   isActive(code: PanelCode): boolean {

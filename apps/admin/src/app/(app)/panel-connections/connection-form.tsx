@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import type { PanelConnectionView } from '@madp/contracts';
 import { btn, input } from '@/components/ui';
 import { changeConnectionAction, decideConnectionAction, testConnectionAction } from './actions';
+import { unwrap } from '@/lib/result';
 
 const FIELD_LABEL: Record<string, string> = {
   syncBaseUrl: 'sync address',
@@ -86,11 +87,11 @@ export function ConnectionForm({ connection: c }: { connection: PanelConnectionV
           )
             return;
           try {
-            const r = await changeConnectionAction(c.panel, {
+            const r = await unwrap(changeConnectionAction(c.panel, {
               ...changes,
               reason: str(f, 'reason'),
               code: str(f, 'code'),
-            });
+            }));
             toast.success(
               r.status === 'pending'
                 ? 'Saved for approval. Another Super Admin approves it on this screen.'
@@ -129,10 +130,10 @@ export function ConnectionForm({ connection: c }: { connection: PanelConnectionV
           start(async () => {
             const f = new FormData(e.currentTarget.form!);
             try {
-              const r = await testConnectionAction(c.panel, {
+              const r = await unwrap(testConnectionAction(c.panel, {
                 ...(str(f, 'syncBaseUrl') ? { syncBaseUrl: str(f, 'syncBaseUrl') } : {}),
                 ...(str(f, 'syncToken') ? { syncToken: str(f, 'syncToken') } : {}),
-              });
+              }));
               if (r.ok) toast.success(r.message);
               else toast.error(r.message);
             } catch (err) {
@@ -208,11 +209,11 @@ export function PendingDecision({ connection: c }: { connection: PanelConnection
         start(async () => {
           try {
             const decision = (f.get('decision') as 'approve' | 'reject') ?? 'approve';
-            await decideConnectionAction(c.panel, {
+            await unwrap(decideConnectionAction(c.panel, {
               decision,
               reason: str(f, 'reason'),
               code: str(f, 'code'),
-            });
+            }));
             toast.success(decision === 'approve' ? 'Approved. MADP uses the new settings now.' : 'Rejected');
           } catch (e) {
             toast.error((e as Error).message);

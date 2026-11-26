@@ -20,6 +20,8 @@ const PUBLIC_ALLOWED = new Set([
   'GET /health',
   'GET /openapi.json',
   'POST /auth/login',
+  // A network's signed push: 404 while the panel has no push key, 401 on a bad signature (networks.test.ts).
+  'POST /networks/:panel/push',
 ]);
 const PUBLIC_PREFIXES_WITH_OWN_AUTH = ['/supply360/', '/webhooks/'];
 /** Any signed-in admin may use these, with no extra permission (their own session). */

@@ -12,6 +12,7 @@ import {
   segmentStateAction,
   updateSegmentAction,
 } from './actions';
+import { unwrap } from '@/lib/result';
 
 const str = (f: FormData, k: string) => String(f.get(k) ?? '').trim();
 const ask = (what: string) => window.prompt(`Reason to ${what} (kept in the audit log)`)?.trim();
@@ -47,13 +48,13 @@ export function CreateSegment() {
       action={(f) =>
         run(
           () =>
-            createSegmentAction({
+            unwrap(createSegmentAction({
               key: str(f, 'key').toLowerCase(),
               label: str(f, 'label'),
               ...(str(f, 'description') ? { description: str(f, 'description') } : {}),
               minors: f.get('minors') === 'on',
               reason: str(f, 'reason'),
-            }),
+            })),
           'Segment added. Add a rule below so members join it.',
           () => setOpen(false),
         )
@@ -105,7 +106,7 @@ export function SegmentActions({ segment: s, hasMembers }: { segment: AudienceSe
     const reason = ask(`${action} ${s.label}`);
     if (!reason) return;
     run(
-      () => segmentStateAction(s.key, action, reason),
+      () => unwrap(segmentStateAction(s.key, action, reason)),
       action === 'delete' ? 'Segment deleted' : action === 'archive' ? 'Segment archived' : 'Segment restored',
     );
   };
@@ -124,7 +125,7 @@ export function SegmentActions({ segment: s, hasMembers }: { segment: AudienceSe
             toast.error('Nothing changed');
             return;
           }
-          run(() => updateSegmentAction(s.key, { ...patch, reason: str(f, 'reason') }), 'Saved', () => setEditing(false));
+          run(() => unwrap(updateSegmentAction(s.key, { ...patch, reason: str(f, 'reason') })), 'Saved', () => setEditing(false));
         }}
       >
         <div className="grid gap-2 sm:grid-cols-[1fr_6rem]">
@@ -192,14 +193,14 @@ export function AddRule({ segments }: { segments: AudienceSegmentInfo[] }) {
       action={(f) =>
         run(
           () =>
-            addRuleAction({
+            unwrap(addRuleAction({
               panel: str(f, 'panel'),
               sourceValue: str(f, 'sourceValue'),
               segment: str(f, 'segment'),
               minor: f.get('minor') === 'on',
               ...(str(f, 'evidence') ? { evidence: str(f, 'evidence') } : {}),
               reason: str(f, 'reason'),
-            }),
+            })),
           'Rule added. New syncs use it.',
           () => setOpen(false),
         )
@@ -259,7 +260,7 @@ export function RuleActions({ rule: r }: { rule: SegmentRuleInfo }) {
     if (action === 'delete' && !window.confirm('Delete this rule?')) return;
     const reason = ask(`${action} this rule`);
     if (!reason) return;
-    run(() => ruleStateAction(r.id, action, reason), action === 'delete' ? 'Rule deleted' : 'Saved');
+    run(() => unwrap(ruleStateAction(r.id, action, reason)), action === 'delete' ? 'Rule deleted' : 'Saved');
   };
   return (
     <div className="flex justify-end gap-1">

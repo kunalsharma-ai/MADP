@@ -50,11 +50,64 @@ export const panels = pgTable('panel', {
   /** 'active' or 'archived'. An archived panel isn't synced and its console screens are hidden. */
   status: text('status').notNull().default('active'),
   sort: smallint('sort').notNull().default(100),
+  /** 'panel_api' (the shared panel backend) or 'inbox' (a network on other software: file upload or push API). */
+  sourceType: text('source_type').notNull().default('panel_api'),
   archivedAt: timestamp('archived_at', { withTimezone: true }),
   archivedBy: uuid('archived_by'),
   createdBy: uuid('created_by'),
   createdAt: created(),
   updatedAt: updated(),
+});
+
+/**
+ * Inbox of a network on other software: members, answers, question definitions and deletions it uploaded or
+ * pushed, encrypted (they hold personal data). The panel's connector reads it in id order like a changes feed.
+ */
+export const networkRecords = pgTable(
+  'network_record',
+  {
+    id: bigserial('id', { mode: 'number' }).primaryKey(),
+    dataMode: dataMode('data_mode').notNull().default('live'),
+    panel: text('panel')
+      .notNull()
+      .references(() => panels.code),
+    /** member | answer | question | deletion */
+    kind: text('kind').notNull(),
+    sourceMemberId: text('source_member_id'),
+    sourceQuestionId: text('source_question_id'),
+    payloadEnc: text('payload_enc').notNull(),
+    batch: text('batch').notNull(),
+    receivedAt: timestamp('received_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index('network_record_feed_idx').on(t.panel, t.kind, t.id)],
+);
+
+/** One upload or push. A batch id is accepted once per panel, so a retried push is not stored twice. */
+export const networkBatches = pgTable(
+  'network_batch',
+  {
+    panel: text('panel')
+      .notNull()
+      .references(() => panels.code),
+    batch: text('batch').notNull(),
+    source: text('source').notNull(),
+    kind: text('kind').notNull(),
+    records: integer('records').notNull(),
+    createdBy: uuid('created_by'),
+    receivedAt: timestamp('received_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [primaryKey({ columns: [t.panel, t.batch] })],
+);
+
+/** The key a network signs its pushes with (HMAC-SHA256), encrypted. Shown once when it is made. */
+export const networkPushKeys = pgTable('network_push_key', {
+  panel: text('panel')
+    .primaryKey()
+    .references(() => panels.code),
+  secretEnc: text('secret_enc').notNull(),
+  hint: text('hint').notNull(),
+  createdBy: uuid('created_by'),
+  createdAt: created(),
 });
 
 /**
