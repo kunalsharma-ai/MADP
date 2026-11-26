@@ -20,3 +20,17 @@ export type SurveyApproval = z.infer<typeof SurveyApproval>;
 
 export const ReconcileRequest = z.object({ repair: z.boolean().default(false) });
 export type ReconcileRequest = z.infer<typeof ReconcileRequest>;
+
+/** Survey statuses as the panels report them; anything else is shown as it arrives. */
+export const PARTICIPATION_STATUSES = ['complete', 'terminate', 'quota_full', 'started', 'invited'] as const;
+
+/** One page of survey attempts across panels, newest first. Filters combine. */
+export const ParticipationQuery = z.object({
+  panel: PanelCode.optional(),
+  status: z.string().trim().regex(/^[a-z_]{1,40}$/).optional(),
+  survey: z.string().trim().min(1).max(200).optional(),
+  personId: z.string().uuid().optional(),
+  page: z.coerce.number().int().min(1).max(10_000).default(1),
+  size: z.coerce.number().int().min(10).max(100).default(50),
+});
+export type ParticipationQuery = z.infer<typeof ParticipationQuery>;

@@ -223,6 +223,15 @@ export const SCREEN_HELP: Record<string, ScreenHelp> = {
     where: 'MADP. A second person approves every version. Runs are dry runs; nothing is sent.',
     how: ['Create a rule for one panel.', 'Have it approved, then run it dry to check who it reaches.'],
   },
+  '/participation': {
+    why: 'See every survey each member started or finished on T2O, MFR and MHO, with the result and the points it earned.',
+    where: 'A read-only copy of each panel’s survey responses, refreshed on every sync. Panels are shown side by side, never added together.',
+    how: [
+      'Pick a panel or a result (Complete, Terminate…) to narrow the list.',
+      'Type part of a survey name to find who took it.',
+      'Click a member to open their 360° profile with their engagement score and full history.',
+    ],
+  },
   '/loyalty': {
     why: 'See each panel’s reward wallets and approve survey completes for payment.',
     where: 'A read-only mirror of the panels’ wallets. Panels are never added together; nothing here changes a wallet.',
