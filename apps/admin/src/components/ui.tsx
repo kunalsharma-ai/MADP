@@ -13,7 +13,7 @@ export function Card({ className, children }: { className?: string; children: Re
   return (
     <section
       className={cn(
-        'rise rounded-xl border border-border bg-surface shadow-[0_1px_0_rgba(12,20,38,0.03)]',
+        'rise rounded-2xl border border-border/80 bg-surface shadow-soft',
         className,
       )}
     >
@@ -26,7 +26,7 @@ export function CardHeader({ title, hint, action }: { title: ReactNode; hint?: R
   return (
     <header className="flex items-start justify-between gap-4 border-b border-border px-5 py-3.5">
       <div>
-        <h2 className="text-[13px] font-semibold tracking-tight text-fg">{title}</h2>
+        <h2 className="text-sm font-semibold tracking-tight text-fg">{title}</h2>
         {hint ? <p className="mt-0.5 text-xs text-fg-3">{hint}</p> : null}
       </div>
       {action}
@@ -49,9 +49,9 @@ export function PageHeader({
     <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
       <div>
         {eyebrow ? (
-          <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-fg-3">{eyebrow}</p>
+          <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-accent">{eyebrow}</p>
         ) : null}
-        <h1 className="mt-1 text-2xl font-semibold tracking-tight text-fg">
+        <h1 className="mt-1 flex items-center text-[26px] font-bold tracking-tight text-fg">
           {title}
           <ScreenInfo />
         </h1>
@@ -120,7 +120,7 @@ export function DemoBanner({ mode }: { mode: DataMode }) {
   return (
     <div
       role="note"
-      className="mb-5 flex items-start gap-3 rounded-lg border border-demo/30 bg-demo-soft px-4 py-2.5 text-[13px] text-fg"
+      className="mb-5 flex items-start gap-3 rounded-2xl border border-demo/30 bg-demo-soft px-4 py-2.5 text-[13px] text-fg"
     >
       <Badge tone="demo">DEMO</Badge>
       <p>
@@ -144,7 +144,7 @@ export function Stat({
   tone?: 'accent' | 'teal';
 }) {
   return (
-    <div className="rounded-xl border border-border bg-surface px-5 py-4 rise">
+    <div className="rise rounded-2xl border border-border/80 bg-surface px-5 py-4 shadow-soft">
       <p className="text-xs font-medium text-fg-3">{label}</p>
       <p
         className={cn(
@@ -170,7 +170,7 @@ export function EmptyState({ title, children }: { title: string; children?: Reac
 
 export const btn = {
   primary:
-    'inline-flex items-center gap-2 rounded-lg bg-accent px-3.5 py-2 text-sm font-medium text-white shadow-sm transition hover:brightness-110 disabled:opacity-50',
+    'inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#4f5bd5] to-[#8b5cf6] px-3.5 py-2 text-sm font-medium text-white shadow-[0_6px_16px_-8px_rgba(99,102,241,0.8)] transition hover:-translate-y-px hover:brightness-110 disabled:opacity-50',
   secondary:
     'inline-flex items-center gap-2 rounded-lg border border-border bg-surface px-3 py-1.5 text-sm font-medium text-fg transition hover:bg-surface-2 disabled:opacity-50',
   ghost:

@@ -97,6 +97,25 @@ const ICONS = {
   ToggleRight,
   Scale,
 } as const;
+/** One colour pair per screen, so every menu icon has its own tile. Picked from the menu order, stable across renders. */
+const TINTS: [string, string][] = [
+  ['#6366f1', '#8b5cf6'],
+  ['#ec4899', '#f43f5e'],
+  ['#f97316', '#f59e0b'],
+  ['#10b981', '#14b8a6'],
+  ['#0ea5e9', '#3b82f6'],
+  ['#a855f7', '#d946ef'],
+  ['#eab308', '#f97316'],
+  ['#06b6d4', '#10b981'],
+  ['#ef4444', '#f97316'],
+  ['#3b82f6', '#6366f1'],
+];
+const ORDER = NAV.flatMap((g) => g.items.map((i) => i.href));
+function tintFor(href: string): [string, string] {
+  const i = ORDER.indexOf(href);
+  return TINTS[(i < 0 ? 0 : i) % TINTS.length]!;
+}
+
 const BRAND_LABEL: Record<string, string> = {
   all: 'All brands',
   t2o: 'Turn2Opinion',
@@ -154,42 +173,58 @@ export function Shell({
 
   return (
     <div className="flex min-h-dvh">
-      <aside className="hidden w-64 shrink-0 bg-nav text-nav-text lg:block">
+      <aside className="hidden w-[17rem] shrink-0 border-r border-side-border bg-side backdrop-blur-xl lg:block">
         <div className="sticky top-0 flex h-dvh flex-col">
-          <div className="flex items-center gap-2.5 px-5 pt-5 pb-6">
-            <div className="grid size-8 place-items-center rounded-lg bg-gradient-to-br from-[#2f5bea] to-[#0f9f95] text-[13px] font-bold text-white">
+          <Link href="/" className="flex items-center gap-3 px-5 pt-5 pb-6">
+            <div className="relative grid size-10 place-items-center rounded-2xl bg-gradient-to-br from-[#6366f1] via-[#a855f7] to-[#ec4899] text-[15px] font-bold text-white shadow-[0_8px_20px_-6px_rgba(168,85,247,0.6)]">
               M
+              <span className="absolute -right-0.5 -top-0.5 size-2.5 rounded-full border-2 border-surface bg-[#22c55e]" aria-hidden />
             </div>
             <div>
-              <p className="text-sm font-semibold tracking-tight text-white">MADP</p>
-              <p className="text-[11px] text-nav-text/60">Master Audience Data Platform</p>
+              <p className="text-[15px] font-bold tracking-tight text-fg">MADP</p>
+              <p className="text-[11px] text-fg-3">Master Audience Data Platform</p>
             </div>
-          </div>
-          <nav className="flex-1 space-y-5 overflow-y-auto px-3" aria-label="Main">
+          </Link>
+          <nav className="flex-1 space-y-5 overflow-y-auto px-3 pb-4" aria-label="Main">
             {groups.map((g) => (
               <div key={g.label}>
-                <p className="px-2 pb-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-nav-text/45">
+                <p className="px-3 pb-1.5 text-[10px] font-bold uppercase tracking-[0.16em] text-fg-3/80">
                   {g.label}
                 </p>
                 <ul className="space-y-0.5">
                   {g.items.map((i) => {
                     const Icon = ICONS[i.icon as keyof typeof ICONS];
                     const active = current?.href === i.href;
+                    const tint = tintFor(i.href);
                     return (
                       <li key={i.href}>
                         <Link
                           href={i.href}
                           aria-current={active ? 'page' : undefined}
                           className={cn(
-                            'flex items-center gap-2.5 rounded-md px-2 py-1.5 text-[13px] transition',
-                            active ? 'bg-nav-2 text-white' : 'hover:bg-nav-2/60 hover:text-white',
+                            'group flex items-center gap-3 rounded-xl px-2 py-1.5 text-[13px] font-medium transition',
+                            active
+                              ? 'bg-surface text-fg shadow-soft ring-1 ring-border'
+                              : 'text-fg-2 hover:bg-surface/70 hover:text-fg',
                           )}
                         >
-                          <Icon
-                            className={cn('size-4', active ? 'text-[#7fa0ff]' : 'opacity-70')}
-                            aria-hidden
-                          />
-                          {i.label}
+                          <span
+                            className={cn(
+                              'grid size-7 shrink-0 place-items-center rounded-lg transition duration-200 group-hover:scale-110 group-hover:-rotate-6',
+                              active ? 'text-white shadow-md' : '',
+                            )}
+                            style={
+                              active
+                                ? { backgroundImage: `linear-gradient(135deg, ${tint[0]}, ${tint[1]})` }
+                                : { background: `color-mix(in oklab, ${tint[0]} 14%, transparent)`, color: tint[0] }
+                            }
+                          >
+                            <Icon className="size-[15px]" aria-hidden />
+                          </span>
+                          <span className="truncate">{i.label}</span>
+                          {active ? (
+                            <span className="ml-auto size-1.5 rounded-full" style={{ background: tint[1] }} aria-hidden />
+                          ) : null}
                         </Link>
                       </li>
                     );
@@ -199,39 +234,41 @@ export function Shell({
             ))}
             {PLANNED.length ? (
               <div>
-                <p className="px-2 pb-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-nav-text/45">
+                <p className="px-3 pb-1.5 text-[10px] font-bold uppercase tracking-[0.16em] text-fg-3/80">
                   Coming next
                 </p>
                 <ul className="space-y-0.5">
                   {PLANNED.map((p) => (
-                    <li
-                      key={p.label}
-                      className="flex items-center justify-between px-2 py-1 text-[12px] text-nav-text/45"
-                    >
+                    <li key={p.label} className="flex items-center justify-between px-3 py-1 text-[12px] text-fg-3">
                       {p.label}
-                      <span className="rounded bg-nav-2 px-1 text-[10px]">{p.milestone}</span>
+                      <span className="rounded bg-surface-2 px-1 text-[10px]">{p.milestone}</span>
                     </li>
                   ))}
                 </ul>
               </div>
             ) : null}
           </nav>
-          <div className="border-t border-white/5 px-4 py-3">
-            <p className="truncate text-[13px] text-white">{user.displayName}</p>
-            <p className="truncate text-[11px] text-nav-text/60">
-              {user.grants
-                .map(
-                  (g) =>
-                    `${g.role.replaceAll('_', ' ')}${g.brands ? ` (${g.brands.join(', ').toUpperCase()})` : ''}`,
-                )
-                .join(' · ')}
-            </p>
+          <div className="m-3 flex items-center gap-3 rounded-2xl border border-border bg-surface p-3 shadow-soft">
+            <div className="grid size-9 shrink-0 place-items-center rounded-full bg-gradient-to-br from-[#f97316] to-[#ec4899] text-[13px] font-bold text-white">
+              {user.displayName.slice(0, 1).toUpperCase()}
+            </div>
+            <div className="min-w-0">
+              <p className="truncate text-[13px] font-semibold text-fg">{user.displayName}</p>
+              <p className="truncate text-[11px] text-fg-3">
+                {user.grants
+                  .map(
+                    (g) =>
+                      `${g.role.replaceAll('_', ' ')}${g.brands ? ` (${g.brands.join(', ').toUpperCase()})` : ''}`,
+                  )
+                  .join(' · ')}
+              </p>
+            </div>
           </div>
         </div>
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col overflow-x-clip">
-        <header className="sticky top-0 z-10 flex h-14 items-center gap-3 border-b border-border bg-bg/85 px-4 backdrop-blur sm:px-8">
+        <header className="sticky top-0 z-10 flex h-16 items-center gap-3 border-b border-border/70 bg-bg/70 px-4 backdrop-blur-xl sm:px-8">
           <nav aria-label="Breadcrumb" className="min-w-0 flex-1 truncate text-[13px] text-fg-3">
             <Link href="/" className="hover:text-fg">
               MADP
@@ -257,7 +294,7 @@ export function Shell({
                 const next = e.target.value;
                 void setBrand(next).then(() => router.refresh());
               }}
-              className="rounded-lg border border-border bg-surface px-2 py-1.5 text-[13px] text-fg"
+              className="rounded-xl border border-border bg-surface px-2.5 py-1.5 text-[13px] font-medium text-fg shadow-soft"
             >
               {allowAll ? <option value="all">{BRAND_LABEL.all}</option> : null}
               {user.brands.map((b) => (
@@ -269,7 +306,7 @@ export function Shell({
           </label>
           <button
             onClick={() => setOpen(true)}
-            className="hidden items-center gap-2 rounded-lg border border-border bg-surface px-2.5 py-1.5 text-[13px] text-fg-3 sm:flex"
+            className="hidden items-center gap-2 rounded-xl border border-border bg-surface px-3 py-1.5 text-[13px] text-fg-3 shadow-soft transition hover:text-fg sm:flex"
             aria-label="Open command palette"
           >
             <Search className="size-3.5" aria-hidden /> Search or jump to…
