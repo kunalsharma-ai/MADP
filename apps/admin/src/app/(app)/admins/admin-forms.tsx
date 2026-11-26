@@ -221,7 +221,30 @@ export function RoleEditor({
       {role && !editing ? (
         <div className="px-5 pb-4 text-[12px]">
           <p className="mb-2 text-fg-2">{role.description}</p>
-          <p className="font-mono text-[11px] leading-5 text-fg-3">{role.permissions.join(' · ')}</p>
+          <details className="group">
+            <summary className="cursor-pointer list-none text-[12.5px] font-semibold text-accent hover:underline">
+              <span className="group-open:hidden">Show what this role can do ({role.permissions.length})</span>
+              <span className="hidden group-open:inline">Hide</span>
+            </summary>
+            <ul className="mt-2 space-y-1.5">
+              {Object.entries(
+                role.permissions.reduce<Record<string, string[]>>((acc, p) => {
+                  const [area, ...rest] = p.split('.');
+                  (acc[area!] ??= []).push(rest.join(' ') || 'use');
+                  return acc;
+                }, {}),
+              ).map(([area, acts]) => (
+                <li key={area} className="flex flex-wrap items-center gap-1.5">
+                  <span className="min-w-28 font-semibold capitalize text-fg">{area.replaceAll('_', ' ')}</span>
+                  {acts.map((a) => (
+                    <span key={a} className="rounded-full bg-accent-soft px-2 py-0.5 text-[11px] font-medium text-accent">
+                      {a.replaceAll('_', ' ')}
+                    </span>
+                  ))}
+                </li>
+              ))}
+            </ul>
+          </details>
         </div>
       ) : null}
       {editing ? (

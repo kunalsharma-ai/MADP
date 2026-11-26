@@ -1,7 +1,10 @@
 import 'server-only';
 import type { ReactNode } from 'react';
 import { ApiError, currentBrand } from '@/lib/api';
+import Link from 'next/link';
 import { Card, EmptyState } from '@/components/ui';
+import { BrandPicker } from '@/components/brand-picker';
+import { getPanels } from '@/lib/panels';
 
 /**
  * Members, question bank and profiles work in one brand at a time. Renders a prompt when "All brands" is picked, and
@@ -14,9 +17,9 @@ export async function withPanel(
   if (!brand || brand === 'all')
     return (
       <Card>
-        <EmptyState title="Pick a brand">
-          Members, the question bank and profiles are managed one brand at a time. Choose T2O, MFR or MHO in
-          the brand switcher at the top.
+        <EmptyState title="Which brand do you want to work on?">
+          This screen works on one brand at a time. Pick one below (you can switch any time at the top).
+          <BrandPicker panels={(await getPanels()).map(({ code, name, shortName }) => ({ code, name, shortName }))} />
         </EmptyState>
       </Card>
     );
@@ -27,8 +30,11 @@ export async function withPanel(
       return (
         <Card>
           <EmptyState title={`${brand.toUpperCase()} is not connected yet`}>
-            {e.message} The panel side is built (MFR #44); it needs the shared secret and the panel&apos;s
-            address in this environment, which is a deploy step for Kunal to approve.
+            MADP can&apos;t reach this panel yet. Add the panel&apos;s address and admin secret on{' '}
+            <Link href="/panel-connections" className="font-semibold text-accent hover:underline">
+              Panel connections
+            </Link>
+            , then come back.
           </EmptyState>
         </Card>
       );
