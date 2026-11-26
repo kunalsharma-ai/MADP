@@ -13,6 +13,7 @@ import { cn } from '@/lib/cn';
 import { setBrand } from '@/app/super-admin-actions';
 import { BrandLogo } from './brand-logo';
 import { PanelsProvider } from './panels-context';
+import { NewMembersBell, NewMembersNavBadge, NewMembersProvider } from './new-members';
 
 
 const BRAND_LABEL: Record<string, string> = {
@@ -71,6 +72,8 @@ export function Shell({
   }, []);
 
   return (
+    <PanelsProvider panels={panels}>
+    <NewMembersProvider>
     <div className="flex min-h-dvh">
       <aside className="hidden w-[17rem] shrink-0 border-r border-side-border bg-side backdrop-blur-xl lg:block">
         <div className="sticky top-0 flex h-dvh flex-col">
@@ -121,7 +124,8 @@ export function Shell({
                             <Icon className="size-[15px]" aria-hidden />
                           </span>
                           <span className="truncate">{i.label}</span>
-                          {active ? (
+                          {i.href === '/members' ? <NewMembersNavBadge brand={brand} /> : null}
+                          {active && i.href !== '/members' ? (
                             <span className="ml-auto size-1.5 rounded-full" style={{ background: tint[1] }} aria-hidden />
                           ) : null}
                         </Link>
@@ -167,7 +171,7 @@ export function Shell({
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col overflow-x-clip">
-        <header className="sticky top-0 z-10 flex h-16 items-center gap-3 border-b border-border/70 bg-bg/70 px-4 backdrop-blur-xl sm:px-8">
+        <header className="sticky top-0 z-30 flex h-16 items-center gap-2 sm:gap-3 border-b border-border/70 bg-bg/70 px-4 backdrop-blur-xl sm:px-8">
           <nav aria-label="Breadcrumb" className="min-w-0 flex-1 truncate text-[13px] text-fg-3">
             <Link href="/" className="hover:text-fg">
               MADP
@@ -193,7 +197,7 @@ export function Shell({
                 const next = e.target.value;
                 void setBrand(next).then(() => router.refresh());
               }}
-              className="rounded-xl border border-border bg-surface px-2.5 py-1.5 text-[13px] font-medium text-fg shadow-soft"
+              className="max-w-[8.5rem] rounded-xl border border-border bg-surface px-2.5 py-1.5 text-[13px] font-medium text-fg shadow-soft sm:max-w-none"
             >
               {allowAll ? <option value="all">{BRAND_LABEL.all}</option> : null}
               {user.brands.map((b) => (
@@ -218,6 +222,7 @@ export function Shell({
           >
             <Menu className="size-4" aria-hidden />
           </button>
+          <NewMembersBell />
           <ThemeToggle />
           <form action={signOut}>
             <button
@@ -228,7 +233,7 @@ export function Shell({
             </button>
           </form>
         </header>
-        <main className="mx-auto w-full max-w-[1400px] flex-1 px-4 py-7 sm:px-8"><PanelsProvider panels={panels}>{children}</PanelsProvider></main>
+        <main className="mx-auto w-full max-w-[1400px] flex-1 px-4 py-7 sm:px-8">{children}</main>
       </div>
 
       <Command.Dialog
@@ -271,6 +276,8 @@ export function Shell({
         </div>
       </Command.Dialog>
     </div>
+    </NewMembersProvider>
+    </PanelsProvider>
   );
 }
 

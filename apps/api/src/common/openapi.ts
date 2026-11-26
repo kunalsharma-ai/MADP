@@ -154,6 +154,12 @@ export function openApiDocument() {
           responses: ok('Profile'),
         },
       },
+      '/new-members': {
+        get: { security: secured, summary: 'New sign-ups per panel and segment since last seen (counts only)', responses: ok('Summary') },
+      },
+      '/new-members/seen': {
+        post: { security: secured, summary: "Mark a panel's new sign-ups as seen for this admin", responses: ok('Seen') },
+      },
       '/dashboard/summary': {
         get: { security: secured, summary: 'Executive KPIs', responses: ok('Summary') },
       },

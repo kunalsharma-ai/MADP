@@ -65,7 +65,12 @@ export const SCREEN_HELP: Record<string, ScreenHelp> = {
   '/members': {
     why: 'Look up and help a member of the brand picked at the top.',
     where: 'The panel itself, through its signed admin API. E-mail and phone stay masked unless you have the PII permission and give a reason.',
-    how: ['Search by name, id, e-mail or phone.', 'Open the member to see points, profiles and history, or to make an audited change.'],
+    how: [
+      'Search by name, id, e-mail or phone, or type in the filter under any column heading and press Enter.',
+      'Click a column name to sort by it; click again to flip the order.',
+      'The New members tile at the top counts sign-ups since you last pressed Seen. The bell at the top right shows every panel, with a sound.',
+      'Open the member to see points, profiles and history, or to make an audited change.',
+    ],
   },
   '/question-bank': {
     why: 'Keep the brand’s question library: wording, options and rules.',

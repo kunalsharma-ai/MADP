@@ -1354,3 +1354,21 @@ export const questionnaireDrafts = pgTable(
       .where(sql`status in ('draft', 'review', 'approved')`),
   ],
 );
+
+/**
+ * When each admin last marked a panel's new sign-ups as seen. The console's new-member bell counts members MADP
+ * learned about after this moment. No panel data is kept here, so there is no data_mode.
+ */
+export const adminNewMemberSeen = pgTable(
+  'admin_new_member_seen',
+  {
+    adminUserId: uuid('admin_user_id')
+      .notNull()
+      .references(() => adminUsers.id, { onDelete: 'cascade' }),
+    panel: text('panel')
+      .notNull()
+      .references(() => panels.code),
+    seenAt: timestamp('seen_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [primaryKey({ columns: [t.adminUserId, t.panel] })],
+);
