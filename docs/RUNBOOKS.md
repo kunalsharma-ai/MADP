@@ -75,8 +75,16 @@ First deploy, on a manager node:
 
    Back up `madp_field_encryption_key` and `madp_pii_hash_key` apart from the database: losing either loses or unlinks
    personal data.
-4. Build and push the images from a green `main`: `docker build -f apps/api/Dockerfile -t <registry>/api:<version> .`
-   and the same for `apps/admin`.
+4. Build and push the images from a green `main`, with the stack file itself (it has `build:` for api and admin):
+
+   ```
+   export MADP_HOST=<host> MADP_REGISTRY=<registry> MADP_VERSION=<version>
+   docker compose -f ops/deploy/madp-stack.yml build
+   docker compose -f ops/deploy/madp-stack.yml push api admin
+   ```
+
+   This tags `<registry>/api:<version>` and `<registry>/admin:<version>`. The `migrate` job runs the api image, so it
+   isn't built twice. `docker stack deploy` ignores `build:` and pulls these images from the registry on each node.
 5. Deploy: `MADP_HOST=<host> MADP_REGISTRY=<registry> MADP_VERSION=<version> docker stack deploy -c
    ops/deploy/madp-stack.yml madp`. The `migrate` job runs the migrations once and exits; check it with `docker service
    ps madp_migrate`. The api replicas never migrate.
