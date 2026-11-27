@@ -1,4 +1,13 @@
-import { BadRequestException, Body, Controller, ForbiddenException, HttpCode, Post, Req, Res } from '@nestjs/common';
+import {
+  BadRequestException,
+  Body,
+  Controller,
+  ForbiddenException,
+  HttpCode,
+  Post,
+  Req,
+  Res,
+} from '@nestjs/common';
 import {
   MemberBulkAction,
   MemberExport,
@@ -16,6 +25,7 @@ import type { Principal } from '../auth/auth.types.js';
 import { hasOn } from '../auth/access.js';
 import { ZodPipe } from '../common/zod.pipe.js';
 import { AuditService } from '../audit/audit.service.js';
+import { CONTENT_TYPE } from '../exports/writers.js';
 import { writeReport } from '../reports/export-writer.js';
 import { PanelAdminService } from './panel-admin.service.js';
 import { MemberTagStore } from './member-tags.js';
@@ -76,9 +86,13 @@ export class MemberBulkController {
       }
       try {
         if (body.action === 'segment') {
-          const r = await this.panel.call<{ before: Record<string, unknown>; after: Record<string, unknown> }>(
-            brand, p.id, 'POST', R.memberSegment(id), undefined, { category: body.category, reason: body.reason },
-          );
+          const r = await this.panel.call<{
+            before: Record<string, unknown>;
+            after: Record<string, unknown>;
+          }>(brand, p.id, 'POST', R.memberSegment(id), undefined, {
+            category: body.category,
+            reason: body.reason,
+          });
           await this.audit.record({
             ...AuditService.fromRequest(req),
             action: 'members.segment.change',
@@ -133,7 +147,9 @@ export class MemberBulkController {
     let rows: Row[] = [];
     let truncated = false;
     if (body.ids) {
-      rows = (await Promise.all([...new Set(body.ids)].map((id) => this.listRow(p, brand, id)))).filter((r): r is Row => !!r);
+      rows = (await Promise.all([...new Set(body.ids)].map((id) => this.listRow(p, brand, id)))).filter(
+        (r): r is Row => !!r,
+      );
     } else {
       const parsed = MemberSearch.safeParse({ ...(body.filters ?? {}), page: 1 });
       if (!parsed.success) throw new BadRequestException('These filters cannot be exported');
@@ -144,12 +160,18 @@ export class MemberBulkController {
       } else {
         const sort = q.sort === 'age' ? { sort: 'born', dir: q.dir === 'asc' ? 'desc' : 'asc' } : {};
         for (let page = 1; rows.length < MAX_EXPORT; page++) {
-          const d = await this.panel.call<{ items: Row[]; total: number; pageSize: number }>(brand, p.id, 'GET', R.members, {
-            ...q,
-            ...sort,
-            page,
-            ...(teens ? {} : { noTeens: 1 }),
-          });
+          const d = await this.panel.call<{ items: Row[]; total: number; pageSize: number }>(
+            brand,
+            p.id,
+            'GET',
+            R.members,
+            {
+              ...q,
+              ...sort,
+              page,
+              ...(teens ? {} : { noTeens: 1 }),
+            },
+          );
           rows.push(...d.items);
           if (d.items.length < d.pageSize || page * d.pageSize >= d.total) break;
         }
@@ -158,7 +180,10 @@ export class MemberBulkController {
       }
     }
     if (!teens) rows = rows.filter((r) => r.segment !== 'teen');
-    const tagsOf = await this.tags.forMembers(brand, rows.map((r) => r.id));
+    const tagsOf = await this.tags.forMembers(
+      brand,
+      rows.map((r) => r.id),
+    );
     const mode = this.tags.mode();
     const report: ReportResult = {
       key: 'members' as ReportResult['key'],
@@ -211,7 +236,9 @@ export class MemberBulkController {
       }),
       notes: [
         'E-mail and phone are masked. Full values are never exported from this screen.',
-        ...(truncated ? [`Only the first ${MAX_EXPORT} members are in this file. Narrow the filters for the rest.`] : []),
+        ...(truncated
+          ? [`Only the first ${MAX_EXPORT} members are in this file. Narrow the filters for the rest.`]
+          : []),
         ...(!teens ? ['Teens are left out: your role has no teen access on this brand.'] : []),
       ],
     };
@@ -233,12 +260,7 @@ export class MemberBulkController {
     const name = `madp-members-${brand}${mode === 'demo' ? '-DEMO' : ''}-${report.generatedAt.slice(0, 10)}.${body.format}`;
     res.setHeader('content-disposition', `attachment; filename="${name}"`);
     res.setHeader('cache-control', 'no-store');
-    if (body.format === 'csv') {
-      res.setHeader('content-type', 'text/csv; charset=utf-8');
-      res.send(await writeReport(report, brand, 'csv'));
-    } else {
-      res.setHeader('content-type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-      res.send(await writeReport(report, brand, 'xlsx'));
-    }
+    res.setHeader('content-type', CONTENT_TYPE[body.format]);
+    res.send(await writeReport(report, brand, body.format));
   }
 }
