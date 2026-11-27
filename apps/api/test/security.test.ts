@@ -33,6 +33,9 @@ const SESSION_ONLY = new Set([
   // The active panels, for the brand switcher (archived ones need connectors.read).
   'GET /panels',
   'GET /audience-segments',
+  // Upload preview: turns the admin's own file into rows or blocks and writes nothing. Saving goes through each
+  // screen's own permissioned, audited route (files.controller.ts).
+  'POST /files/parse',
 ]);
 /**
  * Signed-in only, with the permission checked in the handler per brand (brands.controller.ts; panel connections need

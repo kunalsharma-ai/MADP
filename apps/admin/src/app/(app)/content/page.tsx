@@ -5,6 +5,7 @@ import { withPanel } from '@/lib/panel';
 import { Badge, Card, CardHeader, EmptyState, PageHeader, Table, fmtDate } from '@/components/ui';
 import { NewPage } from './content-forms';
 import { KEY_LABEL, type PageSummary } from './shared';
+import { DownloadMenu } from '@/components/files';
 
 export const metadata: Metadata = { title: 'Site & legal pages' };
 
@@ -25,9 +26,40 @@ export default async function ContentPagesPage() {
           <div className="grid gap-4">
             <NewPage missingLegal={missing} />
             <Card>
-              <CardHeader title={`${rows.length} pages on ${brand.toUpperCase()}`} hint="Legal pages first." />
+              <CardHeader
+                title={`${rows.length} pages on ${brand.toUpperCase()}`}
+                hint="Legal pages first. To download one page as Word or PDF, open it."
+                action={
+                  <DownloadMenu
+                    screen="content"
+                    title="Site and legal pages"
+                    columns={[
+                      { key: 'title', label: 'Page' },
+                      { key: 'key', label: 'Key' },
+                      { key: 'kind', label: 'Kind' },
+                      { key: 'lang', label: 'Language' },
+                      { key: 'live', label: 'Live version' },
+                      { key: 'published', label: 'Published', type: 'date' },
+                      { key: 'draft', label: 'Draft' },
+                      { key: 'updated', label: 'Updated', type: 'date' },
+                    ]}
+                    rows={rows.map((p) => ({
+                      title: p.live?.title ?? KEY_LABEL[p.key] ?? p.key,
+                      key: p.key,
+                      kind: p.kind,
+                      lang: p.lang,
+                      live: p.live ? `v${p.live.version}` : 'Built-in text',
+                      published: p.live?.publishedAt ?? null,
+                      draft: p.draft ? (p.draft.state === 'review' ? 'In review' : 'Editing') : 'None',
+                      updated: p.updatedAt,
+                    }))}
+                  />
+                }
+              />
               {rows.length === 0 ? (
-                <EmptyState title="No pages yet">The site shows its built-in privacy, terms, GDPR and cookie text.</EmptyState>
+                <EmptyState title="No pages yet">
+                  The site shows its built-in privacy, terms, GDPR and cookie text.
+                </EmptyState>
               ) : (
                 <Table head={['Page', 'Language', 'Live', 'Draft', 'Updated']}>
                   {rows.map((p) => (

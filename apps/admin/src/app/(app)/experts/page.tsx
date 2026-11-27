@@ -7,6 +7,8 @@ import { ExpertDecision } from '@/components/expert-decision';
 
 export const metadata: Metadata = { title: 'Expert verification' };
 
+import { DownloadMenu } from '@/components/files';
+
 interface Item {
   id: string;
   status: 'requested' | 'verified' | 'declined';
@@ -139,6 +141,33 @@ export default async function ExpertsPage({
             <Card>
               <CardHeader
                 title={`${r.total} ${status === 'all' ? 'requests' : TABS.find(([k]) => k === status)![1].toLowerCase()}`}
+                action={
+                  <DownloadMenu
+                    screen="experts"
+                    title="Expert verification"
+                    subtitle={`Showing: ${TABS.find(([k]) => k === status)?.[1] ?? status}`}
+                    columns={[
+                      { key: 'name', label: 'Member' },
+                      { key: 'segment', label: 'Segment' },
+                      { key: 'job', label: 'Job title' },
+                      { key: 'domain', label: 'Work domain' },
+                      { key: 'linkedin', label: 'LinkedIn' },
+                      { key: 'status', label: 'Status' },
+                      { key: 'asked', label: 'Asked', type: 'date' },
+                      { key: 'decided', label: 'Decided', type: 'date' },
+                    ]}
+                    rows={r.items.map((x) => ({
+                      name: x.member.name,
+                      segment: x.member.segment,
+                      job: x.jobTitle,
+                      domain: x.workDomain,
+                      linkedin: x.linkedin,
+                      status: x.status,
+                      asked: x.requestedAt,
+                      decided: x.decidedAt,
+                    }))}
+                  />
+                }
               />
               {r.items.length === 0 ? (
                 <EmptyState title={status === 'requested' ? 'No one is waiting' : 'Nothing here'} />

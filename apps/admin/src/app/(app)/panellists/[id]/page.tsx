@@ -11,6 +11,7 @@ import { STATUS_TONE, statusLabel } from '../../participation/status';
 import { HELP, Titled } from '../../participation/help';
 import { api, ApiError } from '@/lib/api';
 import type { PanellistDetail } from '@/lib/types';
+import { DownloadMenu } from '@/components/files';
 import {
   Badge,
   Card,
@@ -63,18 +64,45 @@ export default async function PanellistPage({
   }
   const byPanel = Object.groupBy(d.answers, (a) => a.panel);
   type Timeline = {
-    items: { id: string; panel: string; state: string; reason: string | null; dryRun: boolean; plannedFor: string | null; occurredAt: string; campaign: string | null; automation?: string | null; step?: number | null }[];
-    fatigue: { panel: string; score: number | null; band: string; factors: { factor: string; value: number; points: number }[] }[];
+    items: {
+      id: string;
+      panel: string;
+      state: string;
+      reason: string | null;
+      dryRun: boolean;
+      plannedFor: string | null;
+      occurredAt: string;
+      campaign: string | null;
+      automation?: string | null;
+      step?: number | null;
+    }[];
+    fatigue: {
+      panel: string;
+      score: number | null;
+      band: string;
+      factors: { factor: string; value: number; points: number }[];
+    }[];
   };
   // Only roles with communications.read see the timeline; others get the profile without it.
-  const timeline = await api<Timeline>(`/communications/timeline/${encodeURIComponent(id)}?limit=50`).catch(() => null);
+  const timeline = await api<Timeline>(`/communications/timeline/${encodeURIComponent(id)}?limit=50`).catch(
+    () => null,
+  );
   type Wallets = {
     accounts: {
       panel: string;
       membershipStatus: string;
       balances: { approved: number; pending: number; reversed: number; redeemed: number };
       surveys: Record<string, number>;
-      lines: { id: number; bucket: string; points: number; entryKind: string; category: string; reference: string | null; sourceStatus: string | null; recordedAt: string }[];
+      lines: {
+        id: number;
+        bucket: string;
+        points: number;
+        entryKind: string;
+        category: string;
+        reference: string | null;
+        sourceStatus: string | null;
+        recordedAt: string;
+      }[];
     }[];
   };
   type Engagement = {
@@ -92,7 +120,16 @@ export default async function PanellistPage({
   };
   type History = {
     total: number;
-    items: { id: string; panel: string; surveySlug: string | null; status: string; points: number; loi: number | null; startedAt: string | null; endedAt: string | null }[];
+    items: {
+      id: string;
+      panel: string;
+      surveySlug: string | null;
+      status: string;
+      points: number;
+      loi: number | null;
+      startedAt: string | null;
+      endedAt: string | null;
+    }[];
   };
   // Engagement and survey history need loyalty.read too; others get the profile without them.
   const [engagement, history] = await Promise.all([
@@ -190,9 +227,38 @@ export default async function PanellistPage({
             title={<Titled title="Engagement & survey history" help={HELP.personEngagement} />}
             hint="Worked out from the surveys this person took on each panel. Each panel is scored on its own."
             action={
-              <Link href="/participation" className="text-[12px] font-semibold text-accent hover:underline">
-                All survey records
-              </Link>
+              <span className="flex flex-wrap items-center gap-3">
+                <Link href="/participation" className="text-[12px] font-semibold text-accent hover:underline">
+                  All survey records
+                </Link>
+                {history?.items.length ? (
+                  <DownloadMenu
+                    screen="panellist"
+                    title={`Survey history · person ${d.person.id.slice(0, 8)}`}
+                    subtitle={
+                      history.total > history.items.length
+                        ? `Latest ${history.items.length} of ${history.total}`
+                        : undefined
+                    }
+                    columns={[
+                      { key: 'when', label: 'When', type: 'date' },
+                      { key: 'panel', label: 'Panel' },
+                      { key: 'survey', label: 'Survey' },
+                      { key: 'result', label: 'Result' },
+                      { key: 'points', label: 'Points', type: 'number' },
+                      { key: 'loi', label: 'Length (min)', type: 'number' },
+                    ]}
+                    rows={history.items.map((r) => ({
+                      when: r.endedAt ?? r.startedAt,
+                      panel: r.panel.toUpperCase(),
+                      survey: r.surveySlug,
+                      result: statusLabel(r.status),
+                      points: r.points,
+                      loi: r.loi,
+                    }))}
+                  />
+                ) : null}
+              </span>
             }
           />
           <div className="grid gap-4 border-b border-border px-5 py-4 md:grid-cols-3">
@@ -200,7 +266,15 @@ export default async function PanellistPage({
               const [from, to] = PANEL_TONES[e.panel] ?? ['#818cf8', '#6366f1'];
               return (
                 <div key={e.panel} className="flex items-center gap-4 rounded-xl bg-surface-2/60 p-3">
-                  <Ring value={e.score} max={100} size={76} stroke={8} from={from} to={to} label={`Engagement score ${e.score} of 100`}>
+                  <Ring
+                    value={e.score}
+                    max={100}
+                    size={76}
+                    stroke={8}
+                    from={from}
+                    to={to}
+                    label={`Engagement score ${e.score} of 100`}
+                  >
                     <span className="text-center leading-tight">
                       <span className="block text-[17px] font-bold">{e.score}</span>
                       <span className="text-[9.5px] text-fg-3">of 100</span>
@@ -216,7 +290,8 @@ export default async function PanellistPage({
                       {e.completeRate !== null ? ` · ${Math.round(e.completeRate * 100)}% complete rate` : ''}
                     </p>
                     <p className="text-fg-3">
-                      {fmt(e.points)} points from surveys · last survey {e.lastActivity ? fmtDate(e.lastActivity) : 'never'}
+                      {fmt(e.points)} points from surveys · last survey{' '}
+                      {e.lastActivity ? fmtDate(e.lastActivity) : 'never'}
                     </p>
                   </div>
                 </div>
@@ -227,7 +302,9 @@ export default async function PanellistPage({
             <Table head={['When', 'Panel', 'Survey', 'Result', 'Points', 'Length']}>
               {history.items.map((r) => (
                 <tr key={r.id}>
-                  <td className="whitespace-nowrap px-5 py-2 text-fg-2">{fmtDate(r.endedAt ?? r.startedAt)}</td>
+                  <td className="whitespace-nowrap px-5 py-2 text-fg-2">
+                    {fmtDate(r.endedAt ?? r.startedAt)}
+                  </td>
                   <td className="px-5 py-2">
                     <PanelChip panel={r.panel} />
                   </td>
@@ -242,7 +319,9 @@ export default async function PanellistPage({
             </Table>
           ) : null}
           {history && history.total > history.items.length ? (
-            <p className="px-5 py-2 text-[12px] text-fg-3">Showing the latest {history.items.length} of {fmt(history.total)}.</p>
+            <p className="px-5 py-2 text-[12px] text-fg-3">
+              Showing the latest {history.items.length} of {fmt(history.total)}.
+            </p>
           ) : null}
         </Card>
       ) : null}
@@ -251,6 +330,26 @@ export default async function PanellistPage({
           <CardHeader
             title="Consent"
             hint="As recorded by each panel at the last sync. Guardian details stay on the panel."
+            action={
+              <DownloadMenu
+                screen="panellist"
+                title={`Consent · person ${d.person.id.slice(0, 8)}`}
+                columns={[
+                  { key: 'panel', label: 'Panel' },
+                  { key: 'purpose', label: 'Purpose' },
+                  { key: 'status', label: 'Status' },
+                  { key: 'version', label: 'Version' },
+                  { key: 'at', label: 'Recorded', type: 'date' },
+                ]}
+                rows={d.consents.map((c) => ({
+                  panel: c.panel.toUpperCase(),
+                  purpose: CONSENT_PURPOSE_LABELS[c.purpose] ?? c.purpose,
+                  status: c.status,
+                  version: c.version,
+                  at: c.capturedAt,
+                }))}
+              />
+            }
           />
           <Table head={['Panel', 'Purpose', 'Status', 'Version', 'Recorded']}>
             {d.consents.map((c) => (
@@ -275,12 +374,20 @@ export default async function PanellistPage({
           hint="As received from each panel, with question version and source time"
         />
         {d.hiddenSensitiveAnswers > 0 && d.access.healthPurposeRequired ? (
-          <form method="get" className="mx-5 mt-4 flex flex-wrap items-center gap-2 rounded-lg bg-surface-2 px-3 py-2 text-[13px] text-fg-2">
+          <form
+            method="get"
+            className="mx-5 mt-4 flex flex-wrap items-center gap-2 rounded-lg bg-surface-2 px-3 py-2 text-[13px] text-fg-2"
+          >
             <span>
-              {d.hiddenSensitiveAnswers} health or special-category answers are hidden. Say why you need them; the
-              reason is kept in the audit log.
+              {d.hiddenSensitiveAnswers} health or special-category answers are hidden. Say why you need them;
+              the reason is kept in the audit log.
             </span>
-            <select name="purpose" required aria-label="Purpose" className="rounded-md border border-border bg-surface px-2 py-1">
+            <select
+              name="purpose"
+              required
+              aria-label="Purpose"
+              className="rounded-md border border-border bg-surface px-2 py-1"
+            >
               <option value="">Choose a purpose…</option>
               {HealthAccessPurpose.options.map((k) => (
                 <option key={k} value={k}>
@@ -288,7 +395,9 @@ export default async function PanellistPage({
                 </option>
               ))}
             </select>
-            <button className="rounded-md border border-border bg-surface px-2.5 py-1 font-medium">Show</button>
+            <button className="rounded-md border border-border bg-surface px-2.5 py-1 font-medium">
+              Show
+            </button>
           </form>
         ) : d.hiddenSensitiveAnswers > 0 ? (
           <p className="mx-5 mt-4 rounded-lg bg-surface-2 px-3 py-2 text-[13px] text-fg-2">
@@ -299,7 +408,8 @@ export default async function PanellistPage({
         ) : null}
         {d.access.purpose ? (
           <p className="mx-5 mt-4 text-[12px] text-fg-3">
-            Health answers shown for: {HEALTH_ACCESS_PURPOSE_LABELS[d.access.purpose as HealthAccessPurpose]}. This view is logged.
+            Health answers shown for: {HEALTH_ACCESS_PURPOSE_LABELS[d.access.purpose as HealthAccessPurpose]}.
+            This view is logged.
           </p>
         ) : null}
         {Object.entries(byPanel).map(([panel, answers]) => (
@@ -324,14 +434,22 @@ export default async function PanellistPage({
       </Card>
       {timeline ? (
         <Card className="mt-4">
-          <CardHeader title="Communication timeline" hint="Per panel. Dry-run lines show what a campaign would do; nothing was sent." />
+          <CardHeader
+            title="Communication timeline"
+            hint="Per panel. Dry-run lines show what a campaign would do; nothing was sent."
+          />
           {timeline.fatigue.length ? (
             <div className="flex flex-wrap gap-4 px-5 pt-4 text-[12px] text-fg-2">
               {timeline.fatigue.map((f) => (
                 <div key={f.panel}>
-                  <span className="font-medium">{panelShort(f.panel, panelList)} contact load: {f.band}</span>
+                  <span className="font-medium">
+                    {panelShort(f.panel, panelList)} contact load: {f.band}
+                  </span>
                   {f.score !== null ? ` (${f.score})` : ''}
-                  <span className="text-fg-3"> · {f.factors.map((x) => `${x.factor}: ${x.value}`).join(' · ')}</span>
+                  <span className="text-fg-3">
+                    {' '}
+                    · {f.factors.map((x) => `${x.factor}: ${x.value}`).join(' · ')}
+                  </span>
                 </div>
               ))}
             </div>
@@ -341,7 +459,12 @@ export default async function PanellistPage({
               {timeline.items.map((e) => (
                 <li key={e.id} className="flex flex-wrap items-center gap-2 px-5 py-2 text-[13px]">
                   <PanelChip panel={e.panel} />
-                  <span>{e.campaign ?? (e.automation ? `${e.automation}${e.step !== null && e.step !== undefined ? ` · day ${e.step}` : ''}` : 'Message')}</span>
+                  <span>
+                    {e.campaign ??
+                      (e.automation
+                        ? `${e.automation}${e.step !== null && e.step !== undefined ? ` · day ${e.step}` : ''}`
+                        : 'Message')}
+                  </span>
                   <Badge tone={e.state === 'suppressed' ? 'warn' : 'neutral'}>{e.state}</Badge>
                   {e.reason ? <span className="text-fg-3">{e.reason.replaceAll('_', ' ')}</span> : null}
                   {e.dryRun ? <Badge>dry run</Badge> : null}
@@ -358,7 +481,10 @@ export default async function PanellistPage({
       ) : null}
       {wallets?.accounts.length ? (
         <Card className="mt-4">
-          <CardHeader title="Reward wallets" hint="One per panel, mirrored read-only from the panel and never added together. Survey completes stay pending until the client approves them." />
+          <CardHeader
+            title="Reward wallets"
+            hint="One per panel, mirrored read-only from the panel and never added together. Survey completes stay pending until the client approves them."
+          />
           <ul className="divide-y divide-border">
             {wallets.accounts.map((a) => (
               <li key={a.panel} className="px-5 py-4 text-[13px]">
@@ -368,18 +494,30 @@ export default async function PanellistPage({
                     <span className="font-medium">{fmt(a.balances.approved)}</span> approved
                   </span>
                   <span className="text-fg-2">{fmt(a.balances.pending)} pending</span>
-                  {a.balances.reversed ? <span className="text-fg-3">{fmt(a.balances.reversed)} reversed</span> : null}
+                  {a.balances.reversed ? (
+                    <span className="text-fg-3">{fmt(a.balances.reversed)} reversed</span>
+                  ) : null}
                   <span className="text-fg-3">
-                    Surveys: {Object.entries(a.surveys).map(([k, n]) => `${k} ${n}`).join(', ') || 'none'}
+                    Surveys:{' '}
+                    {Object.entries(a.surveys)
+                      .map(([k, n]) => `${k} ${n}`)
+                      .join(', ') || 'none'}
                   </span>
-                  {a.membershipStatus !== 'active' ? <Badge tone="warn">membership {a.membershipStatus}</Badge> : null}
+                  {a.membershipStatus !== 'active' ? (
+                    <Badge tone="warn">membership {a.membershipStatus}</Badge>
+                  ) : null}
                 </div>
                 <ul className="mt-2 space-y-0.5 text-[12px] text-fg-2">
                   {a.lines.slice(0, 8).map((l) => (
                     <li key={l.id} className="flex flex-wrap gap-2">
-                      <span className="w-14 text-right font-mono">{l.points > 0 ? `+${l.points}` : l.points}</span>
+                      <span className="w-14 text-right font-mono">
+                        {l.points > 0 ? `+${l.points}` : l.points}
+                      </span>
                       <span className="w-20">{l.bucket}</span>
-                      <span>{l.category}{l.reference ? ` · ${l.reference}` : ''}</span>
+                      <span>
+                        {l.category}
+                        {l.reference ? ` · ${l.reference}` : ''}
+                      </span>
                       {l.entryKind === 'approval' ? <Badge tone="teal">client approval</Badge> : null}
                       <span className="ml-auto text-fg-3">{fmtDate(l.recordedAt)}</span>
                     </li>

@@ -8,7 +8,8 @@ import { ZodPipe } from '../common/zod.pipe.js';
 import { AuditService } from '../audit/audit.service.js';
 import { AudienceService } from '../audience/audience.service.js';
 import { ReportsService } from './reports.service.js';
-import { toCsv, toXlsx } from './export-writer.js';
+import { writeReport } from './export-writer.js';
+import { CONTENT_TYPE } from '../exports/writers.js';
 import { PanelDirectory } from '../panels/panel-directory.js';
 
 const key = (k: string) => {
@@ -98,13 +99,8 @@ export class ReportsController {
     const name = `madp-${rk}-${brand}${r.dataMode === 'demo' ? '-DEMO' : ''}-${r.generatedAt.slice(0, 10)}.${e.format}`;
     res.setHeader('content-disposition', `attachment; filename="${name}"`);
     res.setHeader('cache-control', 'no-store');
-    if (e.format === 'csv') {
-      res.setHeader('content-type', 'text/csv; charset=utf-8');
-      res.send(toCsv(r));
-    } else {
-      res.setHeader('content-type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-      res.send(await toXlsx(r, brand));
-    }
+    res.setHeader('content-type', CONTENT_TYPE[e.format]);
+    res.send(await writeReport(r, brand, e.format));
   }
 
   /** Permissions held in the selected brand (every brand for `all`). */

@@ -29,6 +29,8 @@ import {
 import { STATUS_LABEL, STATUS_TONE, statusLabel } from './status';
 import { HELP, Titled } from './help';
 import { TopicInfo } from '@/components/screen-info';
+import { DownloadMenu } from '@/components/files';
+import { scopeText } from '@/lib/export-scope';
 
 export const metadata: Metadata = { title: 'Survey participation' };
 
@@ -86,7 +88,8 @@ export default async function ParticipationPage({
     return i < 0 ? 99 : i;
   };
   const totals: Record<string, number> = {};
-  for (const p of sum.panels) for (const [k, v] of Object.entries(p.byStatus)) totals[k] = (totals[k] ?? 0) + v;
+  for (const p of sum.panels)
+    for (const [k, v] of Object.entries(p.byStatus)) totals[k] = (totals[k] ?? 0) + v;
   const all = Object.values(totals).reduce((a, b) => a + b, 0);
   const tabs = [
     { key: '', label: 'All', count: all },
@@ -118,42 +121,68 @@ export default async function ParticipationPage({
           [...sum.panels]
             .sort((a, b) => order(a.panel) - order(b.panel))
             .map((p) => {
-            const [from, to] = PANEL_TONES[p.panel] ?? ['#818cf8', '#6366f1'];
-            const rate = p.completeRate === null ? null : Math.round(p.completeRate * 100);
-            return (
-              <Card key={p.panel} className="p-5">
-                <div className="flex items-center gap-2.5">
-                  <BrandLogo panel={p.panel} size={30} />
-                  <h2 className="text-[15px] font-bold text-fg">
-                    <Titled title={panelName(p.panel, panelList)} help={HELP.panelCard} />
-                  </h2>
-                </div>
-                <div className="mt-4 flex items-center gap-5">
-                  <Ring value={rate ?? 0} max={100} size={96} stroke={10} from={from} to={to} label={`Complete rate ${rate ?? 0}%`}>
-                    <span className="text-center leading-tight">
-                      <span className="block text-[18px] font-bold">{rate === null ? '—' : `${rate}%`}</span>
-                      <span className="text-[10px] text-fg-3">complete</span>
-                    </span>
-                  </Ring>
-                  <ul className="grid flex-1 grid-cols-2 gap-x-3 gap-y-2 text-[12px]">
-                    <Tile icon={CheckCircle2} tone="text-teal" label="Completes" value={p.byStatus.complete ?? 0} />
-                    <Tile icon={XCircle} tone="text-danger" label="Terminates" value={p.byStatus.terminate ?? 0} />
-                    <Tile icon={Users} tone="text-accent" label="Members" value={p.members} />
-                    <Tile icon={Coins} tone="text-warn" label="Points given" value={p.points} />
-                  </ul>
-                </div>
-                <p className="mt-3 text-[12px] text-fg-3">
-                  {fmt(p.activeLast30Days)} {p.activeLast30Days === 1 ? 'member' : 'members'} took a survey in the last 30 days.
-                </p>
-              </Card>
-            );
-          })
+              const [from, to] = PANEL_TONES[p.panel] ?? ['#818cf8', '#6366f1'];
+              const rate = p.completeRate === null ? null : Math.round(p.completeRate * 100);
+              return (
+                <Card key={p.panel} className="p-5">
+                  <div className="flex items-center gap-2.5">
+                    <BrandLogo panel={p.panel} size={30} />
+                    <h2 className="text-[15px] font-bold text-fg">
+                      <Titled title={panelName(p.panel, panelList)} help={HELP.panelCard} />
+                    </h2>
+                  </div>
+                  <div className="mt-4 flex items-center gap-5">
+                    <Ring
+                      value={rate ?? 0}
+                      max={100}
+                      size={96}
+                      stroke={10}
+                      from={from}
+                      to={to}
+                      label={`Complete rate ${rate ?? 0}%`}
+                    >
+                      <span className="text-center leading-tight">
+                        <span className="block text-[18px] font-bold">
+                          {rate === null ? '—' : `${rate}%`}
+                        </span>
+                        <span className="text-[10px] text-fg-3">complete</span>
+                      </span>
+                    </Ring>
+                    <ul className="grid flex-1 grid-cols-2 gap-x-3 gap-y-2 text-[12px]">
+                      <Tile
+                        icon={CheckCircle2}
+                        tone="text-teal"
+                        label="Completes"
+                        value={p.byStatus.complete ?? 0}
+                      />
+                      <Tile
+                        icon={XCircle}
+                        tone="text-danger"
+                        label="Terminates"
+                        value={p.byStatus.terminate ?? 0}
+                      />
+                      <Tile icon={Users} tone="text-accent" label="Members" value={p.members} />
+                      <Tile icon={Coins} tone="text-warn" label="Points given" value={p.points} />
+                    </ul>
+                  </div>
+                  <p className="mt-3 text-[12px] text-fg-3">
+                    {fmt(p.activeLast30Days)} {p.activeLast30Days === 1 ? 'member' : 'members'} took a survey
+                    in the last 30 days.
+                  </p>
+                </Card>
+              );
+            })
         )}
       </div>
 
       <div className="mb-4 flex flex-wrap items-center gap-3">
         <StatusTabs path="/participation" current={status ?? ''} params={{ panel, survey }} tabs={tabs} />
-        <PanelPills path="/participation" current={panel ?? ''} params={{ status, survey }} panels={panelList} />
+        <PanelPills
+          path="/participation"
+          current={panel ?? ''}
+          params={{ status, survey }}
+          panels={panelList}
+        />
         <form method="get" className="flex items-center gap-2">
           {panel ? <input type="hidden" name="panel" value={panel} /> : null}
           {status ? <input type="hidden" name="status" value={status} /> : null}
@@ -172,19 +201,61 @@ export default async function ParticipationPage({
 
       <div className="grid gap-4 xl:grid-cols-[1fr_320px]">
         <Card>
-          <CardHeader title={<Titled title="Survey records" help={HELP.records} />} hint={`${fmt(list.total)} records, newest first`} />
+          <CardHeader
+            title={<Titled title="Survey records" help={HELP.records} />}
+            hint={`${fmt(list.total)} records, newest first`}
+            action={
+              <DownloadMenu
+                screen="participation"
+                title="Survey records"
+                subtitle={scopeText({
+                  panel: panel?.toUpperCase(),
+                  result: status ? statusLabel(status) : undefined,
+                  survey,
+                  page: page > 1 ? String(page) : undefined,
+                })}
+                columns={[
+                  { key: 'when', label: 'When', type: 'date' },
+                  { key: 'panel', label: 'Panel' },
+                  { key: 'member', label: 'Member ref' },
+                  { key: 'survey', label: 'Survey' },
+                  { key: 'result', label: 'Result' },
+                  { key: 'points', label: 'Points', type: 'number' },
+                  { key: 'loi', label: 'Length (min)', type: 'number' },
+                  { key: 'started', label: 'Started', type: 'date' },
+                  { key: 'ended', label: 'Ended', type: 'date' },
+                ]}
+                rows={list.items.map((r) => ({
+                  when: r.endedAt ?? r.startedAt,
+                  panel: r.panel.toUpperCase(),
+                  member: r.memberRef ?? r.personId,
+                  survey: r.surveySlug,
+                  result: statusLabel(r.status),
+                  points: r.points,
+                  loi: r.loi,
+                  started: r.startedAt,
+                  ended: r.endedAt,
+                }))}
+              />
+            }
+          />
           {list.items.length === 0 ? (
             <EmptyState title="Nothing matches">Try another panel, result or survey name.</EmptyState>
           ) : (
             <Table head={['When', 'Panel', 'Member', 'Survey', 'Result', 'Points', 'Length']}>
               {list.items.map((r) => (
                 <tr key={r.id}>
-                  <td className="whitespace-nowrap px-5 py-2.5 text-fg-2">{fmtDate(r.endedAt ?? r.startedAt)}</td>
+                  <td className="whitespace-nowrap px-5 py-2.5 text-fg-2">
+                    {fmtDate(r.endedAt ?? r.startedAt)}
+                  </td>
                   <td className="px-5 py-2.5">
                     <PanelChip panel={r.panel} />
                   </td>
                   <td className="px-5 py-2.5">
-                    <Link href={`/panellists/${r.personId}`} className="whitespace-nowrap font-mono text-[12px] text-accent hover:underline">
+                    <Link
+                      href={`/panellists/${r.personId}`}
+                      className="whitespace-nowrap font-mono text-[12px] text-accent hover:underline"
+                    >
                       {r.memberRef ?? r.personId.slice(0, 8)}
                     </Link>
                   </td>
@@ -193,7 +264,9 @@ export default async function ParticipationPage({
                     <Badge tone={STATUS_TONE[r.status] ?? 'neutral'}>{statusLabel(r.status)}</Badge>
                   </td>
                   <td className="num px-5 py-2.5">{r.points ? `+${fmt(r.points)}` : '0'}</td>
-                  <td className="num whitespace-nowrap px-5 py-2.5 text-fg-2">{r.loi ? `${r.loi} min` : '—'}</td>
+                  <td className="num whitespace-nowrap px-5 py-2.5 text-fg-2">
+                    {r.loi ? `${r.loi} min` : '—'}
+                  </td>
                 </tr>
               ))}
             </Table>
@@ -208,7 +281,10 @@ export default async function ParticipationPage({
         </Card>
         <div className="grid content-start gap-4">
           <Card>
-            <CardHeader title={<Titled title="Most taken surveys" help={HELP.topSurveys} align="right" />} hint="Attempts, for the filters above" />
+            <CardHeader
+              title={<Titled title="Most taken surveys" help={HELP.topSurveys} align="right" />}
+              hint="Attempts, for the filters above"
+            />
             <BarList
               rows={sum.topSurveys.map((t) => ({
                 key: `${t.panel}:${t.surveySlug}`,
@@ -229,7 +305,9 @@ export default async function ParticipationPage({
             <p className="mt-1 text-[30px] font-bold leading-none text-fg">
               <CountUp value={all} />
             </p>
-            <p className="mt-1 text-[12px] text-fg-2">survey records in total. Each panel keeps its own points.</p>
+            <p className="mt-1 text-[12px] text-fg-2">
+              survey records in total. Each panel keeps its own points.
+            </p>
           </Card>
         </div>
       </div>
@@ -237,7 +315,17 @@ export default async function ParticipationPage({
   );
 }
 
-function Tile({ icon: Icon, tone, label, value }: { icon: typeof Users; tone: string; label: string; value: number }) {
+function Tile({
+  icon: Icon,
+  tone,
+  label,
+  value,
+}: {
+  icon: typeof Users;
+  tone: string;
+  label: string;
+  value: number;
+}) {
   return (
     <li className="flex items-center gap-2">
       <Icon className={`size-4 shrink-0 ${tone}`} aria-hidden />

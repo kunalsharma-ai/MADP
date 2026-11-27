@@ -7,6 +7,8 @@ import { CatalogueForm, OfferForm } from './forms';
 
 export const metadata: Metadata = { title: 'Rewards' };
 
+import { DownloadMenu } from '@/components/files';
+
 interface Redemption {
   id: string;
   reference: string;
@@ -127,6 +129,38 @@ export default async function RewardsPage() {
                     ? 'Teen requests are hidden: they need teen access.'
                     : 'Oldest first. Payout addresses are always masked.'
                 }
+                action={
+                  <DownloadMenu
+                    screen="rewards"
+                    title="Redemption queue"
+                    columns={[
+                      { key: 'reference', label: 'Request' },
+                      { key: 'name', label: 'Member' },
+                      { key: 'email', label: 'E-mail' },
+                      { key: 'teen', label: 'Teen' },
+                      { key: 'reward', label: 'Reward' },
+                      { key: 'kind', label: 'Kind' },
+                      { key: 'points', label: 'Points', type: 'number' },
+                      { key: 'method', label: 'Payout method' },
+                      { key: 'to', label: 'Payout to (masked)' },
+                      { key: 'status', label: 'Status' },
+                      { key: 'asked', label: 'Asked', type: 'date' },
+                    ]}
+                    rows={q.items.map((r) => ({
+                      reference: r.reference,
+                      name: r.member?.name ?? '',
+                      email: r.member?.email ?? '',
+                      teen: r.member?.teen ?? null,
+                      reward: r.item.title ?? '',
+                      kind: r.item.kind ?? '',
+                      points: r.points,
+                      method: r.payout.method,
+                      to: r.payout.masked,
+                      status: r.status,
+                      asked: r.createdAt,
+                    }))}
+                  />
+                }
               />
               {q.items.length === 0 ? (
                 <EmptyState title="Nothing waiting">
@@ -167,6 +201,30 @@ export default async function RewardsPage() {
               <CardHeader
                 title={`Catalogue (${fmt(items.length)})`}
                 hint="While the catalogue is empty, members see the placeholder list from the engagement settings."
+                action={
+                  <DownloadMenu
+                    screen="rewards"
+                    title="Reward catalogue"
+                    columns={[
+                      { key: 'title', label: 'Reward' },
+                      { key: 'key', label: 'Key' },
+                      { key: 'kind', label: 'Kind' },
+                      { key: 'points', label: 'Points', type: 'number' },
+                      { key: 'value', label: 'Value', type: 'money' },
+                      { key: 'audience', label: 'For' },
+                      { key: 'active', label: 'Active' },
+                    ]}
+                    rows={items.map((i) => ({
+                      title: i.title,
+                      key: i.key,
+                      kind: i.kind,
+                      points: i.points,
+                      value: i.value,
+                      audience: i.audience.join(', '),
+                      active: i.active,
+                    }))}
+                  />
+                }
               />
               {items.length === 0 ? (
                 <EmptyState title="No rewards yet" />
@@ -198,6 +256,32 @@ export default async function RewardsPage() {
                   draws.enabled
                     ? 'The draw switch is on for this brand.'
                     : 'The draw switch is off: members see no draw and a draw can’t be run. It stays off until legal clears each country.'
+                }
+                action={
+                  <DownloadMenu
+                    screen="rewards"
+                    title="Prize draws"
+                    columns={[
+                      { key: 'month', label: 'Month' },
+                      { key: 'title', label: 'Draw' },
+                      { key: 'countries', label: 'Countries' },
+                      { key: 'ticket', label: 'Points per ticket', type: 'number' },
+                      { key: 'members', label: 'Members', type: 'number' },
+                      { key: 'tickets', label: 'Tickets', type: 'number' },
+                      { key: 'status', label: 'Status' },
+                      { key: 'closes', label: 'Closes', type: 'date' },
+                    ]}
+                    rows={draws.items.map((d) => ({
+                      month: d.month,
+                      title: d.title,
+                      countries: d.countries.join(', '),
+                      ticket: d.ticketPoints,
+                      members: d.members,
+                      tickets: d.tickets,
+                      status: d.status,
+                      closes: d.closesAt,
+                    }))}
+                  />
                 }
               />
               {draws.items.length === 0 ? (
@@ -246,7 +330,29 @@ export default async function RewardsPage() {
             </Card>
             <OfferForm />
             <Card>
-              <CardHeader title="Bonus offers" />
+              <CardHeader
+                title="Bonus offers"
+                action={
+                  <DownloadMenu
+                    screen="rewards"
+                    title="Bonus offers"
+                    columns={[
+                      { key: 'title', label: 'Offer' },
+                      { key: 'multiplier', label: 'Multiplier', type: 'number' },
+                      { key: 'starts', label: 'Starts', type: 'date' },
+                      { key: 'ends', label: 'Ends', type: 'date' },
+                      { key: 'active', label: 'Active' },
+                    ]}
+                    rows={offers.map((o) => ({
+                      title: o.title,
+                      multiplier: o.multiplier,
+                      starts: o.startsAt,
+                      ends: o.endsAt,
+                      active: o.active,
+                    }))}
+                  />
+                }
+              />
               {offers.length === 0 ? (
                 <EmptyState title="No offers" />
               ) : (

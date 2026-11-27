@@ -2,12 +2,30 @@ import { panelName, panelShort } from '@/lib/panel-names';
 import { getPanels } from '@/lib/panels';
 import Link from 'next/link';
 import type { Metadata } from 'next';
-import { brandKitGaps, SUPPRESSION_REASONS, type BrandKit, type DataMode, type PanelCode } from '@madp/contracts';
+import {
+  brandKitGaps,
+  SUPPRESSION_REASONS,
+  type BrandKit,
+  type DataMode,
+  type PanelCode,
+} from '@madp/contracts';
 import { api, currentBrand } from '@/lib/api';
-import { Badge, Card, CardHeader, DataModeBadge, DemoBanner, EmptyState, PageHeader, PanelChip, fmt, fmtDate } from '@/components/ui';
+import {
+  Badge,
+  Card,
+  CardHeader,
+  DataModeBadge,
+  DemoBanner,
+  EmptyState,
+  PageHeader,
+  PanelChip,
+  fmt,
+  fmtDate,
+} from '@/components/ui';
 import { StepGuide } from '@/components/step-guide';
 import { Megaphone, PenLine, PlayCircle, UserCheck } from 'lucide-react';
 import { CampaignButtons, NewCampaign, NewTemplate, NewVersion, VersionButtons } from './studio-forms';
+import { DownloadMenu } from '@/components/files';
 
 export const metadata: Metadata = { title: 'Engagement studio' };
 
@@ -30,7 +48,14 @@ interface Template {
 }
 interface Run {
   startedAt: string;
-  counts: { audience: number; planned: number; suppressed: number; delayedByQuietHours: number; reasons: Record<string, number>; consentRequired: string | null } | null;
+  counts: {
+    audience: number;
+    planned: number;
+    suppressed: number;
+    delayedByQuietHours: number;
+    reasons: Record<string, number>;
+    consentRequired: string | null;
+  } | null;
 }
 interface Campaign {
   id: string;
@@ -60,7 +85,11 @@ const TONE: Record<string, 'teal' | 'warn' | 'danger' | 'neutral'> = {
   paused: 'warn',
 };
 
-export default async function CommunicationsPage({ searchParams }: { searchParams: Promise<{ panel?: string }> }) {
+export default async function CommunicationsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ panel?: string }>;
+}) {
   const panelList = await getPanels();
   const sp = await searchParams;
   // The brand switcher narrows the studio to one panel, like every other screen; ?panel= still picks one under "All".
@@ -73,7 +102,9 @@ export default async function CommunicationsPage({ searchParams }: { searchParam
     api<{ dataMode: DataMode; sendingEnabled: boolean; items: Campaign[] }>(`/communications/campaigns${qs}`),
   ]);
   const approved = tpl.items.flatMap((t) =>
-    t.versions.filter((v) => v.status === 'approved').map((v) => ({ id: v.id, label: `${t.panel.toUpperCase()} · ${t.name} v${v.version}` })),
+    t.versions
+      .filter((v) => v.status === 'approved')
+      .map((v) => ({ id: v.id, label: `${t.panel.toUpperCase()} · ${t.name} v${v.version}` })),
   );
   return (
     <>
@@ -91,27 +122,56 @@ export default async function CommunicationsPage({ searchParams }: { searchParam
       <DemoBanner mode={camp.dataMode} />
       <StepGuide
         steps={[
-          { icon: PenLine, title: 'Write a template', body: 'Pick a panel and write the message in its own brand.', done: tpl.items.length > 0 },
-          { icon: UserCheck, title: 'Get it approved', body: 'A second person checks and approves each version.', done: approved.length > 0 },
-          { icon: Megaphone, title: 'Make a campaign', body: 'Choose an approved template and who should get it.', done: camp.items.length > 0 },
-          { icon: PlayCircle, title: 'Try a dry run', body: 'See who would get it and why others would not. Nothing is sent.', done: camp.items.some((c) => c.lastRun) },
+          {
+            icon: PenLine,
+            title: 'Write a template',
+            body: 'Pick a panel and write the message in its own brand.',
+            done: tpl.items.length > 0,
+          },
+          {
+            icon: UserCheck,
+            title: 'Get it approved',
+            body: 'A second person checks and approves each version.',
+            done: approved.length > 0,
+          },
+          {
+            icon: Megaphone,
+            title: 'Make a campaign',
+            body: 'Choose an approved template and who should get it.',
+            done: camp.items.length > 0,
+          },
+          {
+            icon: PlayCircle,
+            title: 'Try a dry run',
+            body: 'See who would get it and why others would not. Nothing is sent.',
+            done: camp.items.some((c) => c.lastRun),
+          },
         ]}
       />
       <form method="get" className="mb-4 flex items-center gap-2">
-        <select name="panel" defaultValue={panel ?? ''} aria-label="Panel" className="rounded-xl border border-border bg-surface px-3 py-2 text-sm">
+        <select
+          name="panel"
+          defaultValue={panel ?? ''}
+          aria-label="Panel"
+          className="rounded-xl border border-border bg-surface px-3 py-2 text-sm"
+        >
           <option value="">All panels</option>
-          {panelList.map((x) => x.code).map((p) => (
-            <option key={p} value={p}>
-              {panelName(p, panelList)}
-            </option>
-          ))}
+          {panelList
+            .map((x) => x.code)
+            .map((p) => (
+              <option key={p} value={p}>
+                {panelName(p, panelList)}
+              </option>
+            ))}
         </select>
         <button className="rounded-xl border border-border bg-surface px-3 py-2 text-sm">Show</button>
       </form>
       {panelList.map((x) => x.code).some((p) => brandKitGaps(tpl.brandKits[p]).length) ? (
         <p className="mb-4 rounded-xl border border-warn/30 bg-warn-soft px-3 py-2 text-[13px] text-fg-2">
           Still to set in Brands &amp; settings:{' '}
-          {panelList.map((x) => x.code).filter((p) => brandKitGaps(tpl.brandKits[p]).length)
+          {panelList
+            .map((x) => x.code)
+            .filter((p) => brandKitGaps(tpl.brandKits[p]).length)
             .map((p) => `${panelShort(p, panelList)} (${brandKitGaps(tpl.brandKits[p]).join(', ')})`)
             .join('; ')}
           . Previews show a placeholder until then. Nothing is sent from this screen.
@@ -119,7 +179,43 @@ export default async function CommunicationsPage({ searchParams }: { searchParam
       ) : null}
       <div className="grid gap-4 xl:grid-cols-2">
         <Card>
-          <CardHeader title="Templates" hint="Approved versions never change; edits make a new version" action={<NewTemplate />} />
+          <CardHeader
+            title="Templates"
+            hint="Approved versions never change; edits make a new version"
+            action={
+              <span className="flex flex-wrap items-center gap-2">
+                <DownloadMenu
+                  screen="automations"
+                  title="Studio templates"
+                  columns={[
+                    { key: 'panel', label: 'Panel' },
+                    { key: 'name', label: 'Template' },
+                    { key: 'key', label: 'Key' },
+                    { key: 'kind', label: 'Kind' },
+                    { key: 'version', label: 'Version', type: 'number' },
+                    { key: 'subject', label: 'Subject' },
+                    { key: 'status', label: 'Status' },
+                    { key: 'note', label: 'Review note' },
+                    { key: 'created', label: 'Created', type: 'date' },
+                  ]}
+                  rows={tpl.items.flatMap((t) =>
+                    t.versions.map((v) => ({
+                      panel: t.panel.toUpperCase(),
+                      name: t.name,
+                      key: t.key,
+                      kind: t.kind,
+                      version: v.version,
+                      subject: v.subject,
+                      status: v.status,
+                      note: v.reviewNote,
+                      created: v.createdAt,
+                    })),
+                  )}
+                />
+                <NewTemplate />
+              </span>
+            }
+          />
           {tpl.items.length === 0 ? (
             <EmptyState title="No templates yet">Create one for a panel to start.</EmptyState>
           ) : (
@@ -132,7 +228,10 @@ export default async function CommunicationsPage({ searchParams }: { searchParam
                     <span className="font-mono text-[11px] text-fg-3">{t.key}</span>
                     <Badge>{t.kind.replace('_', ' ')}</Badge>
                     {t.source ? (
-                      <Link href={`/communications/mailers/${t.source.pack}/${t.source.template}`} className="text-[12px] text-accent underline">
+                      <Link
+                        href={`/communications/mailers/${t.source.pack}/${t.source.template}`}
+                        className="text-[12px] text-accent underline"
+                      >
                         From the mailer library
                       </Link>
                     ) : null}
@@ -154,7 +253,43 @@ export default async function CommunicationsPage({ searchParams }: { searchParam
           )}
         </Card>
         <Card>
-          <CardHeader title="Campaigns" hint="Approved by a second person before any run" action={<NewCampaign versions={approved} />} />
+          <CardHeader
+            title="Campaigns"
+            hint="Approved by a second person before any run"
+            action={
+              <span className="flex flex-wrap items-center gap-2">
+                <DownloadMenu
+                  screen="automations"
+                  title="Campaigns"
+                  columns={[
+                    { key: 'panel', label: 'Panel' },
+                    { key: 'name', label: 'Campaign' },
+                    { key: 'kind', label: 'Kind' },
+                    { key: 'status', label: 'Status' },
+                    { key: 'lastRun', label: 'Last run', type: 'date' },
+                    { key: 'audience', label: 'Audience', type: 'number' },
+                    { key: 'planned', label: 'Would send', type: 'number' },
+                    { key: 'suppressed', label: 'Held back', type: 'number' },
+                    { key: 'quiet', label: 'Delayed by quiet hours', type: 'number' },
+                    { key: 'created', label: 'Created', type: 'date' },
+                  ]}
+                  rows={camp.items.map((c) => ({
+                    panel: c.panel.toUpperCase(),
+                    name: c.name,
+                    kind: c.kind,
+                    status: c.status,
+                    lastRun: c.lastRun?.startedAt ?? null,
+                    audience: c.lastRun?.counts?.audience ?? null,
+                    planned: c.lastRun?.counts?.planned ?? null,
+                    suppressed: c.lastRun?.counts?.suppressed ?? null,
+                    quiet: c.lastRun?.counts?.delayedByQuietHours ?? null,
+                    created: c.createdAt,
+                  }))}
+                />
+                <NewCampaign versions={approved} />
+              </span>
+            }
+          />
           {camp.items.length === 0 ? (
             <EmptyState title="No campaigns yet">A campaign needs an approved template version.</EmptyState>
           ) : (
@@ -173,9 +308,15 @@ export default async function CommunicationsPage({ searchParams }: { searchParam
                   {c.lastRun?.counts ? (
                     <div className="mt-2 text-[12px] text-fg-2">
                       <p>
-                        Last dry run {fmtDate(c.lastRun.startedAt)}: {fmt(c.lastRun.counts.planned)} of {fmt(c.lastRun.counts.audience)} would get it
-                        {c.lastRun.counts.delayedByQuietHours ? `, ${fmt(c.lastRun.counts.delayedByQuietHours)} held until after quiet hours` : ''}.
-                        {c.lastRun.counts.consentRequired ? ` Needs consent: ${c.lastRun.counts.consentRequired}.` : ''}
+                        Last dry run {fmtDate(c.lastRun.startedAt)}: {fmt(c.lastRun.counts.planned)} of{' '}
+                        {fmt(c.lastRun.counts.audience)} would get it
+                        {c.lastRun.counts.delayedByQuietHours
+                          ? `, ${fmt(c.lastRun.counts.delayedByQuietHours)} held until after quiet hours`
+                          : ''}
+                        .
+                        {c.lastRun.counts.consentRequired
+                          ? ` Needs consent: ${c.lastRun.counts.consentRequired}.`
+                          : ''}
                       </p>
                       <ul className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-fg-3">
                         {SUPPRESSION_REASONS.filter((r) => c.lastRun!.counts!.reasons[r]).map((r) => (

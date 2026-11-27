@@ -5,6 +5,7 @@ import { withPanel } from '@/lib/panel';
 import { Badge, Card, CardHeader, EmptyState, PageHeader, Table, btn, fmtDate } from '@/components/ui';
 import type { MemberRow } from '../shared';
 import { MergeGroup, UndoMerge } from './merge-tools';
+import { DownloadMenu } from '@/components/files';
 
 export const metadata: Metadata = { title: 'Duplicate members' };
 
@@ -51,6 +52,12 @@ export default async function DuplicatesPage({ searchParams }: { searchParams: P
         };
         const newer = by === 'ip' || by === 'device';
         const [found, history] = await Promise.all([
+          api<{
+            reason: string;
+            groups: number;
+            more: boolean;
+            items: { reason: string; members: MemberRow[] }[];
+          }>(`/panel/duplicates?by=${by}`),
           // a panel without the sign-up IP and device hashes yet (before MFR#104) rejects those two rules
           api<Found>(`/panel/duplicates?by=${by}`).catch((e) => {
             if (!newer) throw e;
@@ -97,6 +104,34 @@ export default async function DuplicatesPage({ searchParams }: { searchParams: P
               <CardHeader
                 title="Merges"
                 hint="Newest first. Undo puts every moved row back and reopens the duplicate."
+                action={
+                  <DownloadMenu
+                    screen="duplicates"
+                    title="Member merges"
+                    columns={[
+                      { key: 'at', label: 'When', type: 'date' },
+                      { key: 'keep', label: 'Kept member' },
+                      { key: 'dup', label: 'Closed member' },
+                      { key: 'moved', label: 'Rows moved', type: 'number' },
+                      { key: 'detail', label: 'What moved' },
+                      { key: 'reason', label: 'Reason' },
+                      { key: 'by', label: 'By' },
+                      { key: 'undone', label: 'Undone', type: 'date' },
+                    ]}
+                    rows={history.items.map((m) => ({
+                      at: m.createdAt,
+                      keep: m.keep,
+                      dup: m.duplicate,
+                      moved: Object.values(m.moved).reduce((a, b) => a + b, 0),
+                      detail: Object.entries(m.moved)
+                        .map(([k, v]) => `${k} ${v}`)
+                        .join(', '),
+                      reason: m.reason,
+                      by: m.actor,
+                      undone: m.undoneAt,
+                    }))}
+                  />
+                }
               />
               {history.items.length === 0 ? (
                 <EmptyState title="No merges yet" />

@@ -5,6 +5,8 @@ import { api } from '@/lib/api';
 import type { AuditRow } from '@/lib/types';
 import { Badge, Card, PageHeader, PanelChip, Table, btn, fmtDate, input } from '@/components/ui';
 import { VerifyChain } from './verify-chain';
+import { DownloadMenu } from '@/components/files';
+import { scopeText } from '@/lib/export-scope';
 
 export const metadata: Metadata = { title: 'Security audit' };
 
@@ -37,9 +39,43 @@ export default async function AuditPage({
         actions={
           <div className="flex gap-2">
             {canVerify ? <VerifyChain /> : null}
-            <a className={btn.secondary} href={`/audit/export?${exportQs}`}>
-              Export CSV
+            <a
+              className={btn.secondary}
+              href={`/audit/export?${exportQs}`}
+              title="Every matching entry, not only this page"
+            >
+              Full CSV
             </a>
+            <DownloadMenu
+              screen="audit"
+              title="Security audit"
+              subtitle={scopeText(sp)}
+              columns={[
+                { key: 'at', label: 'When (UTC)', type: 'date' },
+                { key: 'brand', label: 'Brand' },
+                { key: 'action', label: 'Action' },
+                { key: 'outcome', label: 'Outcome' },
+                { key: 'actor', label: 'Admin' },
+                { key: 'role', label: 'Role' },
+                { key: 'target', label: 'Target' },
+                { key: 'change', label: 'Change' },
+                { key: 'reason', label: 'Reason' },
+              ]}
+              rows={data.items.map((e) => ({
+                at: e.at,
+                brand: e.panel?.toUpperCase() ?? '',
+                action: e.action,
+                outcome: e.outcome,
+                actor: `${e.actorType}${e.actorId ? ` · ${e.actorId.slice(0, 8)}` : ''}`,
+                role: e.actorRole ?? '',
+                target: e.targetType ? `${e.targetType} · ${String(e.targetId ?? '')}` : '',
+                change:
+                  e.before != null || e.after != null
+                    ? `old ${JSON.stringify(e.before)} new ${JSON.stringify(e.after)}`
+                    : JSON.stringify(e.metadata),
+                reason: e.reason ?? '',
+              }))}
+            />
           </div>
         }
       />

@@ -15,6 +15,9 @@ import {
   input,
 } from '@/components/ui';
 
+import { DownloadMenu } from '@/components/files';
+import { scopeText } from '@/lib/export-scope';
+
 export const metadata: Metadata = { title: 'Ticket desk' };
 
 interface TicketRow {
@@ -111,6 +114,44 @@ export default async function TicketsPage({
             <Card>
               <CardHeader
                 title={`${fmt(d.total)} tickets`}
+                action={
+                  <DownloadMenu
+                    screen="tickets"
+                    title="Ticket desk"
+                    subtitle={scopeText({
+                      status: status ?? undefined,
+                      priority: sp.priority,
+                      search: sp.q,
+                      page: sp.page,
+                    })}
+                    columns={[
+                      { key: 'no', label: 'Ticket no.' },
+                      { key: 'subject', label: 'Subject' },
+                      { key: 'name', label: 'From' },
+                      { key: 'email', label: 'E-mail' },
+                      { key: 'segment', label: 'Segment' },
+                      { key: 'category', label: 'Category' },
+                      { key: 'priority', label: 'Priority' },
+                      { key: 'status', label: 'Status' },
+                      { key: 'assigned', label: 'Assigned' },
+                      { key: 'age', label: 'Age (hours)', type: 'number' },
+                      { key: 'opened', label: 'Opened', type: 'date' },
+                    ]}
+                    rows={d.items.map((t) => ({
+                      no: t.no,
+                      subject: t.subject,
+                      name: t.from.name,
+                      email: t.from.email,
+                      segment: t.member?.segment ?? '',
+                      category: t.category,
+                      priority: t.priority,
+                      status: t.status,
+                      assigned: t.assignedTo ?? '',
+                      age: t.ageHours,
+                      opened: t.createdAt,
+                    }))}
+                  />
+                }
                 hint={
                   d.teensHidden
                     ? 'Tickets from teens are hidden: your role has no teen access on this brand.'

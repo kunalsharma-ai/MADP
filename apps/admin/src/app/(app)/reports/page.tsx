@@ -5,8 +5,22 @@ import Link from 'next/link';
 import { type PanelCode, type ReportResult } from '@madp/contracts';
 import { api } from '@/lib/api';
 import { Country } from '@/components/country';
-import { Card, CardHeader, DataModeBadge, DemoBanner, EmptyState, PageHeader, PanelChip, Table, btn, fmt, fmtDate, input } from '@/components/ui';
+import {
+  Card,
+  CardHeader,
+  DataModeBadge,
+  DemoBanner,
+  EmptyState,
+  PageHeader,
+  PanelChip,
+  Table,
+  btn,
+  fmt,
+  fmtDate,
+  input,
+} from '@/components/ui';
 import { cn } from '@/lib/cn';
+import { LinkDownloads } from '@/components/files';
 
 export const metadata: Metadata = { title: 'Reports & exports' };
 
@@ -25,16 +39,27 @@ const DAY = /^\d{4}-\d{2}-\d{2}$/;
 
 function cell(v: string | number | null, type: string, key: string) {
   if (v === '') return <span className="text-fg-3">—</span>;
-  if (key === 'panel' && typeof v === 'string' && /^[a-z][a-z0-9_]{1,15}$/.test(v)) return <PanelChip panel={v as PanelCode} />;
+  if (key === 'panel' && typeof v === 'string' && /^[a-z][a-z0-9_]{1,15}$/.test(v))
+    return <PanelChip panel={v as PanelCode} />;
   if (key === 'country' && typeof v === 'string') return <Country code={v} />;
-  if (v === null) return <span className="text-fg-3" title="Suppressed: too few people">&lt; min</span>;
-  if (type === 'money' && typeof v === 'number') return v.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  if (v === null)
+    return (
+      <span className="text-fg-3" title="Suppressed: too few people">
+        &lt; min
+      </span>
+    );
+  if (type === 'money' && typeof v === 'number')
+    return v.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   if (type === 'number' && typeof v === 'number') return fmt(v);
   if (type === 'date' && typeof v === 'string') return fmtDate(v);
   return String(v);
 }
 
-export default async function ReportsPage({ searchParams }: { searchParams: Promise<{ key?: string; panel?: string; from?: string; to?: string }> }) {
+export default async function ReportsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ key?: string; panel?: string; from?: string; to?: string }>;
+}) {
   const panelList = await getPanels();
   const sp = await searchParams;
   const { reports } = await api<{ reports: CatalogueItem[] }>('/reports');
@@ -46,13 +71,14 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
   if (selected?.period && sp.to && DAY.test(sp.to)) params.set('to', sp.to);
   const r = selected ? await api<ReportResult>(`/reports/${selected.key}?${params}`) : null;
   const groups = [...new Set(visible.map((x) => x.group))];
-  const dl = (format: string) => `/reports/${selected!.key}/export?${new URLSearchParams({ ...Object.fromEntries(params), format })}`;
+  const dl = (format: string) =>
+    `/reports/${selected!.key}/export?${new URLSearchParams({ ...Object.fromEntries(params), format })}`;
   return (
     <>
       <PageHeader
         eyebrow="Overview"
         title="Reports & exports"
-        description="Every report is one table per panel, never added across panels. Downloads are CSV or Excel, carry the data mode on every row, and are recorded in the security audit."
+        description="Every report is one table per panel, never added across panels. Downloads are Excel, CSV, PDF or Word, carry the data mode on every row, and are recorded in the security audit."
         actions={r ? <DataModeBadge mode={r.dataMode} /> : null}
       />
       {r ? <DemoBanner mode={r.dataMode} /> : null}
@@ -76,7 +102,9 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
                         aria-current={x.key === selected.key ? 'page' : undefined}
                         className={cn(
                           'block rounded-md px-2 py-1.5 text-[13px]',
-                          x.key === selected.key ? 'bg-accent-soft font-medium text-accent' : 'text-fg-2 hover:bg-surface-2',
+                          x.key === selected.key
+                            ? 'bg-accent-soft font-medium text-accent'
+                            : 'text-fg-2 hover:bg-surface-2',
                         )}
                       >
                         {x.title}
@@ -93,16 +121,24 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
                 hint={selected.description}
                 action={
                   selected.canExport ? (
-                    <div className="flex gap-2">
-                      <a className={`${btn.secondary} whitespace-nowrap`} href={dl('csv')}>
-                        Download CSV
-                      </a>
-                      <a className={`${btn.secondary} whitespace-nowrap`} href={dl('xlsx')}>
-                        Download Excel
-                      </a>
-                    </div>
+                    <LinkDownloads
+                      title={selected.title}
+                      links={{ xlsx: dl('xlsx'), csv: dl('csv'), pdf: dl('pdf'), docx: dl('docx') }}
+                      help={{
+                        why: 'Share this report with your team or a client, or keep a copy for the month.',
+                        where:
+                          'The file holds the whole report for the panel and dates picked above, one row per panel, with DEMO or live printed on it. Every download is written to the Audit log.',
+                        how: [
+                          'Pick the panel and dates first.',
+                          'Press Download and pick Excel, CSV, PDF or Word.',
+                          'Excel and CSV are best for numbers; PDF and Word for sharing.',
+                        ],
+                      }}
+                    />
                   ) : (
-                    <span className="text-[12px] text-fg-3">Your role can view but not download this report.</span>
+                    <span className="text-[12px] text-fg-3">
+                      Your role can view but not download this report.
+                    </span>
                   )
                 }
               />
@@ -123,7 +159,12 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
                   <>
                     <label>
                       From
-                      <input type="date" name="from" defaultValue={r?.period?.from} className={`${input} w-40`} />
+                      <input
+                        type="date"
+                        name="from"
+                        defaultValue={r?.period?.from}
+                        className={`${input} w-40`}
+                      />
                     </label>
                     <label>
                       To
@@ -138,13 +179,18 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
                 </span>
               </form>
               {r!.rows.length === 0 ? (
-                <EmptyState title="Nothing in this report yet">Try another panel or a longer period.</EmptyState>
+                <EmptyState title="Nothing in this report yet">
+                  Try another panel or a longer period.
+                </EmptyState>
               ) : (
                 <Table head={r!.columns.map((c) => c.label)}>
                   {r!.rows.map((row, i) => (
                     <tr key={i}>
                       {r!.columns.map((c) => (
-                        <td key={c.key} className={cn('px-5 py-1.5', c.type !== 'text' && 'font-mono text-[12px]')}>
+                        <td
+                          key={c.key}
+                          className={cn('px-5 py-1.5', c.type !== 'text' && 'font-mono text-[12px]')}
+                        >
                           {cell(row[c.key] ?? null, c.type, c.key)}
                         </td>
                       ))}

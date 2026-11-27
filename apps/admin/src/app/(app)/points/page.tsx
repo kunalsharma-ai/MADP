@@ -7,6 +7,8 @@ import { DecideButtons, ReleaseHold } from './points-actions';
 
 export const metadata: Metadata = { title: 'Points approvals' };
 
+import { DownloadMenu } from '@/components/files';
+
 interface Adjustment {
   id: string;
   member: string;
@@ -56,6 +58,37 @@ export default async function PointsPage({
               <CardHeader
                 title={`${fmt(rows.length)} ${status === 'all' ? '' : `${status} `}adjustment${rows.length === 1 ? '' : 's'}`}
                 hint="You can't decide an adjustment you asked for."
+                action={
+                  <DownloadMenu
+                    screen="points"
+                    title="Points adjustments"
+                    subtitle={`Status: ${status}`}
+                    columns={[
+                      { key: 'member', label: 'Member' },
+                      { key: 'name', label: 'Name' },
+                      { key: 'points', label: 'Points', type: 'number' },
+                      { key: 'reason', label: 'Reason' },
+                      { key: 'note', label: 'Note' },
+                      { key: 'status', label: 'Status' },
+                      { key: 'by', label: 'Asked by' },
+                      { key: 'asked', label: 'Asked', type: 'date' },
+                      { key: 'decidedBy', label: 'Decided by' },
+                      { key: 'decided', label: 'Decided', type: 'date' },
+                    ]}
+                    rows={rows.map((a) => ({
+                      member: a.member,
+                      name: a.memberName,
+                      points: a.points,
+                      reason: a.reasonCode,
+                      note: a.note,
+                      status: a.status,
+                      by: a.requestedBy,
+                      asked: a.createdAt,
+                      decidedBy: a.decidedBy,
+                      decided: a.decidedAt,
+                    }))}
+                  />
+                }
               />
               <div className="flex gap-1 px-5 pt-3 text-[12px]">
                 {['pending', 'applied', 'rejected', 'all'].map((k) => (
@@ -102,6 +135,28 @@ export default async function PointsPage({
               <CardHeader
                 title={`${fmt(holds.length)} open holds`}
                 hint="Points held while the quality team checks a survey or reward. Members see the note, not the reason."
+                action={
+                  <DownloadMenu
+                    screen="points"
+                    title="Points on hold"
+                    columns={[
+                      { key: 'member', label: 'Member' },
+                      { key: 'source', label: 'Source' },
+                      { key: 'reason', label: 'Reason' },
+                      { key: 'note', label: 'Member sees' },
+                      { key: 'expected', label: 'Expected by', type: 'date' },
+                      { key: 'since', label: 'Held since', type: 'date' },
+                    ]}
+                    rows={holds.map((h) => ({
+                      member: h.member,
+                      source: h.source,
+                      reason: h.reason,
+                      note: h.memberNote,
+                      expected: h.expectedBy,
+                      since: h.createdAt,
+                    }))}
+                  />
+                }
               />
               {holds.length === 0 ? (
                 <EmptyState title="No open holds" />

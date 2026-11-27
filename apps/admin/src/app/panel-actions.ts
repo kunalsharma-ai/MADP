@@ -43,7 +43,19 @@ export async function memberUnmaskAction(member: string, fields: string[], reaso
   );
 }
 export type MemberAlerts = {
-  notifications?: Partial<Record<'email' | 'push' | 'whatsapp' | 'weeklySummary' | 'expiryReminders' | 'newSurvey' | 'lifecycle' | 'birthday', boolean>> & {
+  notifications?: Partial<
+    Record<
+      | 'email'
+      | 'push'
+      | 'whatsapp'
+      | 'weeklySummary'
+      | 'expiryReminders'
+      | 'newSurvey'
+      | 'lifecycle'
+      | 'birthday',
+      boolean
+    >
+  > & {
     quietHours?: { enabled?: boolean; start?: string; end?: string };
   };
   survey?: { invitesPerWeek?: number | null };
@@ -69,12 +81,22 @@ export type MemberEmailResult = {
   switch: string;
   wouldSend: { template: string; to: string; brand: string; subject: string };
 };
-export async function memberEmailAction(member: string, kind: 'reset-password' | 'resend-welcome', reason: string) {
+export async function memberEmailAction(
+  member: string,
+  kind: 'reset-password' | 'resend-welcome',
+  reason: string,
+) {
   return run(() =>
     api<MemberEmailResult>(`/panel/members/${id(member)}/${kind}`, { method: 'POST', json: { reason } }),
   );
 }
-export type LoginAsResult = { sessionId: string; url: string; redeemBy: string; expiresAt: string; refused: string[] };
+export type LoginAsResult = {
+  sessionId: string;
+  url: string;
+  redeemBy: string;
+  expiresAt: string;
+  refused: string[];
+};
 export async function memberLoginAsAction(member: string, reason: string) {
   return run(() =>
     api<LoginAsResult>(`/panel/members/${id(member)}/login-as`, { method: 'POST', json: { reason } }),
@@ -383,7 +405,13 @@ export async function helpStatusAction(entry: string, status: string) {
 }
 
 // ---- content and legal pages (MFR#64, turn2opinion#33, MHO#15) ---------------------------------------------------
-export async function contentCreateAction(data: { key: string; kind?: string; lang?: string; title: string; body: unknown[] }) {
+export async function contentCreateAction(data: {
+  key: string;
+  kind?: string;
+  lang?: string;
+  title: string;
+  body: unknown[];
+}) {
   return run(() => api<{ id: string }>('/panel/content', { method: 'POST', json: data }), '/content');
 }
 export async function contentSaveAction(page: string, data: { title?: string; body?: unknown[] }) {
@@ -393,7 +421,10 @@ export async function contentMoveAction(page: string, action: 'review' | 'publis
   return run(() => api(`/panel/content/${id(page)}/${action}`, { method: 'POST' }), `/content/${page}`);
 }
 export async function contentRestoreAction(page: string, version: number) {
-  return run(() => api(`/panel/content/${id(page)}/revisions/${version}/restore`, { method: 'POST' }), `/content/${page}`);
+  return run(
+    () => api(`/panel/content/${id(page)}/revisions/${version}/restore`, { method: 'POST' }),
+    `/content/${page}`,
+  );
 }
 
 // ---- question translations ----------------------------------------------------------------------------------------
@@ -403,7 +434,70 @@ export async function translationSaveAction(
 ) {
   return run(
     () =>
-      api<{ optionsSet?: number }>(`/panel/questions/${id(name)}/translations`, { method: 'PUT', json: body }),
+      api<{ optionsSet?: number }>(`/panel/questions/${id(name)}/translations`, {
+        method: 'PUT',
+        json: body,
+      }),
     `/question-bank/${name}`,
   );
+}
+
+/**
+ * Rows for the translation sheet of one language: each question's wording and each option label, the English text
+ * beside it and the translation the panel has now (blank where missing). Read-only.
+ */
+export async function translationSheetAction(lang: string, names: string[]) {
+  return run(async () => {
+    if (!/^[a-z]{2}(-[A-Z]{2})?$/.test(lang) || lang === 'en')
+      throw new ApiError(400, 'Pick a language other than English');
+    const list = [...new Set(names)].slice(0, 300);
+    type Q = {
+      name: string;
+      label: string;
+      description?: string;
+      category: string[];
+      profiles: { category: string }[];
+      translations?: Record<string, { label?: string; description?: string }>;
+      options: { value: string; label: string; translations?: Record<string, string> }[];
+    };
+    const out: Record<string, string | null>[] = [];
+    for (let i = 0; i < list.length; i += 8) {
+      const qs = await Promise.all(
+        list.slice(i, i + 8).map((n) => api<Q>(`/panel/questions/${id(n)}`).catch(() => null)),
+      );
+      for (const q of qs) {
+        if (!q) continue;
+        const teen =
+          q.category.some((c) => c.includes('minor')) || q.profiles.some((p) => p.category.includes('minor'));
+        const t = q.translations?.[lang];
+        out.push({
+          question: q.name,
+          part: 'wording',
+          value: '',
+          english: q.label,
+          translation: t?.label ?? '',
+          teens: teen ? 'yes' : 'no',
+        });
+        if (q.description)
+          out.push({
+            question: q.name,
+            part: 'description',
+            value: '',
+            english: q.description,
+            translation: t?.description ?? '',
+            teens: teen ? 'yes' : 'no',
+          });
+        for (const o of q.options)
+          out.push({
+            question: q.name,
+            part: 'option',
+            value: o.value,
+            english: o.label,
+            translation: o.translations?.[lang] ?? '',
+            teens: teen ? 'yes' : 'no',
+          });
+      }
+    }
+    return out;
+  });
 }

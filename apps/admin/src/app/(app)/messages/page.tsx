@@ -6,6 +6,8 @@ import { MessageComposer, MessageRowActions } from './message-forms';
 
 export const metadata: Metadata = { title: 'Portal messages' };
 
+import { DownloadMenu } from '@/components/files';
+
 interface Msg {
   id: string;
   title: string;
@@ -37,7 +39,37 @@ export default async function MessagesPage() {
           <div className="grid gap-4">
             <MessageComposer />
             <Card>
-              <CardHeader title={`${fmt(rows.length)} messages`} />
+              <CardHeader
+                title={`${fmt(rows.length)} messages`}
+                action={
+                  <DownloadMenu
+                    screen="messages"
+                    title="Portal messages"
+                    columns={[
+                      { key: 'title', label: 'Title' },
+                      { key: 'subtitle', label: 'Subtitle' },
+                      { key: 'body', label: 'Message' },
+                      { key: 'cta', label: 'Button' },
+                      { key: 'status', label: 'Status' },
+                      { key: 'recipients', label: 'Recipients', type: 'number' },
+                      { key: 'read', label: 'Read', type: 'number' },
+                      { key: 'sent', label: 'Sent', type: 'date' },
+                      { key: 'created', label: 'Created', type: 'date' },
+                    ]}
+                    rows={rows.map((m) => ({
+                      title: m.title,
+                      subtitle: m.subtitle,
+                      body: m.body,
+                      cta: m.cta,
+                      status: m.status,
+                      recipients: m.recipients,
+                      read: m.read,
+                      sent: m.sentAt,
+                      created: m.createdAt,
+                    }))}
+                  />
+                }
+              />
               {rows.length === 0 ? (
                 <EmptyState title="No messages yet" />
               ) : (

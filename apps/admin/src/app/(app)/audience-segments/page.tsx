@@ -4,6 +4,7 @@ import { api } from '@/lib/api';
 import { getPanels } from '@/lib/panels';
 import { Badge, Card, CardHeader, PageHeader, PanelChip, Table } from '@/components/ui';
 import { AddRule, CreateSegment, RuleActions, SegmentActions } from './segment-forms';
+import { DownloadMenu } from '@/components/files';
 
 export const metadata: Metadata = { title: 'Audience segments' };
 
@@ -25,13 +26,13 @@ export default async function AudienceSegmentsPage() {
         title="Audience segments"
         description={
           <>
-            MADP&apos;s own segments, used in audience counts, filters, Supply360 and campaigns across all panels. A
-            person can be in several. Each panel stores its own category on a member (for example b2c, b2b or minor);
-            the rules below say which segment each value joins, and sync applies them to new and updated members.
-            Archiving a segment hides it from filters and stops new members joining; nothing is deleted, and Restore
-            brings it back. A segment can be deleted only while it has no members. The built-in six can be renamed
-            and archived but not deleted, and Teens always stays a minors segment. The sign-up segments inside each
-            panel are set on Segments &amp; audiences.
+            MADP&apos;s own segments, used in audience counts, filters, Supply360 and campaigns across all
+            panels. A person can be in several. Each panel stores its own category on a member (for example
+            b2c, b2b or minor); the rules below say which segment each value joins, and sync applies them to
+            new and updated members. Archiving a segment hides it from filters and stops new members joining;
+            nothing is deleted, and Restore brings it back. A segment can be deleted only while it has no
+            members. The built-in six can be renamed and archived but not deleted, and Teens always stays a
+            minors segment. The sign-up segments inside each panel are set on Segments &amp; audiences.
           </>
         }
       />
@@ -41,7 +42,34 @@ export default async function AudienceSegmentsPage() {
         </div>
       ) : null}
       <Card className="mb-4">
-        <CardHeader title={`${segments.length} segments`} hint="Only a Super Admin on every brand changes segments." />
+        <CardHeader
+          title={`${segments.length} segments`}
+          hint="Only a Super Admin on every brand changes segments."
+          action={
+            <DownloadMenu
+              screen="audience_segments"
+              title="Audience segments"
+              columns={[
+                { key: 'label', label: 'Segment' },
+                { key: 'key', label: 'Key' },
+                { key: 'about', label: 'About' },
+                { key: 'builtIn', label: 'Built in' },
+                { key: 'minors', label: 'Minors' },
+                { key: 'members', label: 'Has members' },
+                { key: 'status', label: 'Status' },
+              ]}
+              rows={segments.map((s) => ({
+                label: s.label,
+                key: s.key,
+                about: s.description,
+                builtIn: s.builtIn,
+                minors: s.minors,
+                members: s.hasMembers,
+                status: s.status,
+              }))}
+            />
+          }
+        />
         <Table head={['Segment', 'Key', 'About', 'Status', '']}>
           {segments.map((s) => (
             <tr key={s.key} className="align-top">
@@ -58,9 +86,15 @@ export default async function AudienceSegmentsPage() {
                 <div className="text-[11px] text-fg-3">{s.hasMembers ? 'Has members' : 'No members yet'}</div>
               </td>
               <td className="px-5 py-3">
-                {s.status === 'archived' ? <Badge tone="warn">Archived</Badge> : <Badge tone="teal">Active</Badge>}
+                {s.status === 'archived' ? (
+                  <Badge tone="warn">Archived</Badge>
+                ) : (
+                  <Badge tone="teal">Active</Badge>
+                )}
               </td>
-              <td className="px-5 py-3">{canEdit ? <SegmentActions segment={s} hasMembers={s.hasMembers} /> : null}</td>
+              <td className="px-5 py-3">
+                {canEdit ? <SegmentActions segment={s} hasMembers={s.hasMembers} /> : null}
+              </td>
             </tr>
           ))}
         </Table>
@@ -69,7 +103,31 @@ export default async function AudienceSegmentsPage() {
         <CardHeader
           title="Rules: panel category to segment"
           hint="A value can join several segments; a minor joins its adult segment and Teens. Rules of archived segments don't apply."
-          action={canEdit ? <AddRule segments={segments.filter((s) => s.status === 'active')} /> : undefined}
+          action={
+            <span className="flex flex-wrap items-center gap-2">
+              <DownloadMenu
+                screen="audience_segments"
+                title="Segment rules"
+                columns={[
+                  { key: 'panel', label: 'Panel' },
+                  { key: 'value', label: 'Panel value' },
+                  { key: 'joins', label: 'Joins' },
+                  { key: 'minor', label: 'Minor' },
+                  { key: 'evidence', label: 'Where it comes from' },
+                  { key: 'status', label: 'Status' },
+                ]}
+                rows={rules.map((r) => ({
+                  panel: panelName[r.panel] ?? r.panel,
+                  value: r.sourceValue,
+                  joins: label[r.segment] ?? r.segment,
+                  minor: r.minor,
+                  evidence: r.evidence,
+                  status: r.status,
+                }))}
+              />
+              {canEdit ? <AddRule segments={segments.filter((s) => s.status === 'active')} /> : null}
+            </span>
+          }
         />
         <Table head={['Panel', 'Panel value', 'Joins', 'Minor', 'Where it comes from', 'Status', '']}>
           {rules.map((r) => (
@@ -82,7 +140,11 @@ export default async function AudienceSegmentsPage() {
               <td className="px-5 py-3">{r.minor ? 'Yes' : 'No'}</td>
               <td className="px-5 py-3 text-[12px] text-fg-3">{r.evidence || '—'}</td>
               <td className="px-5 py-3">
-                {r.status === 'archived' ? <Badge tone="warn">Archived</Badge> : <Badge tone="teal">Active</Badge>}
+                {r.status === 'archived' ? (
+                  <Badge tone="warn">Archived</Badge>
+                ) : (
+                  <Badge tone="teal">Active</Badge>
+                )}
               </td>
               <td className="px-5 py-3">{canEdit ? <RuleActions rule={r} /> : null}</td>
             </tr>

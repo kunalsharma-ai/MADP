@@ -3,7 +3,7 @@ import { PanelCode } from './panels.js';
 
 /**
  * Reports, analytics and data exports (screens 23 and 29). Every report is a table with one row per panel (and
- * per breakdown), never added across panels. Exports are CSV or XLSX, need `export.read`, carry the data mode on
+ * per breakdown), never added across panels. Exports are CSV, XLSX, PDF or Word, need `export.read`, carry the data mode on
  * every row and are audited. A report that holds personal data would also need `export.pii`; none does today.
  */
 export const REPORT_KEYS = [
@@ -32,7 +32,7 @@ export const REPORT_KEYS = [
 export const ReportKey = z.enum(REPORT_KEYS);
 export type ReportKey = z.infer<typeof ReportKey>;
 
-export const ExportFormat = z.enum(['csv', 'xlsx']);
+export const ExportFormat = z.enum(['csv', 'xlsx', 'pdf', 'docx']);
 export type ExportFormat = z.infer<typeof ExportFormat>;
 
 const day = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);

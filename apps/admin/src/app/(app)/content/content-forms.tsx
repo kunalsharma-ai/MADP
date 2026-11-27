@@ -4,19 +4,53 @@ import { useMemo, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { ContentBody } from '@madp/contracts';
-import { contentCreateAction, contentMoveAction, contentRestoreAction, contentSaveAction } from '@/app/panel-actions';
+import {
+  contentCreateAction,
+  contentMoveAction,
+  contentRestoreAction,
+  contentSaveAction,
+} from '@/app/panel-actions';
 import { ContentView } from '@/components/content-view';
 import { Card, CardHeader, btn, input } from '@/components/ui';
 import { blocksToText, textToBlocks } from '@/lib/content-blocks';
 import { KEY_LABEL } from './shared';
+import type { ParsedBlock, ParsedDocument } from '@madp/contracts';
+import { DocumentDownload, UploadButton } from '@/components/files';
 
-const HELP = 'Blank line between paragraphs. “## ” heading, “### ” sub-heading, “- ” list, “1. ” numbered list, “> ” note, “| a | b |” table rows (first row is the header). Write links as plain https:// or e-mail addresses.';
+const WORD_HELP = {
+  why: 'Write or fix a page in Word (for example a privacy policy from the legal team) instead of typing it here.',
+  where:
+    'Headings, bullet and numbered lists, quotes (shown as a note) and tables come across. Pictures, colours and fonts do not: the sites use their own design.',
+  how: [
+    'Upload Word fills the title and text below. Nothing is saved yet.',
+    'Check the preview on the right, fix anything, then press Save draft.',
+    'Legal pages still need review and a second admin to publish.',
+  ],
+};
+
+/** Puts an uploaded Word file into the editor; the admin still checks it and presses Save. */
+function useWord(setTitle: (t: string) => void, setText: (t: string) => void) {
+  return (d: ParsedDocument, name: string) => {
+    if (d.title) setTitle(d.title);
+    setText(blocksToText(d.blocks));
+    toast.success(`Filled from ${name}. Check the preview, then save the draft.`, {
+      description: d.warnings.length ? d.warnings.join(' ') : undefined,
+      duration: d.warnings.length ? 10_000 : 4000,
+    });
+  };
+}
+
+const HELP =
+  'Blank line between paragraphs. “## ” heading, “### ” sub-heading, “- ” list, “1. ” numbered list, “> ” note, “| a | b |” table rows (first row is the header). Write links as plain https:// or e-mail addresses.';
 
 function useBody(text: string) {
   return useMemo(() => {
     const blocks = textToBlocks(text);
     const r = ContentBody.safeParse(blocks);
-    return { blocks, problem: text.trim() && !r.success ? r.error.issues[0]?.message ?? 'Check the text' : null };
+    return {
+      blocks,
+      problem: text.trim() && !r.success ? (r.error.issues[0]?.message ?? 'Check the text') : null,
+    };
   }, [text]);
 }
 
@@ -28,6 +62,7 @@ export function NewPage({ missingLegal }: { missingLegal: string[] }) {
   const [title, setTitle] = useState(KEY_LABEL[missingLegal[0] ?? ''] ?? '');
   const [text, setText] = useState('');
   const body = useBody(text);
+  const fromWord = useWord(setTitle, setText);
   const create = () =>
     start(async () => {
       const r = await contentCreateAction({ key, lang, title, body: body.blocks });
@@ -37,7 +72,13 @@ export function NewPage({ missingLegal }: { missingLegal: string[] }) {
     });
   return (
     <Card>
-      <CardHeader title="New page" hint={HELP} />
+      <CardHeader
+        title="New page"
+        hint={HELP}
+        action={
+          <UploadButton kind="document" title="Upload a Word file" help={WORD_HELP} onParsed={fromWord} />
+        }
+      />
       <div className="grid gap-3 px-5 py-4 text-[13px] md:grid-cols-4">
         <label>
           Page key
@@ -67,7 +108,11 @@ export function NewPage({ missingLegal }: { missingLegal: string[] }) {
         </label>
         <label className="md:col-span-4">
           Text
-          <textarea className={`${input} min-h-40 font-mono text-[12px]`} value={text} onChange={(e) => setText(e.target.value)} />
+          <textarea
+            className={`${input} min-h-40 font-mono text-[12px]`}
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+          />
         </label>
         <p className="text-[12px] text-fg-3 md:col-span-3">
           {['privacy', 'terms', 'gdpr', 'cookies'].includes(key)
@@ -76,7 +121,11 @@ export function NewPage({ missingLegal }: { missingLegal: string[] }) {
           {body.problem ? <span className="ml-2 text-danger">{body.problem}</span> : null}
         </p>
         <div className="flex items-end justify-end">
-          <button className={btn.primary} disabled={pending || !key || !title.trim() || !text.trim() || !!body.problem} onClick={create}>
+          <button
+            className={btn.primary}
+            disabled={pending || !key || !title.trim() || !text.trim() || !!body.problem}
+            onClick={create}
+          >
             Save draft
           </button>
         </div>
@@ -95,7 +144,13 @@ export function PageEditor({
   id: string;
   kind: 'legal' | 'page';
   me: string;
-  draft: { state: 'editing' | 'review'; title: string; body: unknown[]; updatedBy: string; reviewRequestedBy: string | null } | null;
+  draft: {
+    state: 'editing' | 'review';
+    title: string;
+    body: unknown[];
+    updatedBy: string;
+    reviewRequestedBy: string | null;
+  } | null;
   live: { title: string; body: unknown[] } | null;
 }) {
   const [pending, start] = useTransition();
@@ -103,6 +158,7 @@ export function PageEditor({
   const [title, setTitle] = useState(base?.title ?? '');
   const [text, setText] = useState(base ? blocksToText(base.body) : '');
   const body = useBody(text);
+  const fromWord = useWord(setTitle, setText);
   const dirty = !!base && (title !== base.title || text !== blocksToText(base.body));
   const act = (fn: () => Promise<{ ok: boolean; error?: string }>, msg: string) =>
     start(async () => {
@@ -125,7 +181,21 @@ export function PageEditor({
   return (
     <div className="grid items-start gap-4 xl:grid-cols-2">
       <Card>
-        <CardHeader title={draft ? (draft.state === 'review' ? 'Draft in review' : 'Draft') : 'Edit (starts a draft)'} hint={HELP} />
+        <CardHeader
+          title={draft ? (draft.state === 'review' ? 'Draft in review' : 'Draft') : 'Edit (starts a draft)'}
+          hint={HELP}
+          action={
+            <span className="flex flex-wrap items-center gap-2">
+              <UploadButton kind="document" title="Upload a Word file" help={WORD_HELP} onParsed={fromWord} />
+              <DocumentDownload
+                screen="content_page"
+                title={title || 'Page'}
+                subtitle={dirty ? 'Unsaved text from the editor' : draft ? 'Draft' : 'Live version'}
+                blocks={body.problem ? [] : (body.blocks as ParsedBlock[])}
+              />
+            </span>
+          }
+        />
         <div className="grid gap-3 px-5 py-4 text-[13px]">
           <label>
             Title
@@ -133,10 +203,16 @@ export function PageEditor({
           </label>
           <label>
             Text
-            <textarea className={`${input} min-h-96 font-mono text-[12px]`} value={text} onChange={(e) => setText(e.target.value)} />
+            <textarea
+              className={`${input} min-h-96 font-mono text-[12px]`}
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+            />
           </label>
           {body.problem ? <p className="text-danger">{body.problem}</p> : null}
-          {draft?.state === 'review' && dirty ? <p className="text-warn">Saving sends the draft back to editing; review is asked again.</p> : null}
+          {draft?.state === 'review' && dirty ? (
+            <p className="text-warn">Saving sends the draft back to editing; review is asked again.</p>
+          ) : null}
           <div className="flex flex-wrap items-center gap-2">
             <button
               className={btn.secondary}
@@ -146,17 +222,33 @@ export function PageEditor({
               Save draft
             </button>
             {draft?.state === 'editing' ? (
-              <button className={btn.secondary} disabled={pending || dirty} onClick={() => act(() => contentMoveAction(id, 'review'), 'Sent for review')}>
+              <button
+                className={btn.secondary}
+                disabled={pending || dirty}
+                onClick={() => act(() => contentMoveAction(id, 'review'), 'Sent for review')}
+              >
                 Ask for review
               </button>
             ) : null}
             {draft ? (
-              <button className={btn.primary} disabled={pending || !canPublish} onClick={() => act(() => contentMoveAction(id, 'publish'), 'Published. The site shows it now.')}>
+              <button
+                className={btn.primary}
+                disabled={pending || !canPublish}
+                onClick={() =>
+                  act(() => contentMoveAction(id, 'publish'), 'Published. The site shows it now.')
+                }
+              >
                 Publish
               </button>
             ) : null}
             {draft ? (
-              <button className={btn.ghost} disabled={pending} onClick={() => act(() => contentMoveAction(id, 'discard'), 'Draft discarded. The live page is unchanged.')}>
+              <button
+                className={btn.ghost}
+                disabled={pending}
+                onClick={() =>
+                  act(() => contentMoveAction(id, 'discard'), 'Draft discarded. The live page is unchanged.')
+                }
+              >
                 Discard draft
               </button>
             ) : null}
@@ -167,7 +259,11 @@ export function PageEditor({
       <Card>
         <CardHeader title="Preview" hint="How the site shows this text. Nothing here is read as HTML." />
         <div className="px-5 py-4">
-          {body.blocks.length ? <ContentView title={title} body={body.blocks} /> : <p className="text-fg-3">Nothing to show yet.</p>}
+          {body.blocks.length ? (
+            <ContentView title={title} body={body.blocks} />
+          ) : (
+            <p className="text-fg-3">Nothing to show yet.</p>
+          )}
         </div>
       </Card>
     </div>

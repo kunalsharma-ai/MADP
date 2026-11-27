@@ -7,6 +7,8 @@ import { Graduate } from './graduate';
 
 export const metadata: Metadata = { title: 'Teen Panel' };
 
+import { DownloadMenu } from '@/components/files';
+
 interface Teen {
   id: string;
   name: string;
@@ -75,7 +77,44 @@ export default async function TeensPage({ searchParams }: { searchParams: Promis
               />
             </div>
             <Card>
-              <CardHeader title="Teens" />
+              <CardHeader
+                title="Teens"
+                action={
+                  <DownloadMenu
+                    screen="teens"
+                    title="Teens"
+                    subtitle={`Showing: ${VIEWS.find((v) => v.key === view)?.label ?? 'All teens'}`}
+                    columns={[
+                      { key: 'name', label: 'Teen' },
+                      { key: 'born', label: 'Born', type: 'number' },
+                      { key: 'age', label: 'Age', type: 'number' },
+                      { key: 'turns18', label: '18th birthday', type: 'date' },
+                      { key: 'days', label: 'Days to 18', type: 'number' },
+                      { key: 'stage', label: 'Adult terms' },
+                      { key: 'deadline', label: 'Deadline', type: 'date' },
+                      { key: 'ref', label: 'Registration' },
+                      { key: 'regStatus', label: 'Registration status' },
+                      { key: 'guardian', label: 'Guardian' },
+                      { key: 'relation', label: 'Relation' },
+                      { key: 'gEmail', label: 'Guardian e-mail' },
+                    ]}
+                    rows={r.items.map((t) => ({
+                      name: t.name,
+                      born: t.birthYear,
+                      age: t.age,
+                      turns18: t.turns18,
+                      days: t.daysTo18,
+                      stage: t.adultMove?.stage?.replaceAll('_', ' ') ?? '',
+                      deadline: t.adultMove?.deadline ?? null,
+                      ref: t.registration?.reference ?? '',
+                      regStatus: t.registration?.status ?? '',
+                      guardian: t.guardian?.firstName ?? '',
+                      relation: t.guardian?.relation ?? '',
+                      gEmail: t.guardian?.email ?? '',
+                    }))}
+                  />
+                }
+              />
               {r.items.length === 0 ? (
                 <EmptyState title="No one to show" />
               ) : (

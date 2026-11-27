@@ -12,6 +12,7 @@ import type { MemberTagsNotes } from '@madp/contracts';
 import { MemberEngagement, type Engagement, type Responses } from './engagement';
 import Link from 'next/link';
 import { Fragment } from 'react';
+import { DownloadMenu } from '@/components/files';
 
 export const metadata: Metadata = { title: 'Member' };
 
@@ -102,6 +103,183 @@ export default async function MemberPage({
         {tab === 'engagement' ? (
           await engagementTab(m.id, Number(sp.page) || 1)
         ) : (
+          <>
+            <div className="grid gap-4 xl:grid-cols-3">
+              <Card className="xl:col-span-2">
+                <CardHeader
+                  title="Overview"
+                  action={<Badge tone={STATUS_TONE[m.status]}>{m.status}</Badge>}
+                />
+                <dl className="grid grid-cols-2 gap-x-6 gap-y-2 px-5 py-4 text-[13px] md:grid-cols-4">
+                  {row('E-mail', <span className="font-mono text-[12px]">{m.email}</span>)}
+                  {row('Phone', <span className="font-mono text-[12px]">{m.phone}</span>)}
+                  {row('Segment', m.category)}
+                  {row('Born', m.birthYear)}
+                  {row('Gender', m.gender)}
+                  {row('Country', m.country?.toUpperCase())}
+                  {row('City', m.city)}
+                  {row('Time zone', m.timezone)}
+                  {row('E-mail check', m.emailVerified)}
+                  {row('Phone check', m.phoneVerified)}
+                  {row('Quality score', m.qualityScore)}
+                  {row('Registration', m.registrationStatus)}
+                  {row('Signed up', fmtDate(m.signedUpAt))}
+                  {row('Last activity', fmtDate(m.lastActivityAt))}
+                  {row('Profile checked', fmtDate(m.profileCheckedAt))}
+                  {row('Terms', m.terms.join(', ') || '—')}
+                  {row(
+                    'Marketing e-mails',
+                    `${marketingLabel(m.marketingOptIn).text}${m.marketingOptIn?.asked ? ` (${m.marketingOptIn.source ?? '?'}, ${fmtDate(m.marketingOptIn.at)})` : ''}`,
+                  )}
+                  {m.marketingOptInHistory?.length
+                    ? row(
+                        'Opt-in history',
+                        m.marketingOptInHistory
+                          .map(
+                            (h) =>
+                              `${h.granted ? 'yes' : 'no'} via ${h.source}, ${fmtDate(h.at)} (${h.wording})`,
+                          )
+                          .join(' · '),
+                      )
+                    : null}
+                  {m.statusReason
+                    ? row('Status reason', `${m.statusReason} (${fmtDate(m.statusChangedAt)})`)
+                    : null}
+                  {m.guardian
+                    ? row(
+                        'Guardian',
+                        `${m.guardian.email}, ${m.guardian.relation ?? ''}, consent ${m.guardian.consent === true ? 'YES' : m.guardian.consent === false ? 'NO' : 'pending'} ${m.guardian.consentVersion ?? ''}`,
+                      )
+                    : null}
+                  {m.teen ? row('Teen registration', `${m.teen.status} (${m.teen.reference})`) : null}
+                </dl>
+              </Card>
+              <Card>
+                <CardHeader title="Points" hint="Worked out from the ledger" />
+                <dl className="grid grid-cols-2 gap-x-6 gap-y-2 px-5 py-4 text-[13px]">
+                  {Object.entries(m.points).map(([k, v]) => row(k, <span className="num">{fmt(v)}</span>))}
+                </dl>
+                <CardHeader title="Activity" />
+                <dl className="grid grid-cols-2 gap-x-6 gap-y-2 px-5 py-4 text-[13px]">
+                  {row('Profile answers', fmt(m.counts.answers))}
+                  {row(
+                    'Surveys',
+                    Object.entries(m.counts.surveys)
+                      .map(([k, v]) => `${k} ${v}`)
+                      .join(', ') || '0',
+                  )}
+                  {row('Redemptions', fmt(m.counts.redemptions))}
+                  {row('Tickets', fmt(m.counts.tickets))}
+                </dl>
+              </Card>
+            </div>
+            <div className="mt-4 grid gap-4 xl:grid-cols-3">
+              <div className="xl:col-span-2 grid gap-4">
+                <Card>
+                  <CardHeader
+                    title="Points ledger"
+                    hint={ledger ? `${fmt(ledger.entries.length)} lines, newest first` : 'Needs points.read'}
+                    action={
+                      ledger?.entries.length ? (
+                        <DownloadMenu
+                          screen="member"
+                          title={`Points ledger · ${m.name}`}
+                          subtitle={`Member ${id}`}
+                          columns={[
+                            { key: 'at', label: 'When', type: 'date' },
+                            { key: 'type', label: 'Type' },
+                            { key: 'points', label: 'Points', type: 'number' },
+                            { key: 'note', label: 'Note' },
+                          ]}
+                          rows={ledger.entries.map((e) => ({
+                            at: e.at ?? e.createdAt ?? null,
+                            type: e.type ?? e.kind ?? '',
+                            points: e.points,
+                            note: e.label ?? e.remarks ?? '',
+                          }))}
+                        />
+                      ) : undefined
+                    }
+                  />
+                  {!ledger || ledger.entries.length === 0 ? (
+                    <EmptyState title={ledger ? 'No point movements yet' : 'Not shown for your role'} />
+                  ) : (
+                    <Table head={['When', 'Type', 'Points', 'Note']}>
+                      {ledger.entries.slice(0, 50).map((e, i) => (
+                        <tr key={i}>
+                          <td className="px-5 py-2">{fmtDate(e.at ?? e.createdAt ?? null)}</td>
+                          <td className="px-5 py-2">{e.type ?? e.kind ?? '—'}</td>
+                          <td className="num px-5 py-2">{fmt(e.points)}</td>
+                          <td className="px-5 py-2 text-fg-2">{e.label ?? e.remarks ?? ''}</td>
+                        </tr>
+                      ))}
+                    </Table>
+                  )}
+                </Card>
+                <Card>
+                  <CardHeader
+                    title="Segment changes"
+                    action={
+                      m.segmentChanges.length ? (
+                        <DownloadMenu
+                          screen="member"
+                          title={`Segment changes · ${m.name}`}
+                          subtitle={`Member ${id}`}
+                          columns={[
+                            { key: 'at', label: 'When', type: 'date' },
+                            { key: 'from', label: 'From' },
+                            { key: 'to', label: 'To' },
+                            { key: 'reason', label: 'Reason' },
+                          ]}
+                          rows={m.segmentChanges.map((c) => ({
+                            at: c.at,
+                            from: c.from,
+                            to: c.to,
+                            reason: c.reason,
+                          }))}
+                        />
+                      ) : undefined
+                    }
+                  />
+                  {m.segmentChanges.length === 0 ? (
+                    <EmptyState title="No segment changes" />
+                  ) : (
+                    <Table head={['When', 'From', 'To', 'Reason']}>
+                      {m.segmentChanges.map((c, i) => (
+                        <tr key={i}>
+                          <td className="px-5 py-2">{fmtDate(c.at)}</td>
+                          <td className="px-5 py-2">{c.from}</td>
+                          <td className="px-5 py-2">{c.to}</td>
+                          <td className="px-5 py-2 text-fg-2">{c.reason}</td>
+                        </tr>
+                      ))}
+                    </Table>
+                  )}
+                </Card>
+              </div>
+              <div className="grid content-start gap-4">
+                <MemberActions
+                  member={{
+                    id: m.id,
+                    status: m.status,
+                    segment: m.segment,
+                    category: m.category,
+                    emailVerified: m.emailVerified,
+                    phoneVerified: m.phoneVerified,
+                  }}
+                  canUnmask={m.canUnmask}
+                />
+                <MemberAccess
+                  member={m.id}
+                  segment={m.segment}
+                  brand={(await currentBrand()) ?? ''}
+                  canResendEmail={Boolean(m.canResendEmail)}
+                  canLoginAs={Boolean(m.canLoginAs)}
+                />
+                <PointsQuality member={m.id} score={m.qualityScore ?? null} />
+              </div>
+            </div>
+          </>
         <>
         <div className="grid gap-4 xl:grid-cols-3">
           <Card className="xl:col-span-2">
@@ -256,7 +434,10 @@ function MemberTabs({ id, current }: { id: string; current: string }) {
     ['engagement', 'Surveys, points & engagement'],
   ] as const;
   return (
-    <nav aria-label="Member sections" className="mb-4 inline-flex gap-1 rounded-xl bg-surface-2 p-1 text-[13px]">
+    <nav
+      aria-label="Member sections"
+      className="mb-4 inline-flex gap-1 rounded-xl bg-surface-2 p-1 text-[13px]"
+    >
       {tabs.map(([k, label]) => (
         <Link
           key={k}
@@ -285,7 +466,8 @@ async function engagementTab(id: string, page: number) {
     return (
       <Card>
         <EmptyState title="Not available yet">
-          This panel does not have the member engagement routes yet. They arrive with the next panel backend update.
+          This panel does not have the member engagement routes yet. They arrive with the next panel backend
+          update.
         </EmptyState>
       </Card>
     );

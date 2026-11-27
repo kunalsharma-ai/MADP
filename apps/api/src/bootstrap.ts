@@ -20,7 +20,12 @@ export async function createApp(env: ApiEnv, opts: { logger?: boolean } = {}) {
     helmet({
       contentSecurityPolicy: {
         useDefaults: false,
-        directives: { defaultSrc: ["'none'"], frameAncestors: ["'none'"], baseUri: ["'none'"], formAction: ["'none'"] },
+        directives: {
+          defaultSrc: ["'none'"],
+          frameAncestors: ["'none'"],
+          baseUri: ["'none'"],
+          formAction: ["'none'"],
+        },
       },
       strictTransportSecurity: { maxAge: 63_072_000, includeSubDomains: true, preload: true },
       referrerPolicy: { policy: 'no-referrer' },
@@ -30,7 +35,10 @@ export async function createApp(env: ApiEnv, opts: { logger?: boolean } = {}) {
   );
   app.use((_req: Request, res: Response, next: NextFunction) => {
     res.setHeader('cache-control', 'no-store');
-    res.setHeader('permissions-policy', 'camera=(), microphone=(), geolocation=(), payment=(), usb=(), interest-cohort=()');
+    res.setHeader(
+      'permissions-policy',
+      'camera=(), microphone=(), geolocation=(), payment=(), usb=(), interest-cohort=()',
+    );
     next();
   });
   // Request id for the audit trail: the caller's x-request-id when it looks safe, otherwise a new one.
@@ -44,6 +52,8 @@ export async function createApp(env: ApiEnv, opts: { logger?: boolean } = {}) {
   app.use('/api/v1/panel/qb/import', largeJson(25 * 1024 * 1024));
   // Network uploads (CSV or Excel, base64) and pushes are large too; the push signature needs the raw body.
   app.use('/api/v1/networks', largeJson(35 * 1024 * 1024));
+  // Console downloads (up to 10,000 rows) and uploads (10 MB files, base64) carry big bodies too.
+  app.use('/api/v1/files', largeJson(16 * 1024 * 1024));
   app.enableCors({ origin: env.ADMIN_ORIGIN, credentials: true });
   app.setGlobalPrefix('api/v1');
   app.enableShutdownHooks();

@@ -15,6 +15,7 @@ import {
 } from '@/components/ui';
 import { BrandLogo } from '@/components/brand-logo';
 import { ImportButtons, RetryDeadLettersButton, SyncNowButton } from './import-buttons';
+import { DownloadMenu } from '@/components/files';
 
 export const metadata: Metadata = { title: 'Connectors & sync' };
 
@@ -187,7 +188,9 @@ export default async function ConnectorsPage() {
                     </Badge>
                     <span className="min-w-0">
                       <span className="font-mono">{cap.capability}</span>
-                      <span className="block break-words text-fg-3 [overflow-wrap:anywhere]">{cap.evidence}</span>
+                      <span className="block break-words text-fg-3 [overflow-wrap:anywhere]">
+                        {cap.evidence}
+                      </span>
                     </span>
                   </li>
                 ))}
@@ -201,6 +204,51 @@ export default async function ConnectorsPage() {
         <CardHeader
           title="Import & reconciliation history"
           hint="Every run records what it saw and changed"
+          action={
+            <DownloadMenu
+              screen="connectors"
+              title="Import and reconciliation history"
+              columns={[
+                { key: 'started', label: 'Started', type: 'date' },
+                { key: 'finished', label: 'Finished', type: 'date' },
+                { key: 'panel', label: 'Panel' },
+                { key: 'mode', label: 'Data mode' },
+                { key: 'dry', label: 'Dry run' },
+                { key: 'kind', label: 'Kind' },
+                { key: 'status', label: 'Status' },
+                { key: 'error', label: 'Error' },
+                { key: 'respondents', label: 'Respondents', type: 'number' },
+                { key: 'newIds', label: 'Identities new', type: 'number' },
+                { key: 'updIds', label: 'Identities updated', type: 'number' },
+                { key: 'auto', label: 'Auto linked', type: 'number' },
+                { key: 'review', label: 'For review', type: 'number' },
+                { key: 'answers', label: 'Answers changed', type: 'number' },
+                { key: 'versions', label: 'Question versions', type: 'number' },
+                { key: 'dead', label: 'Dead-lettered', type: 'number' },
+              ]}
+              rows={jobs.map((j) => {
+                const n = j.counts as Record<string, number | undefined>;
+                return {
+                  started: j.startedAt,
+                  finished: j.finishedAt,
+                  panel: j.panel.toUpperCase(),
+                  mode: j.dataMode,
+                  dry: j.dryRun,
+                  kind: j.kind,
+                  status: j.status,
+                  error: j.error,
+                  respondents: n.respondentsSeen,
+                  newIds: n.identitiesCreated,
+                  updIds: n.identitiesUpdated,
+                  auto: n.autoLinked,
+                  review: n.matchCandidates,
+                  answers: n.answersChanged,
+                  versions: n.questionVersionsCreated,
+                  dead: n.deadLetteredMembers ?? 0,
+                };
+              })}
+            />
+          }
         />
         <Table
           head={[
