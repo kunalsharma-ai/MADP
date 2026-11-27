@@ -51,7 +51,7 @@ MADP runs only in containers, from `ops/deploy/madp-stack.yml`. What the stack k
   Docker writes its own iptables rules, so a port published by any container would bypass UFW. Leave `ports:` out of
   every MADP service.
 - **Two networks.** Only the nginx gateway joins the external network `publicweb`, under the alias `madp-gateway`.
-  Everything else (api, admin, postgres, mongodb, the migration job) is on the overlay network `madp`, encrypted
+  Everything else (api, admin, postgres, mongodb) is on the overlay network `madp`, encrypted
   between nodes. Postgres and MongoDB are never on `publicweb`.
 - **TLS stays in front.** The gateway listens on plain 80. The proxy manager terminates TLS, redirects http to https and
   forwards `MADP_HOST` to `http://madp-gateway:80`. The gateway sends `/api/` to the API and everything else to the
@@ -176,7 +176,7 @@ Traefik must itself be attached to `publicweb` to reach `madp-gateway`.
 The NPM container must be attached to `publicweb`.
 
 **Tested (2026-11-25, local single-node swarm, throwaway secrets):** the images were built from this branch and the
-stack was deployed. The migration job finished, and both api and both admin replicas came up healthy. From a container
+stack was deployed. The migration job (since replaced by migrations in each api replica, issue #67) finished, and both api and both admin replicas came up healthy. From a container
 on `publicweb`, `madp-gateway` answered `/api/v1/health` (200), the console sign-in page (200) and `/` (307 to sign-in).
 Another host name got no answer, and `madp_api` couldn't be reached from `publicweb`. No service published a port. The
 sandbox kernel has no IPVS, so that test used `endpoint_mode: dnsrr` and an unencrypted overlay. A normal Docker host
