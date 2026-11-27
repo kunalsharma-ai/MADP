@@ -145,3 +145,34 @@ export interface FraudAlerts {
   panels: FraudAlertPanel[];
   unreachable: string[];
 }
+
+/** One day on one panel, for the daily summary. Counts only: never a name, e-mail or member id. */
+export interface DailySummaryPanel {
+  panel: string;
+  signups: number;
+  /** Sign-ups the day before, to show up or down. */
+  signupsBefore: number;
+  /** Average sign-ups per day over the 7 days before the chosen day. */
+  signupsAvg7: number;
+  bySegment: { segment: string; n: number }[];
+  byCountry: { country: string; n: number }[];
+  completes: number;
+  completesBefore: number;
+  /** Members with at least one survey complete that day. */
+  activeMembers: number;
+  pointsEarned: number;
+  /** null when the admin has no points.read on this panel. */
+  redemptions: { n: number; points: number } | null;
+  /** The 14 days ending on the chosen day, oldest first. */
+  trend: { day: string; signups: number; completes: number }[];
+}
+
+export interface DailySummary {
+  dataMode: 'demo' | 'live';
+  /** The chosen day (YYYY-MM-DD, India time). */
+  day: string;
+  timeZone: string;
+  checkedAt: string;
+  totals: { signups: number; signupsBefore: number; completes: number; completesBefore: number; activeMembers: number; pointsEarned: number };
+  panels: DailySummaryPanel[];
+}

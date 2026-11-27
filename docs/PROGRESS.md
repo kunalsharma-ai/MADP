@@ -872,3 +872,16 @@ verified.
 - Tests: `apps/api/test/reminders.test.ts` (3, a stand-in panel for all three brands); MFR `tests/reminders.test.mjs`
   (6). The screen was checked against the real MFR#105 code with DEMO data on all routes (save, dry run, provider
   save). Real WhatsApp/SMS sending is not verified: it needs Kunal's provider accounts.
+
+## Daily summary (2026-11-27)
+
+- New screen **Overview → Daily summary** (`/daily-summary`, API `GET /api/v1/daily-summary?day=YYYY-MM-DD`). For each
+  panel the admin can see (T2O, MFR, MHO and any added panel): sign-ups by segment and country, survey completes,
+  members who completed a survey, points earned and redemptions for one day (midnight to midnight India time), each
+  compared with the day before, the 7-day sign-up average and a 14-day trend chart. It opens on yesterday and steps
+  back or forward a day. Counts only; teens only with teen.read; redemptions only with points.read.
+- Built from MADP's synced copy, so it is as fresh as the last sync. No panel change was needed.
+- Tests: `apps/api/test/daily-summary.test.ts` (2).
+- Also fixed two leftovers of a merge on `main` that stopped the API and admin typechecks: the Members export now
+  uses the shared `writeReport`, the member page shows the health score and tags and notes once in its tabbed layout,
+  and the duplicates page no longer asks the panel twice.

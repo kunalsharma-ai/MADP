@@ -16,7 +16,7 @@ import type { Principal } from '../auth/auth.types.js';
 import { hasOn } from '../auth/access.js';
 import { ZodPipe } from '../common/zod.pipe.js';
 import { AuditService } from '../audit/audit.service.js';
-import { toCsv, toXlsx } from '../reports/export-writer.js';
+import { writeReport } from '../reports/export-writer.js';
 import { PanelAdminService } from './panel-admin.service.js';
 import { MemberTagStore } from './member-tags.js';
 import { LIST_FIELDS } from './members.controller.js';
@@ -235,10 +235,10 @@ export class MemberBulkController {
     res.setHeader('cache-control', 'no-store');
     if (body.format === 'csv') {
       res.setHeader('content-type', 'text/csv; charset=utf-8');
-      res.send(toCsv(report));
+      res.send(await writeReport(report, brand, 'csv'));
     } else {
       res.setHeader('content-type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-      res.send(await toXlsx(report, brand));
+      res.send(await writeReport(report, brand, 'xlsx'));
     }
   }
 }

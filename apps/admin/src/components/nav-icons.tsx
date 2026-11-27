@@ -40,12 +40,14 @@ import {
   ToggleRight,
   ClipboardCheck,
   BellRing,
+  CalendarDays,
 } from 'lucide-react';
 import { NAV } from './nav';
 
 /** The menu icon of each screen, by the name used in nav.ts. */
 export const ICONS = {
   Activity,
+  CalendarDays,
   ClipboardCheck,
   LayoutDashboard,
   Globe2,
