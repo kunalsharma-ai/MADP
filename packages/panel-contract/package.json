@@ -1,0 +1,31 @@
+{
+  "name": "@madp/panel-contract",
+  "version": "1.0.0",
+  "private": true,
+  "description": "The MADP Panel API Contract: routes, record shapes, signing, capability discovery and a conformance kit that any panel (T2O, MFR, MHO or a new one) can implement and run.",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "bin": {
+    "madp-panel-conformance": "./bin/conformance.mjs"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run",
+    "openapi": "node bin/write-openapi.mjs",
+    "conformance": "node bin/conformance.mjs"
+  },
+  "dependencies": {
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "typescript": "7.0.2",
+    "vitest": "5.1.1",
+    "@types/node": "26.6.6"
+  }
+}

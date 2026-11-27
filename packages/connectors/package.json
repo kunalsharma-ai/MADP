@@ -16,6 +16,7 @@
   },
   "dependencies": {
     "@madp/contracts": "workspace:*",
+    "@madp/panel-contract": "workspace:*",
     "@madp/testing": "workspace:*",
     "zod": "4.6.7"
   },

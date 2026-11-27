@@ -33,6 +33,15 @@ import {
   type RawReward,
 } from './mapping.js';
 import { ConnectorError, type PanelConnector } from './types.js';
+import {
+  CONTRACT_VERSION_HEADER,
+  PANEL_CONTRACT_VERSION,
+  checkDiscovery,
+  pathOf,
+  sign,
+  type Capability,
+  type DiscoveryCheck,
+} from '@madp/panel-contract';
 
 export interface PanelApiConfig {
   /** e.g. https://www.turn2opinion.com - the backend is reached through the panel's own gateway. */
@@ -54,6 +63,11 @@ export interface PanelApiConfig {
   fetchImpl?: typeof fetch;
   /** Injected in tests. */
   sleep?: (ms: number) => Promise<void>;
+  /**
+   * Capabilities the panel declared at GET /api/v1/contract. When set, a feed the panel did not declare is reported
+   * as not supported without calling it. Unset (no discovery yet) means every route is tried.
+   */
+  declaredCapabilities?: readonly Capability[];
 }
 
 /** Endpoint map per panel. Paths are those read in each repository; no endpoint is assumed to be shared. */
@@ -76,27 +90,36 @@ export interface EndpointMap {
 }
 
 /**
- * All three panels run the same T2O backend in production (separate tenants by Host header), so they share one
- * endpoint map. The MFR and MHO repositories contain different API code that is NOT deployed; see
- * docs/INTEGRATION_GAP_ANALYSIS.md section 3.
+ * The read and sync routes of the MADP Panel API Contract (packages/panel-contract), which are the T2O backend's own
+ * routes. All three panels run that backend in production (separate tenants by Host header), and any new panel that
+ * follows the contract serves the same paths. The MFR and MHO repositories contain different API code that is NOT
+ * deployed; see docs/INTEGRATION_GAP_ANALYSIS.md section 3.
  */
 const T2O_BACKEND_ENDPOINTS: EndpointMap = {
-  questions: '/api/v1/question',
-  option: (q) => `/api/v1/option/${encodeURIComponent(q)}`,
-  questionnaires: '/api/v1/profile',
-  users: '/api/v1/user',
-  // POST /user/:user/profile-data also exists on this backend but is marked "under development" and returns
-  // raw Answer documents, so the profile route is used.
-  answers: { method: 'GET', path: (id) => `/api/v1/user/${encodeURIComponent(id)}/profile` },
-  // routes/api/Changes.js (turn2opinion#20): ?cursor=&since=&limit= -> {items, cursor, more}
+  questions: pathOf('sync', 'question'),
+  option: (q) => pathOf('sync', 'option', { question: q }),
+  questionnaires: pathOf('sync', 'profile'),
+  users: pathOf('sync', 'user'),
+  // POST /user/:user/profile-data also exists on the T2O backend but is marked "under development" and returns raw
+  // Answer documents, so the contract uses the profile route.
+  answers: { method: 'GET', path: (id) => pathOf('sync', 'userProfile', { id }) },
+  // ?cursor=&since=&limit= -> {items, cursor, more} (turn2opinion#20, #24)
   changes: {
-    members: '/api/v1/changes/members',
-    answers: '/api/v1/changes/answers',
-    deletions: '/api/v1/changes/deletions',
-    // turn2opinion#24: reward rows and survey responses, same paging.
-    rewards: '/api/v1/changes/rewards',
-    responses: '/api/v1/changes/responses',
+    members: pathOf('sync', 'changesMembers'),
+    answers: pathOf('sync', 'changesAnswers'),
+    deletions: pathOf('sync', 'changesDeletions'),
+    rewards: pathOf('sync', 'changesRewards'),
+    responses: pathOf('sync', 'changesResponses'),
   },
+};
+
+/** The contract capability behind each changes feed. */
+const FEED_CAPABILITY: Record<'members' | 'answers' | 'deletions' | 'rewards' | 'responses', Capability> = {
+  members: 'changes.members',
+  answers: 'changes.answers',
+  deletions: 'changes.deletions',
+  rewards: 'changes.rewards',
+  responses: 'changes.responses',
 };
 
 /** Built-in panels. A panel added in the console runs on the same shared backend, so it uses these routes too. */
@@ -203,6 +226,7 @@ export class PanelApiConnector implements PanelConnector {
           accept: 'application/json',
           'content-type': 'application/json',
           authorization: `Bearer ${this.cfg.bearerToken}`,
+          [CONTRACT_VERSION_HEADER]: PANEL_CONTRACT_VERSION,
         },
         ...(body === undefined ? {} : { body: JSON.stringify(body) }),
       });
@@ -265,6 +289,23 @@ export class PanelApiConnector implements PanelConnector {
         checkedAt: new Date().toISOString(),
         latencyMs: Date.now() - started,
         message: (e as Error).message,
+      };
+    }
+  }
+
+  /** Reads GET /api/v1/contract with the sync token and checks it. A 404 means the panel has no discovery route yet. */
+  async discover(opts: { requireCore?: boolean } = {}): Promise<DiscoveryCheck & { httpStatus?: number }> {
+    try {
+      return checkDiscovery(await this.call<unknown>('GET', pathOf('sync', 'contract')), opts);
+    } catch (e) {
+      const status = e instanceof ConnectorError ? e.httpStatus : undefined;
+      return {
+        ok: false,
+        capabilities: [],
+        unknown: [],
+        missingCore: [],
+        problems: [status === 404 ? 'The panel does not serve GET /api/v1/contract yet (404)' : (e as Error).message],
+        ...(status ? { httpStatus: status } : {}),
       };
     }
   }
@@ -337,6 +378,13 @@ export class PanelApiConnector implements PanelConnector {
     map: (raw: R) => T | null,
   ): Promise<SourceChangePage<T>> {
     const path = this.endpoints.changes?.[feed];
+    const declared = this.cfg.declaredCapabilities;
+    if (declared && !declared.includes(FEED_CAPABILITY[feed]))
+      throw new ConnectorError(
+        `${this.panel} does not declare ${FEED_CAPABILITY[feed]} in its API contract`,
+        this.panel,
+        'not_supported',
+      );
     if (!path)
       throw new ConnectorError(`No ${feed} changes feed for ${this.panel}`, this.panel, 'not_supported');
     const params = new URLSearchParams({ limit: String(q.limit) });
@@ -389,144 +437,142 @@ export class PanelApiConnector implements PanelConnector {
 
 // ---- Panel admin API (super admin console) ------------------------------------------------------------------------
 
+const adm = (resource: string, params?: Record<string, string | number>) => pathOf('admin', resource, params);
+
 /**
- * Routes of the panel backend's admin API, added by kunalsharma-ai/MFR#44 (Project/api/app/admin/routes.js). The
+ * Signed admin routes of the MADP Panel API Contract. The paths come from packages/panel-contract (operations.ts), the
+ * single list of panel routes; these typed helpers only fill them in. They were added to the shared backend by
+ * kunalsharma-ai/MFR#44 (Project/api/app/admin/routes.js). The
  * shared backend image serves all three brands; the brand is the signed x-madp-origin header, never the Host header.
  */
 export const PANEL_ADMIN_ROUTES = {
-  members: '/api/v1/admin/members',
-  member: (id: string) => `/api/v1/admin/members/${encodeURIComponent(id)}`,
-  memberLedger: (id: string) => `/api/v1/admin/members/${encodeURIComponent(id)}/ledger`,
-  memberStatus: (id: string) => `/api/v1/admin/members/${encodeURIComponent(id)}/status`,
-  memberSegment: (id: string) => `/api/v1/admin/members/${encodeURIComponent(id)}/segment`,
-  memberUnmask: (id: string) => `/api/v1/admin/members/${encodeURIComponent(id)}/unmask`,
+  members: adm('members'),
+  member: (id: string) => adm('member', { id }),
+  memberLedger: (id: string) => adm('memberLedger', { id }),
+  memberStatus: (id: string) => adm('memberStatus', { id }),
+  memberSegment: (id: string) => adm('memberSegment', { id }),
+  memberUnmask: (id: string) => adm('memberUnmask', { id }),
   // Member actions (MFR#67, Project/api/app/admin/memberactions.js): e-mails behind email_admin_actions, "log in as member"
-  memberResetPassword: (id: string) => `/api/v1/admin/members/${encodeURIComponent(id)}/reset-password`,
-  memberResendWelcome: (id: string) => `/api/v1/admin/members/${encodeURIComponent(id)}/resend-welcome`,
-  memberLoginAs: (id: string) => `/api/v1/admin/members/${encodeURIComponent(id)}/login-as`,
-  memberAdminSessions: (id: string) => `/api/v1/admin/members/${encodeURIComponent(id)}/admin-sessions`,
-  memberAdminSessionEnd: (id: string, sid: string) =>
-    `/api/v1/admin/members/${encodeURIComponent(id)}/admin-sessions/${encodeURIComponent(sid)}/end`,
+  memberResetPassword: (id: string) => adm('memberResetPassword', { id }),
+  memberResendWelcome: (id: string) => adm('memberResendWelcome', { id }),
+  memberLoginAs: (id: string) => adm('memberLoginAs', { id }),
+  memberAdminSessions: (id: string) => adm('memberAdminSessions', { id }),
+  memberAdminSessionEnd: (id: string, sid: string) => adm('memberAdminSessionEnd', { id, sid }),
   // Member engagement (MFR#101, Project/api/app/admin/memberengagement.js): what the member sees, alerts, payout method
-  memberEngagement: (id: string) => `/api/v1/admin/members/${encodeURIComponent(id)}/engagement`,
-  memberResponses: (id: string) => `/api/v1/admin/members/${encodeURIComponent(id)}/responses`,
-  memberAlerts: (id: string) => `/api/v1/admin/members/${encodeURIComponent(id)}/alerts`,
-  memberPayoutClear: (id: string) => `/api/v1/admin/members/${encodeURIComponent(id)}/payout/clear`,
+  memberEngagement: (id: string) => adm('memberEngagement', { id }),
+  memberResponses: (id: string) => adm('memberResponses', { id }),
+  memberAlerts: (id: string) => adm('memberAlerts', { id }),
+  memberPayoutClear: (id: string) => adm('memberPayoutClear', { id }),
   // Duplicate accounts (MFR#68, Project/api/app/admin/merge.js): find, merge (dry run unless ?dryRun=0), list, undo
-  duplicates: '/api/v1/admin/members/duplicates',
-  merge: '/api/v1/admin/members/merge',
-  merges: '/api/v1/admin/members/merges',
-  mergeUndo: (id: string) => `/api/v1/admin/members/merges/${encodeURIComponent(id)}/undo`,
-  archiveRun: '/api/v1/admin/members/archive-run',
-  restore: '/api/v1/admin/members/restore',
-  qbExport: '/api/v1/admin/qb/export',
-  qbImport: '/api/v1/admin/qb/import',
-  qbRulesCheck: '/api/v1/admin/qb/rules/check',
-  questions: '/api/v1/admin/questions',
-  question: (name: string) => `/api/v1/admin/questions/${encodeURIComponent(name)}`,
-  questionOptions: (name: string) => `/api/v1/admin/questions/${encodeURIComponent(name)}/options`,
-  profiles: '/api/v1/admin/profiles',
-  profileCompletion: '/api/v1/admin/profiles/completion',
-  profile: (id: string) => `/api/v1/admin/profiles/${encodeURIComponent(id)}`,
-  qbVersions: '/api/v1/admin/qb/versions',
-  qbVersion: (n: number) => `/api/v1/admin/qb/versions/${n}`,
-  qbVersionAction: (n: number, action: 'review' | 'publish' | 'discard') =>
-    `/api/v1/admin/qb/versions/${n}/${action}`,
-  questionTranslations: (name: string) => `/api/v1/admin/questions/${encodeURIComponent(name)}/translations`,
-  missingTranslations: '/api/v1/admin/qb/translations/missing',
-  segments: '/api/v1/admin/segments',
-  segment: (name: string) => `/api/v1/admin/segments/${encodeURIComponent(name)}`,
-  audienceCount: '/api/v1/admin/audiences/count',
-  audiences: '/api/v1/admin/audiences',
-  audience: (id: string) => `/api/v1/admin/audiences/${encodeURIComponent(id)}`,
-  audienceRecount: (id: string) => `/api/v1/admin/audiences/${encodeURIComponent(id)}/count`,
-  surveys: '/api/v1/admin/surveys',
-  survey: (id: string) => `/api/v1/admin/surveys/${encodeURIComponent(id)}`,
-  surveyStatus: (id: string) => `/api/v1/admin/surveys/${encodeURIComponent(id)}/status`,
-  surveyFeasibility: (id: string) => `/api/v1/admin/surveys/${encodeURIComponent(id)}/feasibility`,
-  surveyInvite: (id: string) => `/api/v1/admin/surveys/${encodeURIComponent(id)}/invite`,
-  surveyResponses: (id: string) => `/api/v1/admin/surveys/${encodeURIComponent(id)}/responses`,
-  surveyReconcile: (id: string) => `/api/v1/admin/surveys/${encodeURIComponent(id)}/reconcile`,
-  memberPoints: (id: string) => `/api/v1/admin/members/${encodeURIComponent(id)}/points`,
-  pointsApprovals: '/api/v1/admin/points/approvals',
-  pointsApproval: (id: string) => `/api/v1/admin/points/approvals/${encodeURIComponent(id)}`,
-  holds: '/api/v1/admin/points/holds',
-  holdRelease: (id: string) => `/api/v1/admin/points/holds/${encodeURIComponent(id)}/release`,
-  qualityTiers: '/api/v1/admin/quality/tiers',
-  qualityReview: '/api/v1/admin/quality/review',
-  memberQuality: (id: string) => `/api/v1/admin/members/${encodeURIComponent(id)}/quality`,
-  referralFraud: '/api/v1/admin/referrals/fraud',
-  experts: '/api/v1/admin/experts',
-  expert: (id: string) => `/api/v1/admin/experts/${encodeURIComponent(id)}`,
-  expertDecision: (id: string) => `/api/v1/admin/experts/${encodeURIComponent(id)}/decision`,
-  tickets: '/api/v1/admin/tickets',
-  ticket: (id: string) => `/api/v1/admin/tickets/${encodeURIComponent(id)}`,
-  ticketReply: (id: string) => `/api/v1/admin/tickets/${encodeURIComponent(id)}/reply`,
-  ticketStatus: (id: string) => `/api/v1/admin/tickets/${encodeURIComponent(id)}/status`,
-  messages: '/api/v1/admin/messages',
-  message: (id: string) => `/api/v1/admin/messages/${encodeURIComponent(id)}`,
-  messagePreview: (id: string) => `/api/v1/admin/messages/${encodeURIComponent(id)}/preview`,
-  messageSend: (id: string) => `/api/v1/admin/messages/${encodeURIComponent(id)}/send`,
-  messageWithdraw: (id: string) => `/api/v1/admin/messages/${encodeURIComponent(id)}/withdraw`,
-  help: '/api/v1/admin/help',
-  helpEntry: (id: string) => `/api/v1/admin/help/${encodeURIComponent(id)}`,
-  helpStatus: (id: string) => `/api/v1/admin/help/${encodeURIComponent(id)}/status`,
+  duplicates: adm('duplicates'),
+  merge: adm('merge'),
+  merges: adm('merges'),
+  mergeUndo: (id: string) => adm('mergeUndo', { id }),
+  archiveRun: adm('archiveRun'),
+  restore: adm('restore'),
+  qbExport: adm('qbExport'),
+  qbImport: adm('qbImport'),
+  qbRulesCheck: adm('qbRulesCheck'),
+  questions: adm('questions'),
+  question: (name: string) => adm('question', { name }),
+  questionOptions: (name: string) => adm('questionOptions', { name }),
+  profiles: adm('profiles'),
+  profileCompletion: adm('profileCompletion'),
+  profile: (id: string) => adm('profile', { id }),
+  qbVersions: adm('qbVersions'),
+  qbVersion: (n: number) => adm('qbVersion', { n }),
+  qbVersionAction: (n: number, action: 'review' | 'publish' | 'discard') => adm('qbVersionAction', { n, action }),
+  questionTranslations: (name: string) => adm('questionTranslations', { name }),
+  missingTranslations: adm('missingTranslations'),
+  segments: adm('segments'),
+  segment: (name: string) => adm('segment', { name }),
+  audienceCount: adm('audienceCount'),
+  audiences: adm('audiences'),
+  audience: (id: string) => adm('audience', { id }),
+  audienceRecount: (id: string) => adm('audienceRecount', { id }),
+  surveys: adm('surveys'),
+  survey: (id: string) => adm('survey', { id }),
+  surveyStatus: (id: string) => adm('surveyStatus', { id }),
+  surveyFeasibility: (id: string) => adm('surveyFeasibility', { id }),
+  surveyInvite: (id: string) => adm('surveyInvite', { id }),
+  surveyResponses: (id: string) => adm('surveyResponses', { id }),
+  surveyReconcile: (id: string) => adm('surveyReconcile', { id }),
+  memberPoints: (id: string) => adm('memberPoints', { id }),
+  pointsApprovals: adm('pointsApprovals'),
+  pointsApproval: (id: string) => adm('pointsApproval', { id }),
+  holds: adm('holds'),
+  holdRelease: (id: string) => adm('holdRelease', { id }),
+  qualityTiers: adm('qualityTiers'),
+  qualityReview: adm('qualityReview'),
+  memberQuality: (id: string) => adm('memberQuality', { id }),
+  referralFraud: adm('referralFraud'),
+  experts: adm('experts'),
+  expert: (id: string) => adm('expert', { id }),
+  expertDecision: (id: string) => adm('expertDecision', { id }),
+  tickets: adm('tickets'),
+  ticket: (id: string) => adm('ticket', { id }),
+  ticketReply: (id: string) => adm('ticketReply', { id }),
+  ticketStatus: (id: string) => adm('ticketStatus', { id }),
+  messages: adm('messages'),
+  message: (id: string) => adm('message', { id }),
+  messagePreview: (id: string) => adm('messagePreview', { id }),
+  messageSend: (id: string) => adm('messageSend', { id }),
+  messageWithdraw: (id: string) => adm('messageWithdraw', { id }),
+  help: adm('help'),
+  helpEntry: (id: string) => adm('helpEntry', { id }),
+  helpStatus: (id: string) => adm('helpStatus', { id }),
   // content and legal pages (MFR#64, turn2opinion#33, MHO#15: app/admin/content.js)
-  content: '/api/v1/admin/content',
-  contentPage: (id: string) => `/api/v1/admin/content/${encodeURIComponent(id)}`,
-  contentAction: (id: string, action: 'review' | 'publish' | 'discard') =>
-    `/api/v1/admin/content/${encodeURIComponent(id)}/${action}`,
-  contentRevisions: (id: string) => `/api/v1/admin/content/${encodeURIComponent(id)}/revisions`,
-  contentRevision: (id: string, version: number) => `/api/v1/admin/content/${encodeURIComponent(id)}/revisions/${version}`,
-  contentRestore: (id: string, version: number) =>
-    `/api/v1/admin/content/${encodeURIComponent(id)}/revisions/${version}/restore`,
+  content: adm('content'),
+  contentPage: (id: string) => adm('contentPage', { id }),
+  contentAction: (id: string, action: 'review' | 'publish' | 'discard') => adm('contentAction', { id, action }),
+  contentRevisions: (id: string) => adm('contentRevisions', { id }),
+  contentRevision: (id: string, version: number) => adm('contentRevision', { id, version }),
+  contentRestore: (id: string, version: number) => adm('contentRestore', { id, version }),
   // step 4 (MFR backend app/admin/routes.js)
-  switches: '/api/v1/admin/switches',
-  switch: (key: string) => `/api/v1/admin/switches/${encodeURIComponent(key)}`,
+  switches: adm('switches'),
+  switch: (key: string) => adm('switch', { key }),
   // auto reminders and WhatsApp / SMS providers (MFR#105, app/admin/reminders.js)
-  reminders: '/api/v1/admin/reminders',
-  remindersPreview: '/api/v1/admin/reminders/preview',
-  channels: '/api/v1/admin/channels',
-  channel: (c: string) => `/api/v1/admin/channels/${encodeURIComponent(c)}`,
-  channelCheck: (c: string) => `/api/v1/admin/channels/${encodeURIComponent(c)}/check`,
-  channelRemove: (c: string) => `/api/v1/admin/channels/${encodeURIComponent(c)}/remove`,
+  reminders: adm('reminders'),
+  remindersPreview: adm('remindersPreview'),
+  channels: adm('channels'),
+  channel: (c: string) => adm('channel', { channel: c }),
+  channelCheck: (c: string) => adm('channelCheck', { channel: c }),
+  channelRemove: (c: string) => adm('channelRemove', { channel: c }),
   // prize machines, one per segment (MFR#56)
-  prizeMachines: '/api/v1/admin/prize-machines',
+  prizeMachines: adm('prizeMachines'),
   // step 5 reports, aggregate counts per brand (MFR#58)
-  report: (name: string) => `/api/v1/admin/reports/${encodeURIComponent(name)}`,
-  prizeMachine: (segment: string) => `/api/v1/admin/prize-machines/${encodeURIComponent(segment)}`,
-  prizeMachinePlays: (segment: string) => `/api/v1/admin/prize-machines/${encodeURIComponent(segment)}/plays`,
-  catalogue: '/api/v1/admin/rewards/catalogue',
-  catalogueItem: (key: string) => `/api/v1/admin/rewards/catalogue/${encodeURIComponent(key)}`,
-  redemptions: '/api/v1/admin/redemptions',
-  redemption: (id: string) => `/api/v1/admin/redemptions/${encodeURIComponent(id)}`,
-  redemptionDecision: (id: string) => `/api/v1/admin/redemptions/${encodeURIComponent(id)}/decision`,
-  draws: '/api/v1/admin/draws',
-  drawRun: (id: string) => `/api/v1/admin/draws/${encodeURIComponent(id)}/run`,
-  drawCancel: (id: string) => `/api/v1/admin/draws/${encodeURIComponent(id)}/cancel`,
-  offers: '/api/v1/admin/offers',
-  offerEnd: (id: string) => `/api/v1/admin/offers/${encodeURIComponent(id)}/end`,
-  tasks: '/api/v1/admin/engagement/tasks',
-  task: (id: string) => `/api/v1/admin/engagement/tasks/${encodeURIComponent(id)}`,
-  ideas: '/api/v1/admin/engagement/ideas',
-  idea: (id: string) => `/api/v1/admin/engagement/ideas/${encodeURIComponent(id)}`,
-  stories: '/api/v1/admin/engagement/stories',
-  story: (id: string) => `/api/v1/admin/engagement/stories/${encodeURIComponent(id)}`,
-  streaks: '/api/v1/admin/engagement/streaks',
-  teens: '/api/v1/admin/teens',
-  teen: (id: string) => `/api/v1/admin/teens/${encodeURIComponent(id)}`,
-  teenRevokeLinks: (id: string) => `/api/v1/admin/teens/${encodeURIComponent(id)}/revoke-links`,
-  teenGraduate: (id: string) => `/api/v1/admin/teens/${encodeURIComponent(id)}/graduate`,
+  report: (name: string) => adm('report', { name }),
+  prizeMachine: (segment: string) => adm('prizeMachine', { segment }),
+  prizeMachinePlays: (segment: string) => adm('prizeMachinePlays', { segment }),
+  catalogue: adm('catalogue'),
+  catalogueItem: (key: string) => adm('catalogueItem', { key }),
+  redemptions: adm('redemptions'),
+  redemption: (id: string) => adm('redemption', { id }),
+  redemptionDecision: (id: string) => adm('redemptionDecision', { id }),
+  draws: adm('draws'),
+  drawRun: (id: string) => adm('drawRun', { id }),
+  drawCancel: (id: string) => adm('drawCancel', { id }),
+  offers: adm('offers'),
+  offerEnd: (id: string) => adm('offerEnd', { id }),
+  tasks: adm('tasks'),
+  task: (id: string) => adm('task', { id }),
+  ideas: adm('ideas'),
+  idea: (id: string) => adm('idea', { id }),
+  stories: adm('stories'),
+  story: (id: string) => adm('story', { id }),
+  streaks: adm('streaks'),
+  teens: adm('teens'),
+  teen: (id: string) => adm('teen', { id }),
+  teenRevokeLinks: (id: string) => adm('teenRevokeLinks', { id }),
+  teenGraduate: (id: string) => adm('teenGraduate', { id }),
   // turning 18 not accepted within the time: close (MFR#55)
-  teenClose: (id: string) => `/api/v1/admin/teens/${encodeURIComponent(id)}/close`,
+  teenClose: (id: string) => adm('teenClose', { id }),
   // registration pipeline: all eleven statuses; approve (manual review), cancel, renew (expired) (MFR#55)
-  teenRegistrations: '/api/v1/admin/teens/registrations',
-  teenRegistrationAction: (id: string, action: 'approve' | 'cancel' | 'renew') =>
-    `/api/v1/admin/teens/registrations/${encodeURIComponent(id)}/${action}`,
-  dataRequests: '/api/v1/admin/data-requests',
-  dataRequest: (id: string) => `/api/v1/admin/data-requests/${encodeURIComponent(id)}`,
-  dataRequestDecision: (id: string) => `/api/v1/admin/data-requests/${encodeURIComponent(id)}/decision`,
-} as const;
+  teenRegistrations: adm('teenRegistrations'),
+  teenRegistrationAction: (id: string, action: 'approve' | 'cancel' | 'renew') => adm('teenRegistrationAction', { id, action }),
+  dataRequests: adm('dataRequests'),
+  dataRequest: (id: string) => adm('dataRequest', { id }),
+  dataRequestDecision: (id: string) => adm('dataRequestDecision', { id }),} as const;
 
 export interface PanelAdminConfig {
   baseUrl: string;
@@ -566,10 +612,7 @@ export async function signPanelAdmin(
     body: string;
   },
 ): Promise<string> {
-  const { createHash, createHmac } = await import('node:crypto');
-  const bodyHash = createHash('sha256').update(p.body).digest('hex');
-  const canonical = `${p.timestamp}\n${p.nonce}\n${p.method.toUpperCase()}\n${p.path}\n${p.origin}\n${p.actor}\n${bodyHash}`;
-  return createHmac('sha256', secret).update(canonical).digest('hex');
+  return sign(secret, p);
 }
 
 export class PanelAdminClient {
@@ -619,6 +662,7 @@ export class PanelAdminClient {
           'x-madp-origin': this.cfg.origin,
           'x-madp-actor': actor,
           'x-madp-signature': signature,
+          [CONTRACT_VERSION_HEADER]: PANEL_CONTRACT_VERSION,
         },
       });
     } catch (e) {
@@ -641,5 +685,22 @@ export class PanelAdminClient {
         json.code ?? 'panel_error',
       );
     return json.data as T;
+  }
+
+  /** Signed GET /api/v1/contract. A 404 means the panel has no discovery route yet. */
+  async discover(actor: string, opts: { requireCore?: boolean } = {}): Promise<DiscoveryCheck & { httpStatus?: number }> {
+    try {
+      return checkDiscovery(await this.call<unknown>(actor, 'GET', pathOf('sync', 'contract')), opts);
+    } catch (e) {
+      const status = e instanceof PanelAdminError ? e.httpStatus : undefined;
+      return {
+        ok: false,
+        capabilities: [],
+        unknown: [],
+        missingCore: [],
+        problems: [status === 404 ? 'The panel does not serve GET /api/v1/contract yet (404)' : (e as Error).message],
+        ...(status ? { httpStatus: status } : {}),
+      };
+    }
   }
 }

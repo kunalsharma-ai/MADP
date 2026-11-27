@@ -592,6 +592,20 @@ export const panelConnections = pgTable('panel_connection', {
   lastTestAt: timestamp('last_test_at', { withTimezone: true }),
   lastTestOk: boolean('last_test_ok'),
   lastTestMessage: text('last_test_message'),
+  /**
+   * The panel's answer to GET /api/v1/contract (MADP Panel API Contract), from "Check contract". Null until checked;
+   * MADP then assumes the shared panel backend's capabilities. Holds no personal data.
+   */
+  contractVersion: text('contract_version'),
+  contractImplementation: text('contract_implementation'),
+  contractCapabilities: text('contract_capabilities').array(),
+  contractBrands: text('contract_brands').array(),
+  contractCheckedAt: timestamp('contract_checked_at', { withTimezone: true }),
+  contractOk: boolean('contract_ok'),
+  contractMessage: text('contract_message'),
+  /** Last conformance kit report: check ids, statuses and short details only, never records. */
+  conformanceReport: jsonb('conformance_report'),
+  conformanceAt: timestamp('conformance_at', { withTimezone: true }),
   updatedBy: uuid('updated_by'),
   updatedAt: updated(),
 });

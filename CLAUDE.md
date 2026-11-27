@@ -14,15 +14,18 @@ MyHealthOpinions (MHO). The spec is `MADP_CLAUDE_CODE_MASTER_PROMPT.md` (kept ou
 - Get explicit approval from the owner before: reading production personal data, sending any message, changing live
   rewards, deploying, or changing the panel repositories.
 - Never commit secrets or production credentials. `.env` is git-ignored; only `.env.example` holds placeholders.
-- Do not invent panel endpoints. Panel routes live only in `packages/connectors/src/http-connector.ts` and must match
-  the audits.
+- Do not invent panel endpoints. Panel routes live only in the MADP Panel API Contract
+  (`packages/panel-contract/src/operations.ts`, docs in `docs/PANEL_API_CONTRACT.md`) and must match the audits.
+  `packages/connectors` builds its paths from it; a test fails if `apps/api` calls a route or method outside it. A new
+  route is a contract change: add it there, regenerate `docs/panel-contract/` and follow its versioning rules.
 - Use the latest stable versions, pinned exactly. No alpha, beta, RC or canary.
 - MHO answers are special-category by default. Never infer health facts from panel membership.
 
 ## Layout
 
 `apps/api` (NestJS 12, Drizzle on Postgres 18, MongoDB 8) · `apps/admin` (Next.js 16) · `packages/contracts` (zod,
-the single source of API types) · `packages/config` · `packages/connectors` · `packages/testing` (DEMO fixtures).
+the single source of API types) · `packages/config` · `packages/panel-contract` (the Panel API Contract, conformance
+kit and reference panel) · `packages/connectors` · `packages/testing` (DEMO fixtures).
 
 ## Commands
 

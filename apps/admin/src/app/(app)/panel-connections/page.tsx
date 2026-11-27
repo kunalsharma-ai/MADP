@@ -4,6 +4,7 @@ import { api } from '@/lib/api';
 import { Badge, Card, CardHeader, DataModeBadge, PageHeader, PanelChip, fmtDate } from '@/components/ui';
 import { BrandLogo } from '@/components/brand-logo';
 import { ConnectionForm, PendingDecision } from './connection-form';
+import { ContractCard } from './contract-card';
 import type { ReactNode } from 'react';
 import { CheckCircle2, Circle, XCircle } from 'lucide-react';
 import { Ring } from '@/components/dashboard/fx';
@@ -57,7 +58,9 @@ export default async function PanelConnectionsPage() {
             Connect each panel here: add its address and token, test it, then turn on live sync. A green tick
             means the step is done. Tokens are stored encrypted and only their last four characters are shown.
             Each change needs your authenticator code and a reason, and waits for a second Super Admin when there
-            is one. Turning on live sync is your approval to read that panel&apos;s real member data.
+            is one. Turning on live sync is your approval to read that panel&apos;s real member data. Every panel
+            talks to MADP through one API contract: &ldquo;Check contract&rdquo; reads what the panel offers, and
+            &ldquo;Run conformance&rdquo; tests it without changing anything.
           </>
         }
       />
@@ -141,6 +144,7 @@ export default async function PanelConnectionsPage() {
                 </span>
               </Step>
             </ol>
+            <ContractCard connection={c} />
             {c.pending ? <PendingDecision connection={c} /> : null}
             {c.canChange && !c.pending ? <ConnectionForm connection={c} /> : null}
           </Card>
