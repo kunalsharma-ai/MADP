@@ -54,6 +54,14 @@ const CHECKED_IN_HANDLER = new Set([
   'GET /fraud-alerts',
   'POST /fraud-alerts/seen',
   'GET /activity',
+  // Daily summary and each admin's own alert rules: counts only, for brands where the admin holds members.read
+  // (points.read for redemptions), checked per brand in the handler; a rule belongs to the admin who made it.
+  'GET /daily-summary',
+  'GET /alert-rules',
+  'POST /alert-rules',
+  'PUT /alert-rules/:id',
+  'POST /alert-rules/:id/mute',
+  'POST /alert-rules/:id/remove',
 ]);
 
 interface Route {
