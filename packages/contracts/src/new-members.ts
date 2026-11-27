@@ -145,3 +145,106 @@ export interface FraudAlerts {
   panels: FraudAlertPanel[];
   unreachable: string[];
 }
+
+/** One day on one panel, for the daily summary. Counts only: never a name, e-mail or member id. */
+export interface DailySummaryPanel {
+  panel: string;
+  signups: number;
+  /** Sign-ups the day before, to show up or down. */
+  signupsBefore: number;
+  /** Average sign-ups per day over the 7 days before the chosen day. */
+  signupsAvg7: number;
+  bySegment: { segment: string; n: number }[];
+  byCountry: { country: string; n: number }[];
+  completes: number;
+  completesBefore: number;
+  /** Members with at least one survey complete that day. */
+  activeMembers: number;
+  pointsEarned: number;
+  /** null when the admin has no points.read on this panel. */
+  redemptions: { n: number; points: number } | null;
+  /** The 14 days ending on the chosen day, oldest first. */
+  trend: { day: string; signups: number; completes: number }[];
+}
+
+export interface DailySummary {
+  dataMode: 'demo' | 'live';
+  /** The chosen day (YYYY-MM-DD, India time). */
+  day: string;
+  timeZone: string;
+  checkedAt: string;
+  totals: {
+    signups: number;
+    signupsBefore: number;
+    completes: number;
+    completesBefore: number;
+    activeMembers: number;
+    pointsEarned: number;
+  };
+  panels: DailySummaryPanel[];
+}
+
+/** What an admin alert rule counts, on one panel, over the last hour or day. Counts only. */
+export const AlertMetric = z.enum(['signups', 'completes', 'redemptions', 'points_redeemed']);
+export type AlertMetric = z.infer<typeof AlertMetric>;
+export const ALERT_METRIC_LABELS: Record<AlertMetric, string> = {
+  signups: 'New sign-ups',
+  completes: 'Survey completes',
+  redemptions: 'Redemptions',
+  points_redeemed: 'Points redeemed',
+};
+export const AlertRuleInput = z
+  .object({
+    name: z.string().trim().min(3).max(80),
+    /** Leave out to check every panel you can see, one by one. */
+    panel: PanelCode.nullable().optional(),
+    metric: AlertMetric,
+    /** Sign-ups only: count just this segment (for example patient). */
+    segment: z
+      .string()
+      .regex(/^[a-z][a-z0-9_ ]{0,39}$/)
+      .nullable()
+      .optional(),
+    comparator: z.enum(['above', 'below']),
+    threshold: z.number().int().min(0).max(1_000_000),
+    window: z.enum(['hour', 'day']),
+    enabled: z.boolean().optional(),
+  })
+  .strict();
+export type AlertRuleInput = z.infer<typeof AlertRuleInput>;
+export const AlertRuleMute = z
+  .object({
+    hours: z
+      .number()
+      .int()
+      .min(0)
+      .max(24 * 30),
+  })
+  .strict();
+export type AlertRuleMute = z.infer<typeof AlertRuleMute>;
+
+export interface AlertRuleView extends Required<Omit<AlertRuleInput, 'panel' | 'segment'>> {
+  id: string;
+  panel: string | null;
+  segment: string | null;
+  mutedUntil: string | null;
+  updatedAt: string;
+  /** The count right now on each panel the rule checks; null where you cannot see that metric. */
+  current: { panel: string; value: number | null; firing: boolean }[];
+}
+export interface AlertRules {
+  checkedAt: string;
+  dataMode: 'demo' | 'live';
+  rules: AlertRuleView[];
+  /** Rules firing now (on, not muted), one line per panel. */
+  firing: {
+    ruleId: string;
+    name: string;
+    panel: string;
+    metric: AlertMetric;
+    value: number;
+    threshold: number;
+    comparator: 'above' | 'below';
+    window: 'hour' | 'day';
+  }[];
+}

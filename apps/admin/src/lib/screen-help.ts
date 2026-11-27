@@ -71,6 +71,24 @@ export const SCREEN_HELP: Record<string, ScreenHelp> = {
       'Click a line to open the matching screen for that panel.',
     ],
   },
+  '/daily-summary': {
+    why: 'See in one minute how yesterday went on T2O, MFR and MHO: sign-ups, survey completes, points and redemptions, each compared with the day before.',
+    where: 'MADP’s synced copy of each panel, counted by India time (midnight to midnight). Counts only: no names or e-mails.',
+    how: [
+      'It opens on yesterday. Use Day before, Next day or the date box to look at another day.',
+      'The bars are 14 days of sign-ups and the line is survey completes; the brightest bar is the day shown.',
+      'Open Members or Live activity from a panel card for the people behind the numbers.',
+    ],
+  },
+  '/alert-rules': {
+    why: 'Get told when something unusual happens on a panel, such as a sign-up spike or a day with too few survey completes.',
+    where: 'Your own rules, checked against MADP’s synced copy of each panel every two minutes while the console is open. Nothing is sent outside the console.',
+    how: [
+      'Add a rule: what to watch, which panel, the last hour or day, above or below which number.',
+      'The amber siren next to the bell lights up and chimes when a rule fires.',
+      'Mute a rule for 4 hours, turn it off, edit it or remove it on this screen.',
+    ],
+  },
   '/members': {
     why: 'Look up and help a member of the brand picked at the top.',
     where: 'The panel itself, through its signed admin API. E-mail and phone stay masked unless you have the PII permission and give a reason.',

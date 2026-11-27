@@ -30,6 +30,8 @@ import { NewMembersController } from './new-members/new-members.controller.js';
 import { FraudAlertsController } from './new-members/fraud-alerts.controller.js';
 import { MemberViewsController } from './new-members/member-views.controller.js';
 import { ActivityController } from './new-members/activity.controller.js';
+import { DailySummaryController } from './new-members/daily-summary.controller.js';
+import { AlertRulesController } from './new-members/alert-rules.controller.js';
 import { DashboardController } from './dashboard/dashboard.controller.js';
 import { IdentityService } from './identity/identity.service.js';
 import { IdentityController } from './identity/identity.controller.js';
@@ -108,6 +110,8 @@ export class AppModule {
         FraudAlertsController,
         MemberViewsController,
         ActivityController,
+        DailySummaryController,
+        AlertRulesController,
         DashboardController,
         AuditController,
         AdminsController,

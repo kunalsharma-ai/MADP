@@ -15,6 +15,7 @@ import { BrandLogo } from './brand-logo';
 import { PanelsProvider } from './panels-context';
 import { NewMembersBell, NewMembersNavBadge, NewMembersProvider } from './new-members';
 import { FraudAlert } from './fraud-alert';
+import { RuleAlert } from './rule-alert';
 
 
 const BRAND_LABEL: Record<string, string> = {
@@ -223,6 +224,7 @@ export function Shell({
           >
             <Menu className="size-4" aria-hidden />
           </button>
+          <RuleAlert />
           <FraudAlert />
           <NewMembersBell />
           <ThemeToggle />
