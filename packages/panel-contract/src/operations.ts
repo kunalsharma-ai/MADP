@@ -334,6 +334,12 @@ const ADMIN: Record<string, ResourceSpec> = {
     methods: { GET: 'Completion per profile' },
   },
   profile: { path: `${A}/profiles/{id}`, capability: 'admin.profiles', methods: { PUT: 'Change a profile' } },
+  // About You lock (contract 1.1): the panel refuses surveys and the other profiles until these are complete
+  aboutYou: {
+    path: `${A}/about-you`,
+    capability: 'admin.about_you',
+    methods: { GET: 'About You profiles per segment', PUT: 'Change the About You list with a reason' },
+  },
   // segments and audiences
   segments: {
     path: `${A}/segments`,

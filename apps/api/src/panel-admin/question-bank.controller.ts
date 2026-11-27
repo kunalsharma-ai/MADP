@@ -1,6 +1,7 @@
 import { BadRequestException, Body, Controller, Get, Header, Param, Post, Put, Query, Req, Res } from '@nestjs/common';
 import { z } from 'zod';
 import {
+  AboutYouSave,
   BankFile,
   MissingTranslations,
   OptionsSet,
@@ -10,6 +11,7 @@ import {
   ProfileUpdate,
   QuestionCreate,
   QuestionUpdate,
+  type AboutYouView,
   type BrandSelection,
   type PanelCode,
 } from '@madp/contracts';
@@ -18,6 +20,7 @@ import type { Request, Response } from 'express';
 import { BrandScoped, CurrentBrand, CurrentPrincipal, RequirePermissions } from '../auth/decorators.js';
 import type { Principal } from '../auth/auth.types.js';
 import { ZodPipe } from '../common/zod.pipe.js';
+import { hasOn } from '../auth/access.js';
 import { AuditService } from '../audit/audit.service.js';
 import { PanelAdminService } from './panel-admin.service.js';
 import { ConnectorRegistry } from '../connectors/connector-registry.js';
@@ -392,5 +395,38 @@ export class QuestionBankController {
       reason: reason ?? null,
     });
     return r;
+  }
+
+  /**
+   * The About You lock (MFR#122): which profiles a member finishes before surveys and the other profiles open. The
+   * panel enforces it on survey links and its member API; MADP only shows and changes the list.
+   */
+  @RequirePermissions('qb.read')
+  @Get('about-you')
+  async aboutYou(@CurrentBrand() b: BrandSelection, @CurrentPrincipal() p: Principal) {
+    const brand = b as PanelCode;
+    const r = await this.panel.call<AboutYouView>(brand, p.id, 'GET', R.aboutYou);
+    return { ...r, canEdit: hasOn(p, brand, ['profiles.manage']) };
+  }
+
+  @RequirePermissions('profiles.manage')
+  @Put('about-you')
+  async saveAboutYou(
+    @Body(new ZodPipe(AboutYouSave)) body: AboutYouSave,
+    @CurrentBrand() b: BrandSelection,
+    @CurrentPrincipal() p: Principal,
+    @Req() req: Request,
+  ) {
+    const brand = b as PanelCode;
+    const before = await this.panel.call<AboutYouView>(brand, p.id, 'GET', R.aboutYou);
+    const after = await this.panel.call<AboutYouView>(brand, p.id, 'PUT', R.aboutYou, undefined, body);
+    await this.log(req, brand, 'qb.about_you.update', 'about_you', brand, {
+      metadata: {
+        reason: body.reason,
+        before: { saved: before.saved, groups: before.groups, byCategory: before.byCategory },
+        after: { saved: after.saved, groups: after.groups, byCategory: after.byCategory },
+      },
+    });
+    return after;
   }
 }

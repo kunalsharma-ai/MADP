@@ -16,7 +16,7 @@
  * - Major (2.0.0): anything that breaks a 1.x panel. MADP then speaks both majors for at least six months.
  */
 export const PANEL_CONTRACT_NAME = 'madp-panel-api' as const;
-export const PANEL_CONTRACT_VERSION = '1.0.0' as const;
+export const PANEL_CONTRACT_VERSION = '1.1.0' as const;
 
 /** Contract majors this MADP build can talk to. */
 export const SUPPORTED_CONTRACT_MAJORS = [1] as const;

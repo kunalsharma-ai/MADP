@@ -1,8 +1,10 @@
 import type { Metadata } from 'next';
-import { api } from '@/lib/api';
+import type { AboutYouView } from '@madp/contracts';
+import { api, ApiError } from '@/lib/api';
 import { withPanel } from '@/lib/panel';
 import { Card, CardHeader, EmptyState, PageHeader, Table, fmt, input, btn } from '@/components/ui';
 import { ProfileRows, type ProfileRow } from './profile-rows';
+import { AboutYouLock } from './about-you';
 import { DownloadMenu } from '@/components/files';
 
 export const metadata: Metadata = { title: 'Profiles' };
@@ -47,12 +49,31 @@ export default async function ProfilesPage({
       </form>
       {await withPanel(async () => {
         const q = `?category=${encodeURIComponent(category)}`;
-        const [rows, completion] = await Promise.all([
+        const [rows, completion, aboutYou] = await Promise.all([
           api<ProfileRow[]>(`/panel/profiles${q}`),
           api<Completion>(`/panel/profiles/completion${q}`),
+          // a panel backend without the About You lock yet (MFR#122 not deployed) answers 404 or 501
+          api<AboutYouView & { canEdit: boolean }>(`/panel/about-you`).catch((e: unknown) => {
+            if (e instanceof ApiError && [404, 501].includes(e.status)) return null;
+            throw e;
+          }),
         ]);
         return (
           <div className="grid gap-4">
+            <Card>
+              <CardHeader
+                title="About You lock"
+                hint="Surveys and the other profiles stay locked until a member finishes these. The panel checks it on every survey link and API call, for every segment of this brand."
+              />
+              {aboutYou ? (
+                <AboutYouLock view={aboutYou} canEdit={aboutYou.canEdit} />
+              ) : (
+                <EmptyState title="This panel does not offer the About You lock yet">
+                  The panel backend gets it with its next deploy. Until then only the member screen shows the
+                  lock.
+                </EmptyState>
+              )}
+            </Card>
             <Card>
               <CardHeader
                 title={`${rows.length} profiles`}

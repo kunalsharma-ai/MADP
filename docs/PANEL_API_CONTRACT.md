@@ -1,4 +1,4 @@
-# MADP Panel API Contract, version 1.0.0
+# MADP Panel API Contract, version 1.1.0
 
 **Simple words mein:** MADP ab kisi ek panel ke code se bandha nahi hai. Ek common API Contract hai. Koi bhi panel
 (T2O, MFR, MHO, ya kal ka koi naya panel ya panel network) agar is contract ke routes, shapes aur signing follow karta
@@ -67,7 +67,7 @@ because the T2O backend takes its tenant from the Host header. For admin routes 
 | 408, 425, 429, 5xx | temporary | retries with backoff, honours `Retry-After` (max 60 s) |
 | 3xx | never allowed | MADP refuses to follow it, so a token or signature never goes to another host |
 
-MADP sends `x-madp-contract-version: 1.0.0` on every call. A panel may log it or ignore it.
+MADP sends `x-madp-contract-version: 1.1.0` on every call. A panel may log it or ignore it.
 
 ## 4. Authentication
 
@@ -102,7 +102,7 @@ the backend does not serve (the shared backend's `MADP_ADMIN_API_ORIGINS`), 409 
   "status": "success",
   "data": {
     "contract": "madp-panel-api",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "implementation": { "name": "t2o-shared-backend", "version": "2.4.0" },
     "brands": [{ "origin": "www.turn2opinion.com" }, { "origin": "www.myfrequentrewards.com" }],
     "capabilities": ["contract.discovery", "questions.read", "options.read", "questionnaires.read",
@@ -125,7 +125,8 @@ declared. Unknown capability ids (from a newer minor version) are accepted and i
 (loyalty mirror), `special_category` (declares health answers, see section 8), `webhooks.push`.
 
 **Optional admin** (the super admin console): `admin.members`, `admin.members.actions`, `admin.members.engagement`,
-`admin.members.duplicates`, `admin.members.archive`, `admin.question_bank`, `admin.profiles`, `admin.segments`,
+`admin.members.duplicates`, `admin.members.archive`, `admin.question_bank`, `admin.profiles`, `admin.about_you`,
+`admin.segments`,
 `admin.audiences`, `admin.surveys`, `admin.points`, `admin.quality`, `admin.experts`, `admin.tickets`,
 `admin.messages`, `admin.help`, `admin.content`, `admin.switches`, `admin.reminders`, `admin.prize_machines`,
 `admin.reports`, `admin.rewards`, `admin.draws`, `admin.offers`, `admin.engagement`, `admin.teens`,
@@ -189,6 +190,14 @@ What 1.0 pins exactly: every method and path, authentication, the envelope, erro
 shapes and the changes-feed rules. For admin routes 1.0 pins method, path, authentication, envelope and errors; their
 request and answer bodies are those of the shared backend (the reference implementation) as of 2026-11-27, and moving
 each one into a zod schema in `records.ts` is planned 1.x work (additive).
+
+### Changes
+
+- **1.1.0** (2026-11-27): optional capability `admin.about_you`, routes `GET` and `PUT /api/v1/admin/about-you`: the
+  list of About You profiles a member must finish before the panel opens any survey or other profile, per brand and
+  per segment (`{groups, byCategory, reason}`; `groups: null` = the panel's default). The panel enforces the lock
+  itself, on survey links and its member API. Reference implementation: kunalsharma-ai/MFR#122.
+- **1.0.0** (2026-11-27): first version.
 
 ## 11. Conformance kit
 

@@ -1,10 +1,19 @@
 # MADP Panel API Contract: every route
 
-Generated from `packages/panel-contract/src/operations.ts` (contract 1.0.0). Do not edit by hand:
+Generated from `packages/panel-contract/src/operations.ts` (contract 1.1.0). Do not edit by hand:
 run `pnpm --filter @madp/panel-contract build && pnpm --filter @madp/panel-contract openapi`.
 
 Auth: `bearer` = sync token, `signed` = x-madp-* signature, `either` = one of them. Personal = returns member data.
 
+
+## `admin.about_you` About You lock
+
+Which profiles a member must finish before surveys and the other profiles open, per brand and segment (contract 1.1).
+
+| Method | Path | Auth | Writes | Personal | What it does |
+|---|---|---|---|---|---|
+| GET | `/api/v1/admin/about-you` | signed |  |  | About You profiles per segment |
+| PUT | `/api/v1/admin/about-you` | signed | yes |  | Change the About You list with a reason |
 
 ## `admin.audiences` Audiences
 

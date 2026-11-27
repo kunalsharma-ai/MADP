@@ -104,7 +104,7 @@ describe('panel API contract', () => {
       .set('authorization', `Bearer ${boss.token}`)
       .expect(200);
     expect(check.body.ok).toBe(true);
-    expect(check.body.version).toBe('1.0.0');
+    expect(check.body.version).toBe('1.1.0');
     expect(check.body.capabilities).toContain('admin.members');
     expect(check.body.capabilities).not.toContain('admin.tickets');
 
@@ -138,7 +138,7 @@ describe('panel API contract', () => {
     const audit = await db.query(
       `select metadata from audit_event where action = 'connections.contract.check' and panel = 't2o'`,
     );
-    expect(audit.rows[0].metadata).toMatchObject({ ok: true, version: '1.0.0' });
+    expect(audit.rows[0].metadata).toMatchObject({ ok: true, version: '1.1.0' });
   });
 
   it('runs the conformance kit without personal data until live sync is approved', async () => {

@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "MADP Panel API Contract",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "x-contract": "madp-panel-api",
     "description": "The routes any panel serves to work with MADP. Based on the T2O backend API: routes under /api/v1, the {status, message, data} envelope, a bearer token for read and sync routes and signed x-madp-* headers for /api/v1/admin. A panel declares its capabilities at GET /api/v1/contract and MADP calls only those. See docs/PANEL_API_CONTRACT.md."
   },
@@ -96,6 +96,10 @@
     {
       "name": "admin.profiles",
       "description": "Profiles. Profile questionnaires and completion rates."
+    },
+    {
+      "name": "admin.about_you",
+      "description": "About You lock. Which profiles a member must finish before surveys and the other profiles open, per brand and segment (contract 1.1)."
     },
     {
       "name": "admin.segments",
@@ -5889,6 +5893,170 @@
             }
           }
         ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "status",
+                    "data"
+                  ],
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "success"
+                      ]
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "description": "As served by the reference implementation (shared panel backend)."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Credentials missing, wrong, stale or replayed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found, or the capability is not offered",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/about-you": {
+      "get": {
+        "operationId": "admin.aboutYou.get",
+        "summary": "About You profiles per segment",
+        "tags": [
+          "admin.about_you"
+        ],
+        "x-madp-capability": "admin.about_you",
+        "x-madp-writes": false,
+        "security": [
+          {
+            "madpSigned": []
+          }
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "status",
+                    "data"
+                  ],
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "success"
+                      ]
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "description": "As served by the reference implementation (shared panel backend)."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Credentials missing, wrong, stale or replayed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found, or the capability is not offered",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "operationId": "admin.aboutYou.put",
+        "summary": "Change the About You list with a reason",
+        "tags": [
+          "admin.about_you"
+        ],
+        "x-madp-capability": "admin.about_you",
+        "x-madp-writes": true,
+        "security": [
+          {
+            "madpSigned": []
+          }
+        ],
+        "parameters": [],
         "requestBody": {
           "required": false,
           "content": {

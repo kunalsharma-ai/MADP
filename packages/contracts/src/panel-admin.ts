@@ -291,6 +291,60 @@ export const ProfileUpdate = z
   .strict();
 export type ProfileUpdate = z.infer<typeof ProfileUpdate>;
 
+/**
+ * The About You lock (contract 1.1, capability admin.about_you). Each group is one About You profile: the slugs that
+ * count for it, the first one a segment has is used. `groups: null` goes back to the panel's default list (T2O's four).
+ * `byCategory` gives a segment its own list; an empty list there means nothing is locked for that segment.
+ */
+const ProfileSlug = z
+  .string()
+  .trim()
+  .toLowerCase()
+  .regex(/^[a-z0-9][a-z0-9_-]{0,79}$/, 'a profile slug');
+export const AboutYouGroups = z.array(z.array(ProfileSlug).min(1).max(10)).max(20);
+export const AboutYouSave = z
+  .object({
+    groups: AboutYouGroups.min(1).nullable(),
+    byCategory: z
+      .record(
+        z
+          .string()
+          .trim()
+          .toLowerCase()
+          .regex(/^[a-z0-9][a-z0-9_-]{0,39}$/, 'a profile segment'),
+        AboutYouGroups.nullable(),
+      )
+      .default({}),
+    reason: Reason,
+  })
+  .strict();
+export type AboutYouSave = z.infer<typeof AboutYouSave>;
+export interface AboutYouCategory {
+  category: string;
+  source: 'category' | 'brand' | 'default';
+  ownGroups: string[][] | null;
+  aboutYou: { slug: string; name: string }[];
+  locked: number;
+  profiles: { slug: string; name: string }[];
+}
+export interface AboutYouView {
+  saved: boolean;
+  groups: string[][];
+  defaultGroups: string[][];
+  byCategory: Record<string, string[][]>;
+  categories: AboutYouCategory[];
+  updatedBy: string | null;
+  updatedAt: string | null;
+  reason: string | null;
+  history: {
+    groups?: string[][];
+    byCategory?: Record<string, string[][]>;
+    by: string | null;
+    reason: string;
+    at: string;
+  }[];
+}
+
 /** Today's export shape: Profile, Question and Option arrays (plural names accepted too). */
 const Rows = z.array(z.record(z.string(), z.unknown())).max(50_000);
 export const BankFile = z

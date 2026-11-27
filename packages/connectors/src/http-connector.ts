@@ -479,6 +479,7 @@ export const PANEL_ADMIN_ROUTES = {
   profiles: adm('profiles'),
   profileCompletion: adm('profileCompletion'),
   profile: (id: string) => adm('profile', { id }),
+  aboutYou: adm('aboutYou'),
   qbVersions: adm('qbVersions'),
   qbVersion: (n: number) => adm('qbVersion', { n }),
   qbVersionAction: (n: number, action: 'review' | 'publish' | 'discard') => adm('qbVersionAction', { n, action }),
