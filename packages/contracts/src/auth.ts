@@ -172,6 +172,26 @@ export const AdminUpdate = z.object({
 });
 export type AdminUpdate = z.infer<typeof AdminUpdate>;
 
+/** Passwords are 12 to 200 characters (issue #94). */
+export const AdminPassword = z.string().min(12, 'Use at least 12 characters').max(200);
+
+/** A signed-in admin changes their own password. */
+export const PasswordChange = z.object({
+  currentPassword: z.string().min(1).max(200),
+  newPassword: AdminPassword,
+});
+export type PasswordChange = z.infer<typeof PasswordChange>;
+
+/**
+ * A Super Admin resets another admin's password (issue #94): a new one-time password is shown once, the account is
+ * unlocked and every session ends. `resetMfa` also clears the authenticator, for a lost phone.
+ */
+export const AdminPasswordReset = z.object({
+  resetMfa: z.boolean().default(false),
+  reason: z.string().trim().min(5).max(500),
+});
+export type AdminPasswordReset = z.infer<typeof AdminPasswordReset>;
+
 export const SessionUser = z.object({
   id: z.string().uuid(),
   email: z.string().email(),

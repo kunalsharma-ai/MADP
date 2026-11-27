@@ -14,6 +14,7 @@ interface AdminRow {
   isActive: boolean;
   mfaEnabled: boolean;
   lastLoginAt: string | null;
+  lockedUntil: string | null;
   grants: RoleGrant[];
 }
 interface RoleRow {
@@ -28,11 +29,13 @@ interface RoleRow {
 const brandText = (b: string[] | null) => (b ? b.map((x) => x.toUpperCase()).join(', ') : 'All brands');
 
 export default async function AdminsPage() {
-  const [admins, roles, perms] = await Promise.all([
+  const [admins, roles, perms, me] = await Promise.all([
     api<AdminRow[]>('/admins'),
     api<RoleRow[]>('/roles'),
     import('@madp/contracts').then((m) => m.Permission.options as readonly string[]),
+    api<{ id: string }>('/auth/me'),
   ]);
+  const now = Date.now();
   return (
     <>
       <PageHeader
@@ -91,11 +94,16 @@ export default async function AdminsPage() {
                 </td>
                 <td className="px-5 py-2.5">
                   <Badge tone={a.isActive ? 'teal' : 'danger'}>{a.isActive ? 'active' : 'disabled'}</Badge>
+                  {a.lockedUntil && new Date(a.lockedUntil).getTime() > now ? (
+                    <Badge tone="warn">locked</Badge>
+                  ) : null}
                 </td>
                 <td className="px-5 py-2.5">
                   <AdminRowActions
                     id={a.id}
+                    email={a.email}
                     isActive={a.isActive}
+                    isSelf={a.id === me.id}
                     grants={a.grants}
                     roles={roles.map((r) => ({ key: r.key, name: r.name }))}
                   />

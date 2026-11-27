@@ -2,6 +2,7 @@
 
 import { cookies } from 'next/headers';
 import { revalidatePath } from 'next/cache';
+import { unstable_rethrow } from 'next/navigation';
 import { api, BRAND_COOKIE } from '@/lib/api';
 
 /** Brand switcher. The API re-checks the brand against the admin's grants on every call. */
@@ -36,6 +37,16 @@ export async function updateAdminAction(
   revalidatePath('/admins');
 }
 
+/** Issue #94: a new one-time password for another admin, shown once. */
+export async function resetAdminPasswordAction(id: string, input: { resetMfa: boolean; reason: string }) {
+  const r = await api<{ id: string; oneTimePassword: string }>(
+    `/admins/${encodeURIComponent(id)}/reset-password`,
+    { method: 'POST', json: input },
+  );
+  revalidatePath('/admins');
+  return r;
+}
+
 export async function saveRoleAction(
   key: string,
   input: { name: string; description: string; permissions: string[]; reason?: string },
@@ -55,4 +66,19 @@ export async function verifyAuditAction() {
   return api<{ ok: boolean; checked: number; firstBrokenId: number | null; problem: string | null }>(
     '/audit/verify',
   );
+}
+
+/** Issue #94: change your own password. Returns a message instead of throwing, so the form can show it. */
+export async function changePasswordAction(input: {
+  currentPassword: string;
+  newPassword: string;
+}): Promise<{ error?: string }> {
+  try {
+    await api('/auth/password', { method: 'POST', json: input });
+    return {};
+  } catch (e) {
+    unstable_rethrow(e);
+    const m = (e as Error).message;
+    return { error: /current password/i.test(m) ? 'Your current password is not right.' : m };
+  }
 }

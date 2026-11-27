@@ -10,6 +10,7 @@ import { asc, eq, inArray } from 'drizzle-orm';
 import {
   Permission,
   type AdminCreate,
+  type AdminPasswordReset,
   type AdminUpdate,
   type RoleDefinition,
   type RoleGrant,
@@ -71,13 +72,24 @@ export class AdminsService {
       throw new BadRequestException('Each role once');
     const known = new Set(this.panels.codes());
     const stray = grants.flatMap((g) => g.brands ?? []).filter((b) => !known.has(b));
-    if (stray.length) throw new BadRequestException(`Unknown or archived panel: ${[...new Set(stray)].join(', ')}`);
+    if (stray.length)
+      throw new BadRequestException(`Unknown or archived panel: ${[...new Set(stray)].join(', ')}`);
     if (!covers(actor, computeAccess(grants, map, this.panels.codes(), this.panels.explicitGrantCodes())))
       throw new ForbiddenException('You cannot grant permissions or brands you do not hold');
   }
 
   async createRole(actor: Principal, key: string, body: RoleUpsert, req: Request) {
-    if (!covers(actor, computeAccess([{ role: key, brands: null }], new Map([[key, body.permissions]]), this.panels.codes(), this.panels.explicitGrantCodes())))
+    if (
+      !covers(
+        actor,
+        computeAccess(
+          [{ role: key, brands: null }],
+          new Map([[key, body.permissions]]),
+          this.panels.codes(),
+          this.panels.explicitGrantCodes(),
+        ),
+      )
+    )
       throw new ForbiddenException('You cannot create a role with permissions you do not hold');
     const exists = await this.database.db.query.adminRoles.findFirst({ where: eq(adminRoles.key, key) });
     if (exists) throw new ConflictException('A role with this key exists');
@@ -100,7 +112,17 @@ export class AdminsService {
     if (!role) throw new NotFoundException();
     if (key === 'super_admin')
       throw new ForbiddenException('The Super Admin role always holds every permission');
-    if (!covers(actor, computeAccess([{ role: key, brands: null }], new Map([[key, body.permissions]]), this.panels.codes(), this.panels.explicitGrantCodes())))
+    if (
+      !covers(
+        actor,
+        computeAccess(
+          [{ role: key, brands: null }],
+          new Map([[key, body.permissions]]),
+          this.panels.codes(),
+          this.panels.explicitGrantCodes(),
+        ),
+      )
+    )
       throw new ForbiddenException('You cannot give a role permissions you do not hold');
     const permissions = [...new Set(body.permissions)].sort();
     await this.database.db
@@ -209,5 +231,32 @@ export class AdminsService {
       reason: body.reason,
     });
     return { id };
+  }
+
+  /**
+   * Issue #94: a Super Admin resets another admin's password. A new one-time password is returned once (hand it over
+   * in person or by phone, like a new admin's), the account is unlocked and every session ends. Your own password is
+   * changed under My account instead, with the current one.
+   */
+  async resetPassword(actor: Principal, id: string, body: AdminPasswordReset, req: Request) {
+    if (id === actor.id) throw new ForbiddenException('Change your own password under My account');
+    const user = await this.database.db.query.adminUsers.findFirst({ where: eq(adminUsers.id, id) });
+    if (!user) throw new NotFoundException();
+    if (!covers(actor, await this.auth.accessOf(id)))
+      throw new ForbiddenException('This admin holds permissions you do not');
+    const oneTimePassword = randomBytes(15).toString('base64url');
+    await this.auth.setPassword(id, oneTimePassword, { resetMfa: body.resetMfa });
+    await this.audit.record({
+      ...AuditService.fromRequest(req),
+      action: 'admins.password_reset',
+      targetType: 'admin_user',
+      targetId: id,
+      metadata: {
+        resetMfa: body.resetMfa,
+        wasLocked: Boolean(user.lockedUntil && user.lockedUntil > new Date()),
+      },
+      reason: body.reason,
+    });
+    return { id, oneTimePassword };
   }
 }

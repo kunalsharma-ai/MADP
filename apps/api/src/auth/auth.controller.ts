@@ -1,7 +1,7 @@
 import { Body, Controller, Get, HttpCode, Post, Req } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import { z } from 'zod';
-import { LoginRequest } from '@madp/contracts';
+import { LoginRequest, PasswordChange } from '@madp/contracts';
 import type { Request } from 'express';
 import { AuthService } from './auth.service.js';
 import { AllowMfaSetupScope, CurrentPrincipal, Public } from './decorators.js';
@@ -50,5 +50,17 @@ export class AuthController {
     @Req() req: Request,
   ) {
     return this.auth.confirmMfa(p, body.code, req.ip ?? null);
+  }
+
+  /** Issue #94: change your own password (needs the current one). */
+  @Throttle({ default: { limit: 5, ttl: 60_000 } })
+  @Post('password')
+  @HttpCode(204)
+  async changePassword(
+    @CurrentPrincipal() p: Principal,
+    @Body(new ZodPipe(PasswordChange)) body: PasswordChange,
+    @Req() req: Request,
+  ) {
+    await this.auth.changePassword(p, body.currentPassword, body.newPassword, req.ip ?? null);
   }
 }
