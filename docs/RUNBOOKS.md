@@ -130,6 +130,13 @@ replica migrates first) one at a time, starting the new one first and rolling ba
 before issue #67 still has the old `madp_migrate` job: remove it once with `docker service rm madp_migrate` (or deploy
 with `--prune`).
 
+**A screen fails with `DrizzleQueryError: Failed query` (issue #95).** The database is missing migrations. Check it
+from an api container: `docker exec $(docker ps -q -f name=madp_api | head -1) node dist/scripts/migrate.js --status`
+lists every pending migration (it changes nothing). Run `node dist/scripts/migrate.js` the same way to apply them.
+Migrate also applies a file drizzle would skip because its journal time is older than the newest row in the
+database's migration log (a database first migrated by another build). The api now refuses to start while anything
+is pending, and its log names the missing migrations.
+
 Mail: MADP itself sends no e-mail today (panel campaigns are sent by the panel backend). When sending is approved,
 the SMTP details go in as Swarm secrets in the same way.
 
