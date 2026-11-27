@@ -47,6 +47,8 @@ const CHECKED_IN_HANDLER = new Set([
   'PUT /panel-connections/:panel',
   'POST /panel-connections/:panel/decision',
   'POST /panel-connections/:panel/test',
+  'POST /panel-connections/:panel/contract-check',
+  'POST /panel-connections/:panel/conformance',
   // New-member bell and the live activity feed: counts and events only for brands where the admin holds members.read
   // (and points.read / support.read for redemptions / tickets), checked per brand in the handler.
   'GET /new-members',

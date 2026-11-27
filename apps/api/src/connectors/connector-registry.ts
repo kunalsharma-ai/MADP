@@ -2,6 +2,7 @@ import { Inject, Injectable, Logger, type OnModuleInit } from '@nestjs/common';
 import type { ApiEnv } from '@madp/config';
 import { isBuiltInPanel, type BuiltInPanelCode, type DataMode, type PanelCode } from '@madp/contracts';
 import { DemoConnector, PanelApiConnector, type PanelConnector } from '@madp/connectors';
+import { SHARED_BACKEND_CAPABILITIES, isCapability, type Capability } from '@madp/panel-contract';
 import { API_ENV } from '../common/tokens.js';
 import { Database } from '../db/database.js';
 import { panelConnections } from '../db/schema.js';
@@ -9,6 +10,17 @@ import { FieldCrypto } from '../crypto/field-crypto.js';
 import { PanelDirectory } from '../panels/panel-directory.js';
 import { InboxConnector } from '../networks/inbox-connector.js';
 import { InboxService } from '../networks/inbox.service.js';
+
+/**
+ * What a panel offers under the MADP Panel API Contract. `discovered`: its own answer to GET /api/v1/contract, saved
+ * by "Check contract". `assumed`: no passing check yet, so MADP assumes the shared panel backend that T2O, MFR and MHO
+ * run today.
+ */
+export interface PanelContractState {
+  source: 'discovered' | 'assumed';
+  version: string | null;
+  capabilities: Capability[];
+}
 
 export interface ConnectorSlot {
   panel: PanelCode;
@@ -69,6 +81,7 @@ export class ConnectorRegistry implements OnModuleInit {
   private readonly log = new Logger(ConnectorRegistry.name);
   private readonly slots = new Map<PanelCode, ConnectorSlot>();
   private readonly effective = new Map<PanelCode, EffectiveConnection>();
+  private readonly contracts = new Map<PanelCode, PanelContractState>();
 
   constructor(
     @Inject(API_ENV) private readonly env: ApiEnv,
@@ -100,6 +113,13 @@ export class ConnectorRegistry implements OnModuleInit {
   /** The combined settings for a panel. Holds secrets: never return it from a route. */
   connection(panel: PanelCode): EffectiveConnection {
     return this.effective.get(panel) ?? this.combine(panel, undefined);
+  }
+
+  /** The panel's contract capabilities: discovered when a check passed, otherwise the shared backend's. */
+  contract(panel: PanelCode): PanelContractState {
+    return (
+      this.contracts.get(panel) ?? { source: 'assumed', version: null, capabilities: [...SHARED_BACKEND_CAPABILITIES] }
+    );
   }
 
   /** Signed admin API settings for a brand, or null while its URL or secret is missing. */
@@ -152,15 +172,32 @@ export class ConnectorRegistry implements OnModuleInit {
   }
 
   /** A live connector for given settings, without registering it (used to test before saving). */
-  liveConnector(panel: PanelCode, url: string, token: string): PanelConnector {
-    return new PanelApiConnector(panel, { baseUrl: url, tenantHost: new URL(url).host, bearerToken: token });
+  liveConnector(panel: PanelCode, url: string, token: string): PanelApiConnector {
+    const c = this.contracts.get(panel);
+    return new PanelApiConnector(panel, {
+      baseUrl: url,
+      tenantHost: new URL(url).host,
+      bearerToken: token,
+      ...(c?.source === 'discovered' ? { declaredCapabilities: c.capabilities } : {}),
+    });
   }
 
   private apply(rows: Map<PanelCode, Row>, logChanges: boolean) {
     for (const panel of this.panels.allCodes()) {
       const archived = !this.panels.isActive(panel);
-      const eff = this.combine(panel, rows.get(panel));
+      const row = rows.get(panel);
+      const eff = this.combine(panel, row);
       if (archived) eff.liveApproved = false;
+      const prevContract = this.contracts.get(panel);
+      if (row?.contractOk && row.contractCapabilities?.length)
+        this.contracts.set(panel, {
+          source: 'discovered',
+          version: row.contractVersion ?? null,
+          capabilities: row.contractCapabilities.filter(isCapability),
+        });
+      else this.contracts.delete(panel);
+      const contractChanged =
+        JSON.stringify(prevContract ?? null) !== JSON.stringify(this.contracts.get(panel) ?? null);
       const prev = this.effective.get(panel);
       this.effective.set(panel, eff);
       // A network on other software has no API to call: it sends data to its inbox (upload or push).
@@ -180,6 +217,7 @@ export class ConnectorRegistry implements OnModuleInit {
         old &&
         prev &&
         old.reason === reason &&
+        !contractChanged &&
         (!live || inbox || (prev.syncBaseUrl === eff.syncBaseUrl && prev.syncToken === eff.syncToken));
       if (unchanged) continue;
       this.slots.set(panel, {

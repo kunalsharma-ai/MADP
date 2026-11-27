@@ -47,3 +47,27 @@ export async function testConnectionAction(
     return r;
   });
 }
+
+/** Reads the panel's GET /api/v1/contract and saves what it declares (MADP Panel API Contract). */
+export async function checkContractAction(panel: string) {
+  return attempt(async () => {
+    const r = await api<{ ok: boolean; message: string; version: string | null; capabilities: string[] }>(
+      `/panel-connections/${encodeURIComponent(panel)}/contract-check`,
+      { method: 'POST', json: {} },
+    );
+    revalidatePath('/panel-connections');
+    return r;
+  });
+}
+
+/** Runs the read-only conformance kit against the panel. */
+export async function runConformanceAction(panel: string) {
+  return attempt(async () => {
+    const r = await api<{ conformant: boolean; counts: Record<string, number> }>(
+      `/panel-connections/${encodeURIComponent(panel)}/conformance`,
+      { method: 'POST', json: {} },
+    );
+    revalidatePath('/panel-connections');
+    return r;
+  });
+}

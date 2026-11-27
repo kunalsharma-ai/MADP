@@ -5,6 +5,8 @@ import {
   HttpException,
   Injectable,
   NotFoundException,
+  NotImplementedException,
+  InternalServerErrorException,
   ServiceUnavailableException,
   UnprocessableEntityException,
   BadRequestException,
@@ -12,6 +14,7 @@ import {
 import { eq } from 'drizzle-orm';
 import type { PanelCode } from '@madp/contracts';
 import { PanelAdminClient, PanelAdminError } from '@madp/connectors';
+import { CAPABILITIES, matchOperation } from '@madp/panel-contract';
 import { ConnectorRegistry } from '../connectors/connector-registry.js';
 import { Database } from '../db/database.js';
 import { brandSettings } from '../db/schema.js';
@@ -56,6 +59,7 @@ export class PanelAdminService {
     query?: Record<string, string | number | boolean | undefined>,
     body?: unknown,
   ): Promise<T> {
+    this.requireCapability(panel, method, path);
     const c = await this.client(panel);
     try {
       return await c.call<T>(actor, method, path, query, body);
@@ -75,6 +79,32 @@ export class PanelAdminService {
       if (e.httpStatus >= 500 || e.code === 'unreachable') throw new BadGatewayException(payload);
       throw new HttpException(payload, e.httpStatus);
     }
+  }
+
+  /**
+   * Every call goes through the MADP Panel API Contract: the route must be a contract route, and the panel must offer
+   * its capability. A panel that did not declare it answers 501 `capability_not_supported`, before anything is sent.
+   */
+  requireCapability(panel: PanelCode, method: string, path: string) {
+    const m = matchOperation(method, path);
+    if (!m)
+      throw new InternalServerErrorException({
+        code: 'route_not_in_contract',
+        message: `${method} ${path.split('?')[0]} is not a route of the panel API contract`,
+      });
+    const contract = this.registry.contract(panel);
+    if (!contract.capabilities.includes(m.op.capability))
+      throw new NotImplementedException({
+        code: 'capability_not_supported',
+        capability: m.op.capability,
+        message: `${panel.toUpperCase()} does not offer "${CAPABILITIES[m.op.capability].title}" in its panel API contract`,
+      });
+    return m.op;
+  }
+
+  /** Whether the panel offers a capability (for screens that hide what a panel can't do). */
+  offers(panel: PanelCode, capability: keyof typeof CAPABILITIES): boolean {
+    return this.registry.contract(panel).capabilities.includes(capability);
   }
 
   static forbidden(): never {

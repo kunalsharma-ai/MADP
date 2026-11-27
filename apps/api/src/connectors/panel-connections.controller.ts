@@ -31,7 +31,14 @@ import { AuthService } from '../auth/auth.service.js';
 import { ZodPipe } from '../common/zod.pipe.js';
 import { API_ENV } from '../common/tokens.js';
 import { Database } from '../db/database.js';
-import { adminRoleGrants, adminUsers, panelConnections } from '../db/schema.js';
+import { adminRoleGrants, adminUsers, brandSettings, panelConnections } from '../db/schema.js';
+import { PanelAdminClient } from '@madp/connectors';
+import {
+  CORE_CAPABILITIES,
+  runConformance,
+  type Capability,
+  type ConformanceReport,
+} from '@madp/panel-contract';
 import { FieldCrypto } from '../crypto/field-crypto.js';
 import { AuditService } from '../audit/audit.service.js';
 import { ConnectorRegistry } from './connector-registry.js';
@@ -205,7 +212,197 @@ export class PanelConnectionsController {
     return { ok, message, latencyMs: health.latencyMs };
   }
 
+  /**
+   * Check contract: reads the panel's GET /api/v1/contract (MADP Panel API Contract) with the saved sync token, and with
+   * a signed call when the admin API is set, and saves the declared version and capabilities. From then on MADP calls
+   * only what the panel declared. The answer holds no personal data. A failed check keeps the last good answer out:
+   * MADP falls back to the shared backend's capabilities.
+   */
+  @Post(':panel/contract-check')
+  @HttpCode(200)
+  async contractCheck(
+    @CurrentPrincipal() p: Principal,
+    @Param('panel', new ZodPipe(PanelCode)) panel: PanelCode,
+    @Req() req: Request,
+  ) {
+    await this.requireSuperAdmin(p, panel, req);
+    const cur = this.registry.connection(panel);
+    const origin = await this.origin(panel);
+    if (!(cur.syncBaseUrl && cur.syncToken) && !(cur.adminBaseUrl && cur.adminSecret && origin))
+      throw new BadRequestException('Save the panel address and its token (or the admin API) first');
+    // The read and sync routes and the signed admin API may run on different backends (today the T2O backend and the
+    // MFR admin image). Each declares what it serves; together they must cover the core capabilities.
+    const problems: string[] = [];
+    const found: {
+      version: string;
+      implementation: string | null;
+      capabilities: Capability[];
+      brands: string[];
+    }[] = [];
+    let unknown = 0;
+    if (cur.syncBaseUrl && cur.syncToken) {
+      const c = await this.registry
+        .liveConnector(panel, cur.syncBaseUrl, cur.syncToken)
+        .discover({ requireCore: false });
+      problems.push(...c.problems.map((x) => `Sync: ${x}`));
+      if (c.ok && c.discovery) {
+        found.push({
+          version: c.discovery.version,
+          implementation: c.discovery.implementation?.name ?? null,
+          capabilities: c.capabilities,
+          brands: c.discovery.brands.map((b) => b.origin),
+        });
+        unknown += c.unknown.length;
+      }
+    }
+    if (cur.adminBaseUrl && cur.adminSecret && origin) {
+      const c = await new PanelAdminClient(panel, {
+        baseUrl: cur.adminBaseUrl,
+        origin,
+        secret: cur.adminSecret,
+      }).discover(p.id, { requireCore: false });
+      problems.push(...c.problems.map((x) => `Admin API: ${x}`));
+      if (c.ok && c.discovery) {
+        if (!c.discovery.brands.some((b) => b.origin === origin))
+          problems.push(`Admin API: ${origin} is not one of the brands it serves`);
+        found.push({
+          version: c.discovery.version,
+          implementation: c.discovery.implementation?.name ?? null,
+          capabilities: c.capabilities,
+          brands: c.discovery.brands.map((b) => b.origin),
+        });
+        unknown += c.unknown.length;
+      }
+    }
+    const capabilities = [...new Set(found.flatMap((f) => f.capabilities))];
+    const missingCore = CORE_CAPABILITIES.filter((c) => !capabilities.includes(c));
+    if (found.length && missingCore.length)
+      problems.push(`Missing core capabilities: ${missingCore.join(', ')}`);
+    const ok = found.length > 0 && problems.length === 0;
+    // the lowest version speaks for the panel: MADP must not use anything newer than every backend knows
+    const version =
+      found.map((f) => f.version).sort((x, y) => x.localeCompare(y, 'en', { numeric: true }))[0] ?? null;
+    const message = ok
+      ? `Contract ${version}, ${capabilities.length} capabilities${unknown ? `, ${unknown} newer ones ignored` : ''}`
+      : problems.join(' · ').slice(0, 500) || 'No answer';
+    const set = {
+      contractCheckedAt: new Date(),
+      contractOk: ok,
+      contractMessage: message,
+      contractVersion: ok ? version : null,
+      contractImplementation: ok
+        ? [...new Set(found.map((f) => f.implementation).filter(Boolean))].join(' + ') || null
+        : null,
+      contractCapabilities: ok ? capabilities : null,
+      contractBrands: ok ? [...new Set(found.flatMap((f) => f.brands))] : null,
+    };
+    await this.database.db
+      .insert(panelConnections)
+      .values({ panel, ...set })
+      .onConflictDoUpdate({ target: panelConnections.panel, set });
+    await this.registry.reload();
+    await this.record(req, panel, 'connections.contract.check', undefined, {
+      ok,
+      version: set.contractVersion,
+      capabilities: set.contractCapabilities?.length ?? 0,
+    });
+    return { ok, message, version: set.contractVersion, capabilities: set.contractCapabilities ?? [] };
+  }
+
+  /**
+   * Runs the conformance kit against the panel: read-only, it never calls a route that writes. Routes that return
+   * personal data are probed (limit 1-2, nothing kept) only once live sync is approved for the panel, which is the
+   * owner's approval to read its data. The saved report holds check names and short details, never records.
+   */
+  @Post(':panel/conformance')
+  @HttpCode(200)
+  async conformance(
+    @CurrentPrincipal() p: Principal,
+    @Param('panel', new ZodPipe(PanelCode)) panel: PanelCode,
+    @Req() req: Request,
+  ) {
+    await this.requireSuperAdmin(p, panel, req);
+    const cur = this.registry.connection(panel);
+    const origin = await this.origin(panel);
+    // One run per backend: the sync routes with the token, and the signed admin API with the secret. When both are
+    // on one host they are tested in one run.
+    const runs: { label: string; report: ConformanceReport }[] = [];
+    const adminOn = cur.adminBaseUrl && cur.adminSecret && origin ? cur.adminBaseUrl : null;
+    const sameHost = Boolean(
+      adminOn && cur.syncBaseUrl && new URL(adminOn).host === new URL(cur.syncBaseUrl).host,
+    );
+    if (cur.syncBaseUrl && cur.syncToken)
+      runs.push({
+        label: 'Sync',
+        report: await runConformance({
+          baseUrl: cur.syncBaseUrl,
+          syncToken: cur.syncToken,
+          ...(sameHost ? { adminSecret: cur.adminSecret!, origin: origin! } : {}),
+          allowPersonalData: cur.liveApproved,
+          requireCore: false,
+        }),
+      });
+    if (adminOn && !sameHost)
+      runs.push({
+        label: 'Admin API',
+        report: await runConformance({
+          baseUrl: adminOn,
+          adminSecret: cur.adminSecret!,
+          origin: origin!,
+          allowPersonalData: cur.liveApproved,
+          requireCore: false,
+        }),
+      });
+    if (!runs.length) throw new BadRequestException('Save the panel token or the admin API secret first');
+    const split = runs.length > 1;
+    const results = runs.flatMap((r) =>
+      r.report.results.map((x) => ({
+        ...x,
+        id: split ? `${r.label === 'Sync' ? 'sync' : 'admin'}:${x.id}` : x.id,
+        title: split ? `${r.label}: ${x.title}` : x.title,
+        detail: x.detail.slice(0, 300),
+      })),
+    );
+    const counts = { pass: 0, fail: 0, warn: 0, skip: 0 };
+    for (const r of results) counts[r.status]++;
+    const report = {
+      conformant: counts.fail === 0,
+      counts,
+      finishedAt: new Date().toISOString(),
+      baseHost: runs.map((r) => r.report.baseHost).join(' + '),
+    };
+    const stored = {
+      at: report.finishedAt,
+      conformant: report.conformant,
+      counts: report.counts,
+      personalDataProbed: cur.liveApproved,
+      results,
+    };
+    await this.database.db
+      .insert(panelConnections)
+      .values({ panel, conformanceReport: stored, conformanceAt: new Date() })
+      .onConflictDoUpdate({
+        target: panelConnections.panel,
+        set: { conformanceReport: stored, conformanceAt: new Date() },
+      });
+    await this.record(req, panel, 'connections.contract.conformance', undefined, {
+      conformant: report.conformant,
+      counts: report.counts,
+      personalDataProbed: cur.liveApproved,
+      host: report.baseHost,
+    });
+    return stored;
+  }
+
   // ---- helpers ------------------------------------------------------------------------------------------------------
+
+  /** The brand hostname the signed calls carry (first origin in Brands & settings). */
+  private async origin(panel: PanelCode): Promise<string | null> {
+    const row = await this.database.db.query.brandSettings.findFirst({
+      where: eq(brandSettings.panel, panel),
+    });
+    return row?.origins[0] ?? null;
+  }
 
   private view(
     panel: PanelCode,
@@ -254,6 +451,21 @@ export class PanelConnectionsController {
       lastTest: row?.lastTestAt
         ? { at: row.lastTestAt.toISOString(), ok: Boolean(row.lastTestOk), message: row.lastTestMessage }
         : null,
+      contract: {
+        source: this.registry.contract(panel).source,
+        version: this.registry.contract(panel).version,
+        implementation: row?.contractOk ? (row.contractImplementation ?? null) : null,
+        capabilities: this.registry.contract(panel).capabilities,
+        brands: row?.contractOk ? (row.contractBrands ?? []) : [],
+        lastCheck: row?.contractCheckedAt
+          ? {
+              at: row.contractCheckedAt.toISOString(),
+              ok: Boolean(row.contractOk),
+              message: row.contractMessage,
+            }
+          : null,
+        conformance: (row?.conformanceReport as PanelConnectionView['contract']['conformance']) ?? null,
+      },
       canChange: isSuperAdminOn(p, panel),
     };
   }

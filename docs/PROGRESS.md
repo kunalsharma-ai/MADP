@@ -897,3 +897,21 @@ verified.
   table `admin_alert_rule` (migration 0030, settings only, no panel data). Counts come from MADP's synced copy;
   teens only with teen.read, redemption rules only with points.read. Nothing is sent outside the console.
 - Tests: `apps/api/test/alert-rules.test.ts` (2).
+
+## Panel API Contract 1.0.0 (2026-11-27)
+
+- Kunal asked for one common API contract that any panel (T2O, MFR, MHO or a new one) can follow to work with MADP,
+  based on T2O's API concepts. New package `packages/panel-contract`: every panel route (11 read and sync, 138 signed
+  admin operations, 149 in all, in 40 capabilities), the T2O record shapes, the signing scheme, capability discovery
+  (`GET /api/v1/contract`, the one new route), a read-only conformance kit (CLI and console) and an in-memory reference
+  panel with DEMO data. Docs: `docs/PANEL_API_CONTRACT.md`; generated `docs/panel-contract/openapi.v1.json` and
+  `ROUTES.md`.
+- `packages/connectors` now builds every path from the contract. `PanelAdminService.call` refuses a route outside the
+  contract and answers `501 capability_not_supported` for a capability the panel did not declare, before calling it.
+- Panel connections: **Check contract** saves what the panel declares (migration 0031, no personal data) and **Run
+  conformance** runs the kit; member-data routes only after live sync is approved. Until a check passes MADP assumes
+  the shared backend's capabilities, so T2O, MFR and MHO work as before.
+- Tests: `packages/panel-contract/src/contract.test.ts` (23), `packages/connectors/src/contract.test.ts` (8, including a
+  scan of every panel call in `apps/api`), `apps/api/test/panel-contract.test.ts` (4).
+- Not done yet: the shared backend does not serve `GET /api/v1/contract`; that panel-repo change needs Kunal's approval.
+  No live conformance run: the panels are not live.

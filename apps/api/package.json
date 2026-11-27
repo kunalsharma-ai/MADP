@@ -20,6 +20,7 @@
     "@madp/config": "workspace:*",
     "@madp/connectors": "workspace:*",
     "@madp/contracts": "workspace:*",
+    "@madp/panel-contract": "workspace:*",
     "@madp/testing": "workspace:*",
     "@nestjs/common": "12.6.0",
     "@nestjs/core": "12.6.0",

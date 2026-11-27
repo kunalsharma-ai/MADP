@@ -242,7 +242,12 @@ export const SCREEN_HELP: Record<string, ScreenHelp> = {
   '/panel-connections': {
     why: 'Tell MADP how to reach each panel, and approve live sync, without server settings.',
     where: 'MADP. Tokens are stored encrypted and never shown again. A second Super Admin approves changes when one exists.',
-    how: ['Edit a panel’s addresses and tokens, then Test connection.', 'Turn on live sync when the owner approves reading real member data.'],
+    how: [
+      'Edit a panel’s addresses and tokens, then Test connection.',
+      'Check contract: the panel tells MADP its API contract version and what it offers. MADP then calls only that.',
+      'Run conformance: a read-only test of the panel against the contract. Member data is only read once live sync is on.',
+      'Turn on live sync when the owner approves reading real member data.',
+    ],
   },
   '/communications': {
     why: 'Prepare templates and campaigns for each panel’s own brand.',

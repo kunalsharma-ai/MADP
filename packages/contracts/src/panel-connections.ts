@@ -76,6 +76,34 @@ export interface PanelConnectionView {
   reason: string;
   pending: { fields: string[]; by: string; byName: string | null; at: string; reason: string | null } | null;
   lastTest: { at: string; ok: boolean; message: string | null } | null;
+  /** The MADP Panel API Contract: what the panel offers, and its last conformance run. */
+  contract: PanelContractView;
   /** True when the caller may change this panel's connection. */
   canChange: boolean;
+}
+
+/** One conformance check as stored and shown. Never holds records. */
+export interface ConformanceCheckView {
+  id: string;
+  title: string;
+  status: 'pass' | 'fail' | 'warn' | 'skip';
+  detail: string;
+  capability?: string;
+}
+
+export interface PanelContractView {
+  /** `discovered`: the panel's own answer. `assumed`: no passing check yet, so the shared backend's capabilities. */
+  source: 'discovered' | 'assumed';
+  version: string | null;
+  implementation: string | null;
+  capabilities: string[];
+  brands: string[];
+  lastCheck: { at: string; ok: boolean; message: string | null } | null;
+  conformance: {
+    at: string;
+    conformant: boolean;
+    counts: { pass: number; fail: number; warn: number; skip: number };
+    personalDataProbed: boolean;
+    results: ConformanceCheckView[];
+  } | null;
 }
