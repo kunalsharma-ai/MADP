@@ -1,6 +1,6 @@
-import { Body, Controller, Get, Param, Post, Put, Req } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, Param, Post, Put, Req } from '@nestjs/common';
 import { z } from 'zod';
-import { AdminCreate, AdminUpdate, RoleKey, RoleUpsert } from '@madp/contracts';
+import { AdminCreate, AdminPasswordReset, AdminUpdate, RoleKey, RoleUpsert } from '@madp/contracts';
 import type { Request } from 'express';
 import { CurrentPrincipal, RequirePermissions } from '../auth/decorators.js';
 import type { Principal } from '../auth/auth.types.js';
@@ -40,6 +40,19 @@ export class AdminsController {
     @Req() req: Request,
   ) {
     return this.admins.updateAdmin(p, id, body, req);
+  }
+
+  /** Issue #94: a new one-time password for another admin, shown once. Unlocks the account and ends its sessions. */
+  @RequirePermissions('admins.manage')
+  @Post('admins/:id/reset-password')
+  @HttpCode(200)
+  resetPassword(
+    @CurrentPrincipal() p: Principal,
+    @Param('id', new ZodPipe(Uuid)) id: string,
+    @Body(new ZodPipe(AdminPasswordReset)) body: AdminPasswordReset,
+    @Req() req: Request,
+  ) {
+    return this.admins.resetPassword(p, id, body, req);
   }
 
   @RequirePermissions('roles.manage')

@@ -5,7 +5,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState, type ReactNode } from 'react';
 import { Command } from 'cmdk';
 import { useTheme } from 'next-themes';
-import { LogOut, Menu, Moon, Search, Sun } from 'lucide-react';
+import { KeyRound, LogOut, Menu, Moon, Search, Sun } from 'lucide-react';
 import { ICONS, tintFor } from './nav-icons';
 import type { PanelInfo, SessionUser } from '@madp/contracts';
 import { NAV, PLANNED } from './nav';
@@ -228,6 +228,14 @@ export function Shell({
           <FraudAlert />
           <NewMembersBell />
           <ThemeToggle />
+          <Link
+            href="/account"
+            className="rounded-md p-2 text-fg-3 hover:bg-surface-2 hover:text-fg"
+            aria-label="My account and password"
+            title="My account and password"
+          >
+            <KeyRound className="size-4" aria-hidden />
+          </Link>
           <form action={signOut}>
             <button
               className="rounded-md p-2 text-fg-3 hover:bg-surface-2 hover:text-fg"

@@ -311,7 +311,19 @@ export const SCREEN_HELP: Record<string, ScreenHelp> = {
   '/admins': {
     why: 'Manage who can use the console and what they may do.',
     where: 'MADP’s admin accounts and roles. You can only grant what you hold yourself.',
-    how: ['Add an admin and give roles brand by brand (or all brands).', 'Edit roles or disable an account with a reason.'],
+    how: [
+      'Add an admin and give roles brand by brand (or all brands).',
+      'Edit roles or disable an account with a reason.',
+      'Reset password: gives a new one-time password, unlocks the account and signs it out. Tick two-factor for a lost phone.',
+    ],
+  },
+  '/account': {
+    why: 'Change your own password, for example after a Super Admin gave you a one-time password.',
+    where: 'Your MADP staff account. It is separate from every panel member account.',
+    how: [
+      'Enter your current password and the new one twice (at least 12 characters).',
+      'Your other sessions are signed out. Forgot it? Ask a Super Admin to reset it on Admins & roles.',
+    ],
   },
   '/brands': {
     why: 'Set each brand’s name, hostnames, sender and money settings.',

@@ -4,7 +4,12 @@ import type { PanelInfo } from '@madp/contracts';
 import { usePanels } from '@/components/panels-context';
 import { useState, useTransition } from 'react';
 import { toast } from 'sonner';
-import { createAdminAction, saveRoleAction, updateAdminAction } from '@/app/super-admin-actions';
+import {
+  createAdminAction,
+  resetAdminPasswordAction,
+  saveRoleAction,
+  updateAdminAction,
+} from '@/app/super-admin-actions';
 import { Badge, Card, CardHeader, btn, input } from '@/components/ui';
 
 type Grant = { role: string; brands: string[] | null };
@@ -112,18 +117,24 @@ export function CreateAdmin({ roles }: { roles: { key: string; name: string }[] 
 
 export function AdminRowActions({
   id,
+  email,
   isActive,
+  isSelf,
   grants,
   roles,
 }: {
   id: string;
+  email: string;
   isActive: boolean;
+  isSelf: boolean;
   grants: Grant[];
   roles: { key: string; name: string }[];
 }) {
   const [pending, start] = useTransition();
   const panelList = usePanels();
   const [open, setOpen] = useState(false);
+  const [resetOpen, setResetOpen] = useState(false);
+  const [issued, setIssued] = useState<string | null>(null);
   const run = (input: { isActive?: boolean; grants?: Grant[] }) => {
     const reason = window.prompt('Reason for this change (kept in the audit log)');
     if (!reason) return;
@@ -146,12 +157,71 @@ export function AdminRowActions({
         <button className={btn.ghost} disabled={pending} onClick={() => run({ isActive: !isActive })}>
           {isActive ? 'Disable' : 'Enable'}
         </button>
+        {isSelf ? null : (
+          <button className={btn.ghost} disabled={pending} onClick={() => setResetOpen((o) => !o)}>
+            Reset password
+          </button>
+        )}
       </div>
+      {resetOpen ? (
+        <form
+          className="grid w-64 gap-2 rounded-lg border border-border p-3 text-[13px]"
+          action={(f) =>
+            start(async () => {
+              try {
+                const r = await resetAdminPasswordAction(id, {
+                  resetMfa: f.get('resetMfa') === 'on',
+                  reason: String(f.get('reason') ?? ''),
+                });
+                setIssued(r.oneTimePassword);
+                setResetOpen(false);
+                toast.success('Password reset');
+              } catch (e) {
+                toast.error((e as Error).message);
+              }
+            })
+          }
+        >
+          <p className="text-[12px] text-fg-3">
+            They get a new one-time password. Their account is unlocked and they are signed out everywhere.
+          </p>
+          <label className="flex items-start gap-1.5">
+            <input type="checkbox" name="resetMfa" className="mt-0.5" /> Also reset two-factor (lost or new
+            phone). They set up the authenticator again at the next sign-in.
+          </label>
+          <label>
+            Reason
+            <input name="reason" required minLength={5} maxLength={500} className={input} />
+          </label>
+          <button className={btn.secondary} disabled={pending}>
+            Reset password
+          </button>
+        </form>
+      ) : null}
+      {issued ? (
+        <div
+          className="w-64 rounded-xl border border-border bg-surface-2 px-3 py-2 text-[13px]"
+          role="status"
+        >
+          <p className="font-medium">
+            Give this one-time password to {email} in person or by phone. It is not shown again.
+          </p>
+          <code className="mt-1 block break-all font-mono">{issued}</code>
+          <p className="mt-1 text-[12px] text-fg-3">
+            Ask them to change it under My account after signing in.
+          </p>
+          <button className={`${btn.ghost} mt-1`} onClick={() => setIssued(null)}>
+            Done
+          </button>
+        </div>
+      ) : null}
       {open ? (
         <form
           className="grid w-64 gap-2 rounded-lg border border-border p-3"
           action={(f) =>
-            run({ grants: [...grants.filter((g) => g.role !== String(f.get('role'))), readGrant(f, panelList)] })
+            run({
+              grants: [...grants.filter((g) => g.role !== String(f.get('role'))), readGrant(f, panelList)],
+            })
           }
         >
           <p className="text-[12px] text-fg-3">
@@ -223,7 +293,9 @@ export function RoleEditor({
           <p className="mb-2 text-fg-2">{role.description}</p>
           <details className="group">
             <summary className="cursor-pointer list-none text-[12.5px] font-semibold text-accent hover:underline">
-              <span className="group-open:hidden">Show what this role can do ({role.permissions.length})</span>
+              <span className="group-open:hidden">
+                Show what this role can do ({role.permissions.length})
+              </span>
               <span className="hidden group-open:inline">Hide</span>
             </summary>
             <ul className="mt-2 space-y-1.5">
@@ -235,9 +307,14 @@ export function RoleEditor({
                 }, {}),
               ).map(([area, acts]) => (
                 <li key={area} className="flex flex-wrap items-center gap-1.5">
-                  <span className="min-w-28 font-semibold capitalize text-fg">{area.replaceAll('_', ' ')}</span>
+                  <span className="min-w-28 font-semibold capitalize text-fg">
+                    {area.replaceAll('_', ' ')}
+                  </span>
                   {acts.map((a) => (
-                    <span key={a} className="rounded-full bg-accent-soft px-2 py-0.5 text-[11px] font-medium text-accent">
+                    <span
+                      key={a}
+                      className="rounded-full bg-accent-soft px-2 py-0.5 text-[11px] font-medium text-accent"
+                    >
                       {a.replaceAll('_', ' ')}
                     </span>
                   ))}

@@ -95,6 +95,13 @@ First deploy, on a manager node:
 6. Create the first admin: `docker exec -it $(docker ps -q -f name=madp_api | head -1) node dist/scripts/create-admin.js
    --email <e-mail> --name <name> --role super_admin`, with `MADP_ADMIN_PASSWORD` set for that one command. It
    applies any pending migrations first, so it also works on a database nothing has migrated yet.
+   **Passwords (issue #94).** An admin changes their own password under *My account* (the key icon at the top).
+   A Super Admin resets someone else's on **Admins & roles** with *Reset password* and a reason: a new one-time
+   password is shown once, the account is unlocked, every session ends, and *Also reset two-factor* clears the
+   authenticator for a lost phone. MADP sends no e-mail, so hand the password over in person or by phone. If no Super
+   Admin can sign in: `docker exec -it $(docker ps -q -f name=madp_api | head -1) node
+   dist/scripts/reset-admin-password.js --email <e-mail> [--reset-mfa]`, with `MADP_ADMIN_PASSWORD` set for that one
+   command. Every reset is in the audit log.
 7. Add MADP to the proxy manager (below), then check `https://<host>/api/v1/health` and sign in with MFA.
 8. Connect the panels on **Panel connections**: for each brand enter the sync address and token, press *Test
    connection*, enter the admin API address and secret, and turn on live sync when Kunal approves it. No restart is

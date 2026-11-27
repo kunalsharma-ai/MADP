@@ -40,6 +40,16 @@ export function LoginForm() {
       <button type="submit" disabled={pending} className={`${btn.primary} w-full justify-center`}>
         {pending ? 'Signing in…' : 'Sign in'}
       </button>
+      <details className="text-[13px] text-fg-3">
+        <summary className="cursor-pointer text-accent hover:underline">
+          Forgot your password or lost your phone?
+        </summary>
+        <p className="mt-1.5">
+          Ask a Super Admin to reset it on Admins &amp; roles. You get a new one-time password, and they can
+          also reset two-factor so you set up the authenticator again. If no Super Admin can sign in, the
+          server team can run <code className="font-mono">reset-admin-password</code> (see the runbook).
+        </p>
+      </details>
     </form>
   );
 }

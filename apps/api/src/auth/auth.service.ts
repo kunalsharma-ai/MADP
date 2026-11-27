@@ -1,10 +1,22 @@
-import { ForbiddenException, Inject, Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Inject,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 import argon2 from 'argon2';
-import { and, eq, isNull, lt, or, sql } from 'drizzle-orm';
+import { and, eq, isNull, lt, ne, or, sql } from 'drizzle-orm';
 import { SignJWT, jwtVerify } from 'jose';
 import * as OTPAuth from 'otpauth';
 import type { ApiEnv } from '@madp/config';
-import { Permission, type AdminRole, type LoginRequest, type RoleGrant, type SessionUser } from '@madp/contracts';
+import {
+  Permission,
+  type AdminRole,
+  type LoginRequest,
+  type RoleGrant,
+  type SessionUser,
+} from '@madp/contracts';
 import { API_ENV } from '../common/tokens.js';
 import { Database } from '../db/database.js';
 import { adminRoleGrants, adminRoles, adminSessions, adminUsers } from '../db/schema.js';
@@ -62,15 +74,28 @@ export class AuthService {
   /** Role grants and what they allow, read fresh so role and grant changes apply on the next request. */
   async accessOf(adminId: string): Promise<{ grants: RoleGrant[]; roles: string[] } & Access> {
     const rows = await this.database.db
-      .select({ role: adminRoleGrants.roleKey, brands: adminRoleGrants.brands, permissions: adminRoles.permissions })
+      .select({
+        role: adminRoleGrants.roleKey,
+        brands: adminRoleGrants.brands,
+        permissions: adminRoles.permissions,
+      })
       .from(adminRoleGrants)
       .innerJoin(adminRoles, eq(adminRoles.key, adminRoleGrants.roleKey))
       .where(eq(adminRoleGrants.adminId, adminId))
       .orderBy(adminRoleGrants.createdAt);
-    const grants: RoleGrant[] = rows.map((r) => ({ role: r.role, brands: r.brands?.length ? r.brands : null }));
+    const grants: RoleGrant[] = rows.map((r) => ({
+      role: r.role,
+      brands: r.brands?.length ? r.brands : null,
+    }));
     const known = new Set<string>(Permission.options);
-    const map = new Map(rows.map((r) => [r.role, r.permissions.filter((p): p is Permission => known.has(p))]));
-    return { grants, roles: grants.map((g) => g.role), ...computeAccess(grants, map, this.panels.codes(), this.panels.explicitGrantCodes()) };
+    const map = new Map(
+      rows.map((r) => [r.role, r.permissions.filter((p): p is Permission => known.has(p))]),
+    );
+    return {
+      grants,
+      roles: grants.map((g) => g.role),
+      ...computeAccess(grants, map, this.panels.codes(), this.panels.explicitGrantCodes()),
+    };
   }
 
   async login(
@@ -142,15 +167,80 @@ export class AuthService {
       .update(adminSessions)
       .set({ revokedAt: new Date() })
       .where(and(eq(adminSessions.id, p.sessionId), isNull(adminSessions.revokedAt)));
-    await this.audit.record({ actorId: p.id, actorType: 'admin', actorRole: p.roles.join(','), action: 'auth.logout', ip });
+    await this.audit.record({
+      actorId: p.id,
+      actorType: 'admin',
+      actorRole: p.roles.join(','),
+      action: 'auth.logout',
+      ip,
+    });
   }
 
-  /** Ends every session of an admin (deactivation, password or role change by a Super Admin). */
-  async revokeSessions(adminId: string) {
+  /** Ends every session of an admin (deactivation, password or role change by a Super Admin), except `keep`. */
+  async revokeSessions(adminId: string, keep?: string) {
     await this.database.db
       .update(adminSessions)
       .set({ revokedAt: new Date() })
-      .where(and(eq(adminSessions.adminId, adminId), isNull(adminSessions.revokedAt)));
+      .where(
+        and(
+          eq(adminSessions.adminId, adminId),
+          isNull(adminSessions.revokedAt),
+          keep ? ne(adminSessions.id, keep) : undefined,
+        ),
+      );
+  }
+
+  /**
+   * Sets a new password, unlocks the account and ends every session (issue #94: a Super Admin's reset and the
+   * server command). `resetMfa` also clears the authenticator, so the admin enrols again at the next sign-in.
+   */
+  async setPassword(adminId: string, password: string, opts: { resetMfa?: boolean } = {}) {
+    const passwordHash = await AuthService.hashPassword(password);
+    await this.database.db
+      .update(adminUsers)
+      .set({
+        passwordHash,
+        failedAttempts: 0,
+        lockedUntil: null,
+        updatedAt: new Date(),
+        ...(opts.resetMfa ? { mfaEnabled: false, totpSecretEnc: null, totpLastStep: null } : {}),
+      })
+      .where(eq(adminUsers.id, adminId));
+    await this.revokeSessions(adminId);
+  }
+
+  /** A signed-in admin changes their own password. Their other sessions end; this one stays. */
+  async changePassword(p: Principal, currentPassword: string, newPassword: string, ip: string | null) {
+    const user = await this.database.db.query.adminUsers.findFirst({ where: eq(adminUsers.id, p.id) });
+    if (!user) throw new UnauthorizedException();
+    if (!(await argon2.verify(user.passwordHash, currentPassword))) {
+      await this.audit.record({
+        actorId: p.id,
+        actorType: 'admin',
+        actorRole: p.roles.join(','),
+        action: 'auth.password.change',
+        outcome: 'denied',
+        metadata: { reason: 'bad_password' },
+        ip,
+      });
+      throw new ForbiddenException('Your current password is not right');
+    }
+    if (await argon2.verify(user.passwordHash, newPassword))
+      throw new BadRequestException('Choose a password you have not used here');
+    await this.database.db
+      .update(adminUsers)
+      .set({ passwordHash: await AuthService.hashPassword(newPassword), updatedAt: new Date() })
+      .where(eq(adminUsers.id, p.id));
+    await this.revokeSessions(p.id, p.sessionId);
+    await this.audit.record({
+      actorId: p.id,
+      actorType: 'admin',
+      actorRole: p.roles.join(','),
+      action: 'auth.password.change',
+      targetType: 'admin_user',
+      targetId: p.id,
+      ip,
+    });
   }
 
   private toPrincipal(
@@ -210,16 +300,24 @@ export class AuthService {
     }
     const sid = typeof payload.sid === 'string' ? payload.sid : '';
     if (!/^[0-9a-f-]{36}$/i.test(sid)) throw new UnauthorizedException('Invalid or expired session');
-    const session = await this.database.db.query.adminSessions.findFirst({ where: eq(adminSessions.id, sid) });
+    const session = await this.database.db.query.adminSessions.findFirst({
+      where: eq(adminSessions.id, sid),
+    });
     const idleMs = this.env.ADMIN_IDLE_MINUTES * 60_000;
     if (!session || session.adminId !== payload.sub || session.revokedAt)
       throw new UnauthorizedException('Session ended');
     if (Date.now() - session.lastSeenAt.getTime() > idleMs) {
-      await this.database.db.update(adminSessions).set({ revokedAt: new Date() }).where(eq(adminSessions.id, sid));
+      await this.database.db
+        .update(adminSessions)
+        .set({ revokedAt: new Date() })
+        .where(eq(adminSessions.id, sid));
       throw new UnauthorizedException('Session ended after inactivity');
     }
     if (Date.now() - session.lastSeenAt.getTime() > 30_000)
-      await this.database.db.update(adminSessions).set({ lastSeenAt: new Date() }).where(eq(adminSessions.id, sid));
+      await this.database.db
+        .update(adminSessions)
+        .set({ lastSeenAt: new Date() })
+        .where(eq(adminSessions.id, sid));
     const user = await this.database.db.query.adminUsers.findFirst({
       where: eq(adminUsers.id, String(payload.sub)),
     });
@@ -260,7 +358,12 @@ export class AuthService {
     if (!(await this.useTotp(user, code))) throw new UnauthorizedException('Invalid code');
     await this.database.db.update(adminUsers).set({ mfaEnabled: true }).where(eq(adminUsers.id, p.id));
     await this.audit.record({ actorId: p.id, actorType: 'admin', action: 'auth.mfa.enabled', ip });
-    const full = this.toPrincipal({ ...user, mfaEnabled: true }, await this.accessOf(user.id), 'full', p.sessionId);
+    const full = this.toPrincipal(
+      { ...user, mfaEnabled: true },
+      await this.accessOf(user.id),
+      'full',
+      p.sessionId,
+    );
     return { token: await this.sign(full), user: this.toSessionUser({ ...user, mfaEnabled: true }, full) };
   }
 
