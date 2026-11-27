@@ -30,6 +30,8 @@ const SESSION_ONLY = new Set([
   'GET /auth/me',
   'POST /auth/mfa/setup',
   'POST /auth/mfa/confirm',
+  // Change your own password; needs the current one (issue #94).
+  'POST /auth/password',
   // The active panels, for the brand switcher (archived ones need connectors.read).
   'GET /panels',
   'GET /audience-segments',
