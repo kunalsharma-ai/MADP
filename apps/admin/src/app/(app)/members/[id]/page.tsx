@@ -6,6 +6,9 @@ import { STATUS_TONE, marketingLabel, type MemberRow } from '../shared';
 import { MemberAccess } from './member-access';
 import { MemberActions } from './member-actions';
 import { PointsQuality } from './points-quality';
+import { HealthBreakdown } from '../health-badge';
+import { TagsNotes } from './tags-notes';
+import type { MemberTagsNotes } from '@madp/contracts';
 import { MemberEngagement, type Engagement, type Responses } from './engagement';
 import Link from 'next/link';
 import { Fragment } from 'react';
@@ -72,6 +75,11 @@ export default async function MemberPage({
   const tab = sp.tab === 'engagement' ? 'engagement' : 'overview';
   return withPanel(async () => {
     const m = await api<Detail>(`/panel/members/${encodeURIComponent(id)}`);
+    const [tn, known, me] = await Promise.all([
+      api<MemberTagsNotes>(`/panel/members/${encodeURIComponent(id)}/notes`).catch(() => null),
+      api<{ tags: { tag: string }[] }>('/member-tags').catch(() => ({ tags: [] })),
+      api<{ permissions: string[] }>('/auth/me').catch(() => null),
+    ]);
     let ledger: Ledger | null = null;
     try {
       ledger = await api<Ledger>(`/panel/members/${encodeURIComponent(id)}/ledger`);
@@ -272,6 +280,148 @@ export default async function MemberPage({
               </div>
             </div>
           </>
+        <>
+        <div className="grid gap-4 xl:grid-cols-3">
+          <Card className="xl:col-span-2">
+            <CardHeader title="Overview" action={<Badge tone={STATUS_TONE[m.status]}>{m.status}</Badge>} />
+            <dl className="grid grid-cols-2 gap-x-6 gap-y-2 px-5 py-4 text-[13px] md:grid-cols-4">
+              {row('E-mail', <span className="font-mono text-[12px]">{m.email}</span>)}
+              {row('Phone', <span className="font-mono text-[12px]">{m.phone}</span>)}
+              {row('Segment', m.category)}
+              {row('Born', m.birthYear)}
+              {row('Gender', m.gender)}
+              {row('Country', m.country?.toUpperCase())}
+              {row('City', m.city)}
+              {row('Time zone', m.timezone)}
+              {row('E-mail check', m.emailVerified)}
+              {row('Phone check', m.phoneVerified)}
+              {row('Quality score', m.qualityScore)}
+              <div className="col-span-2 row-span-2 md:col-span-2">
+                <dt className="mb-1 text-fg-3">Health score</dt>
+                <dd>
+                  <HealthBreakdown member={m} />
+                </dd>
+              </div>
+              {row('Registration', m.registrationStatus)}
+              {row('Signed up', fmtDate(m.signedUpAt))}
+              {row('Last activity', fmtDate(m.lastActivityAt))}
+              {row('Profile checked', fmtDate(m.profileCheckedAt))}
+              {row('Terms', m.terms.join(', ') || '—')}
+              {row(
+                'Marketing e-mails',
+                `${marketingLabel(m.marketingOptIn).text}${m.marketingOptIn?.asked ? ` (${m.marketingOptIn.source ?? '?'}, ${fmtDate(m.marketingOptIn.at)})` : ''}`,
+              )}
+              {m.marketingOptInHistory?.length
+                ? row(
+                    'Opt-in history',
+                    m.marketingOptInHistory
+                      .map((h) => `${h.granted ? 'yes' : 'no'} via ${h.source}, ${fmtDate(h.at)} (${h.wording})`)
+                      .join(' · '),
+                  )
+                : null}
+              {m.statusReason
+                ? row('Status reason', `${m.statusReason} (${fmtDate(m.statusChangedAt)})`)
+                : null}
+              {m.guardian
+                ? row(
+                    'Guardian',
+                    `${m.guardian.email}, ${m.guardian.relation ?? ''}, consent ${m.guardian.consent === true ? 'YES' : m.guardian.consent === false ? 'NO' : 'pending'} ${m.guardian.consentVersion ?? ''}`,
+                  )
+                : null}
+              {m.teen ? row('Teen registration', `${m.teen.status} (${m.teen.reference})`) : null}
+            </dl>
+          </Card>
+          <Card>
+            <CardHeader title="Points" hint="Worked out from the ledger" />
+            <dl className="grid grid-cols-2 gap-x-6 gap-y-2 px-5 py-4 text-[13px]">
+              {Object.entries(m.points).map(([k, v]) => row(k, <span className="num">{fmt(v)}</span>))}
+            </dl>
+            <CardHeader title="Activity" />
+            <dl className="grid grid-cols-2 gap-x-6 gap-y-2 px-5 py-4 text-[13px]">
+              {row('Profile answers', fmt(m.counts.answers))}
+              {row(
+                'Surveys',
+                Object.entries(m.counts.surveys)
+                  .map(([k, v]) => `${k} ${v}`)
+                  .join(', ') || '0',
+              )}
+              {row('Redemptions', fmt(m.counts.redemptions))}
+              {row('Tickets', fmt(m.counts.tickets))}
+            </dl>
+          </Card>
+        </div>
+        <div className="mt-4 grid gap-4 xl:grid-cols-3">
+          <div className="xl:col-span-2 grid gap-4">
+            <Card>
+              <CardHeader
+                title="Points ledger"
+                hint={ledger ? `${fmt(ledger.entries.length)} lines, newest first` : 'Needs points.read'}
+              />
+              {!ledger || ledger.entries.length === 0 ? (
+                <EmptyState title={ledger ? 'No point movements yet' : 'Not shown for your role'} />
+              ) : (
+                <Table head={['When', 'Type', 'Points', 'Note']}>
+                  {ledger.entries.slice(0, 50).map((e, i) => (
+                    <tr key={i}>
+                      <td className="px-5 py-2">{fmtDate(e.at ?? e.createdAt ?? null)}</td>
+                      <td className="px-5 py-2">{e.type ?? e.kind ?? '—'}</td>
+                      <td className="num px-5 py-2">{fmt(e.points)}</td>
+                      <td className="px-5 py-2 text-fg-2">{e.label ?? e.remarks ?? ''}</td>
+                    </tr>
+                  ))}
+                </Table>
+              )}
+            </Card>
+            <Card>
+              <CardHeader title="Segment changes" />
+              {m.segmentChanges.length === 0 ? (
+                <EmptyState title="No segment changes" />
+              ) : (
+                <Table head={['When', 'From', 'To', 'Reason']}>
+                  {m.segmentChanges.map((c, i) => (
+                    <tr key={i}>
+                      <td className="px-5 py-2">{fmtDate(c.at)}</td>
+                      <td className="px-5 py-2">{c.from}</td>
+                      <td className="px-5 py-2">{c.to}</td>
+                      <td className="px-5 py-2 text-fg-2">{c.reason}</td>
+                    </tr>
+                  ))}
+                </Table>
+              )}
+            </Card>
+          </div>
+          <div className="grid content-start gap-4">
+            {tn ? (
+              <TagsNotes
+                member={m.id}
+                tags={tn.tags}
+                notes={tn.notes}
+                known={known.tags.map((t) => t.tag)}
+                canEdit={!!me?.permissions.includes('members.edit')}
+              />
+            ) : null}
+            <MemberActions
+              member={{
+                id: m.id,
+                status: m.status,
+                segment: m.segment,
+                category: m.category,
+                emailVerified: m.emailVerified,
+                phoneVerified: m.phoneVerified,
+              }}
+              canUnmask={m.canUnmask}
+            />
+            <MemberAccess
+              member={m.id}
+              segment={m.segment}
+              brand={(await currentBrand()) ?? ''}
+              canResendEmail={Boolean(m.canResendEmail)}
+              canLoginAs={Boolean(m.canLoginAs)}
+            />
+            <PointsQuality member={m.id} score={m.qualityScore ?? null} />
+          </div>
+        </div>
+        </>
         )}
       </>
     );

@@ -1,7 +1,7 @@
 'use server';
 
 import { unstable_rethrow } from 'next/navigation';
-import type { ActivityFeed, NewMembersSummary } from '@madp/contracts';
+import type { ActivityFeed, FraudAlerts, NewMembersSummary } from '@madp/contracts';
 import { api } from '@/lib/api';
 import { getSegments } from '@/lib/segments';
 import { setBrand } from './super-admin-actions';
@@ -40,4 +40,18 @@ export async function activityAction(): Promise<ActivityFeed | null> {
     unstable_rethrow(e);
     return null;
   }
+}
+
+/** Possible duplicate accounts per panel, for the red alert next to the bell. */
+export async function fraudAlertsAction(): Promise<FraudAlerts | null> {
+  try {
+    return await api<FraudAlerts>('/fraud-alerts');
+  } catch (e) {
+    unstable_rethrow(e);
+    return null;
+  }
+}
+
+export async function markFraudSeenAction(panel?: string) {
+  await api('/fraud-alerts/seen', { method: 'POST', json: panel ? { panel } : {} });
 }

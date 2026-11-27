@@ -800,3 +800,75 @@ verified.
   (the client's list ticks Approve / Reject; the admin still gives a reason and presses Reconcile).
 - Not done here: the Members table export belongs to the member tools work (bulk actions).
 - Tests: `apps/api/src/exports/files.test.ts` (11) and `apps/api/test/files.test.ts` (6).
+## Member tags and notes (2026-11-26)
+
+- Admins tag members ("vip", "check payout") and keep notes on them, per brand, for T2O, MFR, MHO and added panels.
+  Kept in MADP (`member_tag`, `member_note`, migration 0028, with data_mode), never sent to the panel.
+- Members table: tag chips under each name (click one to filter) and a Tag filter; tagged lists read each member's
+  list fields from the panel (never the member page's extra fields).
+- Member page: "Tags and notes" card. Reading notes is audited (`members.notes_read`); note text stays out of the
+  audit trail. Only the author deletes a note. Writes need `members.edit`; teen members need `teen.read`.
+- Tests: `apps/api/test/member-tags.test.ts` (3).
+
+## Members bulk actions and download (2026-11-26)
+
+- Tick members on the Members table (or the whole page), then: add a tag, remove a tag, change segment, or download
+  the ticked members or the whole filtered list (up to 2,000) as Excel or CSV. T2O, MFR, MHO and added panels alike.
+- Every action asks for a reason (audit log). Segment changes go to the panel one member at a time and are audited
+  per member as on the member page; teens and unknown ids are skipped and listed. `POST /member-bulk` (members.edit;
+  segment also segments.manage), `POST /member-bulk/export` (members.read + export.read).
+- Downloads hold masked e-mail and phone only, never the member page's full name; formula cells are neutralised;
+  DEMO files are named `-DEMO` and carry a data_mode column.
+- Tests: `apps/api/test/member-bulk.test.ts` (3). Screenshots: `/mnt/project-files/madp/preview-madp/tags-bulk/`.
+
+## Duplicate and fraud alert (2026-11-26)
+
+- A red shield next to the bell shows possible duplicate accounts per panel: same phone, same e-mail, or same name
+  and birth date (the panel's duplicate finder, MFR#68). It turns red while a group has an account that signed up
+  since the admin last looked; each panel row opens the Duplicates screen for that rule. T2O, MFR, MHO alike.
+- `GET /fraud-alerts` returns counts and times only; each panel and rule is scanned at most every 10 minutes.
+  `POST /fraud-alerts/seen` (table `admin_fraud_seen`, migration 0029). Admins without members.read see nothing.
+- Same sign-up IP and same device (Kunal approved, 2026-11-26): the panel keeps only one-way HMAC hashes of the
+  sign-up IP and device (MFR#104, not deployed yet). MADP asks for the `ip` and `device` rules too. A panel without
+  them yet answers 400; the alert then leaves those counts out rather than calling the panel unreachable, and the
+  Duplicates screen says the panel does not record them yet. Accounts from before the change never match.
+- Tests: `apps/api/test/fraud-alerts.test.ts` (2).
+
+## Win-back for quiet members (2026-11-26)
+
+- Lifecycle automations has a "Win back quiet members" card per panel (T2O, MFR, MHO alike): how many members had no
+  activity for 30, 60 and 90 days (the panel's own member search with `inactiveSince`, teens left out, cached 10
+  minutes, totals only, needs members.read on that panel). Each count opens that list on Members.
+- "Draft the 3 mailers" makes re-engagement templates `win-back-30/60/90` with ready copy, the legal footer and the
+  unsubscribe and preference links, as drafts only. No points are promised and nothing hints at health.
+- "Set up" builds the Win-back journey (an inactivity automation, steps 30/60/90, at least 25 days apart) from the
+  approved versions and sends it to a second admin. Runs stay dry runs; nothing is sent while sending is off.
+- Routes: `GET /communications/automations/win-back`, `POST .../win-back/drafts`, `POST .../win-back`.
+- Tests: `apps/api/test/win-back.test.ts` (3). Screenshots: `madp/preview-madp/win-back/`.
+
+## Member health score (2026-11-26)
+
+- Every member gets a 0 to 100 health score from what the panel's member list already shows, the same on every
+  panel: recent activity 40, answer quality 30, verified e-mail and phone 15, account standing 15. Bands: Healthy 75+,
+  Okay 50+, At risk 25+, Critical (and always Critical when suspended or banned). Nothing health-related is used.
+- Shown as a ring in a Health column on Members (hover for each part), as a breakdown on the member page, and as two
+  columns in the Members Excel/CSV download. `packages/contracts/src/member-health.ts`, tests in
+  `member-health.test.ts` (4).
+
+## Auto reminders and message channels (2026-11-26)
+
+- New screen **Communications → Auto reminders** (`/communications/reminders`), for one brand at a time (T2O, MFR or
+  MHO). Admins pick which reminders are on (password not set, terms not accepted, no profile yet, profiles still open,
+  surveys waiting, first survey, points to redeem, streak about to break), every how many days, at most how many times,
+  and the gap between any two reminders to one member. A reason is required and every change is audited with a diff
+  (`reminders.settings_changed`). "Who is due now?" asks the panel for a dry run: counts only, nothing is sent.
+- **Message channels** on the same screen: Super Admin (brands.manage) enters the WhatsApp (Twilio or Meta Cloud API)
+  and SMS (Twilio or MSG91) provider keys, sender and template ids per reminder. Keys go straight to the panel, which
+  stores them encrypted (AES-256-GCM) and shows only the last four characters. "Check connection" sends no message.
+  Audit entries never hold a key (`channels.provider_saved/checked/removed`).
+- Panel side is MFR#105 (the shared panel backend): reminder rules, branded mailers with each brand's logo, the
+  dashboard notice that always goes out, and e-mail, push, WhatsApp and SMS by the member's own choice. Sending stays
+  behind the `email_reminders`, `push`, `whatsapp` and `sms` switches, all off by default. Teens are never included.
+- Tests: `apps/api/test/reminders.test.ts` (3, a stand-in panel for all three brands); MFR `tests/reminders.test.mjs`
+  (6). The screen was checked against the real MFR#105 code with DEMO data on all routes (save, dry run, provider
+  save). Real WhatsApp/SMS sending is not verified: it needs Kunal's provider accounts.

@@ -13,6 +13,8 @@ const RULES = [
   ['email', 'Same e-mail'],
   ['phone', 'Same phone'],
   ['name_dob', 'Same name and date of birth'],
+  ['ip', 'Same sign-up IP'],
+  ['device', 'Same device'],
 ] as const;
 
 interface MergeRow {
@@ -42,6 +44,13 @@ export default async function DuplicatesPage({ searchParams }: { searchParams: P
         }
       />
       {await withPanel(async () => {
+        type Found = {
+          reason: string;
+          groups: number;
+          more: boolean;
+          items: { reason: string; members: MemberRow[] }[];
+        };
+        const newer = by === 'ip' || by === 'device';
         const [found, history] = await Promise.all([
           api<{
             reason: string;
@@ -49,6 +58,11 @@ export default async function DuplicatesPage({ searchParams }: { searchParams: P
             more: boolean;
             items: { reason: string; members: MemberRow[] }[];
           }>(`/panel/duplicates?by=${by}`),
+          // a panel without the sign-up IP and device hashes yet (before MFR#104) rejects those two rules
+          api<Found>(`/panel/duplicates?by=${by}`).catch((e) => {
+            if (!newer) throw e;
+            return null;
+          }),
           api<{ items: MergeRow[] }>('/panel/duplicates/merges'),
         ]);
         return (
@@ -64,11 +78,20 @@ export default async function DuplicatesPage({ searchParams }: { searchParams: P
                 </Link>
               ))}
             </div>
-            <p className="text-[13px] text-fg-2">
-              {found.reason}. {found.groups} group{found.groups === 1 ? '' : 's'}
-              {found.more ? ' shown; more exist' : ''}.
-            </p>
-            {found.items.length === 0 ? (
+            {found ? (
+              <p className="text-[13px] text-fg-2">
+                {found.reason}. {found.groups} group{found.groups === 1 ? '' : 's'}
+                {found.more ? ' shown; more exist' : ''}.
+              </p>
+            ) : null}
+            {!found ? (
+              <Card>
+                <EmptyState title="This panel does not record the sign-up IP and device yet">
+                  The panel update that saves a one-way hash of them at sign-up is not live on this brand.
+                  Members who sign up after it goes live are checked; older accounts never match.
+                </EmptyState>
+              </Card>
+            ) : found.items.length === 0 ? (
               <Card>
                 <EmptyState title="No duplicates found">Try another rule above.</EmptyState>
               </Card>

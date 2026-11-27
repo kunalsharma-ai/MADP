@@ -160,6 +160,12 @@ export function openApiDocument() {
       '/new-members/seen': {
         post: { security: secured, summary: "Mark a panel's new sign-ups as seen for this admin", responses: ok('Seen') },
       },
+      '/fraud-alerts': {
+        get: { security: secured, summary: 'Possible duplicate accounts per panel (same phone, e-mail, or name and birth date); counts only', responses: ok('Alerts') },
+      },
+      '/fraud-alerts/seen': {
+        post: { security: secured, summary: "Mark a panel's duplicate alerts as seen for this admin", responses: ok('Seen') },
+      },
       '/member-views': {
         get: { security: secured, summary: "Saved Members-table views for the picked brand: the admin's own and shared ones", responses: ok('Views') },
         post: { security: secured, summary: 'Save the current filters and sort under a name (filters only, no personal data)', responses: ok('Saved') },

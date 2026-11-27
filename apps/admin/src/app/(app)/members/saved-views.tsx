@@ -28,6 +28,7 @@ const LABELS: Partial<Record<keyof MemberViewParams, string>> = {
   gender: 'gender',
   ageMin: 'age from',
   ageMax: 'age to',
+  tag: 'tag',
   sort: 'sorted by',
 };
 

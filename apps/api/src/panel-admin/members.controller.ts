@@ -29,10 +29,14 @@ import { PanelAdminService } from './panel-admin.service.js';
 import { PanelDirectory } from '../panels/panel-directory.js';
 import { MemberTypes } from './member-types.js';
 import { SegmentDirectory } from '../segments/segment-directory.js';
+import { MemberTagStore } from './member-tags.js';
+
+/** Fields of a list row; a member page carries more, which the tag list must not pass on. */
+export const LIST_FIELDS = ['id', 'memberId', 'name', 'email', 'phone', 'category', 'segment', 'status', 'country', 'birthYear', 'gender', 'age', 'qualityScore', 'emailVerified', 'signedUpAt', 'lastActivityAt', 'marketingOptIn'] as const;
 
 const MemberId = z.string().regex(/^[a-f0-9]{24}$/i, 'a member id');
 const SessionId = z.string().regex(/^[a-f0-9]{24}$/i, 'a session id');
-type Row = { id: string; segment?: string; category?: string; types?: Record<string, string[]> };
+type Row = { id: string; segment?: string; category?: string; types?: Record<string, string[]>; tags?: string[] };
 type Change = { before: Record<string, unknown>; after: Record<string, unknown> };
 
 /**
@@ -48,7 +52,23 @@ export class MembersController {
     private readonly types: MemberTypes,
     private readonly directory: PanelDirectory,
     private readonly segments: SegmentDirectory,
+    private readonly tagStore: MemberTagStore,
   ) {}
+
+  /** Members with a MADP tag: one page of tagged ids, each read from the panel (gone or other-brand ids skipped). */
+  private async tagged(p: Principal, brand: PanelCode, tag: string, page: number) {
+    const size = 50;
+    const { ids, total } = await this.tagStore.page(brand, tag, page, size);
+    const rows = await Promise.all(
+      ids.map((id) =>
+        this.panel
+          .call<Record<string, unknown>>(brand, p.id, 'GET', R.member(id))
+          .then((m) => Object.fromEntries(LIST_FIELDS.filter((k) => k in m).map((k) => [k, m[k]])) as Row)
+          .catch(() => null),
+      ),
+    );
+    return { items: rows.filter((r): r is Row => !!r), total, page, pageSize: size, sort: null };
+  }
 
   /** Rules the admin may see: on a sensitive panel (MHO) every answer needs health.sensitive.read. */
   private async visibleTypeRules(p: Principal, brand: PanelCode) {
@@ -95,21 +115,20 @@ export class MembersController {
     const keys = [...new Set(types.shown.flatMap((r) => r.questions))];
     // Age sorts by date of birth the other way round (youngest first = latest birth date first).
     const sort = q.sort === 'age' ? { sort: 'born', dir: q.dir === 'asc' ? 'desc' : 'asc' } : {};
-    const data = await this.panel.call<{
-      items: Row[];
-      total: number;
-      page: number;
-      pageSize: number;
-      sort?: { by: string; dir: 'asc' | 'desc' } | null;
-    }>(brand, p.id, 'GET', R.members, {
-      ...q,
-      ...sort,
-      ...(teens ? {} : { noTeens: 1 }),
-      ...(keys.length ? { typeQuestions: keys.join(',') } : {}),
-    });
+    const { tag, ...panelQuery } = q;
+    const data: { items: Row[]; total: number; page: number; pageSize: number; sort?: { by: string; dir: 'asc' | 'desc' } | null } = tag
+      ? await this.tagged(p, brand, tag, q.page)
+      : await this.panel.call(brand, p.id, 'GET', R.members, {
+          ...panelQuery,
+          ...sort,
+          ...(teens ? {} : { noTeens: 1 }),
+          ...(keys.length ? { typeQuestions: keys.join(',') } : {}),
+        });
     if (!teens) data.items = data.items.filter((r) => r.segment !== 'teen');
     if (q.sort === 'age' && data.sort?.by === 'born') data.sort = { by: 'age', dir: q.dir === 'asc' ? 'asc' : 'desc' };
     MemberTypes.annotate(data.items, types.shown);
+    const tagsOf = await this.tagStore.forMembers(brand, data.items.map((r) => r.id));
+    for (const r of data.items) r.tags = tagsOf.get(r.id) ?? [];
     await this.audit.record({
       ...AuditService.fromRequest(req),
       action: 'members.search',

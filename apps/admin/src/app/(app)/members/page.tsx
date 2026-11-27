@@ -10,8 +10,10 @@ import { ArchiveCheck } from './archive-check';
 import { SortHead, sortPage, SORT_COLUMNS, type SortDir } from './sort';
 import { SavedViews } from './saved-views';
 import { TypeColumns } from './type-columns';
+import { BulkBar } from './bulk-bar';
+import { HealthBadge } from './health-badge';
 import { MemberViewParams, type MemberTypeRule, type MemberView, type SessionUser } from '@madp/contracts';
-import { GENDER_TONE, STATUS_TONE, marketingLabel, type MemberRow, type PanelCategory } from './shared';
+import { GENDER_TONE, STATUS_TONE, marketingLabel, tagTint, type MemberRow, type PanelCategory } from './shared';
 
 export const metadata: Metadata = { title: 'Members' };
 
@@ -34,6 +36,7 @@ const FILTERS = [
   'gender',
   'ageMin',
   'ageMax',
+  'tag',
   'sort',
   'dir',
   'page',
@@ -78,7 +81,7 @@ export default async function MembersPage({
         }
       />
       {await withPanel(async (brand) => {
-        const [data, { views }, types, me] = await Promise.all([api<{
+        const [data, { views }, types, me, tagList] = await Promise.all([api<{
           items: MemberRow[];
           total: number;
           page: number;
@@ -94,6 +97,7 @@ export default async function MembersPage({
             '/panel/members/type-columns',
           ).catch(() => ({ rules: [] as MemberTypeRule[], saved: false, sensitivePanel: false, categories: [] as PanelCategory[] })),
           api<SessionUser>('/auth/me').catch(() => null),
+          api<{ tags: { tag: string; members: number }[] }>('/member-tags').catch(() => ({ tags: [] })),
         ]);
         const categories = types.categories.filter((c) => !c.minor || !data.teensHidden);
         const segmentName = (v: string) => types.categories.find((c) => c.value === v)?.segments.join(', ') || v;
@@ -128,7 +132,7 @@ export default async function MembersPage({
             />
             <Card>
               <form id={FORM} className="grid gap-3 px-5 py-4 text-[13px] md:grid-cols-6" method="get">
-                <label className="md:col-span-3">
+                <label className="md:col-span-2">
                   Search
                   <input
                     name="q"
@@ -136,6 +140,17 @@ export default async function MembersPage({
                     placeholder="E-mail, phone, member ID or name"
                     className={input}
                   />
+                </label>
+                <label>
+                  Tag
+                  <select name="tag" defaultValue={sp.tag ?? ''} className={input}>
+                    <option value="">Any tag</option>
+                    {tagList.tags.map((t) => (
+                      <option key={t.tag} value={t.tag}>
+                        {t.tag} ({fmt(t.members)})
+                      </option>
+                    ))}
+                  </select>
                 </label>
                 <label>
                   Due for 6-month check by
@@ -159,6 +174,15 @@ export default async function MembersPage({
                 </p>
               </form>
             </Card>
+            <BulkBar
+              filters={Object.fromEntries([...qs.entries()].filter(([k]) => k !== 'page'))}
+              categories={types.categories}
+              tags={tagList.tags.map((t) => t.tag)}
+              canEdit={!!me?.permissions.includes('members.edit')}
+              canSegment={!!me?.permissions.includes('members.edit') && !!me?.permissions.includes('segments.manage')}
+              canExport={!!me?.permissions.includes('export.read')}
+              total={data.total}
+            />
             <Card>
               <CardHeader
                 title={
@@ -193,6 +217,9 @@ export default async function MembersPage({
                 <table className="w-full text-left text-[13px]">
                   <thead>
                     <tr className="border-b border-border bg-surface-2/50 text-[11px] uppercase tracking-wider text-fg-3">
+                      <th scope="col" className="w-8 py-3 pl-4 pr-0">
+                        <input type="checkbox" data-bulk-all aria-label="Tick every member on this page" className="size-4 accent-[var(--accent)]" />
+                      </th>
                       {head('name', 'Member')}
                       {head('email', 'E-mail')}
                       {head('phone', 'Phone')}
@@ -204,12 +231,16 @@ export default async function MembersPage({
                       {head('gender', 'Gender')}
                       {head('age', 'Age')}
                       {head('quality', 'Quality')}
+                      <th scope="col" className="px-5 py-3 font-semibold" title="Member health score, 0 to 100: recent activity 40, answer quality 30, verified e-mail and phone 15, account standing 15. Hover a score for its parts.">
+                        Health
+                      </th>
                       {head('status', 'Status')}
                       {head('marketing', 'Marketing')}
                       {head('signedUp', 'Signed up')}
                       {head('lastActivity', 'Last activity')}
                     </tr>
                     <tr className="border-b border-border bg-surface-2/30 align-top">
+                      <th />
                       <th className="px-3 py-2">
                         <input form={FORM} name="qName" defaultValue={sp.qName} placeholder="Name or ID" aria-label="Filter by member name or ID" className={f('min-w-28')} />
                       </th>
@@ -258,6 +289,7 @@ export default async function MembersPage({
                           <input form={FORM} name="qualityMax" inputMode="numeric" pattern="[0-9]{1,3}" defaultValue={sp.qualityMax} placeholder="max" aria-label="Quality up to" className={f('!w-14')} />
                         </div>
                       </th>
+                      <th />
                       <th className="px-3 py-2">
                         <select form={FORM} name="status" defaultValue={sp.status ?? ''} aria-label="Filter by status" className={f('min-w-24')}>
                           <option value="">Any</option>
@@ -290,18 +322,30 @@ export default async function MembersPage({
                   <tbody className="divide-y divide-border [&>tr]:transition-colors [&>tr:hover]:bg-accent-soft/40">
                     {items.length === 0 ? (
                       <tr>
-                        <td colSpan={13}>
+                        <td colSpan={15}>
                           <EmptyState title="No members match">Change the filters or clear them.</EmptyState>
                         </td>
                       </tr>
                     ) : null}
                     {items.map((m) => (
-                    <tr key={m.id} className="hover:bg-surface-2">
+                    <tr key={m.id} className="hover:bg-surface-2 has-[input:checked]:bg-accent-soft/50">
+                      <td className="w-8 py-2.5 pl-4 pr-0">
+                        <input type="checkbox" data-bulk-member value={m.id} aria-label={`Tick ${m.name || m.id}`} className="size-4 accent-[var(--accent)]" />
+                      </td>
                       <td className="px-5 py-2.5">
                         <Link href={`/members/${m.id}`} className="font-medium text-accent hover:underline">
                           {m.name || '(no name)'}
                         </Link>
                         <div className="font-mono text-[11px] text-fg-3">{m.memberId ?? m.id}</div>
+                        {m.tags?.length ? (
+                          <div className="mt-1 flex max-w-48 flex-wrap gap-1">
+                            {m.tags.map((t) => (
+                              <Link key={t} href={`/members?tag=${encodeURIComponent(t)}`} className="rounded-full px-1.5 py-px text-[10px] font-semibold text-white" style={{ background: tagTint(t) }}>
+                                {t}
+                              </Link>
+                            ))}
+                          </div>
+                        ) : null}
                       </td>
                       <td className="px-5 py-2.5 font-mono text-[12px]">{m.email ?? '—'}</td>
                       <td className="px-5 py-2.5 font-mono text-[12px]">{m.phone ?? '—'}</td>
@@ -339,6 +383,9 @@ export default async function MembersPage({
                         {m.age != null ? <span className="font-semibold">{m.age} yr</span> : m.birthYear ? <span className="text-fg-3">b. {m.birthYear}</span> : '—'}
                       </td>
                       <td className="num px-5 py-2.5">{m.qualityScore}</td>
+                      <td className="px-5 py-2.5">
+                        <HealthBadge member={m} />
+                      </td>
                       <td className="px-5 py-2.5">
                         <Badge tone={STATUS_TONE[m.status]}>{m.status}</Badge>
                       </td>

@@ -51,6 +51,8 @@ const CHECKED_IN_HANDLER = new Set([
   // (and points.read / support.read for redemptions / tickets), checked per brand in the handler.
   'GET /new-members',
   'POST /new-members/seen',
+  'GET /fraud-alerts',
+  'POST /fraud-alerts/seen',
   'GET /activity',
 ]);
 

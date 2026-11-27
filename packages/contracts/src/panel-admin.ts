@@ -52,6 +52,13 @@ export const MemberSearch = z.object({
   /** Birth year range (the Born column). Needs a panel build that supports it; older builds ignore it. */
   bornFrom: z.coerce.number().int().min(1900).max(2100).optional(),
   bornTo: z.coerce.number().int().min(1900).max(2100).optional(),
+  /** Members carrying this admin tag (MADP's own tags; see MemberTag). */
+  tag: z
+    .string()
+    .trim()
+    .toLowerCase()
+    .regex(/^[a-z0-9][a-z0-9 _-]{0,29}$/)
+    .optional(),
   /** Gender as the member gave it at sign-up, and age in whole years today. */
   gender: z.enum(['Male', 'Female', 'Other']).optional(),
   ageMin: z.coerce.number().int().min(0).max(120).optional(),
@@ -91,10 +98,15 @@ export type MemberTypeRule = z.infer<typeof MemberTypeRule>;
 export const MemberTypeRules = z
   .object({ rules: z.array(MemberTypeRule).max(12) })
   .strict()
-  .refine((v) => new Set(v.rules.flatMap((r) => r.questions)).size <= 8, { message: 'At most 8 different questions in all' })
-  .refine((v) => new Set(v.rules.map((r) => `${r.category}|${r.label.toLowerCase()}`)).size === v.rules.length, {
-    message: 'Each segment can use a label once',
-  });
+  .refine((v) => new Set(v.rules.flatMap((r) => r.questions)).size <= 8, {
+    message: 'At most 8 different questions in all',
+  })
+  .refine(
+    (v) => new Set(v.rules.map((r) => `${r.category}|${r.label.toLowerCase()}`)).size === v.rules.length,
+    {
+      message: 'Each segment can use a label once',
+    },
+  );
 export type MemberTypeRules = z.infer<typeof MemberTypeRules>;
 
 /** What the Members table shows in its Type column for one member. */
@@ -187,7 +199,7 @@ export const MemberRestore = z.object({ ids: z.array(ObjectId).min(1).max(1000),
 export type MemberRestore = z.infer<typeof MemberRestore>;
 
 // ---- duplicate accounts (MFR#68, Project/api/app/admin/merge.js) -------------------------------------------------
-export const DuplicateRule = z.enum(['email', 'phone', 'name_dob']);
+export const DuplicateRule = z.enum(['email', 'phone', 'name_dob', 'ip', 'device']);
 export const DuplicateSearch = z.object({
   by: DuplicateRule.default('email'),
   limit: z.coerce.number().int().min(1).max(200).default(50),
@@ -196,7 +208,12 @@ export type DuplicateSearch = z.infer<typeof DuplicateSearch>;
 
 /** A merge is a dry run unless `apply` is true; applying needs a reason. */
 export const MemberMergeRequest = z
-  .object({ keep: ObjectId, duplicate: ObjectId, apply: z.boolean().default(false), reason: Reason.optional() })
+  .object({
+    keep: ObjectId,
+    duplicate: ObjectId,
+    apply: z.boolean().default(false),
+    reason: Reason.optional(),
+  })
   .strict()
   .refine((m) => m.keep !== m.duplicate, { message: 'Choose two different accounts', path: ['duplicate'] })
   .refine((m) => !m.apply || Boolean(m.reason), { message: 'A merge needs a reason', path: ['reason'] });
@@ -298,7 +315,10 @@ const Lang = z
   .trim()
   .regex(/^[a-z]{2}(-[A-Z]{2})?$/, 'a language code like hi or pt-BR');
 /** A translation's language: any code but English, which is the question's own wording (the panel refuses `en`). */
-const TranslationLang = Lang.refine((l) => l !== 'en', 'English is the question itself; pick another language');
+const TranslationLang = Lang.refine(
+  (l) => l !== 'en',
+  'English is the question itself; pick another language',
+);
 export const TranslationSet = z.object({
   lang: TranslationLang,
   label: z.string().trim().max(500).optional(),
@@ -311,7 +331,12 @@ export const TranslationSet = z.object({
 export type TranslationSet = z.infer<typeof TranslationSet>;
 export const MissingTranslations = z.object({
   lang: TranslationLang,
-  category: z.string().trim().toLowerCase().regex(/^[a-z0-9_-]{1,60}$/, 'a segment category').optional(),
+  category: z
+    .string()
+    .trim()
+    .toLowerCase()
+    .regex(/^[a-z0-9_-]{1,60}$/, 'a segment category')
+    .optional(),
 });
 export type MissingTranslations = z.infer<typeof MissingTranslations>;
 /**
@@ -672,6 +697,9 @@ export const SwitchKey = z.enum([
   'bonuses',
   'prize_machines',
   'whatsapp',
+  // auto reminders (MFR#105)
+  'email_reminders',
+  'sms',
 ]);
 export type SwitchKey = z.infer<typeof SwitchKey>;
 /** Segments a switch or prize machine can be narrowed to (the panel's member types). */
@@ -1035,12 +1063,7 @@ export const LEGAL_CONTENT_KEYS = ['privacy', 'terms', 'gdpr', 'cookies'] as con
 export const ContentKind = z.enum(['legal', 'page']);
 export type ContentKind = z.infer<typeof ContentKind>;
 export const ContentState = z.enum(['editing', 'review', 'published', 'unpublished']);
-const ContentText = (max: number) =>
-  z
-    .string()
-    .trim()
-    .min(1)
-    .max(max);
+const ContentText = (max: number) => z.string().trim().min(1).max(max);
 const ContentList = z.array(ContentText(5000)).min(1).max(100);
 /**
  * One block of a page body, exactly as the panel accepts it: text, { h2 }, { h3 }, { ul }, { ol }, { note } or
@@ -1058,7 +1081,10 @@ export const ContentBlock = z.union([
       table: z
         .object({
           head: z.array(ContentText(5000)).min(1).max(12),
-          rows: z.array(z.array(z.string().trim().max(1000))).min(1).max(300),
+          rows: z
+            .array(z.array(z.string().trim().max(1000)))
+            .min(1)
+            .max(300),
         })
         .strict()
         .refine((t) => t.rows.every((r) => r.length === t.head.length), 'every row has one cell per column'),
@@ -1081,7 +1107,13 @@ export const ContentListQuery = z.object({
 });
 export type ContentListQuery = z.infer<typeof ContentListQuery>;
 export const ContentCreate = z
-  .object({ key: ContentKey, kind: ContentKind.optional(), lang: ContentLang.optional(), title: ContentText(200), body: ContentBody })
+  .object({
+    key: ContentKey,
+    kind: ContentKind.optional(),
+    lang: ContentLang.optional(),
+    title: ContentText(200),
+    body: ContentBody,
+  })
   .strict();
 export type ContentCreate = z.infer<typeof ContentCreate>;
 export const ContentUpdate = z
@@ -1109,13 +1141,186 @@ export const MemberAlertsChange = z.object({
     })
     .partial()
     .optional(),
-  survey: z.object({ invitesPerWeek: z.number().int().min(0).max(50).nullable() }).partial().optional(),
+  survey: z
+    .object({ invitesPerWeek: z.number().int().min(0).max(50).nullable() })
+    .partial()
+    .optional(),
   reason: Reason,
 });
 export type MemberAlertsChange = z.infer<typeof MemberAlertsChange>;
 
 export const MemberResponsesQuery = z.object({
-  status: z.string().trim().regex(/^[a-z_]{1,40}$/).optional(),
+  status: z
+    .string()
+    .trim()
+    .regex(/^[a-z_]{1,40}$/)
+    .optional(),
   page: z.coerce.number().int().min(1).max(10_000).default(1),
 });
 export type MemberResponsesQuery = z.infer<typeof MemberResponsesQuery>;
+
+// ---- tags and notes (kept in MADP, per brand) ----------------------------------------------------------------------
+/** A short admin label on a member: lower case letters, digits, space, dash or underscore, up to 30. */
+export const MemberTag = z
+  .string()
+  .trim()
+  .toLowerCase()
+  .regex(/^[a-z0-9][a-z0-9 _-]{0,29}$/, 'letters, digits, space, - or _, up to 30');
+export type MemberTag = z.infer<typeof MemberTag>;
+export const MemberTagsSet = z.object({ tags: z.array(MemberTag).max(10) }).strict();
+export type MemberTagsSet = z.infer<typeof MemberTagsSet>;
+export const MemberNoteCreate = z
+  .object({ body: z.string().trim().min(2).max(2000), pinned: z.boolean().default(false) })
+  .strict();
+export type MemberNoteCreate = z.infer<typeof MemberNoteCreate>;
+export interface MemberNote {
+  id: string;
+  body: string;
+  pinned: boolean;
+  author: string | null;
+  mine: boolean;
+  createdAt: string;
+}
+export interface MemberTagsNotes {
+  tags: string[];
+  notes: MemberNote[];
+}
+
+// ---- bulk actions on the Members table ------------------------------------------------------------------------------
+const BulkIds = z.array(ObjectId).min(1).max(100);
+export const MemberBulkAction = z.discriminatedUnion('action', [
+  z.object({ action: z.literal('tag_add'), ids: BulkIds, tag: MemberTag, reason: Reason }).strict(),
+  z.object({ action: z.literal('tag_remove'), ids: BulkIds, tag: MemberTag, reason: Reason }).strict(),
+  z
+    .object({
+      action: z.literal('segment'),
+      ids: BulkIds,
+      category: z.string().trim().min(1).max(40),
+      reason: Reason,
+    })
+    .strict(),
+]);
+export type MemberBulkAction = z.infer<typeof MemberBulkAction>;
+export interface MemberBulkResult {
+  done: number;
+  skipped: { id: string; why: string }[];
+}
+
+/** Export of the Members list: the members ticked, or the whole filtered list (up to 2,000). Masked values only. */
+export const MemberExport = z
+  .object({
+    format: z.enum(['csv', 'xlsx']),
+    reason: Reason,
+    ids: z.array(ObjectId).min(1).max(500).optional(),
+    /** The Members filters as they are in the address bar (validated as a search). */
+    filters: z.record(z.string(), z.string()).optional(),
+  })
+  .strict();
+export type MemberExport = z.infer<typeof MemberExport>;
+
+// ---- auto reminders and message channels (MFR#105, Project/api/app/engagement/reminders.js and channels.js) -------
+/** The reminder cases the panel checks, in the order it picks them. */
+export const ReminderCaseKey = z.enum([
+  'password',
+  'terms',
+  'no_profiles',
+  'partial',
+  'surveys',
+  'first_survey',
+  'redeem',
+  'streak',
+]);
+export type ReminderCaseKey = z.infer<typeof ReminderCaseKey>;
+export const ReminderCaseSetting = z
+  .object({
+    enabled: z.boolean().optional(),
+    everyDays: z.number().int().min(1).max(90).optional(),
+    max: z.number().int().min(1).max(50).optional(),
+  })
+  .strict();
+export const RemindersSave = z
+  .object({
+    cases: z.partialRecord(ReminderCaseKey, ReminderCaseSetting).default({}),
+    minGapDays: z.number().int().min(1).max(30).optional(),
+    reason: Reason,
+  })
+  .strict();
+export type RemindersSave = z.infer<typeof RemindersSave>;
+export const RemindersPreview = z.object({ limit: z.number().int().min(1).max(20000).optional() }).strict();
+export type RemindersPreview = z.infer<typeof RemindersPreview>;
+
+export interface ReminderCaseView {
+  key: ReminderCaseKey;
+  group: 'signup' | 'profile' | 'surveys' | 'rewards';
+  label: string;
+  kind: 'account' | 'marketing';
+  enabled: boolean;
+  everyDays: number;
+  max: number;
+}
+export interface ChannelProviderField {
+  key: string;
+  label: string;
+  secret?: boolean;
+}
+export interface ChannelProviderSpec {
+  label: string;
+  fields: ChannelProviderField[];
+  sender: string;
+  templates: string | false;
+}
+export interface ChannelSetup {
+  channel: 'whatsapp' | 'sms';
+  provider: string;
+  providerLabel: string;
+  keyHint: string;
+  sender: string;
+  templates: Partial<Record<ReminderCaseKey, string>>;
+  language: string;
+  checkedAt: string | null;
+  checkOk: boolean | null;
+  checkMessage: string;
+  updatedAt: string;
+  updatedBy: string | null;
+}
+export interface RemindersView {
+  saved: boolean;
+  minGapDays: number;
+  updatedAt: string | null;
+  updatedBy: string | null;
+  cases: ReminderCaseView[];
+  switches: { email_reminders: boolean; push: boolean; whatsapp: boolean; sms: boolean };
+  channels: { channel: 'whatsapp' | 'sms'; setup: ChannelSetup | null }[];
+}
+export interface ChannelsView {
+  providers: Record<'whatsapp' | 'sms', Record<string, ChannelProviderSpec>>;
+  channels: { channel: 'whatsapp' | 'sms'; setup: ChannelSetup | null }[];
+}
+
+export const ChannelName = z.enum(['whatsapp', 'sms']);
+export type ChannelName = z.infer<typeof ChannelName>;
+export const ChannelSave = z
+  .object({
+    provider: z.enum(['twilio', 'msg91', 'meta']),
+    /** Leave a key out (or empty) to keep the saved one. */
+    credentials: z.record(z.string().regex(/^[a-zA-Z]{2,30}$/), z.string().trim().max(500)).optional(),
+    sender: z.string().trim().max(60).optional(),
+    templates: z
+      .partialRecord(
+        ReminderCaseKey,
+        z
+          .string()
+          .trim()
+          .regex(/^[\w.:-]{0,120}$/),
+      )
+      .optional(),
+    language: z
+      .string()
+      .regex(/^[a-z]{2}(_[A-Z]{2})?$/)
+      .optional(),
+    reason: Reason,
+  })
+  .strict();
+export type ChannelSave = z.infer<typeof ChannelSave>;
+export const ChannelAction = z.object({ reason: Reason }).strict();
+export type ChannelAction = z.infer<typeof ChannelAction>;
