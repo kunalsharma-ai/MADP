@@ -173,6 +173,78 @@ export interface DailySummary {
   day: string;
   timeZone: string;
   checkedAt: string;
-  totals: { signups: number; signupsBefore: number; completes: number; completesBefore: number; activeMembers: number; pointsEarned: number };
+  totals: {
+    signups: number;
+    signupsBefore: number;
+    completes: number;
+    completesBefore: number;
+    activeMembers: number;
+    pointsEarned: number;
+  };
   panels: DailySummaryPanel[];
+}
+
+/** What an admin alert rule counts, on one panel, over the last hour or day. Counts only. */
+export const AlertMetric = z.enum(['signups', 'completes', 'redemptions', 'points_redeemed']);
+export type AlertMetric = z.infer<typeof AlertMetric>;
+export const ALERT_METRIC_LABELS: Record<AlertMetric, string> = {
+  signups: 'New sign-ups',
+  completes: 'Survey completes',
+  redemptions: 'Redemptions',
+  points_redeemed: 'Points redeemed',
+};
+export const AlertRuleInput = z
+  .object({
+    name: z.string().trim().min(3).max(80),
+    /** Leave out to check every panel you can see, one by one. */
+    panel: PanelCode.nullable().optional(),
+    metric: AlertMetric,
+    /** Sign-ups only: count just this segment (for example patient). */
+    segment: z
+      .string()
+      .regex(/^[a-z][a-z0-9_ ]{0,39}$/)
+      .nullable()
+      .optional(),
+    comparator: z.enum(['above', 'below']),
+    threshold: z.number().int().min(0).max(1_000_000),
+    window: z.enum(['hour', 'day']),
+    enabled: z.boolean().optional(),
+  })
+  .strict();
+export type AlertRuleInput = z.infer<typeof AlertRuleInput>;
+export const AlertRuleMute = z
+  .object({
+    hours: z
+      .number()
+      .int()
+      .min(0)
+      .max(24 * 30),
+  })
+  .strict();
+export type AlertRuleMute = z.infer<typeof AlertRuleMute>;
+
+export interface AlertRuleView extends Required<Omit<AlertRuleInput, 'panel' | 'segment'>> {
+  id: string;
+  panel: string | null;
+  segment: string | null;
+  mutedUntil: string | null;
+  updatedAt: string;
+  /** The count right now on each panel the rule checks; null where you cannot see that metric. */
+  current: { panel: string; value: number | null; firing: boolean }[];
+}
+export interface AlertRules {
+  checkedAt: string;
+  dataMode: 'demo' | 'live';
+  rules: AlertRuleView[];
+  /** Rules firing now (on, not muted), one line per panel. */
+  firing: {
+    ruleId: string;
+    name: string;
+    panel: string;
+    metric: AlertMetric;
+    value: number;
+    threshold: number;
+    comparator: 'above' | 'below';
+    window: 'hour' | 'day';
+  }[];
 }

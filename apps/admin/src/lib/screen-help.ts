@@ -80,6 +80,15 @@ export const SCREEN_HELP: Record<string, ScreenHelp> = {
       'Open Members or Live activity from a panel card for the people behind the numbers.',
     ],
   },
+  '/alert-rules': {
+    why: 'Get told when something unusual happens on a panel, such as a sign-up spike or a day with too few survey completes.',
+    where: 'Your own rules, checked against MADP’s synced copy of each panel every two minutes while the console is open. Nothing is sent outside the console.',
+    how: [
+      'Add a rule: what to watch, which panel, the last hour or day, above or below which number.',
+      'The amber siren next to the bell lights up and chimes when a rule fires.',
+      'Mute a rule for 4 hours, turn it off, edit it or remove it on this screen.',
+    ],
+  },
   '/members': {
     why: 'Look up and help a member of the brand picked at the top.',
     where: 'The panel itself, through its signed admin API. E-mail and phone stay masked unless you have the PII permission and give a reason.',

@@ -1463,3 +1463,30 @@ export const adminFraudSeen = pgTable(
   },
   (t) => [primaryKey({ columns: [t.adminUserId, t.panel] })],
 );
+
+/**
+ * Alert rules an admin sets for themself ("tell me when MHO patient sign-ups in the last hour go above 20"). Settings
+ * only: the counts are worked out from MADP's synced data each time they are checked, so no panel data is stored here.
+ */
+export const adminAlertRule = pgTable(
+  'admin_alert_rule',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    adminUserId: uuid('admin_user_id')
+      .notNull()
+      .references(() => adminUsers.id, { onDelete: 'cascade' }),
+    name: text('name').notNull(),
+    /** null: each panel the admin can see, checked one by one. */
+    panel: text('panel').references(() => panels.code),
+    metric: text('metric').notNull(),
+    segment: text('segment'),
+    comparator: text('comparator').notNull(),
+    threshold: integer('threshold').notNull(),
+    window: text('window').notNull(),
+    enabled: boolean('enabled').notNull().default(true),
+    mutedUntil: timestamp('muted_until', { withTimezone: true }),
+    createdAt: created(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index('admin_alert_rule_admin_idx').on(t.adminUserId)],
+);

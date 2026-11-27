@@ -885,3 +885,15 @@ verified.
 - Also fixed two leftovers of a merge on `main` that stopped the API and admin typechecks: the Members export now
   uses the shared `writeReport`, the member page shows the health score and tags and notes once in its tabbed layout,
   and the duplicates page no longer asks the panel twice.
+
+## Admin alert rules (2026-11-27)
+
+- New screen **Overview → Alert rules** (`/alert-rules`) and an amber siren next to the bell. Each admin sets their
+  own rules: what to watch (new sign-ups, optionally one segment; survey completes; redemptions; points redeemed),
+  one panel or each panel they can see, the last hour or the last 24 hours, above or below a number. The siren shows
+  the rules firing now and chimes when a new one starts; a rule can be muted for 4 hours, turned off, edited or
+  removed. Creating, changing and removing a rule is audited.
+- API `GET/POST /api/v1/alert-rules`, `PUT /alert-rules/:id`, `POST /alert-rules/:id/mute`, `POST /alert-rules/:id/remove`;
+  table `admin_alert_rule` (migration 0030, settings only, no panel data). Counts come from MADP's synced copy;
+  teens only with teen.read, redemption rules only with points.read. Nothing is sent outside the console.
+- Tests: `apps/api/test/alert-rules.test.ts` (2).

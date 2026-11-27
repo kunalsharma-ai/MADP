@@ -41,6 +41,7 @@ import {
   ClipboardCheck,
   BellRing,
   CalendarDays,
+  Siren,
 } from 'lucide-react';
 import { NAV } from './nav';
 
@@ -48,6 +49,7 @@ import { NAV } from './nav';
 export const ICONS = {
   Activity,
   CalendarDays,
+  Siren,
   ClipboardCheck,
   LayoutDashboard,
   Globe2,
