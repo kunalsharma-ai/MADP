@@ -52,12 +52,6 @@ export default async function DuplicatesPage({ searchParams }: { searchParams: P
         };
         const newer = by === 'ip' || by === 'device';
         const [found, history] = await Promise.all([
-          api<{
-            reason: string;
-            groups: number;
-            more: boolean;
-            items: { reason: string; members: MemberRow[] }[];
-          }>(`/panel/duplicates?by=${by}`),
           // a panel without the sign-up IP and device hashes yet (before MFR#104) rejects those two rules
           api<Found>(`/panel/duplicates?by=${by}`).catch((e) => {
             if (!newer) throw e;
