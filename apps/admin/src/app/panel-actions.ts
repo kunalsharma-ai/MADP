@@ -212,6 +212,14 @@ export async function importXlsxAction(base64: string, write: boolean) {
 export async function profileSaveAction(profile: string, patch: Record<string, unknown>) {
   return run(() => api(`/panel/profiles/${id(profile)}`, { method: 'PUT', json: patch }), '/profiles');
 }
+/** Saves the About You lock (which profiles open surveys and the other profiles). groups null = panel default. */
+export async function aboutYouSaveAction(body: {
+  groups: string[][] | null;
+  byCategory: Record<string, string[][] | null>;
+  reason: string;
+}) {
+  return run(() => api(`/panel/about-you`, { method: 'PUT', json: body }), '/profiles');
+}
 
 // ---- step 3a: segments, audiences, surveys, points, quality; question bank versions -----------------------------
 export async function segmentSaveAction(name: string, patch: Record<string, unknown>, reason: string) {

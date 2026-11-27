@@ -1,6 +1,11 @@
 import { z } from 'zod';
 import { CAPABILITY_IDS, CORE_CAPABILITIES, isCapability, type Capability } from './capabilities.js';
-import { PANEL_CONTRACT_NAME, contractMajor, isSupportedContractVersion } from './version.js';
+import {
+  PANEL_CONTRACT_NAME,
+  PANEL_CONTRACT_VERSION,
+  contractMajor,
+  isSupportedContractVersion,
+} from './version.js';
 
 /**
  * `GET /api/v1/contract`: what the panel tells MADP about itself. It holds no personal data. It answers either the
@@ -90,7 +95,7 @@ export function makeDiscovery(p: {
 }): Discovery {
   return {
     contract: PANEL_CONTRACT_NAME,
-    version: p.version ?? '1.0.0',
+    version: p.version ?? PANEL_CONTRACT_VERSION,
     ...(p.implementation ? { implementation: p.implementation } : {}),
     brands: p.brands.map((origin) => ({ origin })),
     capabilities: [...(p.capabilities ?? CAPABILITY_IDS)],

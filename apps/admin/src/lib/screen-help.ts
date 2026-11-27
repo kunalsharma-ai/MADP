@@ -110,7 +110,11 @@ export const SCREEN_HELP: Record<string, ScreenHelp> = {
   '/profiles': {
     why: 'Set which profiles each segment sees, in what order, and the points they pay.',
     where: 'The panel’s profiles, through its admin API.',
-    how: ['Pick a segment.', 'Reorder, switch profiles on or off, and set points (empty means the default of 50).'],
+    how: [
+      'Pick a segment.',
+      'Reorder, switch profiles on or off, and set points (empty means the default of 50).',
+      'About You lock: list the profiles a member must finish before surveys and the other profiles open. The panel enforces it, also on survey links.',
+    ],
   },
   '/questionnaires': {
     why: 'Change a profile’s pages, questions and show-if logic safely.',

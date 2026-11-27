@@ -139,6 +139,12 @@ export const CAPABILITIES = {
     purpose: 'Profile questionnaires and completion rates.',
     surface: 'admin',
   },
+  'admin.about_you': {
+    title: 'About You lock',
+    purpose:
+      'Which profiles a member must finish before surveys and the other profiles open, per brand and segment (contract 1.1).',
+    surface: 'admin',
+  },
   'admin.segments': {
     title: 'Segments',
     purpose: 'Panel segments such as consumer, B2B, teens, HCP.',
